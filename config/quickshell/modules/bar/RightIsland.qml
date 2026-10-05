@@ -1,0 +1,208 @@
+// Right island: CPU · RAM · [Wi-Fi | Bluetooth | volume | battery] · bell · clock
+// Each capsule opens its own popover through ShellState (one at a time).
+import QtQuick
+import QtQuick.Effects
+import "../.."
+import "../../services"
+import "../../components"
+
+Rectangle {
+    id: root
+
+    required property var bar
+
+    implicitHeight: Theme.barHeight
+    height: Theme.barHeight
+    width: row.implicitWidth + Theme.barIslandPadH * 2
+    radius: Theme.barIslandRadius
+    color: Theme.barIsland
+    border.width: 1
+    border.color: Theme.hairline
+
+    Row {
+        id: row
+        x: Theme.barIslandPadH
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Theme.barIslandGap
+
+        // CPU
+        Capsule {
+            id: cpuCap
+            anchors.verticalCenter: parent.verticalCenter
+            active: root.bar.isOpen("perf")
+            onClicked: root.bar.openFrom("perf", cpuCap)
+            Glyph { icon: Icons.cpu; size: Theme.iconSm; color: Theme.cyan; anchors.verticalCenter: parent.verticalCenter }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: `${SysStats.cpuPct}%`
+                mono: true
+                size: Theme.sizeBar
+            }
+        }
+
+        // RAM
+        Capsule {
+            id: ramCap
+            anchors.verticalCenter: parent.verticalCenter
+            active: root.bar.isOpen("perf")
+            onClicked: root.bar.openFrom("perf", ramCap)
+            Glyph { icon: Icons.memory; size: Theme.iconSm; color: Theme.violetSoft; anchors.verticalCenter: parent.verticalCenter }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: `${SysStats.memUsedGb.toFixed(1)}G`
+                mono: true
+                size: Theme.sizeBar
+            }
+        }
+
+        // Grouped capsule: each part is its own button
+        Rectangle {
+            id: group
+            anchors.verticalCenter: parent.verticalCenter
+            height: Theme.capsuleHeight
+            width: groupRow.implicitWidth
+            radius: Theme.capsuleRadius
+            color: Theme.surface2
+
+            Row {
+                id: groupRow
+                anchors.verticalCenter: parent.verticalCenter
+
+                Capsule {
+                    id: wifiCap
+                    flat: true
+                    padH: Theme.capsulePadH - 2
+                    active: root.bar.isOpen("wifi")
+                    onClicked: root.bar.openFrom("wifi", wifiCap)
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: Theme.iconMd
+                        icon: Network.wiredConnected && !Network.wifiConnected ? Icons.ethernet
+                              : Icons.wifiFor(Network.signalStrength, Network.wifiEnabled && Network.hasWifi)
+                        color: Network.connected ? Theme.text : Theme.textDim
+                    }
+                }
+
+                Capsule {
+                    id: btCap
+                    visible: Bluetooth.adapterAvailable
+                    flat: true
+                    padH: Theme.capsulePadH - 2
+                    active: root.bar.isOpen("bt")
+                    onClicked: root.bar.openFrom("bt", btCap)
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: Theme.iconMd
+                        icon: !Bluetooth.enabled ? Icons.btOff : (Bluetooth.connectedDevices.length > 0 ? Icons.btConnected : Icons.bluetooth)
+                        color: Bluetooth.connectedDevices.length > 0 ? Theme.cyan : (Bluetooth.enabled ? Theme.text : Theme.textDim)
+                    }
+                }
+
+                Capsule {
+                    id: volCap
+                    flat: true
+                    padH: Theme.capsulePadH - 2
+                    active: root.bar.isOpen("audio")
+                    onClicked: m => {
+                        if (m.button === Qt.MiddleButton || m.button === Qt.RightButton) Audio.toggleMute();
+                        else root.bar.openFrom("audio", volCap);
+                    }
+                    onWheel: d => Audio.setVolume(Audio.volume + (d > 0 ? 0.05 : -0.05))
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: Theme.iconMd
+                        icon: Icons.volumeFor(Audio.volume, Audio.muted)
+                        color: Audio.muted ? Theme.textDim : Theme.text
+                    }
+                    UiText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: `${Audio.volumePct}`
+                        mono: true
+                        size: Theme.sizeBar
+                        color: Audio.muted ? Theme.textDim : Theme.text
+                    }
+                }
+
+                Capsule {
+                    id: batCap
+                    visible: Power.hasBattery
+                    flat: true
+                    padH: Theme.capsulePadH - 2
+                    active: root.bar.isOpen("battery")
+                    onClicked: root.bar.openFrom("battery", batCap)
+                    readonly property color tone: Power.isCharging ? Theme.ok
+                                                 : (Power.batteryPct <= 10 ? Theme.error : (Power.isLow ? Theme.warn : Theme.ok))
+                    Glyph {
+                        anchors.verticalCenter: parent.verticalCenter
+                        size: Theme.iconMd
+                        icon: Icons.batteryFor(Power.batteryPct, Power.isCharging)
+                        color: batCap.tone
+                    }
+                    UiText {
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: `${Power.batteryPct}%`
+                        mono: true
+                        size: Theme.sizeBar
+                        color: batCap.tone
+                    }
+                }
+            }
+        }
+
+        // Notifications bell: dot = unread (accent + glow)
+        Capsule {
+            id: bellCap
+            anchors.verticalCenter: parent.verticalCenter
+            padH: Theme.capsulePadH - 2
+            active: root.bar.isOpen("notifications")
+            onClicked: m => {
+                if (m.button === Qt.RightButton) Notifs.toggleDnd();
+                else root.bar.openFrom("notifications", bellCap);
+            }
+            Item {
+                width: Theme.iconMd
+                height: Theme.capsuleHeight
+                Glyph {
+                    anchors.centerIn: parent
+                    size: Theme.iconMd
+                    icon: Notifs.dnd ? Icons.bellOff : Icons.bell
+                    color: Notifs.dnd ? Theme.textDim : Theme.text
+                }
+                RectangularShadow {
+                    anchors.fill: unreadDot
+                    radius: width / 2
+                    blur: Theme.glowBlurSmall
+                    color: Theme.glowStrong
+                    visible: unreadDot.visible
+                }
+                Rectangle {
+                    id: unreadDot
+                    visible: Notifs.hasUnread && !Notifs.dnd
+                    width: Theme.pillDot + 2
+                    height: width
+                    radius: width / 2
+                    color: Theme.accent
+                    x: parent.width - width / 2 - 1
+                    y: parent.height / 2 - Theme.iconMd / 2
+                }
+            }
+        }
+
+        // Clock: brand gradient, "lun 5 oct  16:23"
+        Capsule {
+            id: clockCap
+            anchors.verticalCenter: parent.verticalCenter
+            brand: true
+            active: root.bar.isOpen("calendar")
+            onClicked: root.bar.openFrom("calendar", clockCap)
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: Clock.barText
+                mono: true
+                size: Theme.sizeBar
+                weight: Theme.weightSemiBold
+                color: Theme.onBrand
+            }
+        }
+    }
+}
