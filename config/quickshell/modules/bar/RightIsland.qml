@@ -2,6 +2,8 @@
 // Each capsule opens its own popover through ShellState (one at a time).
 import QtQuick
 import QtQuick.Effects
+import Quickshell
+import Quickshell.Widgets
 import "../.."
 import "../../services"
 import "../../components"
@@ -144,6 +146,77 @@ Rectangle {
                         mono: true
                         size: Theme.sizeBar
                         color: batCap.tone
+                    }
+                }
+            }
+        }
+
+        // System tray (StatusNotifierItems): left = activate (or menu), middle = secondary,
+        // right = menu, wheel = scroll. Hidden when no app exposes an item.
+        Rectangle {
+            id: tray
+            visible: Tray.hasItems
+            anchors.verticalCenter: parent.verticalCenter
+            height: Theme.capsuleHeight
+            width: trayRow.implicitWidth + Theme.spacingXs * 2
+            radius: Theme.capsuleRadius
+            color: Theme.surface2
+
+            Row {
+                id: trayRow
+                anchors.centerIn: parent
+                spacing: 0
+
+                Repeater {
+                    model: ScriptModel {
+                        values: Tray.items
+                        comparisonMode: ObjectComparison.Identity
+                    }
+                    delegate: Item {
+                        id: trayItem
+                        required property var modelData
+                        width: Theme.capsuleHeight - Theme.spacingXs
+                        height: Theme.capsuleHeight - Theme.spacingXs
+
+                        Rectangle {
+                            anchors.fill: parent
+                            radius: Theme.capsuleRadius - 2
+                            color: trayMouse.containsMouse ? Theme.surfaceHi : Theme.transparent
+                            Behavior on color { ColorAnimation { duration: Theme.durHover } }
+                        }
+                        IconImage {
+                            anchors.centerIn: parent
+                            source: trayItem.modelData.icon
+                            implicitSize: Theme.iconMd
+                            asynchronous: true
+                        }
+                        Rectangle {
+                            visible: Tray.needsAttention(trayItem.modelData)
+                            width: Theme.pillDot
+                            height: width
+                            radius: width / 2
+                            color: Theme.warn
+                            anchors.right: parent.right
+                            anchors.top: parent.top
+                        }
+                        MouseArea {
+                            id: trayMouse
+                            anchors.fill: parent
+                            hoverEnabled: true
+                            cursorShape: Qt.PointingHandCursor
+                            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
+                            function menu() {
+                                const p = trayItem.mapToItem(null, 0, trayItem.height + Theme.popoverGap);
+                                Tray.showMenu(trayItem.modelData, root.bar, p.x, p.y);
+                            }
+                            onClicked: m => {
+                                const item = trayItem.modelData;
+                                if (m.button === Qt.RightButton || (m.button === Qt.LeftButton && item.onlyMenu)) menu();
+                                else if (m.button === Qt.MiddleButton) Tray.secondaryActivate(item);
+                                else Tray.activate(item);
+                            }
+                            onWheel: w => Tray.scroll(trayItem.modelData, w.angleDelta.y)
+                        }
                     }
                 }
             }
