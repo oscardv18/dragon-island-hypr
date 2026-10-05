@@ -103,7 +103,7 @@ FloatingWindow {
                             color: Root.Theme.accent
                         }
                         Text {
-                            text: `Workspace activo: ${Svc.Hypr.focusedWorkspaceId} (${Svc.Hypr.focusedWorkspaceName}) | Modo Lua: ${Svc.Hypr.usingLua}`
+                            text: `Workspace activo: ${Svc.Hypr.focusedWorkspaceId} (monitor ${Svc.Hypr.focusedMonitorName}) | Modo Lua: ${Svc.Hypr.usingLua}`
                             font.family: Root.Theme.fontMono
                             font.pixelSize: Root.Theme.sizeCaption
                             color: Root.Theme.text
@@ -365,7 +365,7 @@ FloatingWindow {
                             color: Root.Theme.warn
                         }
                         Text {
-                            text: `Nivel de brillo actual: ${Svc.Brightness.brightnessPct}% (${Svc.Brightness.brightnessReal.toFixed(2)})`
+                            text: `Brillo: ${Svc.Brightness.available ? Svc.Brightness.brightnessPct + "% (" + Svc.Brightness.device + ")" : "sin retroiluminación"} | Sesión: ${Svc.Session.userName}@${Svc.Session.hostName}`
                             font.family: Root.Theme.fontMono
                             font.pixelSize: Root.Theme.sizeCaption
                             color: Root.Theme.text

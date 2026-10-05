@@ -1,25 +1,28 @@
 // =============================================================================
 // dragon-island — Bluetooth.qml
-// Service: Bluetooth Adapter & Device Management
+// Service: BlueZ adapter & devices (Quickshell.Bluetooth)
 // =============================================================================
 /**
  * Properties:
+ *   - adapter: BluetoothAdapter [readonly] (null when there is no adapter)
  *   - adapterAvailable: bool [readonly]
- *   - enabled: bool
+ *   - enabled: bool [readonly] (adapter powered)
+ *   - blocked: bool [readonly] (rfkill)
  *   - discovering: bool [readonly]
+ *   - devices: list<BluetoothDevice> [readonly] (connected first, then paired, then others; by name)
  *   - connectedDevices: list<BluetoothDevice> [readonly]
  *   - pairedDevices: list<BluetoothDevice> [readonly]
+ *   - availableDevices: list<BluetoothDevice> [readonly] (found while discovering, not paired)
+ *   - primaryConnectedDevice: BluetoothDevice [readonly]
  *   - connectedDeviceName: string [readonly]
- *   - connectedBattery: real [readonly] (0.0 - 1.0)
- *   - connectedBatteryPct: int [readonly] (0 - 100)
- *   - hasBattery: bool [readonly]
+ *   - hasBattery: bool [readonly]   connectedBattery: real [readonly]   connectedBatteryPct: int [readonly]
  *
  * Functions:
- *   - togglePower(): void
- *   - setPower(on: bool): void
- *   - startDiscovery(): void
- *   - connectDevice(device: BluetoothDevice): void
- *   - disconnectDevice(device: BluetoothDevice): void
+ *   - togglePower(): void            setPower(on: bool): void
+ *   - startDiscovery(): void         stopDiscovery(): void        toggleDiscovery(): void
+ *   - connectDevice(d): void         disconnectDevice(d): void    toggleConnection(d): void
+ *   - pairDevice(d): void            forgetDevice(d): void
+ *   - batteryPct(d): int (-1 when the device does not report it)
  *
  * Signals:
  *   - powerChanged(enabled: bool)
@@ -35,52 +38,42 @@ Singleton {
 
     readonly property BluetoothAdapter adapter: Bluetooth.defaultAdapter
     readonly property bool adapterAvailable: adapter !== null
-
-    property bool enabled: adapter?.enabled ?? false
-    onEnabledChanged: {
-        if (adapter && adapter.enabled !== root.enabled) {
-            adapter.enabled = root.enabled;
-        }
-    }
-
+    readonly property bool enabled: adapter?.enabled ?? false
+    readonly property bool blocked: adapter?.state === BluetoothAdapterState.Blocked
     readonly property bool discovering: adapter?.discovering ?? false
 
-    // Device lists
-    readonly property var connectedDevices: {
-        return Bluetooth.devices.values.filter(d => d.connected);
+    readonly property var devices: {
+        const rank = d => d.connected ? 0 : (d.paired ? 1 : 2);
+        return Bluetooth.devices.values.slice().sort((a, b) => (rank(a) - rank(b)) || (a.name || "").localeCompare(b.name || ""));
     }
+    readonly property var connectedDevices: devices.filter(d => d.connected)
+    readonly property var pairedDevices: devices.filter(d => d.paired)
+    readonly property var availableDevices: devices.filter(d => !d.paired && !d.connected && (d.name || "").length > 0)
 
-    readonly property var pairedDevices: {
-        return Bluetooth.devices.values.filter(d => d.paired);
-    }
-
-    // First connected device summary for bar capsule
     readonly property BluetoothDevice primaryConnectedDevice: connectedDevices[0] ?? null
     readonly property string connectedDeviceName: primaryConnectedDevice?.name || ""
-    readonly property real connectedBattery: primaryConnectedDevice?.battery ?? 0.0
-    readonly property int connectedBatteryPct: Math.round(connectedBattery * 100)
     readonly property bool hasBattery: primaryConnectedDevice?.batteryAvailable ?? false
+    readonly property real connectedBattery: hasBattery ? primaryConnectedDevice.battery : 0.0
+    readonly property int connectedBatteryPct: Math.round(connectedBattery * 100)
 
-    function togglePower(): void {
-        root.enabled = !root.enabled;
+    function setPower(on: bool): void { if (adapter) adapter.enabled = on; }
+    function togglePower(): void { if (adapter) adapter.enabled = !adapter.enabled; }
+
+    function startDiscovery(): void { if (adapter && adapter.enabled) adapter.discovering = true; }
+    function stopDiscovery(): void { if (adapter) adapter.discovering = false; }
+    function toggleDiscovery(): void { if (discovering) stopDiscovery(); else startDiscovery(); }
+
+    function connectDevice(device): void { device?.connect(); }
+    function disconnectDevice(device): void { device?.disconnect(); }
+    function toggleConnection(device): void {
+        if (!device) return;
+        if (device.connected) device.disconnect(); else device.connect();
     }
+    function pairDevice(device): void { device?.pair(); }
+    function forgetDevice(device): void { device?.forget(); }
 
-    function setPower(on: bool): void {
-        root.enabled = on;
-    }
-
-    function startDiscovery(): void {
-        if (adapter) {
-            adapter.discovering = true;
-        }
-    }
-
-    function connectDevice(device: BluetoothDevice): void {
-        device?.connect();
-    }
-
-    function disconnectDevice(device: BluetoothDevice): void {
-        device?.disconnect();
+    function batteryPct(device): int {
+        return device?.batteryAvailable ? Math.round(device.battery * 100) : -1;
     }
 
     signal powerChanged(enabled: bool)
@@ -88,8 +81,6 @@ Singleton {
 
     onEnabledChanged: root.powerChanged(root.enabled)
     onConnectedDeviceNameChanged: {
-        if (root.connectedDeviceName.length > 0) {
-            root.deviceConnected(root.connectedDeviceName);
-        }
+        if (root.connectedDeviceName.length > 0) root.deviceConnected(root.connectedDeviceName);
     }
 }

@@ -1,15 +1,19 @@
 // =============================================================================
 // dragon-island — Hypr.qml
-// Service: Hyprland Compositor State & IPC
+// Service: Hyprland compositor state & dispatch (Lua dispatcher syntax on 0.55+)
 // =============================================================================
 /**
  * Properties:
  *   - usingLua: bool [readonly]
  *   - focusedWorkspaceId: int [readonly]
- *   - focusedWorkspaceName: string [readonly]
+ *   - focusedMonitorName: string [readonly]
  *   - activeTitle: string [readonly]
- *   - activeClass: string [readonly]
- *   - workspaces: list<var> [readonly] (workspaces 1-5 metadata: id, name, active, occupied, urgent)
+ *   - activeClass: string [readonly] (Wayland app id, falls back to the X11/IPC class)
+ *   - activeIcon: string [readonly] (image source for the active app, "" if none)
+ *   - hasActiveWindow: bool [readonly]
+ *   - workspaceCount: int [readonly] (numbered pills shown in the bar, 5)
+ *   - workspaces: list<var> [readonly] (1..5: { id, name, active, occupied, urgent, windows, visible })
+ *       active  = focused workspace; visible = shown on some monitor (multi-monitor)
  *   - monitors: ObjectModel<HyprlandMonitor> [readonly]
  *
  * Functions:
@@ -19,6 +23,7 @@
  *   - toggleFullscreen(): void
  *   - toggleFloat(): void
  *   - dispatch(cmd: string): void
+ *   - monitorFor(screen): HyprlandMonitor
  *   - refresh(): void
  *
  * Signals:
@@ -35,24 +40,35 @@ Singleton {
 
     readonly property bool usingLua: Hyprland.usingLua
     readonly property int focusedWorkspaceId: Hyprland.focusedWorkspace?.id ?? 1
-    readonly property string focusedWorkspaceName: Hyprland.focusedWorkspace?.name ?? "1"
+    readonly property string focusedMonitorName: Hyprland.focusedMonitor?.name ?? ""
 
-    readonly property string activeTitle: Hyprland.activeToplevel?.title ?? ""
-    readonly property string activeClass: Hyprland.activeToplevel?.appId ?? ""
+    // Hyprland.activeToplevel is a HyprlandToplevel: title is native, the app id lives on its Wayland handle
+    readonly property var activeToplevel: Hyprland.activeToplevel
+    readonly property bool hasActiveWindow: activeToplevel !== null && activeToplevel !== undefined
+    readonly property string activeTitle: activeToplevel?.title ?? ""
+    readonly property string activeClass: activeToplevel?.wayland?.appId || activeToplevel?.lastIpcObject?.class || ""
+    readonly property string activeIcon: {
+        if (activeClass.length === 0) return "";
+        const entry = DesktopEntries.heuristicLookup(activeClass);
+        return Quickshell.iconPath(entry?.icon || activeClass.toLowerCase(), "application-x-executable");
+    }
 
-    // Workspaces 1..5 representation for island & bar pills
+    readonly property int workspaceCount: 5
+
     readonly property var workspaces: {
         const list = [];
-        const currentActive = root.focusedWorkspaceId;
-        const allWs = Hyprland.workspaces.values;
-        for (let i = 1; i <= 5; i++) {
-            const found = allWs.find(w => w.id === i);
+        const all = Hyprland.workspaces.values;
+        for (let i = 1; i <= root.workspaceCount; i++) {
+            const ws = all.find(w => w.id === i) ?? null;
+            const windows = ws ? ws.toplevels.values.length : 0;
             list.push({
                 id: i,
-                name: found ? found.name : `${i}`,
-                active: (currentActive === i),
-                occupied: (found !== undefined && found !== null),
-                urgent: found ? found.urgent : false
+                name: ws ? ws.name : `${i}`,
+                active: root.focusedWorkspaceId === i,
+                visible: ws ? ws.active : false,
+                occupied: windows > 0,
+                urgent: ws ? ws.urgent : false,
+                windows: windows
             });
         }
         return list;
@@ -65,43 +81,27 @@ Singleton {
     }
 
     function focusWorkspace(id: int): void {
-        if (root.usingLua) {
-            Hyprland.dispatch(`hl.dsp.focus({ workspace = "${id}" })`);
-        } else {
-            Hyprland.dispatch(`workspace ${id}`);
-        }
+        Hyprland.dispatch(root.usingLua ? `hl.dsp.focus({ workspace = ${id} })` : `workspace ${id}`);
     }
 
     function moveWindowToWorkspace(id: int): void {
-        if (root.usingLua) {
-            Hyprland.dispatch(`hl.dsp.window.move({ workspace = "${id}" })`);
-        } else {
-            Hyprland.dispatch(`movetoworkspace ${id}`);
-        }
+        Hyprland.dispatch(root.usingLua ? `hl.dsp.window.move({ workspace = ${id} })` : `movetoworkspace ${id}`);
     }
 
     function closeActiveWindow(): void {
-        if (root.usingLua) {
-            Hyprland.dispatch("hl.dsp.window.close()");
-        } else {
-            Hyprland.dispatch("killactive");
-        }
+        Hyprland.dispatch(root.usingLua ? "hl.dsp.window.close()" : "killactive");
     }
 
     function toggleFullscreen(): void {
-        if (root.usingLua) {
-            Hyprland.dispatch('hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })');
-        } else {
-            Hyprland.dispatch("fullscreen 1");
-        }
+        Hyprland.dispatch(root.usingLua ? 'hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" })' : "fullscreen 1");
     }
 
     function toggleFloat(): void {
-        if (root.usingLua) {
-            Hyprland.dispatch('hl.dsp.window.float({ action = "toggle" })');
-        } else {
-            Hyprland.dispatch("togglefloating");
-        }
+        Hyprland.dispatch(root.usingLua ? 'hl.dsp.window.float({ action = "toggle" })' : "togglefloating");
+    }
+
+    function monitorFor(screen): var {
+        return screen ? Hyprland.monitorFor(screen) : null;
     }
 
     function refresh(): void {

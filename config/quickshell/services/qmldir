@@ -11,3 +11,4 @@ singleton Osd 1.0 Osd.qml
 singleton Toggles 1.0 Toggles.qml
 singleton Apps 1.0 Apps.qml
 singleton Clock 1.0 Clock.qml
+singleton Session 1.0 Session.qml

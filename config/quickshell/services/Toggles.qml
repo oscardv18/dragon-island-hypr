@@ -1,22 +1,25 @@
 // =============================================================================
 // dragon-island — Toggles.qml
-// Service: Quick System Toggles (Wi-Fi, Bluetooth, DND, Night Light, Record)
+// Service: quick toggles for the dashboard (state mirrors the owning services)
 // =============================================================================
 /**
- * Properties:
- *   - wifi: bool
- *   - bluetooth: bool
- *   - dnd: bool
- *   - nightLight: bool
- *   - isRecording: bool
+ * Properties (all readonly mirrors, the owning service is the single source of truth):
+ *   - wifi: bool              (Network.wifiEnabled)
+ *   - wifiAvailable: bool     (there is a Wi-Fi device)
+ *   - bluetooth: bool         (Bluetooth.enabled)
+ *   - bluetoothAvailable: bool
+ *   - dnd: bool               (Notifs.dnd)
+ *   - nightLight: bool        (hyprsunset running, started by us)
+ *   - isRecording: bool       (wf-recorder running)
+ *   - recordingSeconds: int   (elapsed while recording)
  *
  * Functions:
  *   - toggleWifi(): void
  *   - toggleBluetooth(): void
  *   - toggleDnd(): void
  *   - toggleNightLight(): void
- *   - toggleRecording(): void
- *   - triggerScreenshot(): void
+ *   - toggleRecording(): void        (asks for an output/region with slurp, saves to XDG Videos)
+ *   - triggerScreenshot(): void      (region screenshot after the shell panels close)
  *
  * Signals:
  *   - toggleChanged(name: string, state: bool)
@@ -25,69 +28,75 @@ pragma Singleton
 import Quickshell
 import Quickshell.Io
 import QtQuick
-import "."
 
 Singleton {
     id: root
 
-    property bool wifi: Network.wifiEnabled
-    property bool bluetooth: Bluetooth.enabled
-    property bool dnd: Notifs.dnd
-    property bool nightLight: false
-    property bool isRecording: false
+    readonly property bool wifi: Network.wifiEnabled
+    readonly property bool wifiAvailable: Network.hasWifi
+    readonly property bool bluetooth: Bluetooth.enabled
+    readonly property bool bluetoothAvailable: Bluetooth.adapterAvailable
+    readonly property bool dnd: Notifs.dnd
+    readonly property bool nightLight: sunsetProc.running
+    readonly property bool isRecording: recordProc.running
+    property int recordingSeconds: 0
 
-    // Night light process via hyprsunset
+    // Night light: hyprsunset at 4500 K while the process runs
     Process {
         id: sunsetProc
         command: ["hyprsunset", "-t", "4500"]
     }
 
-    // Screen recording process via wf-recorder
+    // Screen recording: `exec` so SIGINT reaches wf-recorder and it finalizes the file
     Process {
         id: recordProc
-        onStarted: root.isRecording = true
-        onExited: root.isRecording = false
+        command: ["sh", "-c",
+            "dir=$(xdg-user-dir VIDEOS 2>/dev/null); [ -n \"$dir\" ] && [ \"$dir\" != \"$HOME\" ] || dir=\"$HOME/Videos\"; " +
+            "mkdir -p \"$dir\"; geom=$(slurp -o -d) || exit 0; " +
+            "f=\"$dir/grabacion_$(date +%Y-%m-%d_%H-%M-%S).mp4\"; " +
+            "notify-send -a dragon-island 'Grabando pantalla' \"$f\"; exec wf-recorder -g \"$geom\" -f \"$f\""]
+        onExited: (code, status) => {
+            root.recordingSeconds = 0;
+            Quickshell.execDetached(["notify-send", "-a", "dragon-island", "Grabación finalizada", "Guardada en la carpeta Vídeos"]);
+        }
+    }
+
+    Timer {
+        interval: 1000
+        repeat: true
+        running: recordProc.running
+        onTriggered: root.recordingSeconds++
     }
 
     function toggleWifi(): void {
         Network.toggleWifi();
-        root.wifi = Network.wifiEnabled;
-        root.toggleChanged("wifi", root.wifi);
+        root.toggleChanged("wifi", !root.wifi);
     }
 
     function toggleBluetooth(): void {
         Bluetooth.togglePower();
-        root.bluetooth = Bluetooth.enabled;
-        root.toggleChanged("bluetooth", root.bluetooth);
+        root.toggleChanged("bluetooth", !root.bluetooth);
     }
 
     function toggleDnd(): void {
         Notifs.toggleDnd();
-        root.dnd = Notifs.dnd;
-        root.toggleChanged("dnd", root.dnd);
+        root.toggleChanged("dnd", Notifs.dnd);
     }
 
     function toggleNightLight(): void {
-        root.nightLight = !root.nightLight;
-        if (root.nightLight) {
-            sunsetProc.running = true;
-        } else {
-            sunsetProc.running = false;
-        }
-        root.toggleChanged("nightLight", root.nightLight);
+        sunsetProc.running = !sunsetProc.running;
+        root.toggleChanged("nightLight", sunsetProc.running);
     }
 
     function toggleRecording(): void {
-        if (recordProc.running) {
-            recordProc.signal(2); // SIGINT
-        } else {
-            const timestamp = Qt.formatDateTime(new Date(), "yyyy-MM-dd_hh-mm-ss");
-            recordProc.exec(["sh", "-c", `wf-recorder -f ~/Videos/recording_${timestamp}.mp4`]);
-        }
+        if (recordProc.running) recordProc.signal(2); // SIGINT
+        else recordProc.running = true;
+        root.toggleChanged("recording", recordProc.running);
     }
 
     function triggerScreenshot(): void {
-        Quickshell.execDetached(["grimblast", "--notify", "copysave", "area"]);
+        // small delay so the dashboard/scrim are gone before slurp draws
+        Quickshell.execDetached(["sh", "-c", "sleep 0.4; grimblast --notify copysave area"]);
     }
 
     signal toggleChanged(name: string, state: bool)
