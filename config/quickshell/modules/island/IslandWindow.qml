@@ -15,6 +15,7 @@ import "../popovers"
 import "../launcher"
 import "../power"
 import "../notifications"
+import "../clipboard"
 
 PanelWindow {
     id: win
@@ -34,12 +35,11 @@ PanelWindow {
     // Panel shown on this monitor ("none" otherwise)
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
     readonly property bool panelHere: panel !== "none"
-    readonly property bool modal: panel === "dashboard" || panel === "launcher" || panel === "power"
+    readonly property bool modal: panel === "dashboard" || panel === "launcher" || panel === "power" || panel === "clipboard"
     readonly property bool isFocusedMonitor: Hypr.focusedMonitorName === "" || Hypr.focusedMonitorName === screenName
 
-    // hide the closed island over fullscreen windows, unless it has something urgent to show
-    readonly property bool islandHidden: Hypr.fullscreenOn(screen) && !panelHere
-                                         && IslandState.mode !== "osd" && IslandState.mode !== "notif"
+    // hide the closed island over fullscreen windows, except while it shows the OSD
+    readonly property bool islandHidden: Hypr.fullscreenOn(screen) && !panelHere && IslandState.mode !== "osd"
 
     mask: panelHere ? null : idleMask
     Region {
@@ -75,6 +75,7 @@ PanelWindow {
 
     onPanelChanged: Qt.callLater(() => {
         if (panel === "launcher") launcher.focusSearch();
+        else if (panel === "clipboard") clipboard.focusSearch();
         else if (panel === "power") power.focusMenu();
         else if (panelHere) keys.forceActiveFocus();
     })
@@ -98,12 +99,19 @@ PanelWindow {
     PopoverHost {
         anchors.fill: parent
         panel: win.panel
+        screenName: win.screenName
     }
 
     Launcher {
         id: launcher
         anchors.fill: parent
         shown: win.panel === "launcher"
+    }
+
+    ClipboardPanel {
+        id: clipboard
+        anchors.fill: parent
+        shown: win.panel === "clipboard"
     }
 
     PowerMenu {

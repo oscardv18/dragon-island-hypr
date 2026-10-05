@@ -62,8 +62,8 @@ hl.bind(mainMod .. " + L", hl.dsp.exec_cmd("loginctl lock-session"))
 hl.bind("Print",                   hl.dsp.exec_cmd("grimblast --notify copysave output"))
 hl.bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("grimblast --notify copysave area"))
 
--- Clipboard history (cliphist)
-hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("cliphist list | rofi -dmenu -theme-str 'window {width: 40%;}' | cliphist decode | wl-copy"))
+-- Clipboard history (cliphist, shown by the Quickshell clipboard panel)
+hl.bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call shell toggle clipboard"))
 
 -- Hardware & Multimedia keys (audio, mic, brightness, player)
 hl.bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+"), { locked = true, repeating = true })

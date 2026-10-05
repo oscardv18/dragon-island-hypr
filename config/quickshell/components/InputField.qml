@@ -16,6 +16,7 @@ Rectangle {
     signal accepted()
     signal navigate(int delta)     // Up / Down / Tab / Shift+Tab
     signal escapePressed()
+    signal deleteOnEmpty()         // Supr with an empty field (e.g. delete the highlighted entry)
 
     implicitHeight: Theme.touchTarget
     implicitWidth: Theme.popoverWidthSm
@@ -59,6 +60,10 @@ Rectangle {
                 Keys.onTabPressed: root.navigate(1)
                 Keys.onBacktabPressed: root.navigate(-1)
                 Keys.onEscapePressed: root.escapePressed()
+                Keys.onDeletePressed: e => {
+                    if (input.text.length === 0) root.deleteOnEmpty();
+                    else e.accepted = false;      // normal forward delete
+                }
             }
 
             UiText {
