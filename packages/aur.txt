@@ -1,0 +1,10 @@
+# =============================================================================
+# dragon-island — AUR dependencies
+# Verified against AUR database (2026-10-05)
+# =============================================================================
+
+# Brand UI typography (Outfit font family)
+outfit-font
+
+# Screenshot helper for Hyprland
+grimblast-git

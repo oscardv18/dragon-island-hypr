@@ -1,0 +1,57 @@
+# =============================================================================
+# dragon-island — Official repository dependencies (Arch Linux core / extra)
+# Verified against Arch Linux repositories (2026-10-05)
+# =============================================================================
+
+# Compositor and core session
+hyprland
+hyprlock
+hypridle
+hyprpaper
+hyprpolkitagent
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+
+# Quickshell and Qt dependencies
+quickshell
+qt6-svg
+qt6-imageformats
+qt6-5compat
+
+# Terminal & default file manager
+kitty
+dolphin
+
+# Audio, video & hardware controls
+pipewire
+pipewire-pulse
+wireplumber
+playerctl
+brightnessctl
+
+# Utilities, clipboard and screenshots
+wl-clipboard
+cliphist
+rofi-wayland
+grim
+slurp
+
+# System services
+networkmanager
+bluez
+bluez-utils
+power-profiles-daemon
+upower
+
+# TUI installer
+gum
+
+# Typography
+ttf-jetbrains-mono-nerd
+
+# Build dependencies for hyprpm plugins
+cpio
+cmake
+git
+meson
+gcc
