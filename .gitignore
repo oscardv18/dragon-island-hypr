@@ -1,0 +1,5 @@
+# Quickshell / qmlls (generated per machine)
+.qmlls.ini
+
+# Community "hyprland" skill: it is its own git clone, fetched/updated by install-skills.sh
+.agents/skills/hyprland/
