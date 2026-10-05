@@ -170,6 +170,35 @@ Todas las tareas de la Fase Base se desarrollaron en ramas dedicadas y se fusion
 
 ---
 
+## 3b. Auditoría (fase final, Fase 1) — 2026-10-05
+
+Revisión de todo lo anterior contra las skills (`dragon-island`, `hyprland`, `hyprland-plugins`, `quickshell`, `arch-tui-installer`).
+Algunas afirmaciones de las secciones 2–3 eran inexactas; esta sección manda sobre ellas.
+
+| Área | Problema | Corrección |
+|---|---|---|
+| Hyprland | `gestures.workspace_swipe` / `workspace_swipe_fingers` no existen en 0.56 (errores de config) | `hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })` |
+| Hyprland | Sin decisión de tema Qt (lo exige la skill) | `QT_QPA_PLATFORMTHEME=kde` vía `hl.env` (solo en la sesión Hyprland) |
+| Hyprland | `misc.background_color` sin alfa | `0xff0b0c14` |
+| Hyprland | polkit lanzado por ruta adivinada | `systemctl --user start hyprpolkitagent` (wiki) |
+| Hyprland | opciones de plugins aplicadas antes de cargar los plugins | `hyprpm reload -n && hyprctl reload` en el arranque |
+| hyprlock | `disable_loading_bar`, `no_fade_in`, `grace` no existen en `general` | eliminadas; `ignore_empty_input = true` |
+| Instalador | `rofi-wayland` y `outfit-font` **no existen** (abortaba `pacman`/`yay`) | `rofi` (2.0, Wayland nativo) y `ttf-outfit` (AUR), verificados contra archlinux.org/AUR |
+| Instalador | los componentes elegidos no filtraban paquetes | secciones `@core/@shell/@plugins/@fonts` en `packages/*.txt` |
+| Instalador | `--dry-run` pedía sudo y fallaba sin gum; modo copia no idempotente; scripts sin bit +x en git | corregido (dry-run sin sudo/sin efectos, `diff -rq` en copia, `100755`) |
+| Instalador | `hyprpm` desde autostart sin TTY (pide sudo para cabeceras) | primer arranque en una ventana de kitty flotante |
+| Paquetes | faltaban `hyprsunset`, `wf-recorder`, `libnotify`, `base-devel` usados por servicios/scripts | añadidos |
+| QML | `Audio.qml`: `signal volumeChanged`/`micVolumeChanged` duplican las señales de propiedad → **el singleton no cargaba** (qmllint: duplicated-name) | eliminadas; el OSD usa las señales de propiedad |
+| QML | `Bluetooth.qml`: dos `onEnabledChanged` en el mismo objeto | corregido |
+| QML | `Network`/`Bluetooth`/`Toggles`: binding bidireccional que se rompe tras el primer cambio | propiedades `readonly` + funciones setter |
+| QML | `Hypr.activeClass` usaba `appId`, que `HyprlandToplevel` no tiene | `activeToplevel.wayland.appId` (fallback `lastIpcObject.class`) |
+| QML | `Osd` nunca se disparaba (no escuchaba a Audio/Brillo) | conectado a cambios de volumen/mute/mic/brillo, con guarda de arranque |
+| QML | `Media.position` se congelaba al cambiar de reproductor | patrón documentado `positionChanged()` con Timer |
+
+Servicios completados para la interfaz: Wi‑Fi (banda, velocidad, IP vía `nmcli`, lista deduplicada, conexión con PSK), Bluetooth (descubrir, emparejar, olvidar, batería), Audio (fuentes, mezclador por app), SysStats (por núcleo, GPU, top procesos), Notifs (no leídas, popups, tiempo relativo, críticas, límite 100), Apps (búsqueda fuzzy + frecuencia de uso persistida), Clock (rejilla de mes L–D), Brightness (sysfs, sin procesos por sondeo, `available`), nuevo `Session` (usuario, host, bloquear/suspender/apagar/reiniciar/cerrar sesión).
+
+Verificado en Windows (estático): `shellcheck -x` limpio (0.11.0), sintaxis Lua + ejecución con `hl` simulado (lupa), `qmllint 6.11` sin errores reales (tipos de Quickshell no resolubles fuera de Linux), nombres de paquetes contra archlinux.org/AUR, finales de línea LF.
+
 ## 4. Lista de Pendientes para Fase 2 (Roadmap Visual & UI)
 
 Habiendo validado la capa funcional y de datos, la **Fase 2** abordará la construcción visual completa según la especificación de diseño (`references/design.md`):
