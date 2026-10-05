@@ -1,7 +1,6 @@
 // Closed-island content, chosen by IslandState.mode (priority handled there):
-//   osd · notif · workspace · media · clock
+//   osd · workspace · media · clock   (notifications appear as popups, not here)
 import QtQuick
-import Quickshell.Widgets
 import "../.."
 import "../../services"
 import "../../components"
@@ -21,7 +20,6 @@ Item {
         sourceComponent: {
             switch (root.mode) {
                 case "osd":       return osdView;
-                case "notif":     return notifView;
                 case "workspace": return workspaceView;
                 case "media":     return mediaView;
                 default:          return clockView;
@@ -56,8 +54,9 @@ Item {
                 color: Toggles.isRecording ? Theme.error
                      : (Notifs.dnd ? Theme.muted : (Notifs.hasUnread ? Theme.accent : Theme.ok))
                 SequentialAnimation on opacity {
-                    running: Toggles.isRecording
+                    running: Toggles.isRecording && Theme.animationsEnabled
                     loops: Animation.Infinite
+                    onStopped: dot.opacity = 1
                     NumberAnimation { to: 0.3; duration: Theme.ms(600) }
                     NumberAnimation { to: 1; duration: Theme.ms(600) }
                 }
@@ -137,49 +136,6 @@ Item {
                         Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
                     }
                 }
-            }
-        }
-    }
-
-    // ---- incoming notification ----
-    Component {
-        id: notifView
-        Row {
-            id: nrow
-            readonly property var n: IslandState.notification
-            readonly property string iconSrc: Notifs.iconFor(n)
-            spacing: Theme.spacingSm
-
-            Item {
-                anchors.verticalCenter: parent.verticalCenter
-                width: Theme.islandIcon
-                height: Theme.islandIcon
-                IconImage {
-                    anchors.fill: parent
-                    source: nrow.iconSrc
-                    visible: nrow.iconSrc.length > 0
-                    asynchronous: true
-                }
-                Glyph {
-                    anchors.centerIn: parent
-                    visible: nrow.iconSrc.length === 0
-                    icon: Icons.bellRing
-                    size: Theme.iconMd
-                    color: Notifs.isCritical(nrow.n) ? Theme.error : Theme.accent
-                }
-            }
-            UiText {
-                anchors.verticalCenter: parent.verticalCenter
-                text: nrow.n?.summary || nrow.n?.appName || "Notificación"
-                weight: Theme.weightMedium
-                width: Math.min(implicitWidth, Theme.islandNotifMax)
-            }
-            UiText {
-                anchors.verticalCenter: parent.verticalCenter
-                visible: (nrow.n?.appName ?? "").length > 0
-                text: `· ${nrow.n?.appName ?? ""}`
-                color: Theme.textDim
-                width: Math.min(implicitWidth, Theme.islandNotifMax / 2)
             }
         }
     }

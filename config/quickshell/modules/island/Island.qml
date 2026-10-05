@@ -130,10 +130,7 @@ Item {
             acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
             onClicked: m => {
                 const mode = IslandState.mode;
-                if (mode === "notif") {
-                    if (m.button === Qt.LeftButton) ShellState.open("notifications", root.screenName);
-                    IslandState.dismissNotification();
-                } else if (mode === "media" && m.button === Qt.MiddleButton) {
+                if (mode === "media" && m.button === Qt.MiddleButton) {
                     Media.playPause();
                 } else if (m.button === Qt.LeftButton) {
                     ShellState.toggle("dashboard", root.screenName);
