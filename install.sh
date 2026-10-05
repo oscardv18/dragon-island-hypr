@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # dragon-island — Interactive TUI Installer & Dotfiles Manager
-# Target: Arch Linux / EndeavourOS with gum TUI
+# Target: Arch Linux / EndeavourOS (next to KDE Plasma) with a gum TUI
 # =============================================================================
 set -Eeuo pipefail
 shopt -s nullglob
@@ -12,14 +12,16 @@ STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/$PROJECT"
 LOG="$STATE_DIR/install.log"
 TS="$(date +%Y%m%d-%H%M%S)"
 BACKUP_DIR="$STATE_DIR/backups/$TS"
-MANIFEST="$STATE_DIR/manifest"
+MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
+
+ALL_COMPONENTS=(core shell plugins fonts services)
 
 DRY_RUN=false
 ASSUME_YES=false
 MODE="install"
 LINK_MODE="symlink"
 
-# Gum styling variables (Sweet / Garuda Dragonized palette)
+# Gum styling (Sweet / Garuda Dragonized palette)
 export GUM_CHOOSE_CURSOR_FOREGROUND="#00c1e4"
 export GUM_CHOOSE_SELECTED_FOREGROUND="#c50ed2"
 export GUM_CONFIRM_SELECTED_BACKGROUND="#7c3aed"
@@ -33,14 +35,13 @@ Uso: $0 [OPCIONES]
 Instalador modular con interfaz TUI para dragon-island en Arch Linux / EndeavourOS.
 
 OPCIONES:
-  --dry-run       Muestra las acciones sin ejecutarlas
+  --dry-run       Muestra las acciones sin ejecutarlas (no pide sudo ni instala nada)
   --yes, -y       Modo desatendido: usa valores por defecto sin preguntas
   --uninstall     Desinstala dragon-island y restaura copias de seguridad
   -h, --help      Muestra esta ayuda
 EOF
 }
 
-# Parse CLI arguments
 for arg in "$@"; do
     case "$arg" in
         --dry-run)   DRY_RUN=true ;;
@@ -57,6 +58,9 @@ mkdir -p "$STATE_DIR"
 exec > >(tee -a "$LOG") 2>&1
 trap 'echo "✗ Error en la línea $LINENO. Revisa el registro en: $LOG" >&2' ERR
 
+# -----------------------------------------------------------------------------
+# Helpers
+# -----------------------------------------------------------------------------
 run() {
     if $DRY_RUN; then
         printf '[dry-run] %q ' "$@"
@@ -66,85 +70,87 @@ run() {
     fi
 }
 
-log_info() {
-    if command -v gum >/dev/null 2>&1; then
-        gum log --level info "$1"
+has_gum() { command -v gum >/dev/null 2>&1; }
+
+log_info() { if has_gum; then gum log --level info "$1"; else echo ":: $1"; fi; }
+log_warn() { if has_gum; then gum log --level warn "$1"; else echo ":: AVISO: $1"; fi; }
+
+# box <border-color> <line>...   (plain text fallback when gum is missing, e.g. in --dry-run)
+box() {
+    local color="$1"; shift
+    if has_gum; then
+        gum style --border rounded --border-foreground "$color" --padding "1 2" --foreground "#e6e8ef" "$@"
     else
-        echo ":: $1"
+        printf '%s\n' "------------------------------------------------------------" "$@" \
+            "------------------------------------------------------------"
     fi
 }
 
-log_warn() {
-    if command -v gum >/dev/null 2>&1; then
-        gum log --level warn "$1"
-    else
-        echo ":: ADVERTENCIA: $1"
-    fi
+# confirm <question>  → 0 = yes. In --yes mode (or without gum) always yes.
+confirm() {
+    if $ASSUME_YES || ! has_gum; then return 0; fi
+    gum confirm --affirmative "Sí" --negative "No" "$1"
+}
+
+# read_packages <file> <component>...  → prints the packages of the selected sections
+read_packages() {
+    local file="$1"; shift
+    [[ -f "$file" ]] || return 0
+    awk -v sel=" $* " '
+        /^[[:space:]]*(#|$)/ { next }
+        /^@/ { section = substr($1, 2); next }
+        index(sel, " " section " ") { print $1 }
+    ' "$file"
 }
 
 # =============================================================================
-# Modo Desinstalación (--uninstall)
+# Uninstall (--uninstall): process the manifest in reverse
 # =============================================================================
 do_uninstall() {
-    if command -v gum >/dev/null 2>&1; then
-        gum style --border rounded --border-foreground "#ed254e" --padding "1 2" \
-            "Desinstalador de dragon-island" "Se revertirán los archivos desplegados y restaurarán respaldos."
-        if ! $ASSUME_YES; then
-            gum confirm "¿Deseas proceder con la desinstalación?" || exit 0
-        fi
-    fi
+    box "#ed254e" "Desinstalador de dragon-island" \
+        "Se eliminarán los archivos desplegados y se restaurarán los respaldos." \
+        "Los paquetes instalados NO se desinstalan."
+    confirm "¿Deseas proceder con la desinstalación?" || exit 0
 
     if [[ ! -f "$MANIFEST" ]]; then
-        echo "No se encontró el archivo de manifiesto en $MANIFEST. Nada que desinstalar."
+        echo "No se encontró el manifiesto en $MANIFEST. Nada que desinstalar."
         exit 0
     fi
 
     log_info "Procesando manifiesto en orden inverso..."
-    local lines=()
+    local lines=() line action target extra idx
     mapfile -t lines < "$MANIFEST"
 
     for (( idx=${#lines[@]}-1; idx>=0; idx-- )); do
-        local line="${lines[idx]}"
+        line="${lines[idx]}"
         [[ -z "$line" ]] && continue
-        local action target extra
-        action="$(echo "$line" | cut -f1)"
-        target="$(echo "$line" | cut -f2)"
-        extra="$(echo "$line" | cut -f3)"
-
-        if [[ "$action" == "deploy" ]]; then
-            if [[ -L "$target" || -e "$target" ]]; then
-                log_info "Eliminando objetivo desplegado: $target"
-                run rm -rf "$target"
-            fi
-        elif [[ "$action" == "backup" ]]; then
-            if [[ -e "$extra" ]]; then
-                log_info "Restaurando respaldo: $extra -> $target"
-                run mkdir -p "$(dirname "$target")"
-                run mv "$extra" "$target"
-            fi
-        fi
+        IFS=$'\t' read -r action target extra <<< "$line"
+        case "$action" in
+            deploy)
+                if [[ -L "$target" || -e "$target" ]]; then
+                    log_info "Eliminando: $target"
+                    run rm -rf -- "$target"
+                fi
+                ;;
+            backup)
+                if [[ -e "$extra" || -L "$extra" ]]; then
+                    log_info "Restaurando respaldo: $extra -> $target"
+                    run mkdir -p "$(dirname "$target")"
+                    run mv -- "$extra" "$target"
+                fi
+                ;;
+        esac
     done
 
-    # Remove firstrun marker if present
-    run rm -f "$STATE_DIR/firstrun.done"
-    run rm -f "$MANIFEST"
-
-    echo
-    if command -v gum >/dev/null 2>&1; then
-        gum style --border rounded --border-foreground "#06c993" --padding "1 2" \
-            "Desinstalación finalizada" "Los dotfiles y respaldos fueron revertidos correctamente."
-    else
-        echo "Desinstalación finalizada con éxito."
-    fi
+    run rm -f "$STATE_DIR/firstrun.done" "$MANIFEST"
+    box "#06c993" "Desinstalación finalizada" "Los dotfiles fueron retirados y los respaldos restaurados."
     exit 0
 }
 
-if [[ "$MODE" == "uninstall" ]]; then
-    do_uninstall
-fi
+[[ "$MODE" == "uninstall" ]] && do_uninstall
 
 # =============================================================================
-# Preflight Checks
+# Preflight
 # =============================================================================
 if [[ $EUID -eq 0 ]]; then
     echo "ERROR: Por seguridad, no ejecutes este instalador como root." >&2
@@ -155,7 +161,6 @@ if [[ ! -f /etc/os-release ]]; then
     echo "ERROR: No se detectó un sistema Linux compatible." >&2
     exit 1
 fi
-
 # shellcheck source=/dev/null
 . /etc/os-release
 if [[ "$ID" != "arch" && "$ID" != "endeavouros" && " ${ID_LIKE:-} " != *" arch "* ]]; then
@@ -163,216 +168,192 @@ if [[ "$ID" != "arch" && "$ID" != "endeavouros" && " ${ID_LIKE:-} " != *" arch "
     exit 1
 fi
 
-if ! curl -fsS --max-time 5 -o /dev/null https://archlinux.org; then
+if ! $DRY_RUN && ! curl -fsS --max-time 5 -o /dev/null https://archlinux.org; then
     echo "ERROR: No hay conexión a internet disponible." >&2
     exit 1
 fi
 
-# Ensure gum is installed
-if ! command -v gum >/dev/null 2>&1; then
-    echo ":: Instalando gum para la interfaz gráfica de terminal..."
+if ! $DRY_RUN; then
+    sudo -v
+    # keep sudo alive while the installer runs
+    while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null &
+fi
+
+# --dry-run without gum: nothing can be prompted, use defaults
+if $DRY_RUN && ! has_gum; then ASSUME_YES=true; fi
+
+if ! has_gum; then
+    log_info "Instalando gum para la interfaz de terminal..."
     run sudo pacman -S --needed --noconfirm gum
 fi
 
-# Detect or install AUR helper (yay or paru)
-AUR_HELPER=""
-for h in yay paru; do
-    if command -v "$h" >/dev/null 2>&1; then
-        AUR_HELPER="$h"
-        break
-    fi
-done
-
-if [[ -z "$AUR_HELPER" ]]; then
-    if $ASSUME_YES; then
-        INSTALL_YAY=true
-    else
-        gum style --border normal --border-foreground "#f9ae58" \
-            "No se detectó un ayudante de AUR (yay o paru)."
-        INSTALL_YAY=false
-        if gum confirm "¿Deseas compilar e instalar yay-bin automáticamente?"; then
-            INSTALL_YAY=true
-        fi
-    fi
-
-    if $INSTALL_YAY; then
-        log_info "Instalando yay-bin desde AUR..."
-        BUILD_DIR="$(mktemp -d)"
-        run git clone https://aur.archlinux.org/yay-bin.git "$BUILD_DIR/yay-bin"
-        ( cd "$BUILD_DIR/yay-bin" && run makepkg -si --noconfirm )
-        run rm -rf "$BUILD_DIR"
-        AUR_HELPER="yay"
-    else
-        log_warn "Se continuará sin AUR helper. Los paquetes de AUR deberán instalarse manualmente."
-    fi
+if pacman -Qq plasma-desktop >/dev/null 2>&1 || pacman -Qq plasma-workspace >/dev/null 2>&1; then
+    log_info "KDE Plasma detectado: se instalará Hyprland como sesión adicional en SDDM (Plasma no se toca)."
 fi
-
-# Keep sudo credentials alive in background
-sudo -v
-while true; do sudo -n true; sleep 50; kill -0 "$$" || exit; done 2>/dev/null &
 
 # =============================================================================
-# Bienvenida y Selección de Componentes
+# Welcome and choices
 # =============================================================================
-gum style --border rounded --border-foreground "#c50ed2" --padding "1 2" --foreground "#e6e8ef" \
-    "dragon-island — Instalador de Entorno de Escritorio" \
-    "Hyprland 0.56.x (Lua) + Quickshell 0.3.1 (Dynamic Island)" \
-    "Base: EndeavourOS / Arch Linux (Coexistencia segura con KDE Plasma)"
+box "#c50ed2" "dragon-island — Instalador" \
+    "Hyprland 0.56 (Lua) + Quickshell 0.3.1 (barra + Dynamic Island)" \
+    "EndeavourOS / Arch Linux, junto a KDE Plasma"
 
-# Full system update prompt
-if ! $ASSUME_YES; then
-    if gum confirm "¿Deseas realizar una actualización completa del sistema (pacman -Syu)?"; then
-        log_info "Actualizando repositorios y paquetes del sistema..."
-        run sudo pacman -Syu --noconfirm
-    fi
+# One full upgrade first (never partial upgrades); default yes in --yes mode
+if confirm "¿Actualizar el sistema ahora (pacman -Syu)? Recomendado antes de instalar."; then
+    log_info "Actualizando el sistema..."
+    run sudo pacman -Syu --noconfirm
 fi
 
-# Choose installation mode
 if ! $ASSUME_YES; then
-    CHOICE="$(gum choose --header "¿Método de despliegue para los archivos de configuración?" \
-        "Symlink (Recomendado para desarrollo/actualizaciones de git)" \
-        "Copia (Archivos independientes en ~/.config)")"
-    if [[ "$CHOICE" == Copia* ]]; then
-        LINK_MODE="copy"
-    else
-        LINK_MODE="symlink"
-    fi
+    CHOICE="$(gum choose --header "¿Cómo desplegar los archivos de configuración?" \
+        "Symlink (recomendado: se actualiza con git pull)" \
+        "Copia (archivos independientes en ~/.config)")"
+    [[ "$CHOICE" == Copia* ]] && LINK_MODE="copy"
 fi
 
-# Component selection
-SELECTED_COMPONENTS=("core" "shell" "plugins" "fonts" "services")
+SELECTED_COMPONENTS=("${ALL_COMPONENTS[@]}")
 if ! $ASSUME_YES; then
     mapfile -t SELECTED_COMPONENTS < <(gum choose --no-limit \
-        --header "Selecciona los componentes a instalar (Espacio para marcar/desmarcar, Enter para confirmar):" \
-        --selected "core,shell,plugins,fonts,services" \
-        "core" \
-        "shell" \
-        "plugins" \
-        "fonts" \
-        "services")
+        --header "Componentes (Espacio marca/desmarca, Enter confirma):" \
+        --selected "$(IFS=,; echo "${ALL_COMPONENTS[*]}")" \
+        "${ALL_COMPONENTS[@]}")
 fi
+if [[ ${#SELECTED_COMPONENTS[@]} -eq 0 ]]; then
+    log_warn "No se seleccionó ningún componente. Saliendo."
+    exit 0
+fi
+log_info "Componentes: ${SELECTED_COMPONENTS[*]}"
 
 has_component() {
-    local target="$1"
-    for c in "${SELECTED_COMPONENTS[@]}"; do
-        [[ "$c" == "$target" ]] && return 0
-    done
+    local c
+    for c in "${SELECTED_COMPONENTS[@]}"; do [[ "$c" == "$1" ]] && return 0; done
     return 1
 }
 
 # =============================================================================
-# Instalación de Paquetes
+# AUR helper (only if some selected component needs AUR packages)
 # =============================================================================
-PACMAN_FILE="$REPO_DIR/packages/pacman.txt"
-AUR_FILE="$REPO_DIR/packages/aur.txt"
+mapfile -t AUR_PKGS < <(read_packages "$REPO_DIR/packages/aur.txt" "${SELECTED_COMPONENTS[@]}")
 
-if [[ -f "$PACMAN_FILE" ]]; then
-    mapfile -t ALL_PACMAN_PKGS < <(grep -vE '^\s*(#|$)' "$PACMAN_FILE")
-    if [[ ${#ALL_PACMAN_PKGS[@]} -gt 0 ]]; then
-        log_info "Instalando paquetes desde repositorios oficiales..."
-        run sudo pacman -S --needed --noconfirm "${ALL_PACMAN_PKGS[@]}"
+AUR_HELPER=""
+for h in paru yay; do
+    if command -v "$h" >/dev/null 2>&1; then AUR_HELPER="$h"; break; fi
+done
+
+if [[ -z "$AUR_HELPER" && ${#AUR_PKGS[@]} -gt 0 ]]; then
+    if confirm "No hay ayudante de AUR (yay/paru). ¿Compilar e instalar yay-bin?"; then
+        log_info "Instalando yay-bin desde AUR..."
+        run sudo pacman -S --needed --noconfirm base-devel git
+        if $DRY_RUN; then
+            run git clone https://aur.archlinux.org/yay-bin.git "<tmp>/yay-bin"
+            run makepkg -si --noconfirm
+        else
+            BUILD_DIR="$(mktemp -d)"
+            git clone https://aur.archlinux.org/yay-bin.git "$BUILD_DIR/yay-bin"
+            ( cd "$BUILD_DIR/yay-bin" && makepkg -si --noconfirm )
+            rm -rf "$BUILD_DIR"
+        fi
+        AUR_HELPER="yay"
+    else
+        log_warn "Sin ayudante de AUR: instala a mano: ${AUR_PKGS[*]}"
     fi
 fi
 
-if [[ -n "$AUR_HELPER" && -f "$AUR_FILE" ]]; then
-    mapfile -t ALL_AUR_PKGS < <(grep -vE '^\s*(#|$)' "$AUR_FILE")
-    if [[ ${#ALL_AUR_PKGS[@]} -gt 0 ]]; then
-        log_info "Instalando paquetes desde AUR con $AUR_HELPER..."
-        run "$AUR_HELPER" -S --needed --noconfirm "${ALL_AUR_PKGS[@]}"
-    fi
+# =============================================================================
+# Packages
+# =============================================================================
+mapfile -t PACMAN_PKGS < <(read_packages "$REPO_DIR/packages/pacman.txt" "${SELECTED_COMPONENTS[@]}")
+
+if [[ ${#PACMAN_PKGS[@]} -gt 0 ]]; then
+    log_info "Instalando ${#PACMAN_PKGS[@]} paquetes de los repositorios oficiales..."
+    run sudo pacman -S --needed --noconfirm "${PACMAN_PKGS[@]}"
+fi
+
+if [[ -n "$AUR_HELPER" && ${#AUR_PKGS[@]} -gt 0 ]]; then
+    log_info "Instalando paquetes de AUR con $AUR_HELPER: ${AUR_PKGS[*]}"
+    run "$AUR_HELPER" -S --needed --noconfirm "${AUR_PKGS[@]}"
 fi
 
 # =============================================================================
-# Despliegue de Configuraciones (Idempotente + Respaldos)
+# Configs: backup + link/copy (idempotent)
 # =============================================================================
 deploy_item() {
-    local src="$1"
-    local dest="$2"
+    local src="$1" dest="$2" rel_path
 
-    # Already deployed as symlink pointing to our repo? Skip!
+    # Already a symlink to our repo → nothing to do
     if [[ -L "$dest" && "$(readlink -f "$dest")" == "$(readlink -f "$src")" ]]; then
-        log_info "Ya enlazado correctamente: $dest"
+        log_info "Ya enlazado: $dest"
+        return 0
+    fi
+    # Copy mode and identical content → nothing to do
+    if [[ "$LINK_MODE" == "copy" && -e "$dest" && ! -L "$dest" ]] && diff -rq -- "$src" "$dest" >/dev/null 2>&1; then
+        log_info "Ya copiado y sin cambios: $dest"
         return 0
     fi
 
-    # Backup existing file/dir
     if [[ -e "$dest" || -L "$dest" ]]; then
-        local rel_path="${dest#"$HOME"/}"
+        rel_path="${dest#"$HOME"/}"
         run mkdir -p "$BACKUP_DIR/$(dirname "$rel_path")"
-        run mv "$dest" "$BACKUP_DIR/$rel_path"
+        run mv -- "$dest" "$BACKUP_DIR/$rel_path"
         $DRY_RUN || printf 'backup\t%s\t%s\n' "$dest" "$BACKUP_DIR/$rel_path" >> "$MANIFEST"
-        log_info "Respaldo creado: $dest -> $BACKUP_DIR/$rel_path"
+        log_info "Respaldo: $dest -> $BACKUP_DIR/$rel_path"
     fi
 
     run mkdir -p "$(dirname "$dest")"
     if [[ "$LINK_MODE" == "symlink" ]]; then
-        run ln -sfn "$src" "$dest"
-        log_info "Enlace creado: $dest -> $src"
+        run ln -sfn -- "$src" "$dest"
     else
-        run cp -a "$src" "$dest"
-        log_info "Copia creada: $dest"
+        run cp -a -- "$src" "$dest"
     fi
-
     $DRY_RUN || printf 'deploy\t%s\t%s\n' "$dest" "$src" >> "$MANIFEST"
+    log_info "Desplegado ($LINK_MODE): $dest"
 }
 
-log_info "Desplegando archivos de configuración..."
+log_info "Desplegando configuración..."
 
-if has_component "core"; then
-    deploy_item "$REPO_DIR/config/hypr" "$HOME/.config/hypr"
+if has_component core; then
+    deploy_item "$REPO_DIR/config/hypr"  "$HOME/.config/hypr"
     deploy_item "$REPO_DIR/config/kitty" "$HOME/.config/kitty"
 fi
 
-if has_component "shell"; then
+if has_component shell; then
     deploy_item "$REPO_DIR/config/quickshell" "$HOME/.config/quickshell"
 fi
 
-if has_component "plugins"; then
-    # Deploy first-run script into ~/.local/state/dragon-island/firstrun.sh
-    run mkdir -p "$STATE_DIR"
+if has_component plugins; then
+    # Run once, from autostart.lua, inside the first Hyprland session (hyprpm needs a running Hyprland)
+    run chmod +x "$REPO_DIR/installer/firstrun.sh"
     deploy_item "$REPO_DIR/installer/firstrun.sh" "$STATE_DIR/firstrun.sh"
-    run chmod +x "$STATE_DIR/firstrun.sh"
 fi
 
 # =============================================================================
-# Habilitación de Servicios del Sistema
+# Services (system units; skipped when already enabled)
 # =============================================================================
-if has_component "services"; then
+if has_component services; then
     log_info "Configurando servicios del sistema..."
-    SYSTEM_SERVICES=("NetworkManager" "bluetooth" "power-profiles-daemon")
-    for s in "${SYSTEM_SERVICES[@]}"; do
-        if systemctl is-active --quiet "$s" 2>/dev/null; then
-            log_info "Servicio $s ya está activo."
+    for s in NetworkManager bluetooth power-profiles-daemon; do
+        if systemctl is-enabled --quiet "$s" 2>/dev/null; then
+            log_info "Servicio $s ya habilitado."
         else
-            log_info "Habilitando e iniciando servicio: $s"
             run sudo systemctl enable --now "$s" || log_warn "No se pudo habilitar $s"
         fi
     done
 fi
 
 # =============================================================================
-# Pantalla Final y Resumen
+# Final screen
 # =============================================================================
-echo
-gum style --border rounded --border-foreground "#06c993" --padding "1 2" \
-    "¡Instalación de dragon-island completada con éxito!" \
+box "#06c993" "dragon-island instalado" \
     "" \
-    "Resumen:" \
-    "  • Modo de despliegue: $LINK_MODE" \
-    "  • Respaldos guardados en: $BACKUP_DIR" \
-    "  • Registro de instalación: $LOG" \
+    "  • Despliegue: $LINK_MODE · componentes: ${SELECTED_COMPONENTS[*]}" \
+    "  • Respaldos: $BACKUP_DIR (solo si había algo que reemplazar)" \
+    "  • Registro: $LOG" \
     "" \
-    "Instrucciones de inicio:" \
-    "  1. Cierra sesión en tu entorno actual." \
-    "  2. En la pantalla de SDDM, selecciona la sesión 'Hyprland'." \
-    "  3. Inicia sesión: Quickshell y los plugins se cargarán automáticamente." \
+    "Para empezar: cierra sesión → en SDDM elige la sesión «Hyprland» → entra." \
+    "En el primer arranque se abre una terminal que compila hyprbars/hyprfocus." \
     "" \
-    "Atajos clave:" \
-    "  • SUPER + Return   : Terminal kitty" \
-    "  • SUPER + Space    : Lanzador de aplicaciones" \
-    "  • SUPER + D        : Dashboard (Dynamic Island expandida)" \
-    "  • SUPER + L        : Bloquear pantalla (hyprlock)" \
-    "  • SUPER + Q        : Cerrar ventana" \
+    "  SUPER + Return  terminal      SUPER + Space   lanzador" \
+    "  SUPER + D       dashboard     SUPER + N       notificaciones" \
+    "  SUPER + Escape  energía       SUPER + L       bloquear" \
     "" \
-    "Para desinstalar en cualquier momento:" \
-    "  $REPO_DIR/install.sh --uninstall"
+    "Desinstalar: $REPO_DIR/install.sh --uninstall"

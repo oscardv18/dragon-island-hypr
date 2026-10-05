@@ -58,6 +58,6 @@ hl.config({
         disable_splash_rendering = true,
         force_default_wallpaper  = 0,
         vfr                      = true,
-        background_color         = 0x0b0c14, -- #0b0c14
+        background_color         = 0xff0b0c14, -- bg #0b0c14 (0xAARRGGBB)
     },
 })

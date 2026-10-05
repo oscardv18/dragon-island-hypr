@@ -54,3 +54,19 @@ hl.layer_rule({
     blur         = true,
     ignore_alpha = 0.5,
 })
+
+-- First-run setup terminal: floating and centered
+hl.window_rule({
+    name   = "float-firstrun",
+    match  = { class = "^dragon-island-setup$" },
+    float  = true,
+    center = true,
+    size   = { 900, 560 },
+})
+
+-- The Dynamic Island and popovers animate themselves in QML: no compositor layer animation
+hl.layer_rule({
+    name    = "no-anim-dragon-island",
+    match   = { namespace = "^dragon-(island|popover|launcher|notifications)$" },
+    no_anim = true,
+})

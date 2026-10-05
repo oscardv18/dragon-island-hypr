@@ -20,10 +20,13 @@ hl.config({
         },
     },
 
+    -- Only tuning options live under `gestures`; the gestures themselves are hl.gesture() calls
+    -- (gestures.workspace_swipe / workspace_swipe_fingers no longer exist on 0.56).
     gestures = {
-        workspace_swipe          = true,
-        workspace_swipe_fingers  = 3,
         workspace_swipe_distance = 300,
         workspace_swipe_invert   = true,
     },
 })
+
+-- 3-finger horizontal swipe switches workspaces
+hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })
