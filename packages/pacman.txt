@@ -21,7 +21,6 @@ dolphin
 # Clipboard, screenshots, recording, night light
 wl-clipboard
 cliphist
-rofi
 grim
 slurp
 wf-recorder
@@ -44,6 +43,9 @@ bluez
 bluez-utils
 power-profiles-daemon
 upower
+# Calendar events (khal) and external-monitor brightness (DDC/CI; ships the i2c-dev module and udev rule)
+khal
+ddcutil
 
 @plugins
 # Build dependencies for hyprpm (hyprbars, hyprfocus)
