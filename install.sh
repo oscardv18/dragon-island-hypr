@@ -320,6 +320,16 @@ if has_component shell; then
     deploy_item "$REPO_DIR/config/quickshell" "$HOME/.config/quickshell"
 fi
 
+if has_component core; then
+    # Default wallpaper, only when the user has none (never replaces a custom one)
+    WALLPAPER="${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/wallpaper.jpg"
+    if [[ -e "$WALLPAPER" || -L "$WALLPAPER" ]]; then
+        log_info "Fondo de pantalla existente conservado: $WALLPAPER"
+    else
+        deploy_item "$REPO_DIR/assets/wallpapers/dragon-island.jpg" "$WALLPAPER"
+    fi
+fi
+
 if has_component plugins; then
     # Run once, from autostart.lua, inside the first Hyprland session (hyprpm needs a running Hyprland)
     run chmod +x "$REPO_DIR/installer/firstrun.sh"
