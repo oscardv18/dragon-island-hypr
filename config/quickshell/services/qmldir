@@ -13,3 +13,6 @@ singleton Apps 1.0 Apps.qml
 singleton Clock 1.0 Clock.qml
 singleton Session 1.0 Session.qml
 singleton IslandState 1.0 IslandState.qml
+singleton Settings 1.0 Settings.qml
+singleton Clipboard 1.0 Clipboard.qml
+singleton Tray 1.0 Tray.qml

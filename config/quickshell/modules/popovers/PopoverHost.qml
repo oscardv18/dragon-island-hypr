@@ -9,6 +9,7 @@ Item {
     id: host
 
     property string panel: "none"
+    property string screenName: ""
 
     readonly property real popTop: Theme.barMarginTop + Theme.barHeight + Theme.popoverGap
     readonly property real rightEdge: ShellState.anchorRight >= 0 ? ShellState.anchorRight : width - Theme.barMarginSide
@@ -21,7 +22,7 @@ Item {
     WifiPopover          { shown: host.panel === "wifi";          x: host.xFor(width); y: host.popTop }
     BluetoothPopover     { shown: host.panel === "bt";            x: host.xFor(width); y: host.popTop }
     AudioPopover         { shown: host.panel === "audio";         x: host.xFor(width); y: host.popTop }
-    BatteryPopover       { shown: host.panel === "battery";       x: host.xFor(width); y: host.popTop }
+    BatteryPopover       { shown: host.panel === "battery";       x: host.xFor(width); y: host.popTop; screenName: host.screenName }
     NotificationCenter   { shown: host.panel === "notifications"; x: host.xFor(width); y: host.popTop }
     CalendarPopover      { shown: host.panel === "calendar";      x: host.xFor(width); y: host.popTop }
 }

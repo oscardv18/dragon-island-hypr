@@ -46,12 +46,13 @@ ColumnLayout {
                     onMoved: v => Audio.setVolume(v)
                     onIconClicked: Audio.toggleMute()
                 }
+                // backlight on the laptop panel, DDC/CI on external monitors (per monitor)
                 Slider {
                     Layout.fillWidth: true
-                    visible: Brightness.available
+                    visible: Brightness.controllableOn(root.screenName)
                     icon: Icons.sun
-                    value: Brightness.brightnessReal
-                    onMoved: v => Brightness.setBrightnessReal(v)
+                    value: Brightness.levelFor(root.screenName)
+                    onMoved: v => Brightness.setLevelFor(root.screenName, v)
                 }
             }
         }

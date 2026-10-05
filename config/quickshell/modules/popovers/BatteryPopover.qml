@@ -9,6 +9,8 @@ PopoverFrame {
     id: root
     title: "Batería"
 
+    property string screenName: ""
+
     readonly property color tone: Power.isCharging ? Theme.ok
                                  : (Power.batteryPct <= 10 ? Theme.error : (Power.isLow ? Theme.warn : Theme.ok))
 
@@ -78,14 +80,14 @@ PopoverFrame {
     }
 
     Card {
-        visible: Brightness.available
+        visible: Brightness.controllableOn(root.screenName)
         Layout.fillWidth: true
         UiText { caption: true; text: "Brillo" }
         Slider {
             Layout.fillWidth: true
             icon: Icons.sun
-            value: Brightness.brightnessReal
-            onMoved: v => Brightness.setBrightnessReal(v)
+            value: Brightness.levelFor(root.screenName)
+            onMoved: v => Brightness.setLevelFor(root.screenName, v)
         }
     }
 
