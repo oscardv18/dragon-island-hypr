@@ -341,6 +341,29 @@ if has_component services; then
 fi
 
 # =============================================================================
+# Post-install checks for the shell (warnings only, nothing is changed)
+# =============================================================================
+if has_component shell && ! $DRY_RUN; then
+    if command -v qs >/dev/null 2>&1; then
+        log_info "Quickshell: $(qs --version 2>/dev/null | head -n1)"
+    else
+        log_warn "No se encontró 'qs' (quickshell). La barra y la isla no se mostrarán."
+    fi
+
+    # Only one notification daemon per session: ours (Quickshell). Others may be D-Bus activated.
+    for d in mako dunst swaync; do
+        if pacman -Qq "$d" >/dev/null 2>&1; then
+            log_warn "$d está instalado: si arranca en Hyprland competirá con las notificaciones de Quickshell."
+        fi
+    done
+fi
+
+if has_component fonts && ! $DRY_RUN && command -v fc-list >/dev/null 2>&1; then
+    fc-list | grep -qi "Outfit" || log_warn "Fuente Outfit no encontrada (paquete AUR ttf-outfit)."
+    fc-list | grep -qi "JetBrainsMono Nerd\|JetBrains Mono Nerd" || log_warn "JetBrains Mono Nerd Font no encontrada (ttf-jetbrains-mono-nerd)."
+fi
+
+# =============================================================================
 # Final screen
 # =============================================================================
 box "#06c993" "dragon-island instalado" \
@@ -355,5 +378,7 @@ box "#06c993" "dragon-island instalado" \
     "  SUPER + Return  terminal      SUPER + Space   lanzador" \
     "  SUPER + D       dashboard     SUPER + N       notificaciones" \
     "  SUPER + Escape  energía       SUPER + L       bloquear" \
+    "" \
+    "Pruebas: docs/TESTING.md · Atajos: docs/KEYBINDS.md" \
     "" \
     "Desinstalar: $REPO_DIR/install.sh --uninstall"
