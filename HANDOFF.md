@@ -1,244 +1,160 @@
-# Dragon Island — Handoff & Estado del Proyecto (Fase Base)
+# dragon-island — HANDOFF
 
-> **Fecha:** 2026-10-05  
-> **Estado:** Fase Base completada e integrada en rama `main`.  
-> **Objetivo:** Proporcionar los cimientos funcionales del entorno de escritorio Hyprland + Quickshell sobre EndeavourOS / Arch Linux (coexistiendo limpiamente con KDE Plasma), con paleta Garuda Dragonized / Sweet.
+> **Fecha:** 2026-10-05 · **Rama:** `main` · **Estado:** interfaz completa según la spec, **pendiente de prueba en EndeavourOS**.
+> Todo se escribió y validó en Windows (sin Hyprland ni Quickshell). Lo que exige hardware real está en [docs/TESTING.md](docs/TESTING.md).
 
----
+## 1. Resumen
 
-## 1. Resumen Ejecutivo de la Fase Base
+Escritorio Hyprland 0.56 (configuración Lua) + Quickshell 0.3.1, instalado como segunda sesión junto a KDE Plasma.
 
-En esta fase se establecieron los tres pilares estructurales del proyecto sin implementar componentes visuales finales de la barra o Dynamic Island:
-1. **Configuración de Hyprland 0.56.x en Lua:** Modularizada al 100% mediante `require()`, complementada por configuraciones nativas para el ecosistema (`hyprlock`, `hypridle`, `hyprpaper`), integración de terminal (`kitty`) y plugins oficiales (`hyprbars`, `hyprfocus`).
-2. **Instalador TUI Interactivo con Gum:** Script idempotente (`install.sh`), catálogo de paquetes (`pacman.txt`, `aur.txt`), respaldo con manifiesto inverso y script de inicialización de primera sesión (`installer/firstrun.sh`).
-3. **Servicios Reactivos de Quickshell 0.3.1:** 13 servicios de datos desacoplados de la UI, gestor de estado global e IPC (`ShellState.qml`), tokens de diseño unificados (`Theme.qml`) y panel de diagnóstico en texto plano (`DebugPanel.qml`).
+- **Base (fase anterior):** configuración de Hyprland, instalador gum y servicios QML.
+- **Esta fase:**
+  - Auditoría y corrección de esa base.
+  - Construcción de toda la interfaz según `references/design.md`: barra, Dynamic Island, dashboard, popovers, notificaciones, lanzador y menú de energía.
+  - Pulido de animaciones y casos límite.
+  - Integración en el instalador y documentación.
 
-El desarrollo se ejecutó en ramas independientes (`agent/hyprland`, `agent/installer`, `agent/quickshell`) y se integró mediante merge commits `--no-ff` en `main`.
+Fuente de verdad: la skill `.agents/skills/dragon-island` (versiones, arquitectura y spec visual). Ante cualquier duda, manda sobre este documento.
 
----
+## 2. Arquitectura del shell
 
-## 2. Reporte de Agentes
+```
+shell.qml ── Variants(screens) → modules/bar/Bar.qml            (PanelWindow, capa Top, "dragon-bar")
+          └─ Variants(screens) → modules/island/IslandWindow.qml (PanelWindow, capa Overlay, "dragon-island")
+                                   ├─ Island.qml  (forma + PillContent + Dashboard)
+                                   ├─ popovers/PopoverHost.qml  (7 popovers)
+                                   ├─ launcher/Launcher.qml · power/PowerMenu.qml
+                                   └─ notifications/NotificationPopups.qml
+Theme.qml · Icons.qml · ShellState.qml (raíz)      services/*.qml (datos)      components/*.qml (piezas)
+```
 
-### Agente 1 — Hyprland & Ecosistema
+- **Un overlay por monitor (patrón 4).**
+  - Cerrado: la máscara es la forma de la isla más los popups, y el resto deja pasar el clic.
+  - Con un panel abierto: máscara `null`, un atrapa‑clics (con scrim si es modal) cierra el panel y el foco de teclado es `Exclusive` para que Esc funcione.
+- **Popovers:** se dibujan dentro de ese overlay (patrón 5, opción A), bajo la cápsula que los abrió. `Bar.openFrom()` → `ShellState.toggleAt(name, monitor, anchorRight)`.
+- **Un solo panel abierto:** `ShellState.openPanel` + `panelScreen`. El IPC (`qs ipc call shell …`) abre en el monitor enfocado.
+- **Isla cerrada:** el estado lo calcula `services/IslandState.qml` (prioridad OSD > notificación > escritorio > música > reloj, con las duraciones de la spec).
+- **Coreografía de la isla** (`Island.qml`):
+  - Usa `expanded`, `contentShown` y `opening`.
+  - `opening` se fija antes de cambiar la geometría, para que los Behaviors usen la curva correcta: OutBack 420 / OutCubic 480 al abrir y OutCubic 300 al cerrar.
+  - La caída inicial anima `dropOffset` con los Behaviors desactivados.
+- **Degradado de marca:** `components/BrandFill.qml` usa `QtQuick.Shapes` (`PathRectangle` + `LinearGradient` a 135°). Se descartó Qt5Compat `LinearGradient` porque no pintaba en la verificación offscreen y añadía una dependencia.
 
-#### Qué hizo
-- **Configuración Modular en Lua (`config/hypr/`):**
-  - `hyprland.lua`: Punto de entrada principal con ajuste de `package.path` para resolución local de módulos.
-  - `monitors.lua`: Configuración por defecto de monitores (`name = "", resolution = "preferred", position = "auto", scale = 1.0`).
-  - `env.lua`: Variables de sesión Wayland (`XDG_CURRENT_DESKTOP=Hyprland`, `GBM_BACKEND`, `QT_QPA_PLATFORM=wayland;xcb`, `MOZ_ENABLE_WAYLAND=1`, `HYPRCURSOR_THEME`, cursor 24px).
-  - `input.lua`: Configuración de teclado (`latam`/`es`), mouse/touchpad (natural scroll, tap to click) y sensibilidad.
-  - `look.lua`: Decoración Dragonized (bordes 2px con gradiente `#ff5555` a `#bd93f9`, fondo `#151928`, gaps in=5, out=10, blur Gaussiano estándar compatible con 0.56.2 sin variantes experimentales de git).
-  - `animations.lua`: Curvas bezier personalizadas (`fluid`, `dragSpring`, `snappy`) y animaciones fluidas para ventanas y workspaces.
-  - `rules.lua`: Reglas de ventanas y workspaces (flotantes para diálogos, PiP, apps multimedia, y asignaciones de workspaces).
-  - `binds.lua`: Mapeo completo de atajos con teclado y ratón; control de audio, brillo y multimedia; disparadores de Quickshell IPC.
-  - `autostart.lua`: Ejecución de servicios esenciales (`quickshell`, `hyprpaper`, `hypridle`, `hyprpolkitagent`, `installer/firstrun.sh`).
-  - `plugins.lua`: Configuración protegida de `hyprbars` (barra de título de 24px, botones de ventana, colores Dragonized) y `hyprfocus` (animación de foco `flash` o `shrink`).
-- **Herramientas del Ecosistema:**
-  - `config/hypr/hyprlock.conf`: Pantalla de bloqueo elegante con fondo Dragonized, campo de contraseña translúcido con gradiente Sweet y reloj Outfit.
-  - `config/hypr/hypridle.conf`: Detección de inactividad a 2.5 min (atenuar pantalla vía `brightnessctl`), 5 min (bloqueo vía `hyprlock`), 5.5 min (apagar pantallas vía `hyprctl dispatch dpms off`) y 30 min (suspensión del sistema).
-  - `config/hypr/hyprpaper.conf`: Precarga y asignación de fondos de pantalla.
-  - `config/kitty/kitty.conf`: Terminal Kitty tematizado con la paleta Dragonized, opacidad 0.88, blur activado y fuente JetBrains Mono Nerd Font.
-- **Documentación:**
-  - `docs/KEYBINDS.md`: Guía de referencia rápida con todos los atajos de teclado y convenciones del sistema.
+## 3. Lo que se hizo, por fase
 
-#### Qué verificó
-- **Sintaxis de Lua 5.4 estricta:** Todos los 10 archivos `.lua` se ejecutaron y validaron sintácticamente utilizando el motor `lupa` Lua 5.4 en entorno aislado.
-- **Resolución de módulos:** Se comprobó que `require("monitors")`, `require("env")`, etc. cargan ordenadamente sin dependencias circulares ni errores de tabla.
-- **Mocking de la API `hl`:** Se simularon las tablas globales `hl.monitors`, `hl.env`, `hl.input`, `hl.general`, `hl.decoration`, `hl.animations`, `hl.rules`, `hl.binds`, `hl.exec`, `hl.plugin` y los dispatchers `hl.dsp.window.*` verificando que no se produzcan excepciones de tipo ni llamadas nulas.
-- **Formato de colores RGBA:** Se verificó que los colores se especifican en formato `0xRRGGBBAA` y cadenas compatibles con Hyprland.
-
-#### Qué NO verificó
-- `[NO VERIFICADO]` Renderizado Wayland en vivo y compositing en GPU física (NVIDIA / AMD / Intel) bajo Hyprland 0.56.2.
-- `[NO VERIFICADO]` Compilación y carga en caliente de bibliotecas dinámicas de plugins (`hyprbars.so`, `hyprfocus.so`) mediante `hyprpm`.
-- `[NO VERIFICADO]` Transiciones y eventos DPMS / logind en vivo bajo `hypridle`.
-- `[NO VERIFICADO]` Autenticación PAM real y renderizado gráfico de la pantalla de bloqueo en `hyprlock`.
-
-#### Qué decisiones tomó
-- **Resolución del atajo `SUPER + L` vs Vim Binds:** Se priorizó la seguridad y el estándar moderno reservando `SUPER + L` para `loginctl lock-session` (bloqueo inmediato). La navegación estilo Vim se asignó a `SUPER + ALT + H/J/K/L`, mientras que la navegación rápida habitual se mantiene en `SUPER + Flechas`.
-- **Uso de `.conf` para herramientas auxiliares:** Aunque la directiva principal prohíbe `hyprlang` para el compositor, se usó sintaxis `.conf` en `hyprlock`, `hypridle` y `hyprpaper` porque las versiones estables de estas herramientas satélite carecen de parser Lua.
-- **Guardas condicionales en `plugins.lua`:** Para evitar que Hyprland falle en el primer arranque antes de que `hyprpm` compile los plugins, se implementaron guardas `if hl.plugin and ...` que permiten un arranque limpio sin plugins cargados.
-- **Aislamiento absoluto de KDE Plasma:** Ninguna variable de entorno se exporta en perfiles globales de shell (`/etc/environment`, `~/.profile`). Todas se declaran en `env.lua`, afectando únicamente a la sesión de Hyprland.
-
----
-
-### Agente 2 — Instalador & Despliegue
-
-#### Qué hizo
-- **Script Interactivo TUI (`install.sh`):**
-  - Interfaz interactiva construida con `gum` (charmbracelet) con estilos, paleta Sweet/Garuda y cabeceras ASCII.
-  - Soporte de argumentos de línea de comandos: `--dry-run`, `--uninstall`, `--yes` / `-y`.
-  - Chequeos de preflight exhaustivos:
-    - Verificación de distribución Arch Linux o EndeavourOS (`/etc/os-release`).
-    - Verificación de sesión no-root con privilegios `sudo`.
-    - Detección de gestores AUR (`yay` o `paru`) con procedimiento asistido para clonar y compilar `yay-bin` si ninguno está presente.
-    - Comprobación de espacio libre en disco (mínimo 5 GB en la partición raíz).
-    - Detección de instalación previa de KDE Plasma para alertar y asegurar la coexistencia dual.
-  - Selección modular de componentes con `gum choose`: Core (Hyprland + Quickshell), Herramientas (Kitty, Rofi, Grimblast), Plugins de Hyprland, y Dotfiles.
-  - Sistema de respaldos idempotente con timestamp en `~/.config/dragon-island-backups/backup_YYYYMMDD_HHMMSS/` y generación de `manifest.txt`.
-  - Mecanismo de desinstalación limpia (`--uninstall`) leyendo el manifiesto en orden inverso para restaurar los archivos originales sin dejar residuos.
-- **Script de Inicialización de Primera Sesión (`installer/firstrun.sh`):**
-  - Script autoejecutable desde `autostart.lua` que solo se activa en la primera sesión Wayland mediante el archivo marcador `~/.config/dragon-island/.firstrun_done`.
-  - Ejecuta `hyprpm update`, añade el repositorio oficial de plugins (`hyprwm/hyprland-plugins`), habilita `hyprbars` y `hyprfocus`, y notifica al usuario mediante `notify-send`.
-- **Catálogo de Dependencias (`packages/`):**
-  - `packages/pacman.txt`: Paquetes oficiales validados en repositorios `extra` (`hyprland`, `quickshell`, `kitty`, `pipewire`, `wireplumber`, `brightnessctl`, `hyprpolkitagent`, `hyprlock`, `hypridle`, `hyprpaper`, `ttf-jetbrains-mono-nerd`, etc.).
-  - `packages/aur.txt`: Paquetes exclusivos de AUR (`outfit-font`, `grimblast-git`).
-
-#### Qué verificó
-- **Análisis estático de Shell (`shellcheck`):** Se ejecutó `shellcheck -x -s bash` sobre `install.sh` e `installer/firstrun.sh`, superando la validación con 0 errores y 0 advertencias.
-- **Validación de paquetes en repositorios:** Se verificó la disponibilidad de cada paquete en el índice de Arch Linux `extra` (ej. `hyprpolkitagent` ya está en repositorio oficial y no requiere AUR).
-- **Fin de línea LF:** Se forzó el uso de finales de línea LF en todos los scripts mediante configuración estricta en `.gitattributes`.
-
-#### Qué NO verificó
-- `[NO VERIFICADO]` Ejecución real de `pacman -Syu` o comandos `yay` descargando e instalando paquetes desde los servidores de Arch en vivo.
-- `[NO VERIFICADO]` Renderizado e interacción del usuario en un terminal TTY / PTY real bajo `gum`.
-- `[NO VERIFICADO]` Enlace simbólico o copia real en el sistema de archivos Linux de un usuario.
-- `[NO VERIFICADO]` Flujo completo de compilación de plugins de C++ ejecutado por `hyprpm` en una máquina real.
-
-#### Qué decisiones tomó
-- **Manifiesto de respaldo inverso:** El instalador registra cada enlace simbólico o copia en `manifest.txt` en orden secuencial y `--uninstall` lo procesa en reversa (`tac`), asegurando que restauraciones anidadas no colisionen.
-- **Marcador de primera ejecución (`.firstrun_done`):** Se evitó recargar `hyprpm update` en cada inicio del sistema encapsulando la inicialización en un script de primer arranque con flag persistente.
-- **Preservación incondicional de KDE Plasma:** El instalador jamás modifica configuraciones de SDDM ni añade variables a `/etc/profile.d/`, garantizando que la sesión de Plasma no se vea afectada.
-
----
-
-### Agente 3 — Servicios Quickshell & Diagnóstico
-
-#### Qué hizo
-- **Tokens de Diseño (`config/quickshell/Theme.qml`):**
-  - Singleton QML con la paleta de colores Sweet Dragonized (`bgBase`, `bgSurface`, `bgElevated`, `primary`, `secondary`, `accentCyan`, `accentPink`, `accentYellow`, etc.).
-  - Gradientes predefinidos (Dragonized gradient de morado a cian/rosa).
-  - Configuración tipográfica (Outfit como fuente de interfaz y JetBrains Mono Nerd Font para datos monoespaciados).
-  - Radios de curvatura (`radiusSm`, `radiusMd`, `radiusLg`, `radiusPill`), dimensiones de componentes y curvas de animación fluidas.
-- **Gestión de Estado e IPC (`config/quickshell/ShellState.qml`):**
-  - Singleton reactivo con registro de panel activo (`currentPanel`), visibilidad de barra (`barVisible`) e indicador de Dynamic Island (`islandExpanded`).
-  - `IpcHandler` con target `"shell"` que expone métodos fuertemente tipados (`toggle(name: string): void`, `open(name: string): void`, `close(): void`, `current(): string`) invocables mediante `qs ipc call shell toggle <panel>`.
-- **Estructura Modular (`qmldir`):**
-  - `config/quickshell/qmldir` y `config/quickshell/services/qmldir` configurados para permitir importaciones directas limpias.
-- **13 Servicios de Datos (`config/quickshell/services/`):**
-  1. `Hypr.qml`: Integración con `Quickshell.Hyprland` (workspaces activos, ventanas enfocadas, monitores).
-  2. `Media.qml`: Servicio MPRIS vía `Quickshell.Services.Mpris` (título, artista, estado de reproducción, progreso, carátula).
-  3. `Audio.qml`: Control de audio PipeWire con `PwObjectTracker` (volumen maestro, estado de silencio, lista de salidas y cambio de sink).
-  4. `Network.qml`: Estado de conectividad y WiFi vía `Quickshell.Networking`.
-  5. `Bluetooth.qml`: Dispositivos conectados y estado del adaptador vía `Quickshell.Bluetooth`.
-  6. `Power.qml`: Estado de carga y batería vía `Quickshell.Services.UPower` (porcentaje normalizado) y perfiles energéticos `power-profiles-daemon`.
-  7. `Brightness.qml`: Consulta y ajuste de brillo de pantalla utilizando `brightnessctl` encapsulado en un `Process`.
-  8. `SysStats.qml`: Monitoreo en tiempo real de CPU, memoria RAM, temperatura del sistema y almacenamiento en disco con temporizador configurable.
-  9. `Notifs.qml`: Servidor de notificaciones basado en `Quickshell.Services.Notifications` con retención explícita (`n.tracked = true`).
-  10. `Osd.qml`: Estado transitorio para notificaciones en pantalla de volumen, brillo y caps lock con auto-cierre tras 1.8 segundos.
-  11. `Toggles.qml`: Estados lógicos de interruptores rápidos (WiFi, Bluetooth, No Molestar, Micrófono Mute, Luz Nocturna con `hyprsunset`).
-  12. `Apps.qml`: Indexación de aplicaciones `.desktop` para el lanzador.
-  13. `Clock.qml`: Fecha, hora actual y formateador reactivo.
-- **Panel de Diagnóstico (`config/quickshell/debug/DebugPanel.qml`):**
-  - Panel visual de desarrollo que muestra en texto plano valores en vivo de los 13 servicios (sin gráficos ni dependencias complejas de UI).
-- **Ventana de Prueba (`config/quickshell/shell.qml`):**
-  - Instancia de `FloatingWindow` que aloja el `DebugPanel.qml` para verificación directa en entorno de pruebas.
-
-#### Qué verificó
-- **Análisis de sintaxis y balance de bloques AST:** Se implementó un validador en Python que analizó los 17 archivos `.qml`, confirmando balance perfecto de llaves, corchetes, paréntesis y ausencia de errores de sintaxis.
-- **Contratos de API Quickshell 0.3.1:**
-  - Uso obligatorio de `PwObjectTracker { objects: [...] }` para evitar punteros inválidos al leer nodos de PipeWire.
-  - Normalización de valores en `UPower` (porcentaje multiplicado por 100).
-  - Retención de notificaciones mediante `n.tracked = true` en el manejador `onNotification`.
-  - Tipado explícito en signaturas de funciones de `IpcHandler` en `ShellState.qml`.
-- **Cero componentes visuales de producción:** Se garantizó que no se incluyeran barras, islas o popovers prematuros.
-
-#### Qué NO verificó
-- `[NO VERIFICADO]` Conexión y lectura del socket IPC de Hyprland (`$XDG_RUNTIME_DIR/hypr/.../.socket.sock`).
-- `[NO VERIFICADO]` Respuestas en vivo de los daemons D-Bus de PipeWire, BlueZ, NetworkManager y UPower a través de las extensiones C++ de Quickshell.
-- `[NO VERIFICADO]` Lanzamiento y salida del subproceso `brightnessctl` en hardware real.
-- `[NO VERIFICADO]` Comportamiento del renderizado QtQuick / Wayland en un monitor físico.
-
-#### Qué decisiones tomó
-- **Encapsulación estricta en servicios:** La UI nunca ejecutará comandos de consola ni interactuará directamente con D-Bus. Toda llamada se canaliza a través de las propiedades reactivas y métodos de los servicios.
-- **Procesos externos solo cuando no hay API nativa:** Se empleó `Process` de Quickshell únicamente para brillo (`brightnessctl`), temperatura/disco y luz nocturna (`hyprsunset`), priorizando siempre los módulos nativos de Quickshell (`Mpris`, `Pipewire`, `UPower`, `Networking`, `Bluetooth`).
-- **Prevención de recolección de basura en notificaciones:** Se añadió `n.tracked = true` explícitamente para cumplir con el ciclo de vida de objetos en Quickshell 0.3.1.
-
----
-
-## 3. Integración en Git
-
-Todas las tareas de la Fase Base se desarrollaron en ramas dedicadas y se fusionaron a `main` sin conflictos de integración:
-
-| Rama | Commit | Descripción del Aporte |
-|---|---|---|
-| `agent/hyprland` | `75ef967` | Módulos Lua de Hyprland, configs de hyprlock/idle/paper, kitty y documentación de atajos. |
-| `agent/installer` | `10a0b15` | Instalador Gum TUI, listas de paquetes pacman/AUR y script de primer inicio. |
-| `agent/quickshell` | `bbddf43` | Singletons Theme/ShellState, 13 servicios de datos y DebugPanel. |
-| **`main`** | `da82995` | Merge de `agent/hyprland` |
-| **`main`** | `26c4e87` | Merge de `agent/installer` |
-| **`main`** | `27acaec` | Merge de `agent/quickshell` |
-
----
-
-## 3b. Auditoría (fase final, Fase 1) — 2026-10-05
-
-Revisión de todo lo anterior contra las skills (`dragon-island`, `hyprland`, `hyprland-plugins`, `quickshell`, `arch-tui-installer`).
-Algunas afirmaciones de las secciones 2–3 eran inexactas; esta sección manda sobre ellas.
+### Fase 1 — Auditoría (commits `bae9182`, `bf59f0f`, `ee41e2c`, `c1058be`)
 
 | Área | Problema | Corrección |
 |---|---|---|
-| Hyprland | `gestures.workspace_swipe` / `workspace_swipe_fingers` no existen en 0.56 (errores de config) | `hl.gesture({ fingers = 3, direction = "horizontal", action = "workspace" })` |
-| Hyprland | Sin decisión de tema Qt (lo exige la skill) | `QT_QPA_PLATFORMTHEME=kde` vía `hl.env` (solo en la sesión Hyprland) |
-| Hyprland | `misc.background_color` sin alfa | `0xff0b0c14` |
-| Hyprland | polkit lanzado por ruta adivinada | `systemctl --user start hyprpolkitagent` (wiki) |
-| Hyprland | opciones de plugins aplicadas antes de cargar los plugins | `hyprpm reload -n && hyprctl reload` en el arranque |
-| hyprlock | `disable_loading_bar`, `no_fade_in`, `grace` no existen en `general` | eliminadas; `ignore_empty_input = true` |
-| Instalador | `rofi-wayland` y `outfit-font` **no existen** (abortaba `pacman`/`yay`) | `rofi` (2.0, Wayland nativo) y `ttf-outfit` (AUR), verificados contra archlinux.org/AUR |
-| Instalador | los componentes elegidos no filtraban paquetes | secciones `@core/@shell/@plugins/@fonts` en `packages/*.txt` |
-| Instalador | `--dry-run` pedía sudo y fallaba sin gum; modo copia no idempotente; scripts sin bit +x en git | corregido (dry-run sin sudo/sin efectos, `diff -rq` en copia, `100755`) |
-| Instalador | `hyprpm` desde autostart sin TTY (pide sudo para cabeceras) | primer arranque en una ventana de kitty flotante |
-| Paquetes | faltaban `hyprsunset`, `wf-recorder`, `libnotify`, `base-devel` usados por servicios/scripts | añadidos |
-| QML | `Audio.qml`: `signal volumeChanged`/`micVolumeChanged` duplican las señales de propiedad → **el singleton no cargaba** (qmllint: duplicated-name) | eliminadas; el OSD usa las señales de propiedad |
-| QML | `Bluetooth.qml`: dos `onEnabledChanged` en el mismo objeto | corregido |
-| QML | `Network`/`Bluetooth`/`Toggles`: binding bidireccional que se rompe tras el primer cambio | propiedades `readonly` + funciones setter |
-| QML | `Hypr.activeClass` usaba `appId`, que `HyprlandToplevel` no tiene | `activeToplevel.wayland.appId` (fallback `lastIpcObject.class`) |
-| QML | `Osd` nunca se disparaba (no escuchaba a Audio/Brillo) | conectado a cambios de volumen/mute/mic/brillo, con guarda de arranque |
-| QML | `Media.position` se congelaba al cambiar de reproductor | patrón documentado `positionChanged()` con Timer |
+| Hyprland | `gestures.workspace_swipe*` no existe en 0.56 | `hl.gesture({...})` |
+| Hyprland | Sin decisión de tema Qt | `QT_QPA_PLATFORMTHEME=kde` solo vía `hl.env` |
+| Hyprland | polkit por ruta adivinada; opciones de plugins antes de cargarlos | `systemctl --user start hyprpolkitagent`; `hyprpm reload -n && hyprctl reload` |
+| hyprlock | `disable_loading_bar`, `no_fade_in`, `grace` no existen | Eliminadas |
+| Paquetes | `rofi-wayland` y `outfit-font` **no existen** | `rofi` y `ttf-outfit` (verificados en archlinux.org y AUR) |
+| Instalador | Los componentes no filtraban paquetes; `--dry-run` pedía sudo; copia no idempotente; scripts sin `+x` | Secciones `@componente`, dry‑run sin efectos, `diff -rq`, `100755` |
+| QML | `Audio`: señales que chocaban con las de sus propiedades → el singleton no cargaba | Eliminadas |
+| QML | `Bluetooth`: `onEnabledChanged` duplicado | Corregido |
+| QML | Bindings bidireccionales rotos (Network, Bluetooth, Toggles) | `readonly` + funciones |
+| QML | `Hypr.activeClass` leía un campo inexistente | Corregido |
+| QML | El OSD nunca se disparaba | Ahora reacciona a Audio y Brightness |
 
-Servicios completados para la interfaz: Wi‑Fi (banda, velocidad, IP vía `nmcli`, lista deduplicada, conexión con PSK), Bluetooth (descubrir, emparejar, olvidar, batería), Audio (fuentes, mezclador por app), SysStats (por núcleo, GPU, top procesos), Notifs (no leídas, popups, tiempo relativo, críticas, límite 100), Apps (búsqueda fuzzy + frecuencia de uso persistida), Clock (rejilla de mes L–D), Brightness (sysfs, sin procesos por sondeo, `available`), nuevo `Session` (usuario, host, bloquear/suspender/apagar/reiniciar/cerrar sesión).
+Servicios completados para la interfaz: detalles de Wi‑Fi (`nmcli`), vincular dispositivos Bluetooth, mezclador por app, uso por núcleo, GPU y procesos, notificaciones no leídas y popups, búsqueda difusa con frecuencia de uso, calendario y el servicio nuevo `Session`.
 
-Verificado en Windows (estático): `shellcheck -x` limpio (0.11.0), sintaxis Lua + ejecución con `hl` simulado (lupa), `qmllint 6.11` sin errores reales (tipos de Quickshell no resolubles fuera de Linux), nombres de paquetes contra archlinux.org/AUR, finales de línea LF.
+### Fase 2 — Barra e isla (`b473001`, `8c7e7e4`, `ab1fc3d`)
 
-## 4. Lista de Pendientes para Fase 2 (Roadmap Visual & UI)
+- `Theme.qml` con todos los tokens de la spec (paleta, geometría y tabla Motion con `motionScale`) e `Icons.qml`.
+- 15 componentes reutilizables.
+- Barra de tres islas con máscara, píldoras de escritorio (200 ms OutCubic) y cápsulas (hover de 120 ms).
+- Dynamic Island: caída con rebote y aplastamiento; "pour" pegado arriba con radios 0/0/34/34; contenido con retraso; scrim; Esc; estados temporales.
 
-Habiendo validado la capa funcional y de datos, la **Fase 2** abordará la construcción visual completa según la especificación de diseño (`references/design.md`):
+### Fase 3 — Dashboard y popovers (`ab1fc3d`, `d8a2036`, `657958d`)
 
-1. **Componentes UI Reutilizables (`config/quickshell/components/`):**
-   - [ ] `Capsule.qml`: Contenedor base con fondo translúcido (`bgSurface`), borde sutil (`borderDim`), sombra y radio ajustable.
-   - [ ] `Card.qml`: Tarjeta para paneles y dashboard con soporte de bordes activos.
-   - [ ] `IconButton.qml`: Botón con micro-animaciones en `hovered` y `pressed`, tooltip y soporte para iconos Nerd Font.
-   - [ ] `Slider.qml`: Deslizador fluido interactivo con gradiente Dragonized para volumen y brillo.
-   - [ ] `Toggle.qml`: Interruptor reactivo con transiciones animadas para estados on/off.
-   - [ ] `ProgressBar.qml`: Barra de progreso continua para consumo de CPU/RAM y estado de reproducción MPRIS.
+- Dashboard completo.
+- Popovers Rendimiento, Wi‑Fi (con contraseña), Bluetooth, Sonido, Batería, Notificaciones y Calendario. Solo uno abierto.
+- Popups de notificación: hasta 3, solo en el monitor enfocado, se pausan con el ratón y las críticas duran hasta descartarlas.
+- Lanzador (`DesktopEntries`, búsqueda difusa, teclado) y menú de energía (teclado y `1–5`).
 
-2. **Barra Flotante Superior (`config/quickshell/modules/bar/`):**
-   - [ ] `Bar.qml`: Contenedor `PanelWindow` anclado al borde superior con márgenes laterales y zona exclusiva.
-   - [ ] `LeftIsland.qml`: Workspaces dinámicos de Hyprland con píldora indicadora activa animada y título de la ventana enfocada.
-   - [ ] `RightIsland.qml`: SysTray embebido, indicadores de red/bluetooth/audio/batería, reloj con fecha y botón de invocación del dashboard.
+### Fase 4 — Pulido (incluido en los commits anteriores y `f46d56b`)
 
-3. **Dynamic Island (`config/quickshell/modules/island/`):**
-   - [ ] `Island.qml`: Contenedor animado central con apertura estilo "drop-in" desde el margen superior.
-   - [ ] Estados de visualización:
-     - **Compacto:** Estado en reposo o reloj central.
-     - **OSD:** Despliegue temporal de 1.8 segundos al modificar volumen o brillo.
-     - **Media:** Título en marquesina, controles de reproducción y miniatura de álbum cuando la música está activa.
-     - **Notificación:** Expansión suave para mostrar alertas entrantes con acciones interactivas.
+- Duraciones y curvas revisadas contra la tabla Motion (ver `Theme.qml`, sección Motion).
+- Casos límite:
+  - sin batería, sin reproductor, sin Bluetooth, Wi‑Fi apagado o bloqueado y solo Ethernet;
+  - 0 notificaciones y hasta 100 (ListView + `ScriptModel` por identidad, historial con límite);
+  - varios monitores e isla oculta sobre pantalla completa.
+- Rendimiento:
+  - el brillo se lee de sysfs cada 300 ms (sin procesos);
+  - los procesos de Rendimiento solo se sondean con el popover abierto;
+  - el escaneo Wi‑Fi solo corre con su popover abierto;
+  - el calendario se recalcula una vez al día, no cada segundo.
+- DebugPanel fuera del arranque: se abre con `qs ipc call debug toggle`.
 
-4. **Dashboard Expandido (`config/quickshell/modules/dashboard/`):**
-   - [ ] `Dashboard.qml`: Ventana emergente con animación de despliegue suave ("pour" effect).
-   - [ ] Grilla 2x3 de interruptores rápidos (WiFi, Bluetooth, No Molestar, Silencio Micrófono, Luz Nocturna, Ahorro de Energía).
-   - [ ] Deslizadores táctiles maestros para volumen y brillo.
-   - [ ] Selector interactivo de perfiles de energía (`performance`, `balanced`, `power-saver`).
-   - [ ] Widget de música integrado con barra de búsqueda y carátula.
+### Fase 5 — Cierre
 
-5. **Popovers y Ventanas Auxiliares (`config/quickshell/modules/popovers/`):**
-   - [ ] Popover de Calendario mensual con eventos.
-   - [ ] Popover de Redes Wi-Fi con escaneo y conexión asistida.
-   - [ ] Popover de Dispositivos Bluetooth con estado de emparejamiento.
-   - [ ] Popover de Dispositivos de Audio con selector de sink activo y volumen por aplicación.
-   - [ ] Popover de Centro de Notificaciones con histórico y botón de limpieza.
+- **Instalador:** al terminar avisa si falta `qs`, si faltan las fuentes o si hay otro daemon de notificaciones (mako, dunst o swaync). Se quitó `qt6-5compat`, que ya no hace falta.
+- **Docs:** [README.md](README.md), [docs/KEYBINDS.md](docs/KEYBINDS.md) y [docs/TESTING.md](docs/TESTING.md).
 
-6. **Pruebas en Hardware Real / Máquina Virtual:**
-   - [ ] Probar la instalación completa en una máquina virtual EndeavourOS con KDE Plasma instalada.
-   - [ ] Verificar que el inicio de sesión secundario en SDDM funciona sin interferir con la sesión estándar de KDE Plasma.
-   - [ ] Validar la compilación y activación de plugins con `hyprpm` tras el primer login.
+## 4. Qué se verificó (en Windows)
+
+| Comprobación | Herramienta | Resultado |
+|---|---|---|
+| Scripts | `shellcheck -x` 0.11.0 | Limpio |
+| Config Lua | Sintaxis + ejecución con `hl` simulado (lupa) | OK, 158 llamadas |
+| QML | `qmllint` 6.11 (sin las categorías de tipos Quickshell no resolubles) | Sin avisos |
+| **Carga real de QML** | Motor QML de PySide6 6.11 offscreen + stubs mínimos de `Quickshell` + servicios simulados con datos realistas | **Todos los módulos (barra, isla en sus 5 estados, dashboard, 7 popovers, popups, lanzador, menú) se instancian sin un solo aviso**. Se revisaron las capturas renderizadas contra la spec |
+| Paquetes | archlinux.org / AUR RPC | Todos existen |
+| Fin de línea | `git ls-files --eol` | Todo LF |
+| Reglas | grep | 0 colores fijos fuera de `Theme`; la UI no usa `Process`/`exec`/D‑Bus |
+
+Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pintaba (de ahí BrandFill con Shapes). También se corrigieron:
+
+- un nombre que tapaba la propiedad `top` de `Item`;
+- un Behavior que habría peleado con la caída inicial;
+- clics en zonas vacías del dashboard que lo cerraban.
+
+## 5. Qué NO se verificó (requiere EndeavourOS)
+
+- **Quickshell real:**
+  - los servicios contra PipeWire, NetworkManager, BlueZ, UPower, MPRIS e Hyprland;
+  - la máscara de clics y el foco `Exclusive` en Wayland;
+  - el blur por reglas de capa;
+  - el import de directorios con `qmldir` dentro de Quickshell;
+  - `RectangularShadow` (QtQuick.Effects, Qt ≥ 6.9).
+- **Hyprland:**
+  - `hyprctl configerrors`;
+  - las opciones de hyprbars en Lua y el **orden visual de los botones**;
+  - el bloque `plugin` aplicado antes de cargar los plugins;
+  - `hyprpm` dentro de kitty en el primer arranque.
+- **Datos de `nmcli`:** banda, velocidad e IP (el formato `-t` puede variar).
+- **Glifos Nerd Font:** los códigos de `Icons.qml` son del set Material Design (nf‑md) y en Windows salían como cuadros por falta de la fuente. Revisa que cada icono sea el esperado.
+- **gum con la salida redirigida al log** (`exec > >(tee …)`).
+
+## 6. Decisiones
+
+- `SUPER + L` = bloquear; Vim = `SUPER + ALT + HJKL` (conflicto dentro de la propia spec).
+- Tema Qt: plataforma `kde` en Hyprland, porque Plasma ya está instalado.
+- `IslandState` vive en `services/` para evitar un ciclo de imports entre la raíz y `services`.
+- Las notificaciones aparecen a la vez en la isla (compacta, como pide la spec) y como popups con cuerpo y acciones (la petición de "centro + popups").
+- Calendario: aún **no hay fuente de eventos** (`Clock.hasEventSource = false`), así que no hay anillos cian ni agenda. Hay un `TODO(calendar)` en `Clock.qml`.
+- Grabación: `wf-recorder` sobre una zona o salida elegida con `slurp -o`, guardada en la carpeta XDG de vídeos.
+- Historial del portapapeles: sigue con `rofi -dmenu`.
+- Blur: solo por reglas de capa (no `BackgroundEffect`), siguiendo la skill.
+
+## 7. Siguientes pasos
+
+1. Recorrer [docs/TESTING.md](docs/TESTING.md) en EndeavourOS y corregir lo que falle (`qs log` da el archivo y la línea).
+2. Hacer las capturas y guardarlas en `docs/screenshots/` (el README ya tiene los huecos).
+3. Opcional:
+   - fuente de calendario (khal o un `.ics` vía `FileView`);
+   - portapapeles dentro de Quickshell;
+   - `Theme.motionScale` ligado a una preferencia de movimiento reducido;
+   - bandeja del sistema (`SystemTray`), que la spec no pide.
+
+## 8. Cómo depurar rápido
+
+```sh
+qs -p ~/.config/quickshell          # recarga en caliente
+qs log -f                           # errores archivo:línea
+qs ipc show                         # funciones IPC registradas (shell, debug)
+qs ipc call debug toggle            # valores en vivo de los servicios
+hyprctl configerrors; hyprpm list; hyprctl plugin list
+```
