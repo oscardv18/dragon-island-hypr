@@ -1,5 +1,5 @@
 // Calendario: clock with seconds · month grid (Mon first, L M X J V S D) · today = brand gradient,
-// days with events = cyan ring · today's agenda
+// days with events = cyan ring (khal) · agenda of the selected day (today by default)
 import QtQuick
 import QtQuick.Layouts
 import "../.."
@@ -12,17 +12,25 @@ PopoverFrame {
 
     property int viewYear: Clock.currentDate.getFullYear()
     property int viewMonth: Clock.currentDate.getMonth()
+    property date selected: new Date()
     readonly property var cells: Clock.monthGrid(viewYear, viewMonth)
+    readonly property bool selectedIsToday: Clock.dayKey(selected) === Clock.todayKey
+    readonly property var agenda: Clock.eventsFor(selected)
 
     function shift(delta: int): void {
         const d = new Date(viewYear, viewMonth + delta, 1);
         viewYear = d.getFullYear();
         viewMonth = d.getMonth();
+        Clock.requestMonth(viewYear, viewMonth);
     }
 
     onOpened: {
-        viewYear = Clock.currentDate.getFullYear();
-        viewMonth = Clock.currentDate.getMonth();
+        const now = new Date();
+        viewYear = now.getFullYear();
+        viewMonth = now.getMonth();
+        selected = now;
+        Clock.requestMonth(viewYear, viewMonth);
+        Clock.refreshEvents();
     }
 
     // clock with seconds
@@ -76,6 +84,16 @@ PopoverFrame {
                 Layout.fillWidth: true
                 implicitHeight: Theme.calendarCell
 
+                readonly property bool isSelected: !modelData.isToday
+                    && Clock.dayKey(root.selected) === Clock.dayKey(new Date(modelData.year, modelData.month, modelData.day))
+
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: Theme.calendarCell
+                    height: Theme.calendarCell
+                    radius: width / 2
+                    color: cellMouse.containsMouse || cell.isSelected ? Theme.surfaceHi : Theme.transparent
+                }
                 BrandFill {
                     anchors.centerIn: parent
                     width: Theme.calendarCell
@@ -101,6 +119,13 @@ PopoverFrame {
                     weight: cell.modelData.isToday ? Theme.weightBold : Theme.weightRegular
                     color: cell.modelData.isToday ? Theme.onBrand : (cell.modelData.inMonth ? Theme.text : Theme.muted)
                 }
+                MouseArea {
+                    id: cellMouse
+                    anchors.fill: parent
+                    hoverEnabled: true
+                    cursorShape: Qt.PointingHandCursor
+                    onClicked: root.selected = new Date(cell.modelData.year, cell.modelData.month, cell.modelData.day)
+                }
             }
         }
 
@@ -109,22 +134,53 @@ PopoverFrame {
         }
     }
 
-    // today's agenda
+    // agenda of the selected day
     Card {
         Layout.fillWidth: true
-        UiText { caption: true; text: "Hoy" }
+        RowLayout {
+            Layout.fillWidth: true
+            UiText {
+                Layout.fillWidth: true
+                caption: true
+                text: root.selectedIsToday ? "Hoy"
+                      : `${Clock.days[root.selected.getDay()]} ${root.selected.getDate()} de ${Clock.monthName(root.selected.getMonth())}`
+            }
+            UiText {
+                visible: Clock.eventsLoading
+                text: "Cargando…"
+                size: Theme.sizeCaption
+                color: Theme.textDim
+            }
+        }
         Repeater {
-            model: Clock.eventsFor(Clock.currentDate)
-            delegate: UiText {
+            model: root.agenda
+            delegate: RowLayout {
                 required property var modelData
                 Layout.fillWidth: true
-                text: `${modelData.time ?? ""}  ${modelData.title ?? ""}`
+                spacing: Theme.spacingSm
+                Rectangle {
+                    Layout.preferredWidth: Theme.pillDot
+                    Layout.preferredHeight: Theme.calendarCell * 0.8
+                    radius: width / 2
+                    color: modelData.allDay ? Theme.violetSoft : Theme.cyan
+                }
+                ColumnLayout {
+                    Layout.fillWidth: true
+                    spacing: 0
+                    UiText { Layout.fillWidth: true; text: modelData.title; weight: Theme.weightMedium }
+                    UiText {
+                        Layout.fillWidth: true
+                        text: [modelData.time, modelData.location, modelData.calendar].filter(x => x.length > 0).join(" · ")
+                        size: Theme.sizeCaption
+                        color: Theme.textDim
+                    }
+                }
             }
         }
         UiText {
-            visible: Clock.eventsFor(Clock.currentDate).length === 0
+            visible: root.agenda.length === 0
             Layout.fillWidth: true
-            text: Clock.hasEventSource ? "Sin eventos" : "Sin eventos · no hay calendario configurado"
+            text: Clock.hasEventSource ? "Sin eventos" : (Clock.eventsError || "Sin calendario configurado")
             color: Theme.textDim
             size: Theme.sizeCaption + 1
         }
