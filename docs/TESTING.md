@@ -56,19 +56,18 @@ qs log -f                 # errores de Quickshell con archivo:línea
 - [ ] Hacer clic en zonas vacías del dashboard **no** lo cierra.
 - [ ] Estados temporales, con su duración:
   - [ ] Cambiar el volumen o el brillo: OSD con barra y número durante ~2 s.
-  - [ ] `notify-send "Hola" "prueba"`: icono, título y "· app" durante ~4 s.
-  - [ ] `notify-send -u critical "Crítica" "x"`: se queda hasta descartarla (clic derecho en la isla o en el centro).
   - [ ] SUPER+2: "Escritorio 2" con puntos durante ~2 s.
   - [ ] Con música (Spotify, mpv con MPRIS): carátula 24×24, título, "· app" y ecualizador animado. Clic central = play/pausa.
   - [ ] Sin nada de lo anterior: reloj con punto de estado (verde; magenta si hay no leídas; gris con No molestar; rojo parpadeante grabando).
 - [ ] La prioridad se respeta: con música sonando, subir el volumen muestra el OSD y luego vuelve a la música.
-- [ ] Con un vídeo en pantalla completa, la isla cerrada se oculta (excepto OSD y notificaciones).
+- [ ] **Las notificaciones NO aparecen en la isla** (solo como popups, sección 8).
+- [ ] Con un vídeo en pantalla completa, la isla cerrada se oculta (excepto el OSD).
 
 ## 5. Dashboard
 
 - [ ] La cabecera muestra "Buenas tardes, <tu nombre>", fecha · host · tiempo activo, y los botones bloquear / suspender / apagar (este con tinte rojo; abre el menú de energía).
 - [ ] La tarjeta de música funciona (anterior, play/pausa, siguiente, progreso). Sin reproductor muestra "Nada en reproducción".
-- [ ] Los sliders de volumen y brillo funcionan arrastrando y con la rueda. Sin retroiluminación, el de brillo no aparece.
+- [ ] Los sliders de volumen y brillo funcionan arrastrando y con la rueda. El de brillo controla **el monitor donde está abierto el dashboard**: la retroiluminación en el portátil y DDC/CI en los monitores externos (sección 9b). Si ese monitor no se puede controlar, no aparece.
 - [ ] Mosaicos: Wi‑Fi, Bluetooth, No molestar, Luz nocturna (pantalla más cálida), Captura (selección de región) y Grabar.
   - Grabar pide la zona con slurp y muestra el contador. Al pararlo, el archivo queda en `~/Vídeos` (o `~/Videos`) y llega una notificación.
 - [ ] El control segmentado cambia el perfil de energía (`powerprofilesctl get`).
@@ -87,7 +86,7 @@ Comprobar en todos: que aparece 8 px bajo su cápsula, alineado a su borde derec
 - [ ] **Sonido:** sliders de salida y micrófono. La lista de salidas marca la activa con un punto magenta y cambiarla mueve el audio. El mezclador por app muestra cada aplicación con su slider.
 - [ ] **Batería:** porcentaje grande, tiempo restante, consumo en W, salud, brillo y perfil.
 - [ ] **Notificaciones:** No molestar, tarjetas con icono, título, cuerpo, app · tiempo y acciones, y "Borrar todo". Al abrirlo desaparece el punto de no leídas.
-- [ ] **Calendario:** reloj con segundos y mes con lunes primero (`L M X J V S D`); hoy lleva degradado. Las flechas y la rueda cambian de mes y al reabrir vuelve al mes actual.
+- [ ] **Calendario:** reloj con segundos y mes con lunes primero (`L M X J V S D`); hoy lleva degradado. Las flechas y la rueda cambian de mes y al reabrir vuelve al mes actual. Los eventos de khal están en la sección 9a.
 
 ## 7. Lanzador y menú de energía
 
@@ -100,6 +99,8 @@ Comprobar en todos: que aparece 8 px bajo su cápsula, alineado a su borde derec
 ## 8. Notificaciones
 
 - [ ] `for i in $(seq 1 3); do notify-send "n$i" "cuerpo $i"; done`: se apilan hasta 3 popups bajo la isla derecha (solo en el monitor enfocado) y caducan a los ~4 s. Pasar el ratón por encima pausa el tiempo.
+- [ ] `notify-send -u critical "Crítica" "x"`: el popup se queda (borde rojo) hasta cerrarlo con su ✕ o con clic central.
+- [ ] La isla **no** cambia al llegar una notificación.
 - [ ] `notify-send -A ok=Aceptar "Acción" "x"`: el botón "Aceptar" funciona.
 - [ ] Con No molestar no salen popups, pero las notificaciones quedan en el centro.
 - [ ] **50 notificaciones:** `for i in $(seq 1 50); do notify-send "n$i" "x"; done`. El centro hace scroll con fluidez y "Borrar todo" las elimina.
@@ -119,6 +120,47 @@ Comprobar en todos: que aparece 8 px bajo su cápsula, alineado a su borde derec
   - [ ] Un popover se abre en el monitor de la cápsula pulsada.
   - [ ] Conectar o desconectar un monitor en caliente recrea la barra y la isla.
 - [ ] **Escalado fraccional** (`scale = 1.25`): textos nítidos y nada recortado.
+
+## 9a. Calendario con khal
+
+Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirsyncer sync`). Crea un evento: `khal new hoy 18:00 19:00 Prueba`.
+
+- [ ] Al abrir el calendario, los días con eventos tienen anillo cian y la agenda de hoy lista el evento con su hora.
+- [ ] Clic en otro día: la agenda muestra ese día. Los eventos de todo el día van primero con barra violeta.
+- [ ] Al cambiar de mes se cargan los anillos de ese mes.
+- [ ] Prueba con tu formato de fecha (`khal printformats` → `longdateformat`): europeo `21.12.2013`, ISO `2013-12-21` y US `12/21/2013` funcionan. Si ves «Formato de fecha de khal no soportado», anota el formato.
+- [ ] Sin khal configurado, la agenda dice «khal no está configurado (ejecuta «khal configure»)».
+
+## 9b. Brillo de monitores externos (DDC/CI)
+
+- [ ] Tras instalar y **reiniciar** (para cargar `i2c-dev`), `ddcutil detect` lista tus monitores con `DRM connector`.
+- [ ] El slider de brillo del dashboard, abierto en el monitor externo, cambia su brillo (tarda ~0,3 s).
+- [ ] En un portátil con un monitor externo, cada monitor controla el suyo: retroiluminación en `eDP-1` y DDC en el externo.
+- [ ] Si el monitor no soporta DDC/CI (o está desactivado en su menú OSD), el slider no aparece en ese monitor.
+
+## 9c. Bandeja del sistema
+
+- [ ] Abre una app con icono de bandeja (nm-applet, Steam, Discord, KDE Connect…): aparece en una cápsula antes de la campana.
+- [ ] Clic: acción principal. Derecho: menú. Central: secundaria. Rueda: desplazar (p. ej. volumen en mezcladores).
+- [ ] Una app que pide atención muestra el punto ámbar. Sin apps de bandeja, la cápsula no aparece.
+
+## 9d. Portapapeles
+
+- [ ] Copia varios textos y una captura (`SUPER + SHIFT + S`). `SUPER + SHIFT + V` abre el panel con el historial, la imagen con miniatura y su tamaño.
+- [ ] Filtrar, `↑ ↓` y `Enter`: el elemento vuelve al portapapeles (pega con Ctrl+V). Las imágenes también.
+- [ ] `Supr` con la búsqueda vacía borra la entrada; «Borrar historial» lo vacía todo.
+
+## 9e. Movimiento reducido
+
+- [ ] `qs ipc call settings motion 0`: las animaciones son instantáneas, pero los tiempos de pantalla se mantienen (el OSD dura ~2 s y los popups ~4 s). El ecualizador queda quieto.
+- [ ] `qs ipc call settings motion 2`: todo va el doble de lento. `qs ipc call settings motion -1` vuelve a seguir a KDE.
+- [ ] En Plasma, Preferencias del sistema → Velocidad de animación (`AnimationDurationFactor`): con `motion -1`, Hyprland usa la misma velocidad.
+- [ ] Se guarda en `~/.config/dragon-island/settings.json` y sobrevive a reinicios.
+
+## 9f. Fondo de pantalla
+
+- [ ] Tras instalar, el escritorio muestra el fondo de dragon-island (`~/.local/share/dragon-island/wallpaper.jpg`).
+- [ ] Sustituye ese archivo por otro JPEG y reinicia hyprpaper (`pkill hyprpaper; hyprpaper &`): se ve el tuyo. Reejecutar el instalador no lo sustituye.
 
 ## 10. Rendimiento
 

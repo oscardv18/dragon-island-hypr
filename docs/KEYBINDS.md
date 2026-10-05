@@ -15,7 +15,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
 | `Print` | Captura de pantalla completa |
 | `SUPER + SHIFT + S` | Captura de una región |
-| `SUPER + SHIFT + V` | Historial del portapapeles (cliphist + rofi) |
+| `SUPER + SHIFT + V` | Historial del portapapeles (panel de Quickshell, cliphist) |
 
 ## Ventanas
 
@@ -61,9 +61,11 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | CPU / RAM | Popover Rendimiento | |
 | Wi‑Fi · Bluetooth · Batería | Su popover | |
 | Volumen | Popover Sonido | Rueda: ±5 % · clic derecho o central: silenciar |
+| Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |
 | Campana (punto = no leídas) | Centro de notificaciones | Clic derecho: No molestar |
-| Reloj | Calendario | |
-| Isla cerrada | Dashboard | Notificación: abre el centro (derecho: descartar) · Música: clic central = play/pausa |
+| Reloj | Calendario | Clic en un día: su agenda (khal) · rueda: cambiar de mes |
+| Popup de notificación | Acción por defecto (o cerrar el popup) | Central: descartar · pasar el ratón: no caduca |
+| Isla cerrada | Dashboard | Música: clic central = play/pausa |
 | Mosaicos del dashboard | Activar / desactivar | Clic derecho en Wi‑Fi, Bluetooth o No molestar: abre su popover |
 | Fuera de un panel / `Esc` | Cierra el panel | |
 
@@ -73,6 +75,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 |---|---|
 | Lanzador | Escribir para filtrar (búsqueda difusa) · `↑ ↓` o `Tab` para moverse · `Enter` abre · `Esc` cierra |
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
+| Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
 | Cualquier panel | `Esc` cierra |
 
@@ -80,8 +83,10 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 
 ```sh
 qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery,
-qs ipc call shell open launcher      # notifications, calendar, launcher, power
+qs ipc call shell open launcher      # notifications, calendar, launcher, power, clipboard
 qs ipc call shell close
 qs ipc call shell current            # imprime el panel abierto o "none"
 qs ipc call debug toggle             # panel de diagnóstico de servicios (desarrollo)
+qs ipc call settings motion 0        # sin animaciones (0), normal (1), lentas (2); -1 = seguir a KDE
+qs ipc call settings current         # velocidad de animación actual y de dónde sale
 ```

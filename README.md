@@ -1,6 +1,6 @@
 # dragon-island
 
-Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda sesión junto a KDE Plasma** (Plasma no se toca). Tiene una barra flotante de tres islas, una **Dynamic Island** que se despliega en dashboard, popovers para cada indicador, centro de notificaciones, lanzador y menú de energía. Usa la paleta Sweet / Garuda Dragonized.
+Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda sesión junto a KDE Plasma** (Plasma no se toca). Tiene una barra flotante de tres islas, una **Dynamic Island** que se despliega en dashboard, popovers para cada indicador, centro de notificaciones, lanzador, portapapeles y menú de energía. Usa la paleta Sweet / Garuda Dragonized.
 
 > **Capturas pendientes.** Se añadirán desde EndeavourOS (ver [docs/TESTING.md](docs/TESTING.md)):
 >
@@ -17,11 +17,12 @@ Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda 
 |---|---|
 | **Hyprland 0.56** | Configuración en **Lua** (`config/hypr/*.lua`), borde con degradado, blur, animaciones, reglas de capa para el shell |
 | **Plugins** | `hyprbars` (barra de título de 30 px, botones a la izquierda) y `hyprfocus`, instalados con `hyprpm` en el primer inicio |
-| **Barra** | Isla izquierda (lanzador, escritorios 1–5, ventana activa) e isla derecha (CPU, RAM, Wi‑Fi, Bluetooth, volumen, batería, notificaciones, reloj). Los huecos dejan pasar el clic |
-| **Dynamic Island** | Cae desde arriba al arrancar. Muestra OSD, notificaciones, cambio de escritorio, música o el reloj. Al pulsarla se "derrama" el dashboard |
+| **Barra** | Isla izquierda (lanzador, escritorios 1–5, ventana activa) e isla derecha (CPU, RAM, Wi‑Fi, Bluetooth, volumen, batería, bandeja del sistema, notificaciones, reloj). Los huecos dejan pasar el clic |
+| **Dynamic Island** | Cae desde arriba al arrancar. Muestra OSD, cambio de escritorio, música o el reloj. Al pulsarla se "derrama" el dashboard |
+| **Notificaciones** | Solo como popups (hasta 3, bajo la isla derecha) y en el centro de notificaciones |
 | **Dashboard** | Saludo, música, volumen y brillo, 6 interruptores rápidos, perfil de energía, sistema y últimas notificaciones |
-| **Popovers** | Rendimiento, Wi‑Fi, Bluetooth, Sonido (con mezclador por app), Batería, Notificaciones y Calendario |
-| **Extras** | Lanzador con búsqueda difusa, menú de energía, hyprlock, hypridle, kitty con el tema |
+| **Popovers** | Rendimiento, Wi‑Fi, Bluetooth, Sonido (con mezclador por app), Batería, Notificaciones y Calendario (eventos de **khal**) |
+| **Extras** | Lanzador con búsqueda difusa, historial del portapapeles con miniaturas, menú de energía, brillo de monitores externos por DDC/CI, movimiento reducido, fondo de pantalla propio, hyprlock, hypridle, kitty con el tema |
 
 Versiones de referencia: Hyprland 0.56.2, Quickshell 0.3.1 y gum 2.x (Arch `extra`, octubre de 2026).
 
@@ -46,7 +47,22 @@ El instalador:
 
 Después, cierra sesión, elige **Hyprland** en SDDM y entra. En el primer inicio se abre una terminal que compila hyprbars y hyprfocus (`hyprpm` pedirá tu contraseña).
 
-Fondo de pantalla: copia una imagen a `~/.config/hypr/wallpaper.png`.
+Fondo de pantalla: el instalador pone el de dragon-island en `~/.local/share/dragon-island/wallpaper.jpg` (solo si no existe). Para usar el tuyo, sustituye ese archivo por otro JPEG.
+
+### Calendario (khal)
+
+El popover del calendario muestra los eventos de [khal](https://khal.readthedocs.io), que el instalador ya incluye. Configúralo una vez:
+
+```sh
+khal configure                       # crea ~/.config/khal/config y un calendario local
+khal new hoy 18:00 19:00 Prueba      # comprueba que funciona
+```
+
+Para sincronizar con Google, Nextcloud u otro CalDAV, usa `vdirsyncer` y apunta khal a esa carpeta. Los eventos se recargan cada 10 minutos y al abrir el calendario.
+
+### Brillo de monitores externos
+
+El slider de brillo controla el monitor en el que lo usas: la retroiluminación en un portátil y **DDC/CI** (`ddcutil`) en los monitores externos. Tras instalar, reinicia una vez para que se cargue el módulo `i2c-dev`. El monitor debe tener DDC/CI activado en su menú.
 
 ### Opciones
 
@@ -82,10 +98,12 @@ config/quickshell/
   Icons.qml             glifos Nerd Font
   ShellState.qml        panel abierto (uno a la vez) + IPC "shell"
   services/             datos: Hypr, Media, Audio, Network, Bluetooth, Power, Brightness,
-                        SysStats, Notifs, Osd, Toggles, Apps, Clock, Session, IslandState
+                        SysStats, Notifs, Osd, Toggles, Apps, Clock, Session, IslandState,
+                        Settings, Clipboard, Tray
   components/           Capsule, Slider, ToggleTile, PopoverFrame, ListRow…
-  modules/              bar · island (+ dashboard) · popovers · notifications · launcher · power
+  modules/              bar · island (+ dashboard) · popovers · notifications · launcher · power · clipboard
   debug/DebugPanel.qml  diagnóstico (qs ipc call debug toggle)
+assets/wallpapers/      fondo por defecto
 installer/ install.sh packages/ docs/
 ```
 
@@ -103,7 +121,15 @@ qs ipc call debug toggle       # valores en vivo de todos los servicios
 hyprctl configerrors           # errores de la config de Hyprland
 ```
 
-Para animaciones más lentas o rápidas, cambia `Theme.motionScale` (multiplica todas las duraciones).
+Velocidad de las animaciones (movimiento reducido):
+
+```sh
+qs ipc call settings motion 0     # sin animaciones
+qs ipc call settings motion 1.5   # más lentas
+qs ipc call settings motion -1    # seguir a Plasma (Velocidad de animación)
+```
+
+Se guarda en `~/.config/dragon-island/settings.json`. Sin ese valor, se usa la velocidad de animación de Plasma.
 
 ## Pruebas
 

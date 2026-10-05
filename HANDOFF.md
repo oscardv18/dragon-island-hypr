@@ -33,7 +33,7 @@ Theme.qml · Icons.qml · ShellState.qml (raíz)      services/*.qml (datos)    
   - Con un panel abierto: máscara `null`, un atrapa‑clics (con scrim si es modal) cierra el panel y el foco de teclado es `Exclusive` para que Esc funcione.
 - **Popovers:** se dibujan dentro de ese overlay (patrón 5, opción A), bajo la cápsula que los abrió. `Bar.openFrom()` → `ShellState.toggleAt(name, monitor, anchorRight)`.
 - **Un solo panel abierto:** `ShellState.openPanel` + `panelScreen`. El IPC (`qs ipc call shell …`) abre en el monitor enfocado.
-- **Isla cerrada:** el estado lo calcula `services/IslandState.qml` (prioridad OSD > notificación > escritorio > música > reloj, con las duraciones de la spec).
+- **Isla cerrada:** el estado lo calcula `services/IslandState.qml` (prioridad OSD > escritorio > música > reloj). Las notificaciones **no** pasan por la isla: solo popups (decisión del usuario, ver §6).
 - **Coreografía de la isla** (`Island.qml`):
   - Usa `expanded`, `contentShown` y `opening`.
   - `opening` se fija antes de cambiar la geometría, para que los Behaviors usen la curva correcta: OutBack 420 / OutCubic 480 al abrir y OutCubic 300 al cerrar.
@@ -88,6 +88,30 @@ Servicios completados para la interfaz: detalles de Wi‑Fi (`nmcli`), vincular 
   - el calendario se recalcula una vez al día, no cada segundo.
 - DebugPanel fuera del arranque: se abre con `qs ipc call debug toggle`.
 
+### Fase 6 — Decisiones del usuario y mejoras
+
+- **Notificaciones solo como popups.** Se quitó el estado de notificación de la isla. Esto se aparta a propósito de la spec (`design.md` lo incluía); la spec no se ha editado.
+- **Calendario con khal** (`Clock.qml`):
+  - `khal list` con `--day-format "@@{date-long}"` y un formato separado por tabuladores.
+  - El formato de fecha del usuario se aprende de `khal printformats` (europeo, ISO y US probados).
+  - Anillos cian en los días con eventos; clic en un día muestra su agenda.
+  - Recarga cada 10 min y al abrir el calendario.
+- **Portapapeles en Quickshell** (`Clipboard.qml` + `modules/clipboard/`):
+  - Sustituye a rofi (paquete eliminado). Se abre con `SUPER + SHIFT + V` → `shell toggle clipboard`.
+  - Muestra miniaturas de las imágenes; `Supr` borra la entrada y "Borrar historial" lo vacía.
+- **Bandeja del sistema** (`Tray.qml`): una cápsula en la isla derecha. Clic, derecho = menú de la plataforma, central y rueda. Oculta las entradas pasivas.
+- **Movimiento reducido** (`Settings.qml`):
+  - `Theme.motionScale` se toma de `~/.config/dragon-island/settings.json`; si no hay valor, de la "Velocidad de animación" de Plasma (`kdeglobals AnimationDurationFactor`); si tampoco, 1.0.
+  - IPC: `qs ipc call settings motion <x>`.
+  - Los tiempos de pantalla (OSD 2 s, popups 4 s) **no** se escalan.
+  - Con 0, las animaciones infinitas no corren.
+- **Brillo por DDC/CI** (`Brightness.qml`):
+  - `ddcutil detect` empareja cada monitor con Hyprland por su `DRM connector`; la lectura y escritura van por `--bus`, en cola, porque DDC no admite concurrencia.
+  - La escritura espera 250 ms tras el último cambio.
+  - El slider del dashboard y del popover de Batería actúa sobre **su** monitor.
+  - El paquete `ddcutil` instala el módulo `i2c-dev` y la regla udev, así que el instalador no toca `/etc`.
+- **Fondo propio:** `assets/wallpapers/dragon-island.jpg` (4K, paleta de la spec). El instalador lo enlaza en `~/.local/share/dragon-island/wallpaper.jpg` solo si no existe, y `hyprpaper.conf` apunta ahí.
+
 ### Fase 5 — Cierre
 
 - **Instalador:** al terminar avisa si falta `qs`, si faltan las fuentes o si hay otro daemon de notificaciones (mako, dunst o swaync). Se quitó `qt6-5compat`, que ya no hace falta.
@@ -104,6 +128,9 @@ Servicios completados para la interfaz: detalles de Wi‑Fi (`nmcli`), vincular 
 | Paquetes | archlinux.org / AUR RPC | Todos existen |
 | Fin de línea | `git ls-files --eol` | Todo LF |
 | Reglas | grep | 0 colores fijos fuera de `Theme`; la UI no usa `Process`/`exec`/D‑Bus |
+| khal (`Clock.qml` real) | Motor QML + stubs; salida de ejemplo con cabeceras ANSI en 3 formatos de fecha | Fechas, rango de consulta, orden y anillos correctos |
+| DDC (`Brightness.qml` real) | Motor QML + salida de ejemplo de `ddcutil detect` / `getvcp` | Ignora pantallas inválidas, escala al máximo del monitor y aplica el retardo |
+| Nuevas vistas | Render offscreen (calendario con eventos, portapapeles, bandeja) | Sin avisos y coherentes con la spec |
 
 Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pintaba (de ahí BrandFill con Shapes). También se corrigieron:
 
@@ -127,16 +154,21 @@ Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pint
 - **Datos de `nmcli`:** banda, velocidad e IP (el formato `-t` puede variar).
 - **Glifos Nerd Font:** los códigos de `Icons.qml` son del set Material Design (nf‑md) y en Windows salían como cuadros por falta de la fuente. Revisa que cada icono sea el esperado.
 - **gum con la salida redirigida al log** (`exec > >(tee …)`).
+- **khal real:** que `printformats` y `list --day-format/--format` se comporten como dice su documentación (0.14).
+- **ddcutil 3.0 real:** que `detect` muestre `DRM connector` y los permisos tras reiniciar.
+- **Bandeja:** que el menú de `display()` aparezca bien colocado.
+- **Portapapeles:** que las miniaturas decodificadas (`*.img` en caché) se carguen.
 
 ## 6. Decisiones
 
 - `SUPER + L` = bloquear; Vim = `SUPER + ALT + HJKL` (conflicto dentro de la propia spec).
 - Tema Qt: plataforma `kde` en Hyprland, porque Plasma ya está instalado.
 - `IslandState` vive en `services/` para evitar un ciclo de imports entre la raíz y `services`.
-- Las notificaciones aparecen a la vez en la isla (compacta, como pide la spec) y como popups con cuerpo y acciones (la petición de "centro + popups").
-- Calendario: aún **no hay fuente de eventos** (`Clock.hasEventSource = false`), así que no hay anillos cian ni agenda. Hay un `TODO(calendar)` en `Clock.qml`.
+- Notificaciones: **solo popups** y centro (decisión del usuario). La isla no las muestra.
+- Calendario: **khal** como fuente de eventos; la sincronización (vdirsyncer) la configura el usuario.
 - Grabación: `wf-recorder` sobre una zona o salida elegida con `slurp -o`, guardada en la carpeta XDG de vídeos.
-- Historial del portapapeles: sigue con `rofi -dmenu`.
+- Historial del portapapeles: panel propio en Quickshell (rofi ya no se instala).
+- Movimiento reducido: el usuario manda (`settings.json`); si no, se sigue a Plasma.
 - Blur: solo por reglas de capa (no `BackgroundEffect`), siguiendo la skill.
 
 ## 7. Siguientes pasos
@@ -144,10 +176,9 @@ Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pint
 1. Recorrer [docs/TESTING.md](docs/TESTING.md) en EndeavourOS y corregir lo que falle (`qs log` da el archivo y la línea).
 2. Hacer las capturas y guardarlas en `docs/screenshots/` (el README ya tiene los huecos).
 3. Opcional:
-   - fuente de calendario (khal o un `.ics` vía `FileView`);
-   - portapapeles dentro de Quickshell;
-   - `Theme.motionScale` ligado a una preferencia de movimiento reducido;
-   - bandeja del sistema (`SystemTray`), que la spec no pide.
+   - crear eventos desde el calendario (`khal new`);
+   - un selector de fondos de pantalla;
+   - pegar automáticamente tras elegir en el portapapeles (`wtype`).
 
 ## 8. Cómo depurar rápido
 
