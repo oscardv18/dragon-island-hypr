@@ -23,6 +23,7 @@
  *   - connectDevice(d): void         disconnectDevice(d): void    toggleConnection(d): void
  *   - pairDevice(d): void            forgetDevice(d): void
  *   - batteryPct(d): int (-1 when the device does not report it)
+ *   - isBusy(d): bool (pairing, connecting or disconnecting)
  *
  * Signals:
  *   - powerChanged(enabled: bool)
@@ -74,6 +75,12 @@ Singleton {
 
     function batteryPct(device): int {
         return device?.batteryAvailable ? Math.round(device.battery * 100) : -1;
+    }
+
+    function isBusy(device): bool {
+        return (device?.pairing ?? false)
+            || device?.state === BluetoothDeviceState.Connecting
+            || device?.state === BluetoothDeviceState.Disconnecting;
     }
 
     signal powerChanged(enabled: bool)

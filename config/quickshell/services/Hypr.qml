@@ -18,6 +18,8 @@
  *
  * Functions:
  *   - focusWorkspace(id: int): void
+ *   - focusRelative(delta: int): void (next/previous existing workspace, mouse wheel)
+ *   - fullscreenOn(screen): bool      (active workspace of that monitor has a fullscreen window)
  *   - moveWindowToWorkspace(id: int): void
  *   - closeActiveWindow(): void
  *   - toggleFullscreen(): void
@@ -82,6 +84,16 @@ Singleton {
 
     function focusWorkspace(id: int): void {
         Hyprland.dispatch(root.usingLua ? `hl.dsp.focus({ workspace = ${id} })` : `workspace ${id}`);
+    }
+
+    function focusRelative(delta: int): void {
+        const target = delta > 0 ? "e+1" : "e-1";
+        Hyprland.dispatch(root.usingLua ? `hl.dsp.focus({ workspace = "${target}" })` : `workspace ${target}`);
+    }
+
+    function fullscreenOn(screen): bool {
+        const mon = screen ? Hyprland.monitorFor(screen) : null;
+        return mon?.activeWorkspace?.hasFullscreen ?? false;
     }
 
     function moveWindowToWorkspace(id: int): void {

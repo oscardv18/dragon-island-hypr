@@ -8,10 +8,13 @@
  *   - panelScreen: string [readonly] (monitor name where the panel opens; "" = focused monitor)
  *   - panels: list<string> [readonly]
  *   - anyOpen: bool [readonly]
+ *   - anchorRight: real [readonly] (screen x of the right edge of the capsule that opened the
+ *                   popover; -1 when opened by IPC → popover aligns to the bar's right edge)
  *
  * Functions:
  *   - toggle(name: string, screenName: string = ""): void
  *   - open(name: string, screenName: string = ""): void
+ *   - toggleAt(name: string, screenName: string, anchorRight: real): void (bar capsules)
  *   - close(): void
  *   - current(): string
  *   - isOpenOn(name: string, screenName: string): bool (true if `name` is open on that monitor)
@@ -33,6 +36,7 @@ Singleton {
     property string openPanel: "none"
     property string panelScreen: ""
     readonly property bool anyOpen: openPanel !== "none"
+    property real anchorRight: -1
 
     function _valid(name: string): bool {
         if (panels.indexOf(name) >= 0) return true;
@@ -42,6 +46,7 @@ Singleton {
 
     function open(name: string, screenName): void {
         if (!_valid(name)) return;
+        root.anchorRight = -1;
         root.panelScreen = screenName || Hyprland.focusedMonitor?.name || "";
         root.openPanel = name;
     }
@@ -50,6 +55,12 @@ Singleton {
         const scr = screenName || Hyprland.focusedMonitor?.name || "";
         if (root.openPanel === name && (root.panelScreen === scr || root.panelScreen === "")) root.close();
         else root.open(name, scr);
+    }
+
+    function toggleAt(name: string, screenName: string, anchorRight: real): void {
+        if (root.openPanel === name && root.panelScreen === screenName) { root.close(); return; }
+        root.open(name, screenName);
+        root.anchorRight = anchorRight;
     }
 
     function close(): void {

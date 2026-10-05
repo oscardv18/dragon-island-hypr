@@ -13,6 +13,7 @@
  *   - greeting: string [readonly] ("Buenos días" | "Buenas tardes" | "Buenas noches")
  *   - uptimeFormatted: string [readonly] ("3 h 12 min")
  *   - weekdayLetters: list<string> [readonly] (["L","M","X","J","V","S","D"], Monday first)
+ *   - todayKey: string [readonly] ("2026-10-05", changes once a day: use it to refresh day-based UI)
  *   - hasEventSource: bool [readonly] (false: no calendar backend yet → no event rings / agenda)
  *
  * Functions:
@@ -76,6 +77,7 @@ Singleton {
         return "Buenas noches";
     }
 
+    readonly property string todayKey: Qt.formatDate(sysClock.date, "yyyy-MM-dd")
     readonly property bool hasEventSource: false
 
     // ---- Uptime ----
@@ -109,7 +111,8 @@ Singleton {
         const first = new Date(year, month, 1);
         const offset = (first.getDay() + 6) % 7;          // Monday = 0
         const start = new Date(year, month, 1 - offset);
-        const today = sysClock.date;
+        void root.todayKey;              // depend on the day, not on every second
+        const today = new Date();
         const cells = [];
         for (let i = 0; i < 42; i++) {
             const d = new Date(start.getFullYear(), start.getMonth(), start.getDate() + i);
