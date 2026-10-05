@@ -24,13 +24,13 @@ Row {
             height: Math.max(width, root.barHeight * level)
 
             SequentialAnimation on level {
-                running: root.playing
+                running: root.playing && Theme.animationsEnabled
                 loops: Animation.Infinite
                 NumberAnimation { to: 1.0;  duration: Theme.ms(260 + bar.index * 70); easing.type: Easing.InOutSine }
                 NumberAnimation { to: 0.25; duration: Theme.ms(300 + bar.index * 50); easing.type: Easing.InOutSine }
             }
             states: State {
-                when: !root.playing
+                when: !root.playing || !Theme.animationsEnabled
                 PropertyChanges { bar.level: 0.35 }
             }
         }

@@ -167,7 +167,6 @@ Singleton {
     readonly property real islandIcon:          20
     readonly property real islandOsdBar:        120
     readonly property real islandMediaTitleMax: 200
-    readonly property real islandNotifMax:      240
 
     // Dashboard content
     readonly property real dashColumnGap:  14
@@ -187,12 +186,15 @@ Singleton {
     readonly property real launcherWidth:   560
     readonly property real launcherTop:     140
     readonly property int  launcherRows:    8
+    readonly property real clipThumbHeight: 56
     readonly property real powerButton:     88
 
     // -------------------------------------------------------------------------
     // Motion (spec "Motion" table). Every duration goes through motionScale.
     // -------------------------------------------------------------------------
+    // Set by the Settings service (settings.json → KDE AnimationDurationFactor → 1.0). 0 = no animations.
     property real motionScale: 1.0
+    readonly property bool animationsEnabled: motionScale > 0
     function ms(v: real): int { return Math.round(v * motionScale); }
 
     readonly property int durDropIn:       ms(700)  // island first appearance, OutBack
@@ -209,8 +211,9 @@ Singleton {
     readonly property int durScrim:        ms(240)  // 220-250
     readonly property int durPopover:      ms(280)  // OutBack
     readonly property int durPopoverOut:   ms(160)
-    readonly property int durTransient:    ms(2000) // OSD / workspace island states
-    readonly property int durNotif:        ms(4000) // notification island state / popup
+    // display times (how long something stays on screen): NOT scaled by motionScale
+    readonly property int durTransient:    2000     // OSD / workspace island states
+    readonly property int durNotif:        4000     // notification popups
     readonly property int durPill:         ms(200)  // workspace pill width + color, OutCubic
     readonly property int durHover:        ms(120)  // capsule hover
     readonly property int durFade:         ms(180)  // generic cross-fades

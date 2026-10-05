@@ -101,7 +101,7 @@ PopoverFrame {
                 size: Theme.iconSm
                 color: Theme.textDim
                 RotationAnimation on rotation {
-                    running: Network.scanning
+                    running: Network.scanning && Theme.animationsEnabled
                     loops: Animation.Infinite
                     from: 0
                     to: 360
