@@ -1,10 +1,13 @@
 # =============================================================================
 # dragon-island — AUR dependencies
-# Verified against AUR database (2026-10-05)
+# Names verified against the AUR RPC on 2026-10-05.
+# Same "@<component>" sections as pacman.txt.
 # =============================================================================
 
-# Brand UI typography (Outfit font family)
-outfit-font
-
-# Screenshot helper for Hyprland
+@core
+# Screenshot helper for Hyprland (grim + slurp wrapper)
 grimblast-git
+
+@fonts
+# UI typography (Outfit)
+ttf-outfit
