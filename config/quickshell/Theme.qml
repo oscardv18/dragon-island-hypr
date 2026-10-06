@@ -187,6 +187,11 @@ Singleton {
     readonly property real launcherTop:     140
     readonly property int  launcherRows:    8
     readonly property real clipThumbHeight: 56
+    readonly property real keybindsWidth:   920
+    readonly property real keyCapHeight:    22
+    readonly property real keyCapPadH:      7
+    readonly property real keyCapRadius:    6
+    readonly property real keybindsChrome:  190   // title + search + footer + paddings of the panel
     readonly property real powerButton:     88
 
     // -------------------------------------------------------------------------

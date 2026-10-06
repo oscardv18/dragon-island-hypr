@@ -31,7 +31,7 @@ import QtQuick
 Singleton {
     id: root
 
-    readonly property var panels: ["dashboard", "perf", "wifi", "bt", "audio", "battery", "notifications", "calendar", "launcher", "power", "clipboard"]
+    readonly property var panels: ["dashboard", "perf", "wifi", "bt", "audio", "battery", "notifications", "calendar", "launcher", "power", "clipboard", "keybinds"]
 
     property string openPanel: "none"
     property string panelScreen: ""

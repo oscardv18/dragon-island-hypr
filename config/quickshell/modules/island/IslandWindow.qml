@@ -16,6 +16,7 @@ import "../launcher"
 import "../power"
 import "../notifications"
 import "../clipboard"
+import "../keybinds"
 
 PanelWindow {
     id: win
@@ -35,7 +36,7 @@ PanelWindow {
     // Panel shown on this monitor ("none" otherwise)
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
     readonly property bool panelHere: panel !== "none"
-    readonly property bool modal: panel === "dashboard" || panel === "launcher" || panel === "power" || panel === "clipboard"
+    readonly property bool modal: panel === "dashboard" || panel === "launcher" || panel === "power" || panel === "clipboard" || panel === "keybinds"
     readonly property bool isFocusedMonitor: Hypr.focusedMonitorName === "" || Hypr.focusedMonitorName === screenName
 
     // hide the closed island over fullscreen windows, except while it shows the OSD
@@ -76,6 +77,7 @@ PanelWindow {
     onPanelChanged: Qt.callLater(() => {
         if (panel === "launcher") launcher.focusSearch();
         else if (panel === "clipboard") clipboard.focusSearch();
+        else if (panel === "keybinds") keybinds.focusSearch();
         else if (panel === "power") power.focusMenu();
         else if (panelHere) keys.forceActiveFocus();
     })
@@ -112,6 +114,12 @@ PanelWindow {
         id: clipboard
         anchors.fill: parent
         shown: win.panel === "clipboard"
+    }
+
+    KeybindsPanel {
+        id: keybinds
+        anchors.fill: parent
+        shown: win.panel === "keybinds"
     }
 
     PowerMenu {
