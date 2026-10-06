@@ -33,6 +33,7 @@ Baseline syntax: `resources/hyprland-0.56.2-example.lua` is the upstream example
 - Only one notification daemon per session: our Quickshell `NotificationServer` (Plasma's runs only in Plasma).
 - Polkit in Hyprland: `hyprpolkitagent` (Plasma's agent only autostarts in Plasma).
 - Portals: install `xdg-desktop-portal-hyprland` + `xdg-desktop-portal-gtk`; leave the KDE portal installed for Plasma.
+- Keyring: **one Secret Service, KWallet**, shared with Plasma. The display manager's PAM (`pam_kwallet5`, already in SDDM / Plasma Login) unlocks wallet `kdewallet` (Blowfish, same password as the user, no autologin); `autostart.lua` runs `/usr/lib/pam_kwallet_init` chained before quickshell. `~/.config/xdg-desktop-portal/hyprland-portals.conf` routes the Secret portal to `kwallet`; Brave gets `--password-store=kwallet6` via `~/.config/brave-flags.conf`. Never start gnome-keyring (it steals `org.freedesktop.secrets`); recommend `pacman -R gnome-keyring` instead.
 - File manager stays Dolphin; terminal is kitty.
 - Qt theming in Hyprland: decide explicitly (KDE platform theme vs `hyprqt6engine`) and set it only via `hl.env`.
 

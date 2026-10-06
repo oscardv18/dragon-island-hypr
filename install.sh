@@ -314,6 +314,11 @@ log_info "Desplegando configuración..."
 if has_component core; then
     deploy_item "$REPO_DIR/config/hypr"  "$HOME/.config/hypr"
     deploy_item "$REPO_DIR/config/kitty" "$HOME/.config/kitty"
+    # Keyring: the Secret portal → KWallet in Hyprland (Plasma keeps kde-portals.conf),
+    # and Brave forced to KWallet 6 so both sessions share its passwords and cookies
+    deploy_item "$REPO_DIR/config/xdg-desktop-portal/hyprland-portals.conf" \
+        "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf"
+    deploy_item "$REPO_DIR/config/brave/brave-flags.conf" "$HOME/.config/brave-flags.conf"
 fi
 
 if has_component shell; then
@@ -368,6 +373,13 @@ if has_component shell && ! $DRY_RUN; then
     done
 fi
 
+# Only one Secret Service: two daemons race for org.freedesktop.secrets and apps end up
+# split across two keyrings. Warn only; removing a package is the user's decision.
+if has_component core && ! $DRY_RUN && pacman -Qq gnome-keyring >/dev/null 2>&1; then
+    log_warn "gnome-keyring está instalado y compite con KWallet por el servicio de secretos."
+    log_warn "Recomendado (lee README → Llavero / contraseñas): sudo pacman -R gnome-keyring"
+fi
+
 if has_component fonts && ! $DRY_RUN && command -v fc-list >/dev/null 2>&1; then
     fc-list | grep -qi "Outfit" || log_warn "Fuente Outfit no encontrada (paquete AUR ttf-outfit)."
     fc-list | grep -qi "JetBrainsMono Nerd\|JetBrains Mono Nerd" || log_warn "JetBrains Mono Nerd Font no encontrada (ttf-jetbrains-mono-nerd)."
@@ -382,12 +394,17 @@ box "#06c993" "dragon-island instalado" \
     "  • Respaldos: $BACKUP_DIR (solo si había algo que reemplazar)" \
     "  • Registro: $LOG" \
     "" \
-    "Para empezar: cierra sesión → en SDDM elige la sesión «Hyprland» → entra." \
+    "Para empezar: cierra sesión → en la pantalla de inicio (SDDM o Plasma Login) elige «Hyprland»." \
     "En el primer arranque se abre una terminal que compila hyprbars/hyprfocus." \
     "" \
     "  SUPER + Return  terminal      SUPER + Space   lanzador" \
     "  SUPER + D       dashboard     SUPER + N       notificaciones" \
     "  SUPER + Escape  energía       SUPER + L       bloquear" \
+    "" \
+    "Llavero (KWallet, compartido con Plasma, se abre solo al entrar):" \
+    "  la cartera debe llamarse «kdewallet», tener la MISMA contraseña que tu" \
+    "  usuario y cifrado Blowfish (no GPG). Sin inicio de sesión automático." \
+    "  Compruébalo en KWalletManager. Detalles: README → Llavero / contraseñas" \
     "" \
     "Pruebas: docs/TESTING.md · Atajos: docs/KEYBINDS.md" \
     "" \

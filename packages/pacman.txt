@@ -15,6 +15,10 @@ hyprpaper
 hyprpolkitagent
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
+# Keyring: one KWallet shared with Plasma, unlocked at login by PAM (pam_kwallet5)
+kwallet
+kwallet-pam
+kwalletmanager
 # Terminal & default file manager
 kitty
 dolphin

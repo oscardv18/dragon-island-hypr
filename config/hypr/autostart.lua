@@ -3,8 +3,15 @@
 -- =============================================================================
 
 hl.on("hyprland.start", function()
-    -- Shell (bar, Dynamic Island, notifications daemon) and desktop components
-    hl.exec_cmd("quickshell")
+    -- Keyring first: pam_kwallet5 started the wallet daemon at login with the password;
+    -- pam_kwallet_init hands it this session's environment so it unlocks "kdewallet"
+    -- (Plasma runs it from /etc/xdg/autostart, which Hyprland ignores). Chained with ";"
+    -- so the shell (bar, Dynamic Island, notifications, tray host) starts after it.
+    -- exec_cmd does not wait: apps added here that read secrets (Brave, Proton VPN…)
+    -- must be chained the same way, not just listed below.
+    hl.exec_cmd("/usr/lib/pam_kwallet_init; exec quickshell")
+
+    -- Desktop components
     hl.exec_cmd("hyprpaper")
     hl.exec_cmd("hypridle")
 
