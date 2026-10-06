@@ -52,10 +52,12 @@ khal
 ddcutil
 
 @plugins
-# Build dependencies for hyprpm (hyprbars, hyprfocus)
+# hyprpm is a separate package on Arch, plus its build dependencies (hyprbars, hyprfocus)
+hyprpm
 base-devel
 cpio
 cmake
+pkgconf
 git
 meson
 gcc

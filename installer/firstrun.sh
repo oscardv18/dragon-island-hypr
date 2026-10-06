@@ -33,6 +33,11 @@ finish() {
 trap finish EXIT
 
 echo "==> dragon-island: primer arranque"
+if ! command -v hyprpm >/dev/null 2>&1; then
+    echo "ERROR: hyprpm no está instalado (en Arch es el paquete 'hyprpm'). Ejecuta: sudo pacman -S hyprpm" >&2
+    notify "Plugins" "Falta el paquete hyprpm"
+    exit 1
+fi
 echo "==> Descargando cabeceras de Hyprland (hyprpm update)..."
 if ! hyprpm update; then
     notify "Plugins" "hyprpm update falló. Revisa $LOG"

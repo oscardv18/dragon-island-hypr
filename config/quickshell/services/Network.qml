@@ -79,7 +79,7 @@ Singleton {
 
     readonly property bool scanning: wifiDevice?.scannerEnabled ?? false
 
-    readonly property NetworkConnectivity connectivity: Networking.connectivity
+    readonly property int connectivity: Networking.connectivity
     readonly property string connectivityString: {
         switch (Networking.connectivity) {
             case NetworkConnectivity.Full:    return "Acceso a Internet";

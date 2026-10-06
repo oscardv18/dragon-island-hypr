@@ -209,6 +209,16 @@ Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pint
    - un selector de fondos de pantalla;
    - pegar automáticamente tras elegir en el portapapeles (`wtype`).
 
+## 7b. Primer arranque real en Hyprland (2026-10-05)
+
+- `misc.vfr` no existe en Hyprland 0.56 (Lua): quitado de `look.lua`. Mientras estuvo, el banner de error de Hyprland tapaba la zona superior y **la isla parecía no aparecer**: la ventana `dragon-island` sí existía en `hyprctl layers`. Lección: ante "no aparece", mira primero `hyprctl configerrors`.
+- `hyprpm` es un paquete aparte en Arch: añadido a `packages/pacman.txt` (con `pkgconf`). `installer/firstrun.sh` comprueba que exista y luego hace update/add/enable en primer plano.
+- `Network.connectivity` y `Power.currentProfile` pasan a `int` (avisos "Unable to assign int to …*"). Anotado en `gotchas.md`.
+- `~/.config/hypr` y `~/.config/quickshell` ya son symlinks al repo (`deploy_item`).
+- Los avisos de `IconPixmap` (Proton) y `printer.svg` (Humanity) son inofensivos.
+- Verificado: `hyprctl configerrors` vacío, hyprbars y hyprfocus cargados, `qs log` sin errores desde la recarga, isla visible y dashboard abierto/cerrado por IPC (lo que ejecuta SUPER+D).
+- Sin probar: el clic físico sobre la isla (usa el mismo `ShellState.toggle`).
+
 ## 8. Cómo depurar rápido
 
 ```sh

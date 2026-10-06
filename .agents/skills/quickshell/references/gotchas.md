@@ -47,3 +47,4 @@ Checked against the 0.3.1 source. Read before declaring a component done.
 - Keep `qs -p <dir>` running while editing; it hot-reloads and prints `file:line` errors.
 - Create an empty `.qmlls.ini` next to `shell.qml` so qmlls understands Quickshell imports (Quickshell fills it in). Git-ignore it.
 - After changes, test: multiple monitors (`Quickshell.screens`), no battery (desktop), no player, no Bluetooth adapter, Wi-Fi off, 0 notifications and 50 notifications.
+- **Enum-typed properties:** `readonly property NetworkConnectivity x: Networking.connectivity` (same for `PowerProfile`) logs `Unable to assign int to …*`. Declare them as `int`; the enum is still usable in `switch` via `NetworkConnectivity.Full`.

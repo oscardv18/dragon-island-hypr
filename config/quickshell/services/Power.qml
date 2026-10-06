@@ -14,7 +14,7 @@
  *   - changeRateWatts: real [readonly] (absolute value)
  *   - healthPct: real [readonly] (-1 if unknown)
  *   - hasPerformanceProfile: bool [readonly]
- *   - currentProfile: PowerProfile [readonly]
+ *   - currentProfile: int [readonly] (PowerProfile enum value)
  *   - currentProfileKey: string [readonly] ("power-saver" | "balanced" | "performance")
  *   - currentProfileString: string [readonly] (Spanish label)
  *   - profiles: list<var> [readonly] ({ key, label, available })
@@ -80,7 +80,7 @@ Singleton {
     // ---- Power profiles ----
     // Needs power-profiles-daemon (installed and enabled by the installer's "services" component)
     readonly property bool hasPerformanceProfile: PowerProfiles.hasPerformanceProfile
-    readonly property PowerProfile currentProfile: PowerProfiles.profile
+    readonly property int currentProfile: PowerProfiles.profile
     readonly property string currentProfileKey: {
         switch (PowerProfiles.profile) {
             case PowerProfile.PowerSaver:  return "power-saver";
