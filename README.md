@@ -40,7 +40,7 @@ cd ~/dragon-island-hypr
 El instalador:
 
 1. Comprueba el sistema y ofrece `pacman -Syu` antes de instalar nada.
-2. Te deja elegir los componentes: `core` (Hyprland y herramientas), `shell` (Quickshell y servicios), `plugins` (compilación de hyprpm), `fonts` y `services` (NetworkManager, bluetooth, power-profiles-daemon).
+2. Te deja elegir los componentes: `core` (Hyprland y herramientas), `shell` (Quickshell y servicios), `plugins` (compilación de hyprpm), `tools` (opcionales: Seahorse), `fonts` y `services` (NetworkManager, bluetooth, power-profiles-daemon).
 3. Instala los paquetes de [`packages/pacman.txt`](packages/pacman.txt) y [`packages/aur.txt`](packages/aur.txt) (con `yay` o `paru`).
 4. Enlaza (o copia) `config/hypr`, `config/kitty` y `config/quickshell` en `~/.config`, además de `~/.config/brave-flags.conf` y `~/.config/xdg-desktop-portal/hyprland-portals.conf` (ver [Llavero](#llavero--contraseñas)). Lo que ya existía va a `~/.local/state/dragon-island/backups/<fecha>/`.
 5. Es **idempotente**: si lo ejecutas otra vez, no cambia nada.
@@ -66,33 +66,39 @@ El slider de brillo controla el monitor en el que lo usas: la retroiluminación 
 
 ### Llavero / contraseñas
 
-Plasma y Hyprland comparten **un único llavero: KWallet**. Se abre solo al iniciar sesión: el módulo PAM `pam_kwallet5` del gestor de inicio (SDDM o Plasma Login) recibe tu contraseña. En Plasma termina el trabajo su autostart; en Hyprland lo hace `/usr/lib/pam_kwallet_init`, que se lanza antes de Quickshell (`config/hypr/autostart.lua`). Así Brave, Proton VPN y las apps que usan libsecret no vuelven a pedir la clave.
+Plasma y Hyprland usan **un único llavero: gnome-keyring**. Es el único proveedor del servicio de secretos (`org.freedesktop.secrets`). Lo usan Brave, Proton VPN y las apps con libsecret o qtkeychain (también `plasma-nm`). Proton VPN y `plasma-nm` dependen de él: **no lo desinstales**.
 
-Para que funcione, la cartera debe:
+El gestor de inicio lo arranca y lo desbloquea con la contraseña que escribes al entrar. Lo hace el módulo PAM `pam_gnome_keyring`: en Plasma Login (`/usr/lib/pam.d/plasmalogin`) ya viene incluido, y en SDDM lo trae su archivo PAM de Arch. En Hyprland no hay que arrancar nada.
 
-- **llamarse `kdewallet`**: es la que abre `pam_kwallet5`; con otro nombre te la pedirá;
-- tener **la misma contraseña que tu usuario** (si cambias una, cambia la otra);
-- usar cifrado **Blowfish**, no GPG (PAM no puede abrir una cartera GPG);
-- usarse **sin inicio de sesión automático**: sin contraseña escrita, PAM no tiene con qué abrirla.
+Requisitos:
 
-Cómo comprobarlo en **KWalletManager** (paquete `kwalletmanager`):
+- El llavero **`login`** debe tener **la misma contraseña que tu usuario**. Si no coinciden, PAM no puede abrirlo y te la pedirá.
+- **Sin inicio de sesión automático:** sin contraseña escrita, PAM no tiene con qué abrir el llavero.
+- **KWallet no debe ofrecer el servicio de secretos.** Queda solo para Plasma. Si no, compite con gnome-keyring por el mismo nombre de D-Bus. Desactívalo una vez y luego cierra sesión:
 
-1. Debe aparecer **kdewallet** y, tras entrar, mostrarse abierta sin que la hayas desbloqueado tú.
-2. En *Configurar* → *Cartera*, la cartera predeterminada debe ser `kdewallet`. Desmarca *Cerrar la cartera tras N minutos* y *Cerrar cuando se activa el salvapantallas*: si se cierra, vuelve a pedir la clave.
-3. Si la contraseña no coincide con la de tu usuario: selecciona `kdewallet` → *Cambiar contraseña…*.
-4. Cifrado: KWalletManager solo lo muestra al crear la cartera. Para verlo, ejecuta esto; `3` o `0` = Blowfish, `2` = GPG:
+  ```sh
+  kwriteconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled false
+  ```
 
-   ```sh
-   od -An -tu1 -j14 -N1 ~/.local/share/kwalletd/kdewallet.kwl
-   ```
+  Equivale a desmarcar *Usar KWallet para la interfaz Secret Service* en *Configuración del sistema → Cartera de KDE*. Esa página la instala `kwalletmanager`. El instalador avisa si sigue activo.
 
-   Si es GPG, crea una cartera nueva `kdewallet` con Blowfish y la contraseña de tu usuario (renombra antes la vieja desde KWalletManager).
+Comprobarlo con **Seahorse** (*Contraseñas y claves*, componente `tools`):
+
+1. En *Contraseñas* aparece **Inicio de sesión** (`login`), abierto (candado sin cerrar) nada más entrar.
+2. Clic derecho → *Establecer como predeterminado*, si no lo es ya.
+3. Si te pidió la contraseña al entrar, la del llavero no coincide con la de tu usuario. Clic derecho → *Cambiar contraseña*: pon la antigua del llavero y, como nueva, la de tu usuario.
+
+Desde la terminal también puedes ver quién da el servicio:
+
+```sh
+busctl --user status org.freedesktop.secrets | grep -E '^(PID|Comm)='   # debe ser gnome-keyring-d
+```
 
 Detalles:
 
-- **gnome-keyring:** si está instalado, compite con KWallet por `org.freedesktop.secrets` y las apps acaban repartidas entre dos llaveros, uno de ellos con su propio diálogo de contraseña. Quítalo con `sudo pacman -R gnome-keyring`. Ningún paquete lo requiere y las líneas `-…pam_gnome_keyring.so` de PAM se ignoran solas. Lo que guardaba (p. ej. la sesión de Proton VPN) se pierde: vuelve a iniciar sesión una vez. `~/.local/share/keyrings/` queda en disco.
-- **Brave:** `config/brave/brave-flags.conf` se despliega en `~/.config/brave-flags.conf` con `--password-store=kwallet6`. El lanzador de `brave-bin` lee ese archivo. Sin la opción, Brave usaría otro almacén en Hyprland y no podría descifrar las contraseñas y cookies guardadas en Plasma.
-- **Portal Secret:** `config/xdg-desktop-portal/hyprland-portals.conf` (en `~/.config/xdg-desktop-portal/`) envía el portal *Secret* a KWallet solo en Hyprland, igual que hace Plasma.
+- **Brave:** `config/brave/brave-flags.conf` se despliega en `~/.config/brave-flags.conf` con `--password-store=gnome-libsecret`. El lanzador de `brave-bin` lee ese archivo. **Antes de usarlo, exporta tus contraseñas** (`brave://password-manager/settings` → *Exportar contraseñas*). Brave guardaba su clave en KWallet: con el nuevo almacén ya no podrá descifrar lo anterior, así que se cierran las sesiones de las webs y las contraseñas se pierden. Después impórtalas desde la misma página.
+- **Proton VPN:** guarda su sesión en `login`. Si ya la tenía ahí, la recuerda en las dos sesiones.
+- **Portal Secret:** `config/xdg-desktop-portal/hyprland-portals.conf` (en `~/.config/xdg-desktop-portal/`) envía el portal *Secret* a gnome-keyring en Hyprland, porque ni `hyprland` ni `gtk` lo implementan.
 - **Bandeja:** Proton VPN y otras apps se minimizan en la bandeja de la isla derecha (entre la campana y el reloj).
 
 ### Opciones

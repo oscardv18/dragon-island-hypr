@@ -3,7 +3,7 @@
 # Names verified against archlinux.org on 2026-10-05.
 #
 # Format: one package per line, '#' comments. A line "@<component>" starts the
-# section installed with that component (core, shell, plugins, fonts, services).
+# section installed with that component (core, shell, plugins, tools, fonts, services).
 # =============================================================================
 
 @core
@@ -15,10 +15,10 @@ hyprpaper
 hyprpolkitagent
 xdg-desktop-portal-hyprland
 xdg-desktop-portal-gtk
-# Keyring: one KWallet shared with Plasma, unlocked at login by PAM (pam_kwallet5)
-kwallet
-kwallet-pam
-kwalletmanager
+# Keyring: gnome-keyring is the only Secret Service (org.freedesktop.secrets) in both
+# sessions, started and unlocked at login by the display manager's PAM (pam_gnome_keyring)
+gnome-keyring
+libsecret
 # Terminal & default file manager
 kitty
 dolphin
@@ -59,6 +59,11 @@ cmake
 git
 meson
 gcc
+
+@tools
+# Optional helpers (deselect the "tools" component to skip them)
+# GUI for the keyring: check the "login" keyring, change its password
+seahorse
 
 @fonts
 ttf-jetbrains-mono-nerd

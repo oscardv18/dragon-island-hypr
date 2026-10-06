@@ -14,7 +14,7 @@ TS="$(date +%Y%m%d-%H%M%S)"
 BACKUP_DIR="$STATE_DIR/backups/$TS"
 MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
 
-ALL_COMPONENTS=(core shell plugins fonts services)
+ALL_COMPONENTS=(core shell plugins tools fonts services)
 
 DRY_RUN=false
 ASSUME_YES=false
@@ -314,8 +314,8 @@ log_info "Desplegando configuración..."
 if has_component core; then
     deploy_item "$REPO_DIR/config/hypr"  "$HOME/.config/hypr"
     deploy_item "$REPO_DIR/config/kitty" "$HOME/.config/kitty"
-    # Keyring: the Secret portal → KWallet in Hyprland (Plasma keeps kde-portals.conf),
-    # and Brave forced to KWallet 6 so both sessions share its passwords and cookies
+    # Keyring: the Secret portal → gnome-keyring in Hyprland (Plasma keeps kde-portals.conf),
+    # and Brave forced to libsecret so both sessions share its passwords and cookies
     deploy_item "$REPO_DIR/config/xdg-desktop-portal/hyprland-portals.conf" \
         "$HOME/.config/xdg-desktop-portal/hyprland-portals.conf"
     deploy_item "$REPO_DIR/config/brave/brave-flags.conf" "$HOME/.config/brave-flags.conf"
@@ -373,11 +373,15 @@ if has_component shell && ! $DRY_RUN; then
     done
 fi
 
-# Only one Secret Service: two daemons race for org.freedesktop.secrets and apps end up
-# split across two keyrings. Warn only; removing a package is the user's decision.
-if has_component core && ! $DRY_RUN && pacman -Qq gnome-keyring >/dev/null 2>&1; then
-    log_warn "gnome-keyring está instalado y compite con KWallet por el servicio de secretos."
-    log_warn "Recomendado (lee README → Llavero / contraseñas): sudo pacman -R gnome-keyring"
+# Only one Secret Service: gnome-keyring. KWallet (Plasma) must not offer it too, or the two
+# daemons race for org.freedesktop.secrets. Warn only: it is Plasma's setting, the user decides.
+if has_component core && ! $DRY_RUN && pacman -Qq kwallet >/dev/null 2>&1; then
+    kw_api="$(kreadconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled 2>/dev/null || true)"
+    if [[ "$kw_api" != "false" ]]; then
+        log_warn "KWallet también ofrece el servicio de secretos y compite con gnome-keyring."
+        log_warn "Desactívalo (lee README → Llavero / contraseñas):"
+        log_warn "  kwriteconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled false"
+    fi
 fi
 
 if has_component fonts && ! $DRY_RUN && command -v fc-list >/dev/null 2>&1; then
@@ -401,10 +405,11 @@ box "#06c993" "dragon-island instalado" \
     "  SUPER + D       dashboard     SUPER + N       notificaciones" \
     "  SUPER + Escape  energía       SUPER + L       bloquear" \
     "" \
-    "Llavero (KWallet, compartido con Plasma, se abre solo al entrar):" \
-    "  la cartera debe llamarse «kdewallet», tener la MISMA contraseña que tu" \
-    "  usuario y cifrado Blowfish (no GPG). Sin inicio de sesión automático." \
-    "  Compruébalo en KWalletManager. Detalles: README → Llavero / contraseñas" \
+    "Llavero: gnome-keyring, el mismo en Plasma y Hyprland; PAM lo abre al entrar." \
+    "  El llavero «login» debe tener la MISMA contraseña que tu usuario (compruébalo" \
+    "  con Seahorse) y no debe usarse el inicio de sesión automático." \
+    "  Antes del primer arranque con la nueva opción de Brave, exporta sus contraseñas." \
+    "  Detalles: README → Llavero / contraseñas" \
     "" \
     "Pruebas: docs/TESTING.md · Atajos: docs/KEYBINDS.md" \
     "" \
