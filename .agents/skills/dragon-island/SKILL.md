@@ -46,7 +46,7 @@ config/quickshell/
   Theme.qml               singleton: every color, radius, font, duration (see references/design.md)
   ShellState.qml          singleton: openPanel + IpcHandler (target "shell")
   services/               singletons, data only: Hypr, Media, Audio, Network, Bluetooth, Power, Brightness,
-                          SysStats, Notifs, Osd, Toggles, Apps, Clock
+                          SysStats, Notifs, Osd, Toggles, Apps, Clock, Tray (SNI host)
   components/             Capsule, IconButton, Toggle, Slider, ProgressBar, Card, Popover …
   modules/bar|island|popovers|notifications|launcher|power|lock
   debug/DebugPanel.qml    plain-text dump of all services (dev only, not autostarted)

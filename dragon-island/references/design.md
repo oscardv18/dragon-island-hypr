@@ -57,7 +57,10 @@ Gradients:
 
 **Left island:** launcher button (30×30, radius 9, brand gradient) · workspace pills 1–5 · divider (1×18, white 10 %) · active window: app icon + class + title (dim).
 
-**Right island:** CPU capsule (cyan icon, `NN%`) · RAM capsule (violet icon, `N.NG`) · grouped capsule [Wi-Fi | Bluetooth | volume `NN` | battery `NN%` green] — each is its own button · bell (dot = unread, accent with glow) · clock capsule (brand gradient, `lun 5 oct  16:23`, Spanish locale).
+**Right island:** CPU capsule (cyan icon, `NN%`) · RAM capsule (violet icon, `N.NG`) · grouped capsule [Wi-Fi | Bluetooth | volume `NN` | battery `NN%` green] — each is its own button · bell (dot = unread, accent with glow) · system tray capsule · clock capsule (brand gradient, `lun 5 oct  16:23`, Spanish locale).
+
+
+**System tray capsule** (between bell and clock; hidden when no app exposes an item): capsule height 28, radius 9, `surface2`, padding 0 4. One 24×24 cell per item (radius 7, hover or menu open = `surfaceHi`, `durHover`) with a 16 px icon (theme name → `Quickshell.iconPath`). Item asking for attention = `warn` dot top-right. Left click activates (opens the menu if the item only has one) · right click opens its menu (`QsMenuAnchor`, 8 px below the icon) · middle = secondary action · wheel = scroll. Passive items are hidden.
 
 **Island, closed (priority order):** OSD > incoming notification > workspace change > now playing (art 24×24 radius 7, title, `· app`, 4-bar equalizer) > clock with status dot.
 

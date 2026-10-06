@@ -150,8 +150,9 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 
 ## 9c. Bandeja del sistema
 
-- [ ] Abre una app con icono de bandeja (nm-applet, Steam, Discord, KDE Connect…): aparece en una cápsula antes de la campana.
-- [ ] Clic: acción principal. Derecho: menú. Central: secundaria. Rueda: desplazar (p. ej. volumen en mezcladores).
+- [ ] Abre una app con icono de bandeja (Proton VPN, nm-applet, Steam, Discord, KDE Connect…): aparece en una cápsula entre la campana y el reloj, con iconos de 16 px.
+- [ ] Clic: acción principal (Proton VPN: muestra/oculta su ventana). Derecho: menú, justo debajo del icono. Central: secundaria. Rueda: desplazar (p. ej. volumen en mezcladores).
+- [ ] Proton VPN: cerrar su ventana la oculta en la bandeja (no cierra la app); el icono cambia al conectar y desconectar.
 - [ ] Una app que pide atención muestra el punto ámbar. Sin apps de bandeja, la cápsula no aparece.
 
 ## 9d. Portapapeles
