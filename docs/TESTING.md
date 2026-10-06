@@ -121,6 +121,16 @@ Comprobar en todos: que aparece 8 px bajo su cápsula, alineado a su borde derec
   - [ ] Conectar o desconectar un monitor en caliente recrea la barra y la isla.
 - [ ] **Escalado fraccional** (`scale = 1.25`): textos nítidos y nada recortado.
 
+## 8b. Panel de atajos (SUPER + F1)
+
+- [ ] `SUPER + F1` abre el panel centrado con los atajos agrupados (Aplicaciones, Ventanas, Foco, Escritorios, Ratón, Shell, Sistema, Capturas, Multimedia) en dos columnas.
+- [ ] Las filas equivalentes salen juntas: `SUPER + ← → ↑ ↓`, `SUPER + 1–5`, `Play / Pausa`. El contador dice ~32 atajos.
+- [ ] Escribir «vol» deja solo los de volumen; buscar «shift» encuentra los atajos con SHIFT.
+- [ ] Añade en `binds.lua` un atajo con `description = "Pruebas · Hola"`, guarda (Hyprland recarga) y reabre el panel: aparece el grupo «Pruebas».
+- [ ] Un atajo sin descripción sale en «Otros» con su dispatcher.
+- [ ] En 1080p cabe sin desplazamiento; en pantallas más bajas se puede desplazar con la rueda o `↑ ↓`. Esc o un clic fuera lo cierran.
+- [ ] **Comprobar el JSON real:** `hyprctl binds -j | head -40`. Debe tener `modmask`, `key`, `description` y `submap`. Si los nombres de campo cambian, ajusta `services/Keybinds.qml`.
+
 ## 9a. Calendario con khal
 
 Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirsyncer sync`). Crea un evento: `khal new hoy 18:00 19:00 Prueba`.

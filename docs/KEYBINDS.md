@@ -2,6 +2,8 @@
 
 Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están en [`config/hypr/binds.lua`](../config/hypr/binds.lua); los paneles del shell se abren con `qs ipc call shell toggle <panel>`.
 
+> **`SUPER + F1` muestra esta lista dentro del escritorio.** La lee en vivo de Hyprland (`hyprctl binds -j`) usando la `description` de cada atajo («Grupo · Texto»): si añades o cambias un atajo en `binds.lua` con su descripción, aparece ahí sin tocar nada más.
+
 ## Aplicaciones y sistema
 
 | Atajo | Acción |
@@ -16,6 +18,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `Print` | Captura de pantalla completa |
 | `SUPER + SHIFT + S` | Captura de una región |
 | `SUPER + SHIFT + V` | Historial del portapapeles (panel de Quickshell, cliphist) |
+| `SUPER + F1` | Ayuda: panel con todos los atajos de Hyprland |
 
 ## Ventanas
 
@@ -75,6 +78,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 |---|---|
 | Lanzador | Escribir para filtrar (búsqueda difusa) · `↑ ↓` o `Tab` para moverse · `Enter` abre · `Esc` cierra |
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
+| Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
 | Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
 | Cualquier panel | `Esc` cierra |
@@ -83,7 +87,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 
 ```sh
 qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery,
-qs ipc call shell open launcher      # notifications, calendar, launcher, power, clipboard
+qs ipc call shell open launcher      # notifications, calendar, launcher, power, clipboard, keybinds
 qs ipc call shell close
 qs ipc call shell current            # imprime el panel abierto o "none"
 qs ipc call debug toggle             # panel de diagnóstico de servicios (desarrollo)

@@ -110,6 +110,12 @@ Servicios completados para la interfaz: detalles de Wi‑Fi (`nmcli`), vincular 
   - La escritura espera 250 ms tras el último cambio.
   - El slider del dashboard y del popover de Batería actúa sobre **su** monitor.
   - El paquete `ddcutil` instala el módulo `i2c-dev` y la regla udev, así que el instalador no toca `/etc`.
+- **Panel de atajos (`SUPER + F1`)** (`Keybinds.qml` + `modules/keybinds/`):
+  - Lee los atajos en vivo con `hyprctl binds -j` y se recarga al abrirse.
+  - Cada `hl.bind` de `binds.lua` lleva `description = "Grupo · Texto"` (con un helper `bind()`), así que no hay ninguna lista duplicada.
+  - Agrupa las filas iguales (`SUPER + 1–5`, flechas, `Play / Pausa`) y traduce los nombres de tecla.
+  - Dos columnas equilibradas, búsqueda y Esc. Probado con el `binds.lua` real ejecutado en lupa: 53 atajos → 32 filas.
+  - **No verificado:** los nombres exactos de los campos del JSON de `hyprctl binds -j` en 0.56 (se asumen `modmask`, `key`, `description` y `submap`).
 - **Fondo propio:** `assets/wallpapers/dragon-island.jpg` (4K, paleta de la spec). El instalador lo enlaza en `~/.local/share/dragon-island/wallpaper.jpg` solo si no existe, y `hyprpaper.conf` apunta ahí.
 
 ### Fase 5 — Cierre

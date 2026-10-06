@@ -85,6 +85,7 @@ Los atajos y los controles con el ratón están en **[docs/KEYBINDS.md](docs/KEY
 | `SUPER + N` | Notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear |
+| `SUPER + F1` | **Ayuda: todos los atajos** (panel en pantalla) |
 
 El shell se controla también por IPC: `qs ipc call shell toggle <panel>`. Los paneles disponibles son `dashboard`, `perf`, `wifi`, `bt`, `audio`, `battery`, `notifications`, `calendar`, `launcher` y `power`.
 
@@ -99,9 +100,9 @@ config/quickshell/
   ShellState.qml        panel abierto (uno a la vez) + IPC "shell"
   services/             datos: Hypr, Media, Audio, Network, Bluetooth, Power, Brightness,
                         SysStats, Notifs, Osd, Toggles, Apps, Clock, Session, IslandState,
-                        Settings, Clipboard, Tray
+                        Settings, Clipboard, Tray, Keybinds
   components/           Capsule, Slider, ToggleTile, PopoverFrame, ListRow…
-  modules/              bar · island (+ dashboard) · popovers · notifications · launcher · power · clipboard
+  modules/              bar · island (+ dashboard) · popovers · notifications · launcher · power · clipboard · keybinds
   debug/DebugPanel.qml  diagnóstico (qs ipc call debug toggle)
 assets/wallpapers/      fondo por defecto
 installer/ install.sh packages/ docs/
