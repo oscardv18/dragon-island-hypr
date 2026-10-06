@@ -1,6 +1,6 @@
 # dragon-island — HANDOFF
 
-> **Fecha:** 2026-10-05 · **Rama:** `main` · **Estado:** interfaz completa según la spec, **pendiente de prueba en EndeavourOS**.
+> **Fecha:** 2026-10-05 · **Rama:** `main` · **Estado:** interfaz completa según la spec; llavero único (KWallet) y bandeja listos, **pendiente de prueba en una sesión Hyprland**.
 > Todo se escribió y validó en Windows (sin Hyprland ni Quickshell). Lo que exige hardware real está en [docs/TESTING.md](docs/TESTING.md).
 
 ## 1. Resumen
@@ -118,6 +118,25 @@ Servicios completados para la interfaz: detalles de Wi‑Fi (`nmcli`), vincular 
   - **No verificado:** los nombres exactos de los campos del JSON de `hyprctl binds -j` en 0.56 (se asumen `modmask`, `key`, `description` y `submap`).
 - **Fondo propio:** `assets/wallpapers/dragon-island.jpg` (4K, paleta de la spec). El instalador lo enlaza en `~/.local/share/dragon-island/wallpaper.jpg` solo si no existe, y `hyprpaper.conf` apunta ahí.
 
+### Fase 7 — Llavero único (KWallet) y bandeja (`ec50bcd`, `3349a1b`)
+
+Diagnóstico, hecho en EndeavourOS desde Plasma con los logs de la sesión Hyprland anterior:
+
+- **Gestor de inicio:** es **Plasma Login Manager** (`plasmalogin`), no SDDM. Su PAM está en `/usr/lib/pam.d/plasmalogin` y ya trae `pam_kwallet5` (auth y session) y `pam_gnome_keyring`. No hay inicio de sesión automático.
+- **Por qué Proton VPN no abría:** se quedaba colgado al leer su sesión del Secret Service. gnome-keyring abrió un diálogo de `gcr-prompter` (22:15) que nadie respondió hasta cerrar la sesión. Sin bandeja Proton sí muestra su ventana; la bandeja no era la causa.
+- **Por qué se pedía la clave:** había dos llaveros. gnome-keyring tenía `org.freedesktop.secrets` y KWallet solo se desbloqueaba en Plasma, porque Hyprland no ejecutaba `pam_kwallet_init`. Brave cifra con KWallet (`v11`, `prev_desktop: KDE`) y en Hyprland caía a otro almacén.
+
+Cambios:
+
+- `autostart.lua`: `/usr/lib/pam_kwallet_init; exec quickshell` (encadenado, antes del shell).
+- `packages/pacman.txt`: `kwallet`, `kwallet-pam` y `kwalletmanager`.
+- `config/xdg-desktop-portal/hyprland-portals.conf`: el portal *Secret* va a `kwallet`, solo en Hyprland.
+- `config/brave/brave-flags.conf` (`--password-store=kwallet6`) → `~/.config/brave-flags.conf`. Lo lee el script `/usr/bin/brave` de `brave-bin`.
+- Instalador: despliega ambos archivos con respaldo, avisa si gnome-keyring está instalado y da las notas del llavero en la pantalla final. README → *Llavero / contraseñas*.
+- La cartera debe llamarse **`kdewallet`** (es la que abre `pam_kwallet5`), no `kwallet`. La del usuario ya cumple: Blowfish‑CBC + PBKDF2.
+- **Bandeja:** la cápsula pasa a estar entre la campana y el reloj. El menú se abre con `QsMenuAnchor` (antes `display()`). La lógica de iconos (`iconPath`, `?path=`, respaldo), clic, rueda horizontal y menú está en `Tray.qml`.
+- **En el sistema, lo hace el usuario:** `sudo pacman -R gnome-keyring`. Al quedar libre `org.freedesktop.secrets` lo toma `ksecretd`. Proton pedirá iniciar sesión una vez.
+
 ### Fase 5 — Cierre
 
 - **Instalador:** al terminar avisa si falta `qs`, si faltan las fuentes o si hay otro daemon de notificaciones (mako, dunst o swaync). Se quitó `qt6-5compat`, que ya no hace falta.
@@ -162,7 +181,9 @@ Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pint
 - **gum con la salida redirigida al log** (`exec > >(tee …)`).
 - **khal real:** que `printformats` y `list --day-format/--format` se comporten como dice su documentación (0.14).
 - **ddcutil 3.0 real:** que `detect` muestre `DRM connector` y los permisos tras reiniciar.
-- **Bandeja:** que el menú de `display()` aparezca bien colocado.
+- **Bandeja:** el menú con `QsMenuAnchor` (posición, cierre al pulsar fuera). Se probó en Plasma que la cápsula carga sin avisos y muestra Proton VPN entre la campana y el reloj; el menú no se probó.
+- **Llavero en Hyprland:** que `pam_kwallet_init` abra `kdewallet` sin pedir nada, que Brave vea sus cookies y que Proton recuerde la sesión. Hay que comprobarlo tras quitar gnome-keyring y volver a entrar (checklist en README / respuesta de la fase 4).
+- `shellcheck` no estaba instalado en la máquina: `install.sh` solo pasó `bash -n` y `--dry-run`.
 - **Portapapeles:** que las miniaturas decodificadas (`*.img` en caché) se carguen.
 
 ## 6. Decisiones
@@ -176,6 +197,7 @@ Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pint
 - Historial del portapapeles: panel propio en Quickshell (rofi ya no se instala).
 - Movimiento reducido: el usuario manda (`settings.json`); si no, se sigue a Plasma.
 - Blur: solo por reglas de capa (no `BackgroundEffect`), siguiendo la skill.
+- Llavero: **un único Secret Service, KWallet**, compartido con Plasma y abierto por PAM. Se quita gnome-keyring (lo hace el usuario); el repo no edita `/etc` ni PAM.
 
 ## 7. Siguientes pasos
 
