@@ -14,7 +14,6 @@ Item {
     id: root
 
     property bool shown: false
-    readonly property Item frameItem: card.visible ? card.frameItem : null   // blur region of the window
     readonly property var groups: shown ? Keybinds.search(search.text) : []
 
     // two balanced columns: heaviest groups first into the lighter column (weight = rows + header),

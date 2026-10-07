@@ -14,8 +14,6 @@ Item {
     property alias headerRight: headerRight.data
     property real t: 0
     property real originX: width    // scale origin: top-right for popovers, centre for launcher/power
-    readonly property Item frameItem: frame             // the visible card: the window's blur region follows it
-    readonly property real frameRadius: Theme.popoverRadius
 
     signal opened()
     signal closed()

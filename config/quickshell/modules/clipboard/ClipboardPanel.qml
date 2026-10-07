@@ -15,7 +15,6 @@ Item {
     id: root
 
     property bool shown: false
-    readonly property Item frameItem: card.visible ? card.frameItem : null   // blur region of the window
     property int current: 0
     readonly property var results: shown ? Clipboard.search(search.text) : []
 

@@ -19,7 +19,6 @@ Item {
     property string tab: "all"        // "all" | "static" | "animated"
     property int current: 0
     property int hovered: -1
-    readonly property Item frameItem: card.visible ? card.frameItem : null   // blur region of the window
 
     readonly property int columns: 3
     readonly property var results: shown ? Wallpaper.search(search.text, tab) : []

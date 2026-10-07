@@ -27,7 +27,7 @@ shell.qml ── Variants(screens) → modules/bar/Bar.qml                      
 Theme.qml · Icons.qml · ShellState.qml (raíz)      services/*.qml (datos)      components/*.qml (piezas)
 ```
 
-- **Cada componente en su capa (namespace propio)**, para poder dar reglas de blur / hyprglass distintas. Salvo el notch, todos llevan `BackgroundEffect.blurRegion` sobre sus tarjetas.
+- **Cada componente en su capa (namespace propio)**, para poder dar reglas de blur / hyprglass distintas. Con hyprglass en `mask_mode = "alpha"` el cristal sigue el alfa de cada ventana (no hay `BackgroundEffect.blurRegion`, ver §7g); el velo de los paneles es su propia ventana (`dragon-scrim`).
 - **Notch (`modules/island/`):**
   - `IslandWindow` mide el ancho de la pantalla y `Theme.notchWindowHeight` (270). `exclusionMode: Ignore`, máscara = solo la forma, `HyprlandFocusGrab` + Esc cierran.
   - `Notch.qml` hace la coreografía (`expanded`, `contentShown`, `appeared`) y anima ancho, alto y x con `SpringAnimation`. `NotchShape.qml` dibuja la silueta con `ShapePath` + `PathArc` (orejas cóncavas r = 12, esquinas inferiores 18 / 34).
@@ -263,6 +263,16 @@ Decisiones y trampas:
 - **Rendimiento con vídeo** (vídeo de prueba 720p H.264, portátil AMD Lucienne, `gpu_busy_percent`): GPU ~5 % con imagen → 14–20 % con vídeo + hyprglass; mpvpaper ~5–6 % de un núcleo; Hyprland ~8–9 %. `live_resample` desactivado en la barra ahorra ~3 puntos, igual que bajar `live_resample_fps` de 30 a 10: se dejó `live_resample_fps = 12` en `glass.lua` y el cristal sigue vivo.
 - Los fondos de prueba (GIF / mp4 sintéticos) se generaron con ffmpeg y se borraron.
 - Color dominante del fondo con `ColorQuantizer`: no (decisión del usuario).
+
+## 7g. Cristal por alfa, sin puntas en las esquinas (2026-10-06)
+
+- **Problema:** puntas cuadradas en las esquinas de islas, tarjetas y popovers. `BackgroundEffect.blurRegion` es una región de Wayland (solo rectángulos, el `radius` no se respeta) y hyprglass en `mask_mode = "region"` usa esa misma región.
+- **Solución:** se eliminó todo `BackgroundEffect.blurRegion` (y `frameItem` / `frames`); hyprglass usa `mask_mode = "alpha"`, `mask_threshold = 0.3` en barra, popovers, notificaciones, lanzador y el selector de fondos (que ahora tiene su propia ventana `dragon-wallpapers`, `WallpaperWindow.qml`). `glassAlpha` pasa a 0.50 (> umbral). Presets `dragon-bar` (hereda de `pomme`; blur 2.8 / 4 iteraciones, refracción 0.3, aberración 0.15, `bevel` 0.25 de 2 px, tinte `0xc50ed214`, `adaptive_dim` 0.85) y `dragon-panel` (hereda de `dragon-bar`, más opaco). Notch y velo con `exclude = true`.
+- **Trampa del modo alfa:** el velo negro al 45 % de los modales (alfa > umbral) se habría llenado de cristal en toda la pantalla; ahora es otra ventana (`ScrimWindow.qml`, `dragon-scrim`, capa Top, máscara vacía, sin blur). Además las ventanas de pantalla completa en reposo (popovers, lanzador, selector) se dibujaban cada fotograma en la máscara de alfa (≈ 3,8 Mpx de cristal por fotograma, GPU 20 %): ahora están **desmapeadas** (`visible: open || lingering`) mientras no hay nada abierto (0,04 Mpx, GPU ≈ 10–13 % en reposo con el navegador reproduciendo).
+- **Texto sobre fondos claros:** con un fondo casi blanco las islas quedaban grises y el texto tenue casi ilegible; `adaptive_dim` 0.85 / 0.9 y `dark.brightness` 0.74 / 0.72 lo arreglan (comprobado con capturas sobre un degradado claro).
+- **Respaldo:** las reglas nativas (`ignore_alpha` 0.3) se crean en `rules.lua` solo `if not (hl.plugin and hl.plugin.hyprglass)`; se probó descargando el plugin (`hyprctl plugin unload …/HyprGlass/hyprglass.so` + `hyprctl reload`): esquinas redondas y huecos limpios también con blur nativo. Se sustituyen los handles `DragonBlurRules` de §7e.
+- **Rendimiento con vídeo** (`hyprctl hyprglass stats`, `gpu_busy_percent`; cifras con un navegador reproduciendo vídeo): imagen estática 2 dibujados de capa por fotograma, GPU ≈ 13 %; vídeo con `live_resample_fps = 8`: ≈ 23 %; vídeo con `live_resample = false` en la barra: ≈ 25 %. Desactivar `live_resample` no ahorró nada y congelaría el cristal tras las islas, así que se deja activo con el tope de 8 fps.
+- **Migración:** no aplica. Todo vive en archivos del repo (symlink o `update.sh` en modo copia) y no se eliminó ningún archivo; `update.sh` ya reinicia Quickshell y hace `hyprctl reload`.
 
 ## 8. Cómo depurar rápido
 

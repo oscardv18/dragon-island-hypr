@@ -2,8 +2,8 @@
 // dragon-island — NotificationWindow.qml
 // Notification popups (namespace "dragon-notifications"): up to 3 cards under the right bar island, on
 // the focused monitor only, hidden while a panel is open. Each card is its OWN layer window, as big as
-// the card, so the glass / blur region is exactly the rounded card and the 8 px between cards stays clear
-// (a single window with several regions gets one bounding box). Each card expires after Theme.durNotif
+// the card: around it there is only alpha 0, so the glass / blur (alpha mask, see glass.lua) follows the
+// rounded card and the 8 px between cards stays clear. Each card expires after Theme.durNotif
 // (critical: until dismissed); hovering pauses the timer. While DND is on, Notifs.popups stays empty.
 // =============================================================================
 import Quickshell
@@ -61,9 +61,6 @@ Scope {
             WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
             mask: Region { item: wrap }
-
-            // glass / blur only behind the card
-            BackgroundEffect.blurRegion: Region { item: wrap; radius: Theme.rowRadius + Theme.spacingXs }
 
             Item {
                 id: wrap

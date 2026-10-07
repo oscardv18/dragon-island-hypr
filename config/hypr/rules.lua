@@ -33,21 +33,21 @@ hl.window_rule({
     center = true,
 })
 
--- Blur behind the Quickshell layers (native blur, see decoration.blur in look.lua).
--- One namespace per component (set in the .qml windows); every bar island, popover card and notification
--- card is its own tight surface with a BackgroundEffect.blurRegion, so only they get blurred.
--- ignore_alpha = 0.35: pixels with less alpha than that are not blurred, so transparent parts stay clear.
--- The notch (dragon-island) is opaque black: no blur rule, ever.
--- ONE system per layer: when hyprglass is loaded, glass.lua disables these rules (handles kept below)
--- and hyprglass blurs the same layers; without the plugin these rules are the blur.
-DragonBlurRules = {}
-for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher" }) do
-    DragonBlurRules[ns] = hl.layer_rule({
-        name         = "blur-" .. ns,
-        match        = { namespace = "^" .. ns .. "$" },
-        blur         = true,
-        ignore_alpha = 0.35,
-    })
+-- Blur behind the Quickshell layers: native fallback, ONLY when hyprglass is not loaded (never two blurs
+-- on one layer; with hyprglass, glass.lua does the layers). Every bar island, popover card and notification
+-- card is drawn by a Quickshell window that is alpha 0 around its rounded rectangle, so the blur follows
+-- the rounded shape (no BackgroundEffect region: Wayland regions are rectangles and left square tips).
+-- ignore_alpha = 0.3: pixels with less alpha than that are not blurred. The notch (dragon-island) is
+-- opaque black: no blur rule, ever. dragon-scrim (the 45 % black scrim) never gets blur either.
+if not (hl.plugin and hl.plugin.hyprglass) then
+    for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher", "dragon-wallpapers" }) do
+        hl.layer_rule({
+            name         = "blur-" .. ns,
+            match        = { namespace = "^" .. ns .. "$" },
+            blur         = true,
+            ignore_alpha = 0.3,
+        })
+    end
 end
 
 -- First-run setup terminal: floating and centered
@@ -62,7 +62,7 @@ hl.window_rule({
 -- The notch, popovers and panels animate themselves in QML: no compositor layer animation
 hl.layer_rule({
     name    = "no-anim-dragon-island",
-    match   = { namespace = "^dragon-(island|popover|launcher|notifications)$" },
+    match   = { namespace = "^dragon-(island|popover|launcher|notifications|wallpapers|scrim)$" },
     no_anim = true,
 })
 

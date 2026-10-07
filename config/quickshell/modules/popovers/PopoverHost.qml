@@ -14,9 +14,6 @@ Item {
     readonly property real popTop: Theme.barMarginTop + Theme.barHeight + Theme.popoverGap
     readonly property real rightEdge: ShellState.anchorRight >= 0 ? ShellState.anchorRight : width - Theme.barMarginSide
 
-    // frame (visible card) of each popover, for the window's blur region; null while hidden
-    readonly property var frames: [perf, wifi, bt, audio, battery, notifs, calendar].map(p => p.visible ? p.frameItem : null)
-
     function xFor(w: real): real {
         return Math.max(Theme.barMarginSide, Math.min(width - w - Theme.barMarginSide, rightEdge - w));
     }

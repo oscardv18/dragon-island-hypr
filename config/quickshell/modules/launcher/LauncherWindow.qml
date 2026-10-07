@@ -1,7 +1,8 @@
 // =============================================================================
 // dragon-island — LauncherWindow.qml
 // Overlay for the modal panels (namespace "dragon-launcher"), one per monitor: launcher, power menu,
-// clipboard history, keybinds cheat-sheet, wallpaper picker. Black 45 % scrim, click outside / Esc closes.
+// clipboard history, keybinds cheat-sheet. Click outside / Esc closes; the black 45 % scrim is its own window
+// (ScrimWindow, namespace "dragon-scrim"): it must not share a layer with the glass (alpha mask > threshold).
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
@@ -11,7 +12,6 @@ import "../../services"
 import "../power"
 import "../clipboard"
 import "../keybinds"
-import "../wallpapers"
 
 PanelWindow {
     id: win
@@ -29,27 +29,16 @@ PanelWindow {
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
-    readonly property bool open: ["launcher", "power", "clipboard", "keybinds", "wallpapers"].indexOf(panel) >= 0
+    readonly property bool open: ["launcher", "power", "clipboard", "keybinds"].indexOf(panel) >= 0
 
     mask: open ? null : idleMask
     Region { id: idleMask }
 
-    // Blur (native and hyprglass) only behind the visible card, not behind the whole scrim
-    BackgroundEffect.blurRegion: Region {
-        Region { item: launcher.frameItem; radius: Theme.popoverRadius }
-        Region { item: clipboard.frameItem; radius: Theme.popoverRadius }
-        Region { item: keybinds.frameItem; radius: Theme.popoverRadius }
-        Region { item: power.frameItem; radius: Theme.popoverRadius }
-        Region { item: wallpapers.frameItem; radius: Theme.popoverRadius }
-    }
-
-    Rectangle {
-        anchors.fill: parent
-        color: Theme.scrim
-        opacity: win.open ? 1 : 0
-        visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: Theme.durScrim; easing.type: Easing.OutCubic } }
-    }
+    // Unmapped while nothing is open (and for the close animation after): an idle full-screen layer would
+    // still be rendered into hyprglass' alpha mask every frame (GPU), for nothing
+    visible: open || lingering.running
+    onOpenChanged: if (!open) lingering.restart()
+    Timer { id: lingering; interval: Theme.durPopover + 200 }
 
     MouseArea {
         anchors.fill: parent
@@ -69,7 +58,6 @@ PanelWindow {
         if (panel === "launcher") launcher.focusSearch();
         else if (panel === "clipboard") clipboard.focusSearch();
         else if (panel === "keybinds") keybinds.focusSearch();
-        else if (panel === "wallpapers") wallpapers.focusSearch();
         else if (panel === "power") power.focusMenu();
         else if (open) keys.forceActiveFocus();
     })
@@ -90,12 +78,6 @@ PanelWindow {
         id: keybinds
         anchors.fill: parent
         shown: win.panel === "keybinds"
-    }
-
-    WallpaperPanel {
-        id: wallpapers
-        anchors.fill: parent
-        shown: win.panel === "wallpapers"
     }
 
     PowerMenu {

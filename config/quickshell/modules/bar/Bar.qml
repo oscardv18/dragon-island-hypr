@@ -1,10 +1,10 @@
 // =============================================================================
 // dragon-island — Bar.qml
 // Floating bar (10 px from the top, 14 px from the sides, height 40) made of two side islands.
-// Each island is its own layer window of exactly the island's size (namespace "dragon-bar"), because
-// hyprglass / the compositor treat the union of several blur regions as ONE bounding box: with a single
-// full-width window the gap between the islands got glass too. Per-island windows have nothing in the
-// gaps, so they stay clean, and each island's blur region is just its rounded rectangle.
+// Each island is its own layer window of exactly the island's size (namespace "dragon-bar"), fully
+// transparent (alpha 0) around the rounded island: hyprglass masks by alpha (mask_mode = "alpha"), so the
+// glass has the island's rounded corners and the gaps between islands stay clean. No BackgroundEffect
+// blurRegion: a Wayland region can only be rectangles, which left square tips at the corners.
 // A third, 1 px high transparent window ("dragon-bar-zone") only reserves the bar's space so tiled
 // windows start below it; it has an empty input mask and no blur.
 // =============================================================================
@@ -71,9 +71,6 @@ Scope {
         WlrLayershell.namespace: "dragon-bar"
         WlrLayershell.layer: WlrLayer.Top
 
-        // glass / blur only behind the island, with its radius
-        BackgroundEffect.blurRegion: Region { item: leftIsland; radius: Theme.barIslandRadius }
-
         LeftIsland {
             id: leftIsland
             bar: bar
@@ -97,8 +94,6 @@ Scope {
 
         WlrLayershell.namespace: "dragon-bar"
         WlrLayershell.layer: WlrLayer.Top
-
-        BackgroundEffect.blurRegion: Region { item: rightIsland; radius: Theme.barIslandRadius }
 
         RightIsland {
             id: rightIsland

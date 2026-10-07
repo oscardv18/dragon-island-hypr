@@ -15,6 +15,7 @@ import "modules/island"
 import "modules/popovers"
 import "modules/launcher"
 import "modules/notifications"
+import "modules/wallpapers"
 import "debug"
 
 ShellRoot {
@@ -48,6 +49,16 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { LauncherWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { WallpaperWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { ScrimWindow {} }
     }
 
     Variants {
