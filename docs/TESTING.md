@@ -191,7 +191,7 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 
 - [ ] `hyprctl configerrors` vacío; `hyprctl getoption decoration:blur:size` = 8.
 - [ ] Sin hyprglass: las islas de la barra se ven acrílicas (60 %, borde blanco 8 %) y el fondo se desenfoca **solo detrás de las islas**, no en los huecos. Lo mismo con un popover, una notificación (`notify-send`) y el lanzador (solo tras la tarjeta, no tras el scrim).
-- [ ] El notch sigue negro opaco, sin blur.
+- [ ] El notch sigue negro opaco, sin blur ni halo alrededor. Los huecos entre las islas de la barra (y entre las tarjetas de notificación) muestran el fondo limpio: ninguna franja de lado a lado.
 - [ ] kitty se ve al 85 % de opacidad; en pantalla completa (SUPER+SHIFT+F) y con mpv / vlc las ventanas quedan opacas.
 - [ ] Con hyprglass (`./install.sh --glass`): `hyprctl plugin list` muestra hyprglass **0.9.1**; `hyprctl getoption plugin:hyprglass:layers:enabled` → `set: true`; `hyprctl hyprglass status` → `layers: on`.
 - [ ] La barra, los popovers, las notificaciones y el lanzador tienen cristal con tinta magenta suave y el texto se lee; el notch (`dragon-island`) sigue negro.

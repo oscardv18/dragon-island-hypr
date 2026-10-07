@@ -19,11 +19,11 @@ Fuente de verdad: la skill `.agents/skills/dragon-island` (versiones, arquitectu
 ## 2. Arquitectura del shell
 
 ```
-shell.qml ── Variants(screens) → modules/bar/Bar.qml                       (capa Top,     "dragon-bar")
+shell.qml ── Variants(screens) → modules/bar/Bar.qml                       (Scope: una ventana por isla, capa Top, "dragon-bar" + "dragon-bar-zone" que reserva el hueco)
           ├─ Variants(screens) → modules/island/IslandWindow.qml           (capa Overlay, "dragon-island")  → Notch.qml
           ├─ Variants(screens) → modules/popovers/PopoverWindow.qml        (capa Overlay, "dragon-popover") → PopoverHost (7 popovers)
           ├─ Variants(screens) → modules/launcher/LauncherWindow.qml       (capa Overlay, "dragon-launcher") → launcher · power · portapapeles · atajos
-          └─ Variants(screens) → modules/notifications/NotificationWindow.qml (capa Overlay, "dragon-notifications")
+          └─ Variants(screens) → modules/notifications/NotificationWindow.qml (Scope: una ventana por tarjeta, capa Overlay, "dragon-notifications")
 Theme.qml · Icons.qml · ShellState.qml (raíz)      services/*.qml (datos)      components/*.qml (piezas)
 ```
 
@@ -243,6 +243,15 @@ Decisiones y trampas:
 - `shellcheck` no estaba instalado: se usó `shellcheck-py` en un venv (0.11.0). `update.sh`, `install.sh`, `installer/*.sh` y `migrations/*.sh` pasan `shellcheck -x`.
 - **zsh + starship (importados, no reescritos):** `config/zsh/.zshrc` es el `.zshrc` del usuario (oh-my-zsh, `plugins=(git zsh-autosuggestions zsh-syntax-highlighting)`, `eval "$(starship init zsh)"`) más la línea que carga `~/.zshrc.local`; no había secretos que mover. oh-my-zsh y los dos plugins son clones de git (`ensure_omz` en `installer/lib.sh`); `zsh` y `starship` salen de `extra` (`@zsh` en `packages/pacman.txt`; starship ya estaba en `/usr/local/bin` y `update.sh` no lo reinstala si el comando existe). Colores de starship pasados a la paleta (decisión del usuario). Componente opcional `zsh` en el instalador y migración `002-zsh-starship.sh` (backup + symlinks, `chsh` con confirmación). `kitty.conf` abre zsh si existe.
 - Los cambios locales sin commit (también los de `.agents/skills`) detienen `update.sh`: es lo pedido.
+
+## 7e. Blur: un solo sistema por capa y una ventana por isla / tarjeta (2026-10-06)
+
+- **Síntoma:** franja gris‑morada de lado a lado de la barra, con las islas dentro de un rectángulo.
+- **Diagnóstico:** `hyprctl eval 'hl.plugin.hyprglass.config({ layers = { enabled = false } })'` hacía desaparecer la franja (el blur nativo no pintaba nada visible); `hyprctl keyword` **no funciona en modo Lua**, usa `hyprctl eval`. Con **una** región (solo la isla izquierda) el cristal quedaba en esa isla: hyprglass (y el protocolo) usan la **caja envolvente de la unión** de las regiones de blur, así que dos islas disjuntas en una ventana cubren también el hueco.
+- **Corrección:** `Bar.qml` es ahora un `Scope` con una ventana por isla (namespace `dragon-bar`, tamaño exacto de la isla, una sola región con su radio) y una ventana transparente de 1 px (`dragon-bar-zone`, máscara vacía) que solo reserva el espacio. Cada tarjeta de notificación es su propia ventana (`NotificationWindow.qml`, sin `NotificationPopups.qml`), así los 8 px entre tarjetas quedan limpios. Popovers y lanzador muestran una sola tarjeta a la vez, por lo que su región ya era exacta.
+- **Un sistema por capa:** `rules.lua` guarda los handles de las reglas nativas (`ignore_alpha` 0.35) en `DragonBlurRules`; `glass.lua` las desactiva (`:set_enabled(false)`) para las capas que pasa a hyprglass. Sin el plugin quedan activas. El notch no tiene regla de blur y está excluido en hyprglass (`exclude = true`).
+- **Verificado** (píxeles de los huecos y capturas): con hyprglass y con el plugin descargado (`hyprctl plugin unload …/HyprGlass/hyprglass.so` + `hyprctl reload`; luego `plugin load`) los huecos entre islas y entre tarjetas quedan limpios y el notch negro sin halo.
+- Migración `003-remove-stale-qml.sh`: borra de una copia de `~/.config/quickshell` los QML eliminados (`update.sh` nunca borra).
 
 ## 8. Cómo depurar rápido
 

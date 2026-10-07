@@ -31,9 +31,11 @@ if hl.plugin and hl.plugin.hyprglass then
         tint_color           = 0xc50ed214,
     })
 
-    -- Layers that get glass (the preset applies to each namespace)
+    -- Layers that get glass (the preset applies to each namespace). One system per layer: the native
+    -- blur rule of rules.lua is switched off for the same namespace (hyprglass replaces it anyway).
     for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher" }) do
         hg.layer(ns, { preset = "dragon-bar", mask_mode = "region" })
+        if DragonBlurRules and DragonBlurRules[ns] then DragonBlurRules[ns]:set_enabled(false) end
     end
 
     -- The notch must stay opaque black
