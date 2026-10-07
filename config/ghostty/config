@@ -1,0 +1,55 @@
+# =============================================================================
+# dragon-island — Ghostty (main terminal). Sweet / Garuda Dragonized palette (references/design.md)
+# Options checked with `ghostty +show-config --default --docs`.
+# =============================================================================
+
+# Typography
+font-family = JetBrains Mono Nerd Font
+font-size = 11.5
+
+# Transparency: Ghostty only makes its background see-through. The blur / liquid glass behind it is
+# done by hyprglass (config/hypr/glass.lua, window tag hyprglass_enabled), so Ghostty's own blur stays off.
+background-opacity = 0.35
+background-blur = false
+
+# Window decorations. Hyprland's hyprbars already draws a title bar with the close / fullscreen / float
+# buttons on every window; Ghostty's own GTK header bar would be a second one. `none` (client-side
+# decorations off) keeps one consistent bar and gives the terminal the whole window. (The alternative,
+# `hyprbars:no_bar` for Ghostty, would remove the bar and the window controls instead.)
+window-decoration = none
+window-padding-x = 12
+window-padding-y = 10
+confirm-close-surface = false
+quit-after-last-window-closed = true
+
+# Cursor
+cursor-style = bar
+cursor-style-blink = true
+cursor-color = #c50ed2
+cursor-text = #0b0c14
+
+# Selection and colors
+foreground = #e6e8ef
+background = #0b0c14
+selection-foreground = #ffffff
+selection-background = #7c3aed
+
+palette = 0=#161925
+palette = 1=#ed254e
+palette = 2=#06c993
+palette = 3=#f9ae58
+palette = 4=#7c3aed
+palette = 5=#c50ed2
+palette = 6=#00c1e4
+palette = 7=#c3c7d1
+palette = 8=#3a3d55
+palette = 9=#f15274
+palette = 10=#2fdba9
+palette = 11=#fbc27f
+palette = 12=#945df0
+palette = 13=#db3fe6
+palette = 14=#38d3ef
+palette = 15=#e6e8ef
+
+# The shell is your login shell (zsh after the "Shell: zsh + starship" component); shell integration is automatic
+shell-integration = detect

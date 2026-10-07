@@ -8,13 +8,15 @@
  *   - panelScreen: string [readonly] (monitor name where the panel opens; "" = focused monitor)
  *   - panels: list<string> [readonly] ("dashboard" = the expanded notch)
  *   - anyOpen: bool [readonly]
- *   - anchorRight: real [readonly] (screen x of the right edge of the capsule that opened the
- *                   popover; -1 when opened by IPC → popover aligns to the bar's right edge)
+ *   - anchorX: real [readonly] (screen x of the capsule edge that opened the popover: its right edge
+ *                   for the right island, its left edge for the left one; -1 when opened by IPC →
+ *                   the popover aligns to the bar's right edge)
+ *   - anchorSide: string [readonly] ("right" | "left")
  *
  * Functions:
  *   - toggle(name: string, screenName: string = ""): void
  *   - open(name: string, screenName: string = ""): void
- *   - toggleAt(name: string, screenName: string, anchorRight: real): void (bar capsules)
+ *   - toggleAt(name: string, screenName: string, anchorX: real, side: string): void (bar capsules)
  *   - close(): void
  *   - current(): string
  *   - isOpenOn(name: string, screenName: string): bool (true if `name` is open on that monitor)
@@ -36,7 +38,8 @@ Singleton {
     property string openPanel: "none"
     property string panelScreen: ""
     readonly property bool anyOpen: openPanel !== "none"
-    property real anchorRight: -1
+    property real anchorX: -1
+    property string anchorSide: "right"
 
     function _valid(name: string): bool {
         if (panels.indexOf(name) >= 0) return true;
@@ -46,7 +49,8 @@ Singleton {
 
     function open(name: string, screenName): void {
         if (!_valid(name)) return;
-        root.anchorRight = -1;
+        root.anchorX = -1;
+        root.anchorSide = "right";
         root.panelScreen = screenName || Hyprland.focusedMonitor?.name || "";
         root.openPanel = name;
     }
@@ -57,10 +61,11 @@ Singleton {
         else root.open(name, scr);
     }
 
-    function toggleAt(name: string, screenName: string, anchorRight: real): void {
+    function toggleAt(name: string, screenName: string, anchorX: real, side: string): void {
         if (root.openPanel === name && root.panelScreen === screenName) { root.close(); return; }
         root.open(name, screenName);
-        root.anchorRight = anchorRight;
+        root.anchorX = anchorX;
+        root.anchorSide = side;
     }
 
     function close(): void {

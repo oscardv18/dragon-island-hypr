@@ -1,5 +1,6 @@
 // Text with the UI typography defaults (Outfit). `caption` = 11 px uppercase, tracked, dim.
 import QtQuick
+import QtQuick.Effects
 import ".."
 
 Text {
@@ -7,6 +8,7 @@ Text {
     property bool mono: false
     property bool caption: false
     property int weight: Theme.weightRegular
+    property bool shadow: false     // subtle drop shadow so text stays legible on glass (bar islands)
 
     color: caption ? Theme.textDim : Theme.text
     font.family: mono ? Theme.fontMono : Theme.fontUi
@@ -18,4 +20,13 @@ Text {
     maximumLineCount: 1
     textFormat: Text.PlainText
     verticalAlignment: Text.AlignVCenter
+
+    layer.enabled: shadow
+    layer.effect: MultiEffect {
+        shadowEnabled: true
+        shadowColor: Theme.textShadow
+        shadowBlur: 0.3
+        shadowVerticalOffset: 1
+        shadowHorizontalOffset: 0
+    }
 }

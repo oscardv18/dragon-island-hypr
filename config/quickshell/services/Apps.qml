@@ -12,7 +12,7 @@
  *       empty query → most launched first, then alphabetical
  *       otherwise fuzzy: name prefix > word prefix > substring > subsequence,
  *       also matching genericName / keywords / comment; ties broken by launch count
- *   - launch(entry: DesktopEntry): void (terminal apps run inside kitty)
+ *   - launch(entry: DesktopEntry): void (terminal apps run inside Ghostty)
  *   - launchById(id: string): void
  *   - iconFor(entry: DesktopEntry): string
  *
@@ -83,7 +83,7 @@ Singleton {
 
     function launch(entry): void {
         if (!entry) return;
-        if (entry.runInTerminal) Quickshell.execDetached(["kitty", "-e"].concat(entry.command));
+        if (entry.runInTerminal) Quickshell.execDetached(["ghostty", "-e"].concat(entry.command));
         else entry.execute();
         const u = Object.assign({}, root.usage);
         u[entry.id] = (u[entry.id] || 0) + 1;

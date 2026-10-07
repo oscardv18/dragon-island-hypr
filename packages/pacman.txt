@@ -20,6 +20,7 @@ gnome-keyring
 libsecret
 # Terminal & default file manager
 kitty
+ghostty
 dolphin
 # Clipboard, screenshots, recording, night light
 wl-clipboard

@@ -22,7 +22,7 @@ Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda 
 | **Notificaciones** | Popups (hasta 3, bajo la isla derecha), un peek del notch y el centro de notificaciones |
 | **Notch expandido** | Pestaña Nook: música, tira de calendario, toggles rápidos (Wi‑Fi, Bluetooth, No molestar, luz nocturna) y estadísticas. Pestaña Tray: la bandeja del sistema |
 | **Popovers** | Rendimiento, Wi‑Fi, Bluetooth, Sonido (con mezclador por app), Batería, Notificaciones y Calendario (eventos de **khal**) |
-| **Extras** | Lanzador con búsqueda difusa, historial del portapapeles con miniaturas, menú de energía, brillo de monitores externos por DDC/CI, movimiento reducido, fondo de pantalla propio, hyprlock, hypridle, kitty con el tema |
+| **Extras** | Lanzador con búsqueda difusa, historial del portapapeles con miniaturas, menú de energía, brillo de monitores externos por DDC/CI, movimiento reducido, fondo de pantalla propio, hyprlock, hypridle, Ghostty con el tema (cristal líquido) |
 
 Versiones de referencia: Hyprland 0.56.2, Quickshell 0.3.1 y gum 2.x (Arch `extra`, octubre de 2026).
 
@@ -42,7 +42,7 @@ El instalador:
 1. Comprueba el sistema y ofrece `pacman -Syu` antes de instalar nada.
 2. Te deja elegir los componentes: `core` (Hyprland y herramientas), `shell` (Quickshell y servicios), `plugins` (compilación de hyprpm), `tools` (opcionales: Seahorse), `fonts` y `services` (NetworkManager, bluetooth, power-profiles-daemon).
 3. Instala los paquetes de [`packages/pacman.txt`](packages/pacman.txt) y [`packages/aur.txt`](packages/aur.txt) (con `yay` o `paru`).
-4. Enlaza (o copia) `config/hypr`, `config/kitty` y `config/quickshell` en `~/.config`, además de `~/.config/brave-flags.conf` y `~/.config/xdg-desktop-portal/hyprland-portals.conf` (ver [Llavero](#llavero--contraseñas)). Lo que ya existía va a `~/.local/state/dragon-island/backups/<fecha>/`.
+4. Enlaza (o copia) `config/hypr`, `config/ghostty`, `config/kitty` y `config/quickshell` en `~/.config`, además de `~/.config/brave-flags.conf` y `~/.config/xdg-desktop-portal/hyprland-portals.conf` (ver [Llavero](#llavero--contraseñas)). Lo que ya existía va a `~/.local/state/dragon-island/backups/<fecha>/`.
 5. Es **idempotente**: si lo ejecutas otra vez, no cambia nada.
 
 Después, cierra sesión, elige **Hyprland** en SDDM y entra. En el primer inicio se abre una terminal que compila hyprbars y hyprfocus (`hyprpm` pedirá tu contraseña).
@@ -159,13 +159,14 @@ Dos capas, y la segunda es opcional. Ambas trabajan por **alfa**: el blur / cris
 
 1. **Blur nativo de Hyprland (base, sin plugins).** `decoration.blur` en `config/hypr/look.lua` (size 8, passes 3, vibrancy 0.17, noise 0.02, contrast 0.9, brightness 0.85, popups) y reglas de capa con `blur = true` e `ignore_alpha = 0.3` para `dragon-bar`, `dragon-popover`, `dragon-notifications`, `dragon-launcher` y `dragon-wallpapers` (`config/hypr/rules.lua`). Esas reglas **solo se crean si hyprglass no está cargado**: nunca hay dos blurs sobre la misma capa. El notch (`dragon-island`) queda negro opaco, sin blur, y el velo oscuro de los paneles (`dragon-scrim`) tampoco lleva blur.
 2. **hyprglass (acrílico / liquid glass real, opcional).** Marca la casilla **«Efecto cristal (hyprglass)»** del instalador (o `./install.sh --glass`): ejecuta `hyprpm add https://github.com/hyprnux/hyprglass` y `hyprpm enable hyprglass` en una terminal visible. hyprpm instala la v0.9.1, la fijada para Hyprland 0.56.2. `config/hypr/glass.lua` (todo dentro de `if hl.plugin.hyprglass then … end`) define dos presets y usa `mask_mode = "alpha"`, `mask_threshold = 0.3` en cada capa:
-   - `dragon-bar` (barra): hereda de `pomme`, `blur_strength` 2.8, 4 iteraciones, refracción y aberración moderadas, un `bevel` fino como borde y tinte magenta muy sutil; `adaptive_dim` alto para que el texto se lea también sobre fondos claros.
+   - `dragon-bar` (barra): hereda de `pomme`, `blur_strength` 2.8, 4 iteraciones, `refraction_strength` 0.8, `bevel_strength` 0.5, `specular_strength` 0.8 y tinte magenta muy sutil; `adaptive_dim` 0.6 para que el texto se lea también sobre fondos claros.
    - `dragon-panel` (popovers, notificaciones, lanzador y selector de fondos): el mismo cristal, algo más opaco.
-   - El notch y el velo están excluidos (`exclude = true`); las pantallas completas y los reproductores de vídeo llevan `+hyprglass_disabled`.
-3. **Cómo se dibuja en Quickshell.** Cada isla de la barra y cada tarjeta de notificación es su propia ventana, transparente (alfa 0) alrededor de un Rectangle redondeado con `Theme.glassBg` (`surface0` al 50 %; `Theme.glassAlpha` entre 0.40 y 0.55, siempre por encima del umbral 0.3) y un borde de 1 px blanco al 8 %. Popovers y tarjetas van al 82 %. Las ventanas de pantalla completa (popovers, lanzador, selector) están desmapeadas mientras no hay nada abierto: dejarlas dibujándose costaba GPU. Nada se sale de las formas (sin sombras ni halos).
+   - `dragon-liquid` (solo **Ghostty**): hereda de `glass`, con refracción marcada (`refraction_strength` 5.0, `edge_thickness` 0.10, `lens_distortion` 0.6), aberración 0.8, brillo especular, fresnel y `bevel` altos, `self_sample` 0.2 y un tinte oscuro suave. El resto de ventanas no tiene cristal: `hg.config({ enabled = false })` y Ghostty se activa con la etiqueta `+hyprglass_enabled` (y `+hyprglass_disabled` en pantalla completa).
+   - El notch y el velo están excluidos (`exclude = true`).
+3. **Cómo se dibuja en Quickshell.** Cada isla de la barra y cada tarjeta de notificación es su propia ventana, transparente (alfa 0) alrededor de un Rectangle redondeado con `Theme.glassBg` (`surface0` al 30 %; `Theme.glassAlpha` entre 0.25 y 0.35) y un borde de 1 px blanco al 8 %; popovers, notificaciones y paneles van al 42 % (`Theme.popoverAlpha`, 35–45 %). Ambos quedan por encima del `mask_threshold` de 0.15. Los textos e iconos de la barra llevan una sombra sutil (`MultiEffect`, solo dentro de las islas) para leerse sobre el cristal. Las ventanas de pantalla completa (popovers, lanzador, selector) están desmapeadas mientras no hay nada abierto: dejarlas dibujándose costaba GPU. Nada se sale de las formas (sin sombras ni halos).
 4. **Respaldo:** sin el plugin, o si una actualización de Hyprland lo rompe, todo se ve bien con el blur nativo y también respeta las esquinas. El gancho de capas de hyprglass usa una función privada de Hyprland, así que puede fallar tras actualizar.
 5. **Comprobación:** `hyprctl plugin list` · `hyprctl getoption plugin:hyprglass:layers:enabled` · `hyprctl hyprglass status` · `hyprctl hyprglass stats`. Con un fondo de vídeo el recálculo del cristal se limita a 8 fps (`live_resample_fps`). Quitarlo: `hyprpm disable hyprglass`.
-6. kitty usa `background_opacity 0.85`. Para opacidad por app hay reglas comentadas al final de `rules.lua`; las ventanas en pantalla completa y los reproductores de vídeo siempre quedan opacos.
+6. Ghostty (`config/ghostty/config`) usa `background-opacity = 0.35` sobre el cristal; su propio blur está apagado y `window-decoration = none` deja la única barra de título de hyprbars. Para opacidad por app hay reglas comentadas al final de `rules.lua`; las ventanas en pantalla completa y los reproductores de vídeo siempre quedan opacos.
 
 ## Shell: zsh + starship
 
@@ -173,7 +174,7 @@ Componente opcional del instalador (casilla «Shell: zsh + starship» o `--zsh`)
 
 - Lo privado (tokens, alias personales, rutas) va en `~/.zshrc.local`, fuera del repo: el `.zshrc` lo carga si existe.
 - Los colores de starship usan la paleta Dragonized (accent, violetSoft, cyan, ok, warn, error).
-- kitty abre zsh si está instalado (si no, tu shell de login). Plasma no se toca: solo cambian tus dotfiles de usuario.
+- Ghostty abre tu shell de login (zsh tras el componente). Plasma no se toca: solo cambian tus dotfiles de usuario.
 - En un sistema ya instalado lo aplica la migración `002-zsh-starship.sh` con `./update.sh`.
 
 ## Estructura

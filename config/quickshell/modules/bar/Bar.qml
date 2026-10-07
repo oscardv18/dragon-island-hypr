@@ -21,14 +21,12 @@ Scope {
     readonly property string screenName: modelData?.name ?? ""
     readonly property real screenWidth: modelData?.width ?? 0
 
-    // x (screen-local) of an item's right edge: popovers align their right edge to it
-    function anchorRightOf(item, windowX: real): real {
-        return item.mapToItem(null, item.width, 0).x + windowX;
-    }
-
-    function openFrom(name: string, item): void {
-        const rightSide = item.Window.window === rightWindow;
-        ShellState.toggleAt(name, bar.screenName, anchorRightOf(item, rightSide ? rightWindow.screenX : leftWindow.screenX));
+    // Popover under a capsule. `item` is the capsule, `windowX` the screen x of the island's window, `side`
+    // "right" (right island: popover's right edge on the capsule's right edge) or "left" (left edges).
+    // mapToItem(null, …) is relative to the capsule's own window, hence + windowX for screen coordinates.
+    function openFrom(name: string, item, side: string, windowX: real): void {
+        const x = side === "left" ? item.mapToItem(null, 0, 0).x : item.mapToItem(null, item.width, 0).x;
+        ShellState.toggleAt(name, bar.screenName, x + windowX, side);
     }
 
     function isOpen(name: string): bool {
@@ -74,6 +72,7 @@ Scope {
         LeftIsland {
             id: leftIsland
             bar: bar
+            windowX: leftWindow.screenX
             // never reach the centre, where the collapsed notch sits
             maxWidth: Math.max(0, (bar.screenWidth - Theme.barMarginSide * 2) / 2 - Theme.notchReserve / 2 - Theme.barIslandGap)
         }
@@ -98,6 +97,7 @@ Scope {
         RightIsland {
             id: rightIsland
             bar: bar
+            windowX: rightWindow.screenX
         }
     }
 }

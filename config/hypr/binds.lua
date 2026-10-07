@@ -17,7 +17,7 @@ local function bind(keys, dispatcher, description, flags)
 end
 
 -- Core applications
-bind(mainMod .. " + Return", hl.dsp.exec_cmd("kitty"),                              "Aplicaciones · Terminal (kitty)")
+bind(mainMod .. " + Return", hl.dsp.exec_cmd("ghostty"),                            "Aplicaciones · Terminal (Ghostty)")
 bind(mainMod .. " + E",      hl.dsp.exec_cmd("dolphin"),                            "Aplicaciones · Archivos (Dolphin)")
 bind(mainMod .. " + Space",  hl.dsp.exec_cmd("qs ipc call shell toggle launcher"),  "Aplicaciones · Lanzador")
 

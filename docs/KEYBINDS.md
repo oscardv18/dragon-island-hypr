@@ -8,7 +8,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 
 | Atajo | Acción |
 |---|---|
-| `SUPER + Return` | Terminal (kitty) |
+| `SUPER + Return` | Terminal (Ghostty) |
 | `SUPER + Space` | Lanzador de aplicaciones |
 | `SUPER + E` | Dolphin |
 | `SUPER + D` | Notch: abre / cierra el panel expandido (Nook · Tray). También Esc o clic fuera |

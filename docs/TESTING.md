@@ -13,7 +13,7 @@ qs log -f                 # errores de Quickshell con archivo:línea
 - [ ] `./install.sh --dry-run` muestra todas las acciones, no pide sudo y no cambia nada.
 - [ ] `./install.sh` termina sin errores. Revisa `~/.local/state/dragon-island/install.log`.
 - [ ] Ejecutarlo una segunda vez no hace nada nuevo (sin respaldos nuevos, "Ya enlazado").
-- [ ] `~/.config/hypr`, `~/.config/kitty` y `~/.config/quickshell` son enlaces al repo (o copias, si elegiste copia).
+- [ ] `~/.config/hypr`, `~/.config/ghostty`, `~/.config/kitty` y `~/.config/quickshell` son enlaces al repo (o copias, si elegiste copia).
 - [ ] Si había configuraciones previas, están en `~/.local/state/dragon-island/backups/<fecha>/`.
 - [ ] El aviso final no menciona fuentes faltantes ni otros daemons de notificaciones.
 
@@ -197,12 +197,17 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - [ ] Cerrar sesión y volver a entrar (o `pkill awww-daemon mpvpaper`, `awww-daemon &`, `qs kill; qs -d`): vuelve el mismo fondo. Reiniciar Quickshell con un vídeo activo no lo reinicia.
 - [ ] Bloquear (`SUPER + L`): hyprlock usa el fondo actual (con un vídeo, un fotograma).
 
+## 12b. Popovers bajo su cápsula
+
+- [ ] Los 7 popovers (rendimiento, Wi‑Fi, Bluetooth, sonido, batería, notificaciones, calendario) se abren con su **borde derecho alineado con el de su cápsula** (isla derecha) y nunca a menos de 14 px del borde de la pantalla; el de la isla izquierda alinearía el borde izquierdo. La animación crece desde ese lado.
+- [ ] Con 2 monitores, el popover se abre en el monitor de la cápsula pulsada y bajo ella.
+
 ## 12. Cristal y blur
 
 - [ ] `hyprctl configerrors` vacío; `hyprctl getoption decoration:blur:size` = 8.
 - [ ] Sin hyprglass: las islas de la barra se ven acrílicas (50 %, borde blanco 8 %) y el fondo se desenfoca **solo detrás de las islas**, con sus esquinas redondas y sin puntas cuadradas; los huecos quedan limpios. Lo mismo con un popover, una notificación (`notify-send`), el lanzador y el selector de fondos (solo tras la tarjeta, no tras el velo).
 - [ ] El notch sigue negro opaco, sin blur ni halo alrededor. Los huecos entre las islas de la barra (y entre las tarjetas de notificación) muestran el fondo limpio: ninguna franja de lado a lado.
-- [ ] kitty se ve al 85 % de opacidad; en pantalla completa (SUPER+SHIFT+F) y con mpv / vlc las ventanas quedan opacas.
+- [ ] Ghostty (`SUPER + Return`, clase `com.mitchellh.ghostty`) se ve transparente (0.35) con cristal líquido visible en los bordes y **una sola** barra de título (hyprbars); Brave y el resto de ventanas, sin cristal. En pantalla completa (SUPER+SHIFT+F) Ghostty queda sin cristal.
 - [ ] Con hyprglass (`./install.sh --glass`): `hyprctl plugin list` muestra hyprglass **0.9.1**; `hyprctl getoption plugin:hyprglass:layers:enabled` → `set: true`; `hyprctl hyprglass status` → `layers: on`.
 - [ ] La barra, los popovers, las notificaciones, el lanzador y el selector de fondos tienen cristal (modo alfa) con tinta magenta suave, **sin puntas en las esquinas**; el texto se lee también sobre un fondo claro; el notch (`dragon-island`) sigue negro sin halo.
 - [ ] En pantalla completa y con vídeo no hay cristal (`+hyprglass_disabled`).

@@ -274,7 +274,8 @@ log_info "Desplegando configuración..."
 
 if has_component core; then
     deploy_item "$REPO_DIR/config/hypr"  "$HOME/.config/hypr"
-    deploy_item "$REPO_DIR/config/kitty" "$HOME/.config/kitty"
+    deploy_item "$REPO_DIR/config/kitty" "$HOME/.config/kitty"      # kept, no longer the default terminal
+    deploy_item "$REPO_DIR/config/ghostty" "$HOME/.config/ghostty"
     # Keyring: the Secret portal → gnome-keyring in Hyprland (Plasma keeps kde-portals.conf),
     # and Brave forced to libsecret so both sessions share its passwords and cookies
     deploy_item "$REPO_DIR/config/xdg-desktop-portal/hyprland-portals.conf" \

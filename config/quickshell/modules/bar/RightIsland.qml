@@ -12,6 +12,10 @@ Rectangle {
     id: root
 
     required property var bar
+    property real windowX: 0     // screen x of this island's window
+
+    // popovers of the right island: right edge on the capsule's right edge
+    function openPopover(name: string, item): void { bar.openFrom(name, item, "right", windowX); }
 
     implicitHeight: Theme.barHeight
     height: Theme.barHeight
@@ -32,9 +36,10 @@ Rectangle {
             id: cpuCap
             anchors.verticalCenter: parent.verticalCenter
             active: root.bar.isOpen("perf")
-            onClicked: root.bar.openFrom("perf", cpuCap)
-            Glyph { icon: Icons.cpu; size: Theme.iconSm; color: Theme.cyan; anchors.verticalCenter: parent.verticalCenter }
+            onClicked: root.openPopover("perf", cpuCap)
+            Glyph { shadow: true; icon: Icons.cpu; size: Theme.iconSm; color: Theme.cyan; anchors.verticalCenter: parent.verticalCenter }
             UiText {
+                shadow: true
                 anchors.verticalCenter: parent.verticalCenter
                 text: `${SysStats.cpuPct}%`
                 mono: true
@@ -47,9 +52,10 @@ Rectangle {
             id: ramCap
             anchors.verticalCenter: parent.verticalCenter
             active: root.bar.isOpen("perf")
-            onClicked: root.bar.openFrom("perf", ramCap)
-            Glyph { icon: Icons.memory; size: Theme.iconSm; color: Theme.violetSoft; anchors.verticalCenter: parent.verticalCenter }
+            onClicked: root.openPopover("perf", ramCap)
+            Glyph { shadow: true; icon: Icons.memory; size: Theme.iconSm; color: Theme.violetSoft; anchors.verticalCenter: parent.verticalCenter }
             UiText {
+                shadow: true
                 anchors.verticalCenter: parent.verticalCenter
                 text: `${SysStats.memUsedGb.toFixed(1)}G`
                 mono: true
@@ -65,6 +71,7 @@ Rectangle {
             padH: Theme.capsulePadH - 2
             onClicked: Keyboard.next()
             UiText {
+                shadow: true
                 anchors.verticalCenter: parent.verticalCenter
                 text: Keyboard.code
                 mono: true
@@ -91,8 +98,9 @@ Rectangle {
                     flat: true
                     padH: Theme.capsulePadH - 2
                     active: root.bar.isOpen("wifi")
-                    onClicked: root.bar.openFrom("wifi", wifiCap)
+                    onClicked: root.openPopover("wifi", wifiCap)
                     Glyph {
+                        shadow: true
                         anchors.verticalCenter: parent.verticalCenter
                         size: Theme.iconMd
                         icon: Network.wiredConnected && !Network.wifiConnected ? Icons.ethernet
@@ -107,8 +115,9 @@ Rectangle {
                     flat: true
                     padH: Theme.capsulePadH - 2
                     active: root.bar.isOpen("bt")
-                    onClicked: root.bar.openFrom("bt", btCap)
+                    onClicked: root.openPopover("bt", btCap)
                     Glyph {
+                        shadow: true
                         anchors.verticalCenter: parent.verticalCenter
                         size: Theme.iconMd
                         icon: !Bluetooth.enabled ? Icons.btOff : (Bluetooth.connectedDevices.length > 0 ? Icons.btConnected : Icons.bluetooth)
@@ -123,16 +132,18 @@ Rectangle {
                     active: root.bar.isOpen("audio")
                     onClicked: m => {
                         if (m.button === Qt.MiddleButton || m.button === Qt.RightButton) Audio.toggleMute();
-                        else root.bar.openFrom("audio", volCap);
+                        else root.openPopover("audio", volCap);
                     }
                     onWheel: d => Audio.setVolume(Audio.volume + (d > 0 ? 0.05 : -0.05))
                     Glyph {
+                        shadow: true
                         anchors.verticalCenter: parent.verticalCenter
                         size: Theme.iconMd
                         icon: Icons.volumeFor(Audio.volume, Audio.muted)
                         color: Audio.muted ? Theme.textDim : Theme.text
                     }
                     UiText {
+                        shadow: true
                         anchors.verticalCenter: parent.verticalCenter
                         text: `${Audio.volumePct}`
                         mono: true
@@ -147,16 +158,18 @@ Rectangle {
                     flat: true
                     padH: Theme.capsulePadH - 2
                     active: root.bar.isOpen("battery")
-                    onClicked: root.bar.openFrom("battery", batCap)
+                    onClicked: root.openPopover("battery", batCap)
                     readonly property color tone: Power.isCharging ? Theme.ok
                                                  : (Power.batteryPct <= 10 ? Theme.error : (Power.isLow ? Theme.warn : Theme.ok))
                     Glyph {
+                        shadow: true
                         anchors.verticalCenter: parent.verticalCenter
                         size: Theme.iconMd
                         icon: Icons.batteryFor(Power.batteryPct, Power.isCharging)
                         color: batCap.tone
                     }
                     UiText {
+                        shadow: true
                         anchors.verticalCenter: parent.verticalCenter
                         text: `${Power.batteryPct}%`
                         mono: true
@@ -175,12 +188,13 @@ Rectangle {
             active: root.bar.isOpen("notifications")
             onClicked: m => {
                 if (m.button === Qt.RightButton) Notifs.toggleDnd();
-                else root.bar.openFrom("notifications", bellCap);
+                else root.openPopover("notifications", bellCap);
             }
             Item {
                 width: Theme.iconMd
                 height: Theme.capsuleHeight
                 Glyph {
+                    shadow: true
                     anchors.centerIn: parent
                     size: Theme.iconMd
                     icon: Notifs.dnd ? Icons.bellOff : Icons.bell
@@ -297,8 +311,9 @@ Rectangle {
             anchors.verticalCenter: parent.verticalCenter
             brand: true
             active: root.bar.isOpen("calendar")
-            onClicked: root.bar.openFrom("calendar", clockCap)
+            onClicked: root.openPopover("calendar", clockCap)
             UiText {
+                shadow: true
                 anchors.verticalCenter: parent.verticalCenter
                 text: Clock.barText
                 mono: true

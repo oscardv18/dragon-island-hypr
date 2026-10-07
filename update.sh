@@ -90,7 +90,7 @@ infer_state() {
             while IFS=$'\t' read -r action target _; do
                 [[ "$action" == "deploy" ]] || continue
                 case "$target" in
-                    */.config/hypr|*/.config/kitty) SELECTED_COMPONENTS+=(core) ;;
+                    */.config/hypr|*/.config/kitty|*/.config/ghostty) SELECTED_COMPONENTS+=(core) ;;
                     */.config/quickshell)           SELECTED_COMPONENTS+=(shell) ;;
                     */firstrun.sh)                  SELECTED_COMPONENTS+=(plugins) ;;
                     */glass.sh)                     SELECTED_COMPONENTS+=(glass) ;;
@@ -324,7 +324,7 @@ step_plugins() {
         run "$REPO_DIR/installer/glass.sh"
         return 0
     fi
-    "$REPO_DIR/installer/glass.sh" || log_warn "hyprglass no se instaló (¿terminal sin sudo?). Ejecuta installer/glass.sh en kitty."
+    "$REPO_DIR/installer/glass.sh" || log_warn "hyprglass no se instaló (¿terminal sin sudo?). Ejecuta installer/glass.sh en una terminal."
     if hyprctl plugin list 2>/dev/null | grep -qi "hyprglass" && ! has_component glass; then
         SELECTED_COMPONENTS+=(glass)
         save_state

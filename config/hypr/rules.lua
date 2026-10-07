@@ -53,7 +53,7 @@ end
 -- First-run setup terminal: floating and centered
 hl.window_rule({
     name   = "float-firstrun",
-    match  = { class = "^dragon-island-setup$" },
+    match  = { class = "^org\\.dragonisland\\.Setup$" },
     float  = true,
     center = true,
     size   = { 900, 560 },

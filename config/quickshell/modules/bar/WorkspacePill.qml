@@ -77,6 +77,7 @@ Item {
             anchors.verticalCenter: parent.verticalCenter
         }
         UiText {
+            shadow: true
             text: `${pill.wsId}`
             mono: true
             size: Theme.sizeCaption
@@ -88,6 +89,7 @@ Item {
 
     // active content: name
     UiText {
+        shadow: true
         id: label
         anchors.centerIn: parent
         text: pill.name

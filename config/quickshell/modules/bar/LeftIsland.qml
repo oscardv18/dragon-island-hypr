@@ -9,6 +9,10 @@ Rectangle {
     id: root
 
     required property var bar
+    property real windowX: 0     // screen x of this island's window
+
+    // popovers of the left island: left edge on the capsule's left edge
+    function openPopover(name: string, item): void { bar.openFrom(name, item, "left", windowX); }
     property real maxWidth: 0
 
     implicitHeight: Theme.barHeight
@@ -47,6 +51,7 @@ Rectangle {
                 Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
             }
             Glyph {
+                shadow: true
                 anchors.centerIn: parent
                 icon: Icons.apps
                 size: Theme.iconMd
@@ -105,6 +110,8 @@ Rectangle {
             }
 
             UiText {
+
+                shadow: true
                 id: appClass
                 anchors.verticalCenter: parent.verticalCenter
                 text: Hypr.activeClass
@@ -114,6 +121,8 @@ Rectangle {
             }
 
             UiText {
+
+                shadow: true
                 anchors.verticalCenter: parent.verticalCenter
                 text: Hypr.activeTitle
                 size: Theme.sizeBar

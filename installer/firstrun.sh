@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # dragon-island — first-session setup (hyprpm plugins)
-# Launched once by autostart.lua inside a kitty window, because hyprpm needs a
+# Launched once by autostart.lua inside a Ghostty window, because hyprpm needs a
 # running Hyprland and may ask for the sudo password to install headers.
 # =============================================================================
 set -Eeuo pipefail
