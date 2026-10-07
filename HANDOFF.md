@@ -284,12 +284,19 @@ Decisiones y trampas:
 
 ## 7i. Cristal líquido "oficial" y valores finales (2026-10-07)
 
-- **Franja opaca de Ghostty:** era la barra de hyprbars (`bar_color` `rgba(161925ee)`). Probado: `hyprbars:no_bar` quita franja y botones; `["hyprbars:bar_color"] = "rgba(00000000)"` (regla de ventana en `plugins.lua`, dentro del guarda de hyprbars) deja la ventana entera de cristal **y conserva** los botones y el título → elegida. Además `window-decoration = none` + `gtk-titlebar = false` en Ghostty.
+- **(Corregido en §7j)** **Franja opaca de Ghostty:** era la barra de hyprbars (`bar_color` `rgba(161925ee)`). Probado: `hyprbars:no_bar` quita franja y botones; `["hyprbars:bar_color"] = "rgba(00000000)"` (regla de ventana en `plugins.lua`, dentro del guarda de hyprbars) deja la ventana entera de cristal **y conserva** los botones y el título → elegida. Además `window-decoration = none` + `gtk-titlebar = false` en Ghostty.
 - **`dragon-liquid`** parte de los valores por defecto (no de `glass`): blur 1.6 / 3 iteraciones, refracción 0.6 con `refraction_spread` 0 y `refraction_flow` 0.3, `edge_thickness` 0.06, `lens_distortion` 0.1, aberración 0.4, specular 0.7, fresnel 0.5, bevel 0.5 de 3 px, `self_sample` 0, tinte `0x0b102060`; dark: brillo 1.0, contraste 1.0, saturación 0.9, `adaptive_dim` 0.5. Ghostty `background-opacity = 0.65`.
 - **Comparación en vivo** (Ghostty de prueba, cerrado por dirección con `hl.dsp.window.close({ window = "address:…" })`; **nunca `pkill ghostty`**, mataría la terminal desde la que se trabaja): con tinte `0xb0` (el valor sugerido, 69 %) y opacidad 0.7 la ventana era casi opaca y el fondo no se intuía; con `0x50`–`0x60` y opacidad 0.5–0.65 se ve el fondo desenfocado. Con brillo 1.1 / `adaptive_dim` 0.2 sobre un fondo casi blanco el prompt magenta se leía mal; 1.0 / 0.5 se lee bien en oscuro y en claro. Preferencia final: la combinación de arriba.
 - **Capas:** `dragon-bar` y `dragon-panel` reescritos con el mismo enfoque (defaults, `refraction_spread` 0, `lens_distortion` 0.1): bar `blur_strength` 2.2, `edge_thickness` 0.2, tinte `0xc50ed214`, dark brillo 0.9 / dim 0.6; panel hereda y pone `edge_thickness` 0.06, tinte `0xc50ed233`, brillo 0.85 / dim 0.7. Capturas de la barra, el popover de Sonido y una notificación sobre fondo oscuro y casi blanco: esquinas limpias y texto legible; el popover queda bajo su cápsula.
 - La skill `dragon-island` pasó a la versión actualizada del usuario sin la sección de migraciones; se restauró.
 - Migraciones: la 005 ya cubre Ghostty + cristal + popovers (todo lo demás vive en el repo); no hace falta otra.
+
+## 7j. Banda oscura bajo la barra de Ghostty (2026-10-07)
+
+- **Síntoma:** sobre el cristal de Ghostty, bajo la barra de título, una banda ~40 px más oscura con esquinas superiores redondeadas y el cristal "de verdad" debajo; además la barra de Ghostty (transparente) no se parecía a la de las demás ventanas.
+- **Diagnóstico por eliminación** (ventana de Ghostty nueva y la del usuario): no es el cristal (con `-hyprglass_enabled` seguía), ni la cabecera GTK (`gtk-titlebar`, `gtk-tabs-location=hidden`, `window-show-tab-bar=never`, `window-theme=ghostty` no la quitaban), ni el borde del preset (`edge_thickness` 0.06 → 0.02 no cambió nada). Con `hyprbars:no_bar` desaparecía y con **`bar_blur = false`** también: el blur nativo de hyprbars pintaba una banda oscura sobre los primeros ~40 px de la ventana translúcida.
+- **Corrección:** `bar_blur = false` en `plugins.lua` (la barra, `rgba(161925ee)`, es casi opaca: apenas cambia en el resto de ventanas) y se quita la regla `hyprbars:bar_color` transparente: la barra de Ghostty vuelve a ser idéntica a la de las demás. `edge_thickness` vuelve a 0.06.
+- Sin migración nueva: es solo configuración del repo (symlink o copia con `update.sh`).
 
 ## 8. Cómo depurar rápido
 

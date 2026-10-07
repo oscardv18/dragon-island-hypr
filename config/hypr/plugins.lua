@@ -14,7 +14,9 @@ hl.config({
             bar_text_weight            = "medium",
             bar_text_align             = "center",
             bar_buttons_alignment      = "left",
-            bar_blur                   = true,
+            -- off: with bar_blur the bar's native blur paints a darker band over the top ~40 px of every
+            -- translucent window (the Ghostty glass); the bar color is nearly opaque anyway
+            bar_blur                   = false,
             bar_part_of_window         = true,
             bar_precedence_over_border = true,
             bar_padding                = 12,
@@ -46,12 +48,3 @@ if hl.plugin and hl.plugin.hyprfocus then
     hl.animation({ leaf = "hyprfocusOut", enabled = true, speed = 1.7, bezier = "easeOutQuint" })
 end
 
--- Ghostty is a see-through liquid-glass window: its hyprbars title bar must not be a solid strip on top.
--- A transparent bar keeps the close / fullscreen / float buttons and the title (dynamic hyprbars rule).
-if hl.plugin and hl.plugin.hyprbars then
-    hl.window_rule({
-        name  = "ghostty-transparent-bar",
-        match = { class = "^com\\.mitchellh\\.ghostty$" },
-        ["hyprbars:bar_color"] = "rgba(00000000)",
-    })
-end
