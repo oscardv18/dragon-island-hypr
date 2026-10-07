@@ -1,0 +1,77 @@
+# =============================================================================
+# dragon-island — herdr (multiplexor de agentes). Parte de `herdr --default-config` (v0.9.3):
+# solo se cambia lo necesario; cada clave se ha comprobado en esa salida y en docs/versions/0.9.3.
+# Se enlaza en ~/.config/herdr/config.toml; se aplica con `herdr server reload-config`.
+# =============================================================================
+
+# El aviso de primera ejecución sobre notificaciones ya está resuelto aquí (toast = system)
+onboarding = false
+
+# -----------------------------------------------------------------------------
+# Tema: paleta Dragonized (references/design.md). panel_bg y sidebar_bg transparentes ("reset"):
+# se ve el liquid glass de Ghostty (background-opacity + hyprglass) detrás de herdr.
+# -----------------------------------------------------------------------------
+[theme.custom]
+panel_bg      = "reset"
+sidebar_bg    = "reset"
+accent        = "#c50ed2"   # accent (magenta de la marca)
+active_row_bg = "#22243a"   # surface3: fila activa (espacio / agente enfocado)
+selection_bg  = "#34385a"   # surfaceHi: cursor del modo navegación
+surface0      = "#161925"   # surface0
+surface1      = "#12131e"   # surface1
+surface_dim   = "#0b0c14"   # bg
+overlay0      = "#3a3d55"   # muted
+overlay1      = "#8a8fa3"   # textDim
+text          = "#e6e8ef"   # text
+subtext0      = "#c3c7d1"   # textSoft
+mauve         = "#a855f7"   # violetSoft
+blue          = "#00c1e4"   # cyan: agente trabajando
+teal          = "#38d3ef"
+green         = "#06c993"   # ok: terminó
+yellow        = "#f9ae58"   # warn: necesita respuesta
+red           = "#ed254e"   # error
+peach         = "#fbc27f"
+
+# -----------------------------------------------------------------------------
+# Notificaciones: del sistema, es decir, llegan al servidor de notificaciones de Quickshell
+# (y de ahí al peek del notch). Sin sonido propio: el aviso lo da la isla.
+# -----------------------------------------------------------------------------
+[ui.toast]
+delivery = "system"
+
+[ui.sound]
+enabled = false
+
+# -----------------------------------------------------------------------------
+# Sesión: tras reiniciar el servidor, los agentes compatibles retoman su conversación
+# -----------------------------------------------------------------------------
+[session]
+resume_agents_on_restore = true
+
+# -----------------------------------------------------------------------------
+# Interfaz
+# -----------------------------------------------------------------------------
+[ui]
+# Estados con símbolos distintos (bloqueado, trabajando, terminado, inactivo), no solo puntos de color
+status_indicators = "symbols"
+
+# Barra de pestañas, a la derecha: rama de git del pane enfocado (el comando corre en su directorio) y la hora
+tab_bar_right = [
+  { type = "command", command = "b=$(git -C \"$HERDR_ACTIVE_PANE_CWD\" branch --show-current 2>/dev/null); [ -n \"$b\" ] && printf ' %s' \"$b\"", interval_seconds = 5, timeout_seconds = 2 },
+  { type = "datetime", format = "%H:%M" },
+]
+tab_bar_right_separator = "  "
+
+# Título de la ventana de Ghostty: el espacio activo (Hyprland / la barra lo muestran)
+window_title = "herdr · {workspace}"
+
+# Filas de la barra lateral: espacio (estado + nombre), y debajo rama y estado de git
+[ui.sidebar.spaces]
+rows = [["state_icon", "workspace"], ["branch", "git_status"]]
+
+# -----------------------------------------------------------------------------
+# Teclas: se deja el prefijo por defecto (ctrl+b). Choques revisados: en zsh ctrl+b es «carácter atrás»
+# (dentro de herdr se usa la flecha ←) y Ghostty no lo usa. Nada de SUPER aquí: es de Hyprland.
+# -----------------------------------------------------------------------------
+# [keys]
+# prefix = "ctrl+b"

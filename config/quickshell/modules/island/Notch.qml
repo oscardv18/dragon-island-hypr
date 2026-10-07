@@ -143,7 +143,8 @@ Item {
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton | Qt.MiddleButton
             onClicked: m => {
-                if (m.button === Qt.MiddleButton && IslandState.mode === "media") Media.playPause();
+                if (IslandState.mode === "agent" && m.button === Qt.LeftButton) { Herdr.focusAgent(IslandState.agentEvent?.agent); IslandState.agentFlash = false; }
+                else if (m.button === Qt.MiddleButton && IslandState.mode === "media") Media.playPause();
                 else if (m.button === Qt.LeftButton) ShellState.toggle("dashboard", root.screenName);
             }
         }

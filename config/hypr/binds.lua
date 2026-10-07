@@ -72,6 +72,7 @@ bind(mainMod .. " + X", hl.dsp.exec_cmd("qs ipc call dock toggle"), "Dock · Fij
 bind(mainMod .. " + M", hl.dsp.exec_cmd("qs ipc call dock minimize"), "Dock · Minimizar la ventana (escritorio especial)")
 bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("qs ipc call toggles record"), "Shell · Grabar pantalla (iniciar / parar)")
 bind(mainMod .. " + I",         hl.dsp.exec_cmd("qs ipc call shell toggle store"), "Shell · Tienda de apps (pacman + AUR)")
+bind(mainMod .. " + A",         hl.dsp.exec_cmd("$HOME/.local/bin/dragon-herdr"), "Agentes · Abrir o enfocar herdr (escritorio 5)")
 bind(mainMod .. " + N",      hl.dsp.exec_cmd("qs ipc call shell toggle notifications"), "Shell · Notificaciones")
 bind(mainMod .. " + Escape", hl.dsp.exec_cmd("qs ipc call shell toggle power"),         "Shell · Menú de energía")
 bind(mainMod .. " + F1",     hl.dsp.exec_cmd("qs ipc call shell toggle keybinds"),      "Shell · Esta ayuda de atajos")

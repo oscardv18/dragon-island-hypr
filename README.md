@@ -223,6 +223,16 @@ Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo s
 
 `fd` es el buscador de fzf (`--hidden --follow --exclude .git`). Arranque medido: ~60 ms antes, ~71 ms después (+11 ms). Aplica en un sistema ya instalado la migración `010-terminal-tools.sh`.
 
+## herdr (agentes)
+
+[herdr](https://herdr.dev) es un multiplexor de terminal para agentes de IA (Claude Code, Codex…): varios agentes en paneles, sesiones que sobreviven al cerrar la ventana y el estado de cada uno (trabajando, te necesita, terminó).
+
+- `SUPER + A` abre herdr en Ghostty (clase propia, escritorio 5, mismo cristal líquido) o enfoca la ventana si ya existe. Cerrarla no mata los agentes: el servidor sigue y `SUPER + A` reconecta.
+- Teclas básicas: `Ctrl+B` y luego `c` pestaña · `v` / `-` dividir · `w` espacios · `q` separar · `?` ayuda (todas en `docs/KEYBINDS.md`). El prefijo `Ctrl+B` se queda por defecto: Ghostty no lo usa y en zsh solo mueve el cursor un carácter (con la flecha ← basta).
+- Barra: cápsula de robot con los contadores por estado (solo si hay agentes); clic = lista; clic en un agente = saltar a él. El notch avisa cuando uno se bloquea o termina (salvo que ya lo estés mirando). Sin servidor de herdr el servicio solo comprueba un archivo cada 30 s.
+- Configuración: `config/herdr/config.toml` (paleta Dragonized, fondo transparente, avisos al sistema, reanudar agentes). Se enlaza en `~/.config/herdr/`; aplica cambios con `herdr server reload-config`.
+- Instalación: herdr no está en pacman ni en el AUR; se instala con su script oficial (sin root, `~/.local/bin/herdr`) desde `install.sh` o la migración `011-herdr.sh`. Actualizar: `herdr update`. Alias `hd`, completado en zsh con fzf-tab.
+
 ## Estructura
 
 ```

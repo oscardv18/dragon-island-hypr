@@ -89,6 +89,28 @@ read_plain_list() {
     awk '/^[[:space:]]*(#|$)/ { next } { print $1 }' "$1"
 }
 
+# ensure_herdr: herdr (agents multiplexer). Not in the repos or the AUR, so the official installer is used
+# (no root, installs to ~/.local/bin/herdr). It updates itself afterwards with `herdr update`.
+ensure_herdr() {
+    if [[ -x "$HOME/.local/bin/herdr" ]] || command -v herdr >/dev/null 2>&1; then
+        log_info "herdr ya está instalado ($("$HOME/.local/bin/herdr" --version 2>/dev/null || herdr --version 2>/dev/null)); se actualiza con: herdr update"
+        return 0
+    fi
+    confirm "herdr (multiplexor de agentes) no está instalado. ¿Instalarlo con el script oficial (sin root)?" || return 1
+    if [[ "${DRY_RUN:-false}" == "true" ]]; then log_info "[dry-run] curl -fsSL https://herdr.dev/install.sh | sh"; return 0; fi
+    curl -fsSL https://herdr.dev/install.sh | sh || { log_warn "No se pudo instalar herdr (¿sin red?)"; return 1; }
+}
+
+# deploy_herdr: config + launcher + zsh completion
+deploy_herdr() {
+    deploy_item "$REPO_DIR/config/herdr/config.toml" "$HOME/.config/herdr/config.toml"
+    deploy_item "$REPO_DIR/bin/dragon-herdr" "$HOME/.local/bin/dragon-herdr"
+    if [[ -x "$HOME/.local/bin/herdr" ]]; then
+        run mkdir -p "$HOME/.zfunc"
+        [[ "${DRY_RUN:-false}" == "true" ]] || "$HOME/.local/bin/herdr" completion zsh >| "$HOME/.zfunc/_herdr" 2>/dev/null || true
+    fi
+}
+
 # ensure_omz: oh-my-zsh and the external plugins (zsh-autosuggestions, zsh-syntax-highlighting, fzf-tab) used by config/zsh/.zshrc (git clones, as in the
 # original setup: they are not pacman packages). Existing clones are left alone.
 ensure_omz() {

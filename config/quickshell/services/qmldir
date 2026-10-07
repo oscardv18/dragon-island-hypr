@@ -28,3 +28,4 @@ singleton BarContext 1.0 BarContext.qml
 singleton WorkspacePreview 1.0 WorkspacePreview.qml
 singleton Dock 1.0 Dock.qml
 singleton Store 1.0 Store.qml
+singleton Herdr 1.0 Herdr.qml

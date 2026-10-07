@@ -113,6 +113,12 @@ Singleton {
             { text: "Marcar y bajar (multi-selección)", combos: [["Tab"], ["Espacio"]] },
             { text: "Instalar / eliminar / actualizar según la pestaña", combos: [["Enter"]] },
             { text: "Cerrar visor o diálogo; luego la Tienda", combos: [["Esc"]] } ] },
+        { name: "herdr (dentro; antes Ctrl+B)", rows: [
+            { text: "Nueva pestaña · dividir vertical · horizontal", combos: [["c"], ["v"], ["-"]] },
+            { text: "Mover el foco entre paneles", combos: [["h", "j", "k", "l"]] },
+            { text: "Cerrar panel · zoom", combos: [["x"], ["z"]] },
+            { text: "Nuevo espacio · selector de espacios", combos: [["Shift+N"], ["w"]] },
+            { text: "Separar (la sesión sigue viva) · ayuda", combos: [["q"], ["?"]] } ] },
         { name: "Fondos de pantalla (dentro)", rows: [
             { text: "Filtrar por nombre", combos: [["escribir"]] },
             { text: "Mover la selección", combos: [["←", "→", "↑", "↓"]] },

@@ -17,6 +17,14 @@ ZSH_THEME="robbyrussell"   # (overridden by starship below)
 # autosuggestions / syntax-highlighting are sourced further down, after fzf-tab
 plugins=(git)
 
+# herdr (agents multiplexer, installed in ~/.local/bin): its zsh completion lives in ~/.zfunc and must be in fpath
+# BEFORE compinit (oh-my-zsh.sh) so fzf-tab sees it; it is regenerated when the binary is newer (after `herdr update`)
+[[ ":$PATH:" == *":$HOME/.local/bin:"* ]] || export PATH="$HOME/.local/bin:$PATH"
+fpath=("$HOME/.zfunc" $fpath)
+if command -v herdr >/dev/null && [[ $HOME/.local/bin/herdr -nt $HOME/.zfunc/_herdr ]]; then
+    mkdir -p "$HOME/.zfunc" && herdr completion zsh >| "$HOME/.zfunc/_herdr" 2>/dev/null
+fi
+
 source $ZSH/oh-my-zsh.sh   # runs compinit
 
 # --- dragon-island terminal: files of config/zsh (deployed to ~/.config/dragon-island/zsh) ---

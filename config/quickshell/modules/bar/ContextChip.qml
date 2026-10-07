@@ -43,6 +43,7 @@ Item {
             id: glyph
             shadow: true
             anchors.verticalCenter: parent.verticalCenter
+            visible: !(root.last?.parts)
             icon: root.last?.icon ?? ""
             size: Theme.iconSm + 1
             color: root.last?.color ?? Theme.text
@@ -53,6 +54,39 @@ Item {
                 onStopped: glyph.opacity = 1
                 NumberAnimation { to: 0.35; duration: Theme.ms(700); easing.type: Easing.InOutSine }
                 NumberAnimation { to: 1; duration: Theme.ms(700); easing.type: Easing.InOutSine }
+            }
+        }
+        // entries with `parts` (agents): a coloured icon + count per state
+        Repeater {
+            model: root.last?.parts ?? []
+            delegate: Row {
+                id: part
+                required property var modelData
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 2
+                Glyph {
+                    id: partGlyph
+                    shadow: true
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: part.modelData.icon
+                    size: Theme.iconSm
+                    color: part.modelData.color
+                    SequentialAnimation on opacity {
+                        running: root.shown && (part.modelData.pulse === true || part.modelData.breathe === true) && Theme.animationsEnabled
+                        loops: Animation.Infinite
+                        onStopped: partGlyph.opacity = 1
+                        NumberAnimation { to: part.modelData.pulse ? 0.3 : 0.65; duration: Theme.ms(part.modelData.pulse ? 600 : 1400); easing.type: Easing.InOutSine }
+                        NumberAnimation { to: 1; duration: Theme.ms(part.modelData.pulse ? 600 : 1400); easing.type: Easing.InOutSine }
+                    }
+                }
+                UiText {
+                    shadow: true
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: part.modelData.text
+                    mono: true
+                    size: Theme.sizeBar
+                    color: part.modelData.color
+                }
             }
         }
         UiText {

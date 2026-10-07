@@ -285,6 +285,9 @@ if has_component core; then
     deploy_item "$REPO_DIR/config/ghostty" "$HOME/.config/ghostty"
     # Tienda: privileged package actions run in a floating terminal through this script
     deploy_item "$REPO_DIR/bin/dragon-pkg" "$HOME/.local/bin/dragon-pkg"
+    # herdr (agents multiplexer, SUPER + A): official installer, then config + launcher + completion
+    ensure_herdr || log_warn "herdr no se instaló: SUPER + A avisará hasta que ejecutes ./update.sh"
+    deploy_herdr
     # Icons and themes: Candy + Sweet Folders (Sweet-Purple). Qt: hyprqt6engine (hyprqt6engine.conf lives in
     # config/hypr, env.lua sets QT_QPA_PLATFORMTHEME); GTK: settings.ini (+ dconf below)
     deploy_item "$REPO_DIR/config/gtk-3.0/settings.ini" "$HOME/.config/gtk-3.0/settings.ini"

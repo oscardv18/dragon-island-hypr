@@ -16,6 +16,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
+| `SUPER + A` | Agentes: abre herdr en el escritorio 5 («agentes») o, si ya hay una ventana, la enfoca. Las sesiones sobreviven al cerrar la ventana |
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
 | `SUPER + Escape` | Tienda (`SUPER + I`) | Escribir busca en repos y AUR · `↑ ↓` · `Tab` (o `Espacio` con el campo vacío) marca · `Enter` instala / elimina / actualiza según la pestaña · `Esc` cierra el visor o el diálogo y luego la Tienda |
 | Fondos de pantalla (`SUPER + W`) | Escribir filtra · `← → ↑ ↓` · `Enter` o clic aplica · `Esc` cierra |
@@ -63,6 +64,22 @@ Dos distribuciones: **English (US)** (la primera, la que resuelve los atajos) y 
 | Clic en la cápsula `US` / `LA` (isla derecha, antes de Wi‑Fi) | Siguiente distribución |
 
 El bloqueo (hyprlock) usa las mismas dos distribuciones: `ALT + SHIFT` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa.
+
+## herdr (SUPER + A)
+
+Primero `Ctrl+B` (el prefijo) y luego:
+
+| Tecla | Acción |
+|---|---|
+| `c` | Nueva pestaña |
+| `v` · `-` | Dividir en vertical · en horizontal |
+| `h j k l` | Mover el foco entre paneles |
+| `x` · `z` | Cerrar el panel · zoom (pantalla completa del panel) |
+| `Shift+N` · `w` | Nuevo espacio · selector de espacios |
+| `q` | Separar (cierra la ventana; la sesión y los agentes siguen) |
+| `?` | Ayuda con todas las teclas |
+
+La cápsula de agentes de la barra (robot) solo aparece con agentes: ámbar parpadeante = necesita tu respuesta, cian = trabajando, verde = terminó. Clic abre la lista y otro clic en un agente salta a él. Si un agente se bloquea o termina, el notch lo avisa (clic en el notch = ir a él). Terminal: alias `hd` = `herdr`; actualizar con `herdr update`.
 
 ## Tienda de apps (SUPER + I)
 

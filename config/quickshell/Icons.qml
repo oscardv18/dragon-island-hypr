@@ -61,6 +61,7 @@ Singleton {
 
     // Notifications
     readonly property string bell:          g(0xF009A)
+    readonly property string robot:         g(0xF06A9)
     readonly property string bellOff:       g(0xF009B)
     readonly property string bellRing:      g(0xF009E)
     readonly property string broom:         g(0xF00E2)

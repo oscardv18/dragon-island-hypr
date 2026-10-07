@@ -23,6 +23,7 @@ Rectangle {
         switch (key) {
             case "privacy": root.openPopover("privacy", item); break;
             case "rec":     Toggles.toggleRecording(); break;
+            case "agents":  root.openPopover("agents", item); break;
             case "vpn":     Vpn.openApp(); break;
             case "headset": root.openPopover("bt", item); break;
             case "caffeine": Caffeine.toggle(); break;

@@ -1,0 +1,33 @@
+#!/usr/bin/env bash
+# =============================================================================
+# dragon-island — dragon-herdr: open or focus herdr (SUPER + A, the agents capsule, the notch peek)
+#   dragon-herdr               focus the herdr window if there is one, else open it
+#   dragon-herdr focus <pane>  the same, then `herdr agent focus <pane>` (jump to that agent)
+# The window is Ghostty with its own class (org.dragonisland.Herdr): a Hyprland window rule sends it to workspace 5
+# ("agentes") and it gets the same liquid glass as every translucent Ghostty. herdr itself keeps its session alive
+# in the background (server), so closing the window and opening it again reconnects to the same agents.
+# =============================================================================
+set -u
+CLASS="org.dragonisland.Herdr"
+HERDR="${HERDR_BIN_PATH:-$HOME/.local/bin/herdr}"
+[[ -x "$HERDR" ]] || HERDR="$(command -v herdr || true)"
+[[ -n "$HERDR" ]] || { notify-send -a herdr "herdr no está instalado" "Ejecuta ./update.sh (migración 011)"; exit 1; }
+
+address="$(hyprctl clients -j 2>/dev/null | python3 -c "
+import json, sys
+for c in json.load(sys.stdin):
+    if c.get('class') == '$CLASS':
+        print(c['address']); break" 2>/dev/null || true)"
+
+if [[ -n "$address" ]]; then
+    hyprctl dispatch "hl.dsp.focus({ window = \"address:$address\" })" >/dev/null
+else
+    setsid -f ghostty --class="$CLASS" --title="herdr" -e "$HERDR" >/dev/null 2>&1 </dev/null
+fi
+
+if [[ "${1:-}" == focus && -n "${2:-}" ]]; then
+    # a fresh window needs a moment to attach before the focus request reaches the right client
+    [[ -z "$address" ]] && sleep 1.5
+    "$HERDR" agent focus "$2" >/dev/null 2>&1 || true
+fi
+exit 0

@@ -60,6 +60,14 @@ hl.window_rule({
     size   = { 900, 520 },
 })
 
+-- herdr (agents multiplexer): Ghostty with its own class, on workspace 5 ("agentes"). Tiled, so the usual
+-- translucent-Ghostty liquid glass applies. Opened or focused by bin/dragon-herdr (SUPER + A).
+hl.window_rule({
+    name      = "herdr-workspace",
+    match     = { class = "^org\\.dragonisland\\.Herdr$" },
+    workspace = "5",
+})
+
 -- First-run setup terminal: floating and centered
 hl.window_rule({
     name   = "float-firstrun",

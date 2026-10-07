@@ -40,6 +40,7 @@ Item {
             switch (root.mode) {
                 case "osd":          return osdView;
                 case "notification": return notifView;
+                case "agent":        return agentView;
                 case "workspace":    return workspaceView;
                 case "media":        return mediaView;
                 default:             return clockView;
@@ -218,6 +219,36 @@ Item {
             PeekLine {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Osd.label
+            }
+        }
+    }
+
+    // ---- herdr agent that needs an answer or finished: icon · text, workspace in the peek line ----
+    Component {
+        id: agentView
+        Column {
+            spacing: 1
+            readonly property var ev: IslandState.agentEvent
+            readonly property bool blocked: ev?.kind === "blocked"
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: Theme.spacingSm
+                Glyph {
+                    anchors.verticalCenter: parent.verticalCenter
+                    icon: parent.parent.blocked ? Icons.bellRing : Icons.check
+                    size: Theme.iconMd
+                    color: parent.parent.blocked ? Theme.warn : Theme.ok
+                }
+                UiText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: `${parent.parent.ev?.agent.name ?? ""} ${parent.parent.blocked ? "necesita tu respuesta" : "terminó"}`
+                    weight: Theme.weightMedium
+                    width: Math.min(implicitWidth, Math.max(60, root.maxWidth - Theme.iconMd - Theme.spacingSm))
+                }
+            }
+            PeekLine {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: parent.ev?.agent.workspace ?? ""
             }
         }
     }

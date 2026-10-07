@@ -24,15 +24,18 @@ Singleton {
     property int workspaceId: Hypr.focusedWorkspaceId
     property bool notifFlash: false
     property var notification: null
+    property bool agentFlash: false
+    property var agentEvent: null     // { agent, kind: "blocked" | "done" }
 
     readonly property string mode: {
         if (Osd.visible) return "osd";
+        if (agentFlash && agentEvent) return "agent";   // above notifications: herdr's own system toast says the same
         if (notifFlash && notification) return "notification";
         if (workspaceFlash) return "workspace";
         if (Media.hasPlayer && Media.title.length > 0) return "media";
         return "clock";
     }
-    readonly property bool isTransient: mode === "osd" || mode === "notification" || mode === "workspace"
+    readonly property bool isTransient: mode === "osd" || mode === "notification" || mode === "agent" || mode === "workspace"
 
     // ignore the initial workspace report at startup
     property bool _armed: false
@@ -42,6 +45,22 @@ Singleton {
         id: wsTimer
         interval: Theme.durTransient
         onTriggered: root.workspaceFlash = false
+    }
+
+    Timer {
+        id: agentTimer
+        interval: Theme.durNotif + 2000
+        onTriggered: root.agentFlash = false
+    }
+
+    // an agent in herdr needs an answer or finished (Herdr only emits it when nobody is looking at that pane)
+    Connections {
+        target: Herdr
+        function onAttention(agent, kind) {
+            root.agentEvent = { agent: agent, kind: kind };
+            root.agentFlash = true;
+            agentTimer.restart();
+        }
     }
 
     Timer {
