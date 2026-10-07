@@ -218,6 +218,12 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - [ ] Batería: respira al cargar y late rojo por debajo del 15 % sin cargar. Rueda sobre la batería = brillo.
 - [ ] Cafeína activa: la pantalla no se apaga ni se bloquea por inactividad (`hypridle`).
 
+## 12c. Iconos (Candy + Sweet Folders)
+
+- [ ] `hyprctl dispatch 'hl.dsp.exec_cmd("dolphin")'` y `tr '\0' '\n' < /proc/$(pgrep -x dolphin)/environ | grep QT_QPA` → `hyprqt6engine`. Dolphin muestra carpetas moradas de Sweet, iconos Candy y tema oscuro. En Plasma sigue como antes.
+- [ ] `gsettings get org.gnome.desktop.interface icon-theme` → `'Sweet-Purple'`; `~/.config/gtk-3.0/settings.ini` y `gtk-4.0` son enlaces al repo.
+- [ ] Barra (bandeja), dock y lanzador orbital con iconos Candy; las apps sin icono Candy caen a Breeze / Adwaita, nunca al icono de «falta imagen» (salvo HP Scan y lstopo, ver README).
+
 ## 12b. Popovers bajo su cápsula
 
 - [ ] Los 7 popovers (rendimiento, Wi‑Fi, Bluetooth, sonido, batería, notificaciones, calendario) se abren con su **borde derecho alineado con el de su cápsula** (isla derecha) y nunca a menos de 14 px del borde de la pantalla; el de la isla izquierda alinearía el borde izquierdo. La animación crece desde ese lado.

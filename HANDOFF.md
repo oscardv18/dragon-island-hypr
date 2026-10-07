@@ -403,6 +403,15 @@ Decisiones y trampas:
 - **Dock = notch desde el otro borde:** negro opaco (`Theme.island`), misma silueta (`NotchShape`: orejas cóncavas junto al borde y esquinas redondeadas lejos) girada hacia el borde (abajo 180°, izquierda −90°, derecha 90°), grosor 40 px (= altura de las islas), cápsulas de 30 (icono 20) con `surface2` / `surfaceHi` como las de las islas. El namespace `dragon-dock` está **excluido** de hyprglass (`glass.lua`) y fuera de las reglas de blur nativo. Solo aplicaciones. Menú del dock con clic derecho sobre la pestaña.
 - **Planeta del lanzador con cristal real:** `modules/launcher/PlanetGlass.qml`, ventana de 200 × 200 (namespace `dragon-launcher`, centrada, sin entrada, mapeada al arrancar para quedar bajo el anillo) con el disco de cristal; así hyprglass dibuja el relieve de su borde. El disco dentro de `Launcher.qml` quedó transparente (solo conserva el campo de búsqueda). Las píldoras de los iconos siguen dentro de la capa de pantalla completa (sin relieve de borde: haría falta una ventana por icono, que además orbitan).
 
+## 7m. Iconos Candy + Sweet Folders sin KDE (2026-10-07)
+
+- Tema `Sweet-Purple` (hereda de `candy-icons`; la lista real de `/usr/share/icons` tiene los `Sweet-*` de `sweet-folders-icons-git`). `QT_QPA_PLATFORMTHEME` pasa de `kde` a `hyprqt6engine` (confirmado por el usuario) solo en `env.lua`. Opciones del `.conf` comprobadas en el plugin instalado: `theme:{color_scheme, icon_theme, style, font, font_size, font_fixed, font_fixed_size}` y `misc:{single_click_activate, menus_have_icons, shortcuts_for_context_menus}`; se busca `hypr/hyprqt6engine.conf` en `XDG_CONFIG_HOME`. Sin `color_scheme` Qt cae a una paleta clara: se usa `/usr/share/color-schemes/BreezeDark.colors` porque no hay esquema Sweet.
+- GTK: `settings.ini` (3.0 y 4.0) enlazados + dconf. Plasma también los lee: avisado en el README.
+- Quickshell: `//@ pragma IconTheme Sweet-Purple`.
+- Verificado: el Dolphin lanzado por Hyprland tiene `QT_QPA_PLATFORMTHEME=hyprqt6engine` en `/proc/<pid>/environ` (hl.env se aplica tras `hyprctl reload`), carpetas moradas de Sweet, iconos Candy y tema oscuro; dock y lanzador orbital con iconos Candy; `gsettings` devuelve `Sweet-Purple`.
+- `update.sh`: un `git pull` fallido (sin red / sin clave SSH: el remoto ahora es `git@github.com`) y un paquete que no se puede instalar sin terminal son avisos, no abortan; el paquete queda anotado en el resumen.
+- Migración `008-icon-theme.sh`: paquetes AUR, `settings.ini`, gsettings y aviso de reiniciar las apps Qt abiertas.
+
 ## 8. Cómo depurar rápido
 
 ```sh

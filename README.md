@@ -156,6 +156,17 @@ El shell se controla también por IPC: `qs ipc call shell toggle <panel>`. Los p
 - Con vídeo y hyprglass, `glass.lua` limita el recálculo del cristal a 12 fps (`live_resample_fps`).
 - Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`. Paquetes: `awww`, `ffmpeg`, `ffmpegthumbnailer`, `mpv` y `mpvpaper` (AUR); hyprpaper ya no se usa.
 
+## Iconos y temas
+
+Iconos **Candy + Sweet Folders**: el tema se llama `Sweet-Purple` (carpetas moradas de Sweet que heredan de `candy-icons`, y después `breeze-dark`, Adwaita y hicolor para lo que a Candy le falte). En Hyprland **no se usan las preferencias de KDE**: todo sale del repo.
+
+- **Qt (Dolphin y demás):** `hyprqt6engine` (AUR). `config/hypr/env.lua` fija `QT_QPA_PLATFORMTHEME=hyprqt6engine` con `hl.env`, **solo en la sesión Hyprland** (nada en `/etc/environment` ni `~/.profile`, así Plasma conserva el suyo). La configuración es `config/hypr/hyprqt6engine.conf` (`icon_theme`, esquema de color `BreezeDark.colors` —no existe un esquema Sweet en el sistema—, estilo `breeze`, tipografías). Antes la variable valía `kde`.
+- **GTK:** `config/gtk-3.0/settings.ini` y `config/gtk-4.0/settings.ini` enlazados a `~/.config/gtk-*/settings.ini`, y `gsettings set org.gnome.desktop.interface icon-theme 'Sweet-Purple'` (instalador y migración 008). Ojo: GTK lee estos archivos también en Plasma; si cambias el tema de iconos desde los ajustes de KDE, escribirá en el repo (verás el cambio en `git status`). `nwg-look` (opcional) sirve para ajustes manuales.
+- **Quickshell:** `//@ pragma IconTheme Sweet-Purple` en la primera línea de `shell.qml` (barra, dock, lanzador orbital, bandeja).
+- **Cambiar de color:** pon `Sweet-Blue`, `Sweet-Teal`, `Sweet-Red`, `Sweet-Yellow`… (están en `/usr/share/icons`) en `hyprqt6engine.conf`, `settings.ini` (×2), `shell.qml` y `ICON_THEME` de `installer/lib.sh`.
+- **Paquetes:** `hyprqt6engine`, `candy-icons-git`, `sweet-folders-icons-git` (AUR) y `nwg-look`. Las apps Qt que ya estaban abiertas conservan el tema anterior hasta reiniciarlas.
+- **Apps sin icono de Candy** (de 64 con entrada visible, 55 lo tienen; las 7 siguientes caen al tema de respaldo): Antigravity, Antigravity IDE, Emoji Selector, Software Token (×2), Volume Control, ikhal. **Sin icono en ningún tema** (icono de «falta imagen»): HP Scan (su `.desktop` apunta a `/usr/share/icons/Humanity/…`, que no existe) y Hardware Locality lstopo (`hwloc`).
+
 ## Cristal y blur
 
 Dos capas, y la segunda es opcional. Ambas trabajan por **alfa**: el blur / cristal aparece donde la ventana de Quickshell tiene píxeles con alfa por encima de un umbral, es decir, exactamente la forma visible (islas y tarjetas redondeadas). No se usa `BackgroundEffect.blurRegion`: una región de Wayland solo puede ser un rectángulo y dejaba puntas cuadradas en las esquinas.
