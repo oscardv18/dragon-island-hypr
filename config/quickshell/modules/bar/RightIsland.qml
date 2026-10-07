@@ -126,27 +126,6 @@ Rectangle {
                               : Icons.wifiFor(Network.signalStrength, Network.wifiEnabled && Network.hasWifi)
                         color: Network.connected ? Theme.text : Theme.textDim
                     }
-                    // hover: download / upload speed
-                    Item {
-                        id: rates
-                        anchors.verticalCenter: parent.verticalCenter
-                        width: wifiCap.hovered ? rateRow.implicitWidth : 0
-                        height: parent.height
-                        opacity: wifiCap.hovered ? 1 : 0
-                        visible: width > 0.5
-                        clip: true
-                        Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
-                        Behavior on opacity { NumberAnimation { duration: Theme.durPill } }
-                        Row {
-                            id: rateRow
-                            anchors.verticalCenter: parent.verticalCenter
-                            spacing: Theme.spacingXs
-                            Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.arrowDown; size: Theme.iconSm; color: Theme.cyan }
-                            UiText { shadow: true; anchors.verticalCenter: parent.verticalCenter; text: SysStats.formatRate(SysStats.rxRate); mono: true; size: Theme.sizeCaption + 1; width: 62 }
-                            Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.arrowUp; size: Theme.iconSm; color: Theme.violetSoft }
-                            UiText { shadow: true; anchors.verticalCenter: parent.verticalCenter; text: SysStats.formatRate(SysStats.txRate); mono: true; size: Theme.sizeCaption + 1; width: 62 }
-                        }
-                    }
                 }
 
                 Capsule {

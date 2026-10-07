@@ -190,9 +190,8 @@ Item {
                     height: width
                     radius: width / 2
                     color: icon.isFront && !root.auto ? Theme.alpha(Theme.accent, 0.35) : Theme.popoverBg
-                    border.width: 1
-                    border.color: icon.isFront && !root.auto ? Theme.alpha(Theme.accent, 0.7) : Theme.glassBorder
                     Behavior on color { ColorAnimation { duration: Theme.durFade } }
+                    GlassRim { radius: parent.radius }
                 }
                 Image {
                     id: ico
@@ -216,17 +215,26 @@ Item {
                     anchors.top: parent.top
                 }
 
-                UiText {
+                // the name sits in a glass pill of its own, under the icon's pill (never over its edge)
+                Rectangle {
                     visible: icon.isFront
                     anchors.top: parent.bottom
-                    anchors.topMargin: Theme.spacingXs
+                    anchors.topMargin: Theme.spacingMd + 12
                     anchors.horizontalCenter: parent.horizontalCenter
-                    width: Theme.orbitIcon * 3
-                    horizontalAlignment: Text.AlignHCenter
-                    text: icon.modelData.name
-                    size: Theme.sizeBody
-                    weight: Theme.weightSemiBold
-                    shadow: true
+                    height: 28
+                    width: Math.min(Theme.orbitIcon * 4.5, nameText.implicitWidth + 28)
+                    radius: height / 2
+                    color: Theme.popoverBg
+                    GlassRim { radius: parent.radius; strength: 0.8 }
+                    UiText {
+                        id: nameText
+                        anchors.centerIn: parent
+                        width: parent.width - 20
+                        horizontalAlignment: Text.AlignHCenter
+                        text: icon.modelData.name
+                        size: Theme.sizeBody
+                        weight: Theme.weightSemiBold
+                    }
                 }
 
                 MouseArea {
@@ -253,8 +261,7 @@ Item {
             z: 0
             scale: root.planetScale
             color: Theme.popoverBg
-            border.width: 1
-            border.color: Theme.glassBorder
+            GlassRim { radius: parent.radius }
 
             // swallow clicks (clicking outside the launcher closes it, the planet must not)
             MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }

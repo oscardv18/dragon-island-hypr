@@ -65,10 +65,31 @@ if hl.plugin and hl.plugin.hyprglass then
         edge_thickness       = 0.06,
     })
 
+    -- The dock and the orbital launcher: the same glass, but the rim has to be crisp and bright (bevel + specular + fresnel),
+    -- or the pills and the band look flat. edge_thickness is a fraction of the layer's smallest side: the dock layer is
+    -- 300 px high, the launcher's 768.
+    hg.preset("dragon-dock", {
+        inherits             = "dragon-liquid",
+        blur_strength        = 2.0,
+        refraction_strength  = 1.0,
+        edge_thickness       = 0.05,
+        chromatic_aberration = 0.5,
+        specular_strength    = 1.0,
+        fresnel_strength     = 0.9,
+        bevel_strength       = 1.0,
+        bevel_size           = 3.0,
+    })
+    hg.preset("dragon-orbit", {
+        inherits             = "dragon-dock",
+        edge_thickness       = 0.014,
+    })
+
     -- mask_threshold 0.1: the Quickshell fills are translucent (Theme.glassBg 18 %, panels 30 %), so the glass shows through
     hg.layer("dragon-bar",           { preset = "dragon-bar",   mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-notifications", { preset = "dragon-card",  mask_mode = "alpha", mask_threshold = 0.1 })
-    for _, ns in ipairs({ "dragon-popover", "dragon-launcher", "dragon-wallpapers", "dragon-preview", "dragon-dock" }) do
+    hg.layer("dragon-dock",     { preset = "dragon-dock",  mask_mode = "alpha", mask_threshold = 0.1 })
+    hg.layer("dragon-launcher", { preset = "dragon-orbit", mask_mode = "alpha", mask_threshold = 0.1 })
+    for _, ns in ipairs({ "dragon-popover", "dragon-wallpapers", "dragon-preview" }) do
         hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.1 })
     end
 

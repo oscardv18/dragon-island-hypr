@@ -91,7 +91,7 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 | Indicador de submap (izquierda) | | Aparece solo con un submap activo |
 | Rendimiento (CPU % + RAM en una sola píldora) | Popover Rendimiento (CPU de los últimos 30 s, núcleos, RAM, GPU, temperatura, procesos, perfil de energía) | Nada se expande con el ratón |
 | Cápsula `US` / `LA` | Siguiente distribución de teclado | |
-| Wi‑Fi · Bluetooth · Batería | Su popover | Wi‑Fi con el ratón encima: velocidad de bajada / subida · rueda sobre la batería: brillo ±5 % |
+| Wi‑Fi · Bluetooth · Batería | Su popover | rueda sobre la batería: brillo ±5 % (la velocidad de bajada / subida está en el popover de Wi‑Fi) |
 | Cápsulas contextuales (solo cuando aplican) | Micrófono / cámara / pantalla: lista de apps · grabación: parar · VPN: abre Proton VPN · auriculares: Bluetooth · cafeína y No molestar: alternar · actualizaciones: abre Ghostty con la actualización · red: Rendimiento | Las que no caben se agrupan en `+N` (ratón encima: despliega los iconos) |
 | Volumen | Popover Sonido | Rueda: ±5 % · clic derecho o central: silenciar |
 | Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |

@@ -361,6 +361,13 @@ Decisiones y trampas:
 - **Rueda del ratón:** el dock no crece nunca. Hay `Theme.dockSlotsPerSide` (3) huecos por lado; si hay más apps, la rueda gira cada lado por separado (según de qué lado del centro esté el puntero) con un spring y las cápsulas que pasan del último hueco se desvanecen «bajo la pantalla»; hacia el botón central se desvanecen antes de cruzarlo (`side`: −1 fijadas, +1 abiertas, 0 centro). La carpeta de descargas forma parte de la lista de la derecha.
 - Bug: con el estado cargado antes de que `DesktopEntries` terminara de escanear, las apps fijadas quedaban vacías para siempre (la propiedad no dependía de la lista de entradas); ahora `pinnedItems` lee `DesktopEntries.applications.values`.
 
+## 7t. Wi‑Fi sin expansión y cristal «de verdad» en el dock y el lanzador (2026-10-07)
+
+- La cápsula de Wi‑Fi ya no se expande con el ratón (quitaba sitio al notch): bajada / subida están en una tarjeta del popover de Wi‑Fi.
+- Lanzador: el nombre de la app ya no se pinta sobre el borde de la píldora del icono; va en su **propia píldora de cristal** debajo (`nameText` dentro de un `Rectangle`).
+- **Bordes planos en el dock y el lanzador:** hyprglass calcula el relieve del borde (bisel, especular, fresnel) a partir del **rectángulo de la capa**, no de la forma que hay dentro (la máscara por alfa solo recorta). En las islas se nota porque su ventana tiene casi su tamaño; en el dock (1366 × 300) y el lanzador (pantalla completa) el borde queda fuera de la forma, así que las formas curvas salían planas aunque el preset fuera extremo (probado con `edge_thickness` 0,16 y refracción 3: sin cambio). Solución: `components/GlassRim.qml` (luz que cae desde arriba, borde brillante en la mitad superior, borde tenue completo y una línea oscura bajo el borde inferior) y `components/BandShape.qml` (la semidona dibujada tres veces: relleno, degradado de luz y borde interior de 3 px) pintados en QML encima del cristal de hyprglass (que sigue dando desenfoque y refracción). Presets `dragon-dock` y `dragon-orbit` en `glass.lua` (bisel y especular al máximo; el relieve del rectángulo de la capa sigue sin verse).
+- Pendiente de decisión: las islas de la barra pasaron a ventanas de ancho constante (fluidez), así que su relieve de hyprglass solo aparece en los bordes de la ventana; si quieres el mismo `GlassRim` en las islas hay que añadirlo en `LeftIsland` / `RightIsland`.
+
 ## 8. Cómo depurar rápido
 
 ```sh

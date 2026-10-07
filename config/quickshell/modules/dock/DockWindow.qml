@@ -127,24 +127,10 @@ PanelWindow {
             }
             readonly property real pointerX: hover.hovered ? hover.point.position.x - 10 : -1000
 
-            // ---- the glass arc ----
-            Shape {
-                anchors.fill: parent
-                preferredRendererType: Shape.CurveRenderer
-                // the band: outer arc, the screen edge, inner arc back (hollow in the middle), like an island bent into a semi-donut
-                ShapePath {
-                    id: arcPath
-                    fillColor: Theme.glassBg
-                    strokeColor: Theme.glassBorder
-                    strokeWidth: 1
-                    startX: 0
-                    startY: Theme.dockHeight
-                    PathArc { x: Theme.dockWidth; y: Theme.dockHeight; radiusX: win.outerR; radiusY: win.outerR; direction: PathArc.Clockwise }
-                    PathLine { x: Theme.dockWidth / 2 + win.innerHalf; y: Theme.dockHeight }
-                    PathArc { x: Theme.dockWidth / 2 - win.innerHalf; y: Theme.dockHeight; radiusX: win.innerR; radiusY: win.innerR; direction: PathArc.Counterclockwise }
-                    PathLine { x: 0; y: Theme.dockHeight }
-                }
-            }
+            // ---- the glass band (a semi-donut): fill, light from the top, a bright rim and an inset rim ----
+            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; fill: Theme.glassBg; stroke: Qt.rgba(1, 1, 1, 0.38); strokeWidth: 1.5 }
+            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; light: true }
+            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; inset: 3; stroke: Qt.rgba(1, 1, 1, 0.10); strokeWidth: 1 }
 
             // ---- an app on the arc ----
             component Slot: Item {
@@ -189,9 +175,8 @@ PanelWindow {
                     anchors.fill: parent
                     radius: width / 2
                     color: mouse.containsMouse ? Theme.surfaceHi : Theme.surface2
-                    border.width: 1
-                    border.color: Theme.glassBorder
                     Behavior on color { ColorAnimation { duration: Theme.durHover } }
+                    GlassRim { radius: parent.radius; strength: 0.7 }
                 }
                 Image {
                     anchors.centerIn: parent

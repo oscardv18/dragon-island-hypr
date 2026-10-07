@@ -28,6 +28,29 @@ PopoverFrame {
         onToggled: Network.toggleWifi()
     }
 
+    // traffic (the bar capsule no longer expands with it: the notch needs the room)
+    Card {
+        Layout.fillWidth: true
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingMd
+            Glyph { icon: Icons.arrowDown; size: Theme.iconMd; color: Theme.cyan }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 0
+                UiText { caption: true; text: "Bajada" }
+                UiText { text: SysStats.formatRate(SysStats.rxRate); mono: true; size: Theme.sizeBodyLg; weight: Theme.weightSemiBold }
+            }
+            Glyph { icon: Icons.arrowUp; size: Theme.iconMd; color: Theme.violetSoft }
+            ColumnLayout {
+                Layout.fillWidth: true
+                spacing: 0
+                UiText { caption: true; text: "Subida" }
+                UiText { text: SysStats.formatRate(SysStats.txRate); mono: true; size: Theme.sizeBodyLg; weight: Theme.weightSemiBold }
+            }
+        }
+    }
+
     // ---- states without a list ----
     UiText {
         visible: !Network.available
