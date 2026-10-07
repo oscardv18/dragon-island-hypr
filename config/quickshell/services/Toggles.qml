@@ -89,7 +89,9 @@ Singleton {
     }
 
     function toggleRecording(): void {
-        if (recordProc.running) recordProc.signal(2); // SIGINT
+        // SIGINT to wf-recorder finalizes the file; while the output picker (slurp) is still open the shell is
+        // waiting on it and would ignore the signal, so slurp is closed too
+        if (recordProc.running) Quickshell.execDetached(["sh", "-c", "pkill -INT -x wf-recorder; pkill -x slurp"]);
         else recordProc.running = true;
         root.toggleChanged("recording", recordProc.running);
     }
