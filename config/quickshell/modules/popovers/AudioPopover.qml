@@ -39,6 +39,28 @@ PopoverFrame {
         }
     }
 
+    // microphone in use (the bar shows an orange dot on the volume capsule)
+    Card {
+        visible: Privacy.mic
+        Layout.fillWidth: true
+        spacing: Theme.spacingXs
+        RowLayout {
+            Layout.fillWidth: true
+            spacing: Theme.spacingSm
+            Glyph { icon: Icons.microphone; size: Theme.iconMd; color: Theme.warn }
+            UiText { Layout.fillWidth: true; text: "Micrófono en uso"; weight: Theme.weightSemiBold }
+        }
+        Repeater {
+            model: Privacy.micApps
+            delegate: UiText {
+                required property string modelData
+                Layout.fillWidth: true
+                text: modelData
+                color: Theme.textSoft
+            }
+        }
+    }
+
     UiText { caption: true; text: "Salida" }
     UiText {
         visible: Audio.sinks.length === 0

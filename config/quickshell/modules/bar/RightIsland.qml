@@ -1,4 +1,4 @@
-// Right island: [contextual capsules] · CPU · RAM · keyboard layout · [Wi-Fi | Bluetooth | volume | battery] · bell · tray · clock
+// Right island: [contextual capsules] · CPU · RAM · keyboard layout · [Wi-Fi | Bluetooth | volume | battery] · tray · clock
 // Each capsule opens its own popover through ShellState (one at a time).
 import QtQuick
 import QtQuick.Effects
@@ -26,8 +26,6 @@ Rectangle {
             case "vpn":     Vpn.openApp(); break;
             case "headset": root.openPopover("bt", item); break;
             case "caffeine": Caffeine.toggle(); break;
-            case "dnd":     Toggles.toggleDnd(); break;
-            case "updates": Updates.run(); break;
             case "net":     root.openPopover("perf", item); break;
         }
     }
@@ -212,12 +210,35 @@ Rectangle {
                         else root.openPopover("audio", volCap);
                     }
                     onWheel: d => Audio.setVolume(Audio.volume + (d > 0 ? 0.05 : -0.05))
-                    Glyph {
-                        shadow: true
+                    Item {
+                        width: Theme.iconMd
+                        height: Theme.capsuleHeight
                         anchors.verticalCenter: parent.verticalCenter
-                        size: Theme.iconMd
-                        icon: Icons.volumeFor(Audio.volume, Audio.muted)
-                        color: Audio.muted ? Theme.textDim : Theme.text
+                        Glyph {
+                            shadow: true
+                            anchors.centerIn: parent
+                            size: Theme.iconMd
+                            icon: Icons.volumeFor(Audio.volume, Audio.muted)
+                            color: Audio.muted ? Theme.textDim : Theme.text
+                        }
+                        // microphone in use: an orange dot here (the apps are listed in the Sonido popover)
+                        Rectangle {
+                            id: micDot
+                            visible: Privacy.mic
+                            width: Theme.pillDot + 2
+                            height: width
+                            radius: width / 2
+                            color: Theme.warn
+                            x: parent.width - width / 2
+                            y: parent.height / 2 - Theme.iconMd / 2 - 1
+                            SequentialAnimation on opacity {
+                                running: micDot.visible && Theme.animationsEnabled
+                                loops: Animation.Infinite
+                                onStopped: micDot.opacity = 1
+                                NumberAnimation { to: 0.45; duration: Theme.ms(900); easing.type: Easing.InOutSine }
+                                NumberAnimation { to: 1; duration: Theme.ms(900); easing.type: Easing.InOutSine }
+                            }
+                        }
                     }
                     UiText {
                         shadow: true
@@ -276,47 +297,7 @@ Rectangle {
             }
         }
 
-        // Notifications bell: dot = unread (accent + glow)
-        Capsule {
-            id: bellCap
-            anchors.verticalCenter: parent.verticalCenter
-            padH: Theme.capsulePadH - 2
-            active: root.bar.isOpen("notifications")
-            onClicked: m => {
-                if (m.button === Qt.RightButton) Notifs.toggleDnd();
-                else root.openPopover("notifications", bellCap);
-            }
-            Item {
-                width: Theme.iconMd
-                height: Theme.capsuleHeight
-                Glyph {
-                    shadow: true
-                    anchors.centerIn: parent
-                    size: Theme.iconMd
-                    icon: Notifs.dnd ? Icons.bellOff : Icons.bell
-                    color: Notifs.dnd ? Theme.textDim : Theme.text
-                }
-                RectangularShadow {
-                    anchors.fill: unreadDot
-                    radius: width / 2
-                    blur: Theme.glowBlurSmall
-                    color: Theme.glowStrong
-                    visible: unreadDot.visible
-                }
-                Rectangle {
-                    id: unreadDot
-                    visible: Notifs.hasUnread && !Notifs.dnd
-                    width: Theme.pillDot + 2
-                    height: width
-                    radius: width / 2
-                    color: Theme.accent
-                    x: parent.width - width / 2 - 1
-                    y: parent.height / 2 - Theme.iconMd / 2
-                }
-            }
-        }
-
-        // System tray (StatusNotifierItems), between bell and clock. Left = activate (or menu if
+        // System tray (StatusNotifierItems), before the clock. Left = activate (or menu if
         // the item only has one), right = menu (QsMenuAnchor), middle = secondary, wheel = scroll.
         // Hidden when no app exposes an item. Logic lives in services/Tray.qml.
         Rectangle {
@@ -401,13 +382,46 @@ Rectangle {
             }
         }
 
-        // Clock: brand gradient, "lun 5 oct  16:23"
+        // Clock: brand gradient, "lun 5 oct  16:23". Notifications and updates live in its popover (calendar +
+        // notifications + updates), so this capsule only shows small markers: DND, unread, updates.
+        // Right click = No molestar.
         Capsule {
             id: clockCap
             anchors.verticalCenter: parent.verticalCenter
             brand: true
             active: root.bar.isOpen("calendar")
-            onClicked: root.openPopover("calendar", clockCap)
+            onClicked: m => {
+                if (m.button === Qt.RightButton) Notifs.toggleDnd();
+                else root.openPopover("calendar", clockCap);
+            }
+
+            // each marker grows in / out instead of popping
+            component Marker: Item {
+                property bool shown: false
+                default property alias data: box.data
+                anchors.verticalCenter: parent.verticalCenter
+                width: shown ? box.implicitWidth : 0
+                height: Theme.capsuleHeight
+                opacity: shown ? 1 : 0
+                visible: width > 0.5
+                clip: true
+                Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
+                Behavior on opacity { NumberAnimation { duration: Theme.durPill } }
+                Item { id: box; implicitWidth: childrenRect.width; implicitHeight: parent.height }
+            }
+
+            Marker {
+                shown: Notifs.dnd
+                Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.bellOff; size: Theme.iconSm; color: Theme.onBrand }
+            }
+            Marker {
+                shown: Notifs.hasUnread && !Notifs.dnd
+                Rectangle { anchors.verticalCenter: parent.verticalCenter; width: Theme.pillDot + 2; height: width; radius: width / 2; color: Theme.onBrand }
+            }
+            Marker {
+                shown: Updates.count > 0
+                Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.update; size: Theme.iconSm; color: Theme.onBrand }
+            }
             UiText {
                 shadow: true
                 anchors.verticalCenter: parent.verticalCenter

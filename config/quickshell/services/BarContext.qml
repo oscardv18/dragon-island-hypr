@@ -3,6 +3,9 @@
 // Service: the contextual capsules of the right island — shown only while they are relevant
 // =============================================================================
 /**
+ * (Microphone use is a dot on the volume capsule; No molestar, unread notifications and updates are markers on
+ * the clock capsule and live in its popover.)
+ *
  * Each entry: { key, prio, icon, color, text, est, pulse }
  *   prio: lower = more important. prio <= 2 (privacy, recording) is never grouped into "+N".
  *   est:  estimated width in px (the bar decides what fits before the chips are measured)
@@ -23,7 +26,7 @@ Singleton {
 
     property real netThreshold: 512000
 
-    readonly property var slots: ["privacy", "rec", "vpn", "headset", "caffeine", "dnd", "updates", "net"]
+    readonly property var slots: ["privacy", "rec", "vpn", "headset", "caffeine", "net"]
 
     function _mmss(s: int): string {
         return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -31,9 +34,11 @@ Singleton {
 
     readonly property var items: {
         const l = [];
-        if (Privacy.active) {
-            l.push({ key: "privacy", prio: 1, icon: Privacy.screen ? Icons.screenShare : (Privacy.camera ? Icons.webcam : Icons.microphone),
-                     color: Privacy.color, text: "", est: 30, pulse: false });
+        // the microphone is a dot on the volume capsule (details in the Sonido popover); camera and screen
+        // sharing get a capsule of their own
+        if (Privacy.camera || Privacy.screen) {
+            l.push({ key: "privacy", prio: 1, icon: Privacy.screen ? Icons.screenShare : Icons.webcam,
+                     color: Privacy.camera && !Privacy.screen ? Theme.ok : Theme.warn, text: "", est: 30, pulse: false });
         }
         if (Toggles.isRecording) {
             l.push({ key: "rec", prio: 2, icon: Icons.record, color: Theme.error, text: root._mmss(Toggles.recordingSeconds), est: 68, pulse: true });
@@ -48,12 +53,6 @@ Singleton {
         }
         if (Caffeine.enabled) {
             l.push({ key: "caffeine", prio: 5, icon: Icons.coffee, color: Theme.warn, text: "", est: 30, pulse: false });
-        }
-        if (Notifs.dnd) {
-            l.push({ key: "dnd", prio: 6, icon: Icons.bellOff, color: Theme.textDim, text: "", est: 30, pulse: false });
-        }
-        if (Updates.count > 0) {
-            l.push({ key: "updates", prio: 7, icon: Icons.update, color: Theme.cyan, text: `${Updates.count}`, est: 30 + 9 * `${Updates.count}`.length + 8, pulse: false });
         }
         const top = Math.max(SysStats.rxRate, SysStats.txRate);
         if (top > root.netThreshold) {
