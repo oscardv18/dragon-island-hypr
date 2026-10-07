@@ -335,6 +335,8 @@ fi
 if has_component zsh; then
     ensure_omz
     deploy_item "$REPO_DIR/config/zsh/.zshrc" "$HOME/.zshrc"
+    # the terminal setup .zshrc sources (aliases, fzf, fzf-tab, history)
+    deploy_item "$REPO_DIR/config/zsh" "${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh"
     deploy_item "$REPO_DIR/config/starship/starship.toml" "$HOME/.config/starship.toml"
     if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/usr/bin/zsh" ]]; then
         if confirm "Tu shell por defecto no es zsh. ¿Cambiarla con chsh -s /usr/bin/zsh? (pide tu contraseña)"; then

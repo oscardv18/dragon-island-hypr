@@ -1,1 +1,5 @@
 # "Mis apps": packages installed from the Tienda panel (kept by bin/dragon-pkg), official repositories
+opencode
+eza
+zoxide
+bat

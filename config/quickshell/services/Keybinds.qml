@@ -120,6 +120,13 @@ Singleton {
         { name: "Portapapeles / Menú de energía (dentro)", rows: [
             { text: "Portapapeles: copiar · borrar entrada (búsqueda vacía)", combos: [["Enter"], ["Supr"]] },
             { text: "Energía: mover · ejecutar · atajo directo", combos: [["← →"], ["Enter"], ["1–5"]] } ] },
+        { name: "Terminal zsh (Ghostty)", rows: [
+            { text: "Búsqueda avanzada con vista previa (fzf-tab)", combos: [["Tab"]] },
+            { text: "Aceptar la carpeta y seguir completando", combos: [["/"]] },
+            { text: "Cambiar de grupo de resultados", combos: [["<", ">"]] },
+            { text: "Historial · archivos · carpetas (fzf)", combos: [["Ctrl", "R"], ["Ctrl", "T"], ["Alt", "C"]] },
+            { text: "Saltar a una carpeta · elegirla (zoxide)", combos: [["z dir"], ["zi"]] },
+            { text: "eza: lista · larga con git · árbol", combos: [["ls"], ["ll"], ["lt"]] } ] },
         { name: "Cualquier panel", rows: [
             { text: "Cerrar", combos: [["Esc"], ["clic fuera"]] } ] }
     ]

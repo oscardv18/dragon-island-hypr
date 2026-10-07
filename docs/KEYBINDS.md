@@ -137,6 +137,17 @@ El icono bajo el ratón se ilumina con el contorno en degradado (sin ampliarse).
 
 El dock se muestra solo cuando el escritorio actual no tiene ventanas en mosaico (vacío, o solo flotantes) y se hunde con una ventana en mosaico o en pantalla completa. Posición y apps fijadas en `~/.local/state/dragon-island/dock.json` (`"position"`: `bottom` · `left` · `right`; `qs ipc call dock position left`).
 
+## Terminal (zsh en Ghostty)
+
+| Atajo | Acción |
+|---|---|
+| `Tab` | Búsqueda avanzada (fzf-tab) con vista previa: carpetas (eza), archivos (bat), git, variables, procesos, paquetes |
+| `/` | Aceptar la carpeta y seguir completando |
+| `<` `>` | Cambiar de grupo de resultados |
+| `Ctrl + R` / `Ctrl + T` / `Alt + C` | Historial · archivos · carpetas con fzf |
+| `z dir` · `zi` | Saltar a una carpeta (zoxide) · elegirla con fzf |
+| `ls` `ll` `la` `lt` | eza: lista · larga con git · con ocultos · árbol |
+
 ## Teclado dentro de los paneles
 
 | Panel | Teclas |

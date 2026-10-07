@@ -204,6 +204,25 @@ Componente opcional del instalador (casilla «Shell: zsh + starship» o `--zsh`)
 - Ghostty abre tu shell de login (zsh tras el componente). Plasma no se toca: solo cambian tus dotfiles de usuario.
 - En un sistema ya instalado lo aplica la migración `002-zsh-starship.sh` con `./update.sh`.
 
+## Terminal
+
+Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo suma `eza`, `fzf`, `fzf-tab`, `zoxide`, `fd` y `bat`, todo en `config/zsh/` (desplegado en `~/.config/dragon-island/zsh`; `~/.zshrc` solo los carga, y **el prompt de starship no cambia**).
+
+**Orden de carga** (importa): oh-my-zsh con el plugin `git` (`oh-my-zsh.sh` ejecuta `compinit` después de la lista `plugins`) → historial → `fzf` (`fzf --zsh`, que también enlaza Tab) → `fzf-tab` (el último en enlazar `^I`) → `zsh-autosuggestions` → `zsh-syntax-highlighting` (el último envoltorio de widgets) → aliases → `zoxide` → starship. Por eso autosuggestions y el resaltado ya no están en `plugins=()`. `fzf-tab` es un clon de git como los otros plugins (`ensure_omz`); el resto, paquetes de `extra`.
+
+| Atajo | Qué hace |
+|---|---|
+| `Tab` | Búsqueda difusa con fzf-tab, con vista previa: `eza` para carpetas, `bat` para archivos, `git diff` / `git log` / `git show` en git, el valor de las variables, `ps` en `kill`, `pacman -Si` en `pacman` / `yay` |
+| `/` | En una ruta, acepta la carpeta y sigue completando (rutas profundas) |
+| `<` `>` | Cambiar de grupo de resultados (archivos, ramas, comandos…) |
+| `Ctrl+R` | Historial con fzf (200 000 entradas, compartido entre terminales, sin duplicados; un espacio delante de un comando lo deja fuera) |
+| `Ctrl+T` | Insertar archivos (vista previa con bat / eza) |
+| `Alt+C` | Entrar en una carpeta (vista previa con eza) |
+| `z dir` · `zi` | Saltar a una carpeta por frecuencia (zoxide) · elegirla con fzf. `cd` sigue siendo el `cd` normal |
+| `ls` · `ll` · `la` · `lt` | eza con iconos · lista larga con git · incluye ocultos · árbol de 2 niveles. Colores de la paleta Dragonized (`EZA_COLORS`) |
+
+`fd` es el buscador de fzf (`--hidden --follow --exclude .git`). Arranque medido: ~60 ms antes, ~71 ms después (+11 ms). Aplica en un sistema ya instalado la migración `010-terminal-tools.sh`.
+
 ## Estructura
 
 ```

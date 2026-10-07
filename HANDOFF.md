@@ -454,6 +454,14 @@ Decisiones y trampas:
 - **Corrección:** `scripts/wallpapers.sh apply-video` mira la altura del vídeo (`ffprobe`) y, si pasa en más de un 25 % la de la pantalla (`hyprctl monitors`), reproduce el original al momento y en segundo plano (prioridad baja) genera una copia H.264 del tamaño de la pantalla, sin audio, 30 fps, en `~/.cache/dragon-island/video/<hash>.mp4` (7 s para un clip de 14 s); cuando existe, relanza `mpvpaper` con ella si sigue siendo el fondo actual. mpv usa además `profile=fast`. Las siguientes veces usa la copia directamente.
 - **Medido:** GPU 70 % → 12 % con la copia; el cambio automático original → copia comprobado.
 
+## 7t. Terminal avanzada: eza, fzf, fzf-tab, zoxide (2026-10-07)
+
+- **Diagnóstico:** oh-my-zsh con `plugins=(git zsh-autosuggestions zsh-syntax-highlighting)` (clones de git en `custom/plugins`); `oh-my-zsh.sh` carga los plugins y **después** ejecuta `compinit` (línea 238). fzf-tab necesita ir tras `compinit` y antes de autosuggestions / resaltado, así que esos dos salen de `plugins=()` y se cargan a mano después. `fzf --zsh` enlaza Tab (`fzf-completion`): va antes que fzf-tab para que este sea el último en enlazar `^I` (comprobado con `bindkey`).
+- **Archivos** (`config/zsh/`, desplegados en `~/.config/dragon-island/zsh`): `history.zsh`, `fzf.zsh` (paleta, `fd`, previsualizaciones; sin terminal no hace nada), `completion.zsh` (zstyles del README de fzf-tab + previsualizaciones por comando, `/` continuo, `<` `>`), `aliases.zsh` (eza + `EZA_COLORS` en truecolor; `cat` → bat). `zoxide init` queda al final con `z` / `zi` y **`cd` normal**: con `--cmd cd` zoxide se mete en funciones y scripts y las vistas previas de fzf-tab perderían las rutas reales.
+- **Medido** (`zsh -i -c exit`, 5 pruebas, mismo estado de la máquina): 60 ms antes, 71 ms después (+11 ms, sin carga diferida ni caché extra). La medida inicial de ~140 ms se hizo con la GPU saturada por el vídeo 4K (§7s).
+- **Probado en Ghostty con teclado virtual:** `cd ` + Tab (fzf-tab con bordes redondeados, colores Dragonized y vista previa de eza), `git checkout ` + Tab (archivos modificados / head local / ramas remotas con su `git diff`), `Ctrl+R`. El prompt de starship no cambió.
+- Paquetes: `eza fzf zoxide fd bat` en `@zsh`; `fzf-tab` por `ensure_omz` (git). Migración `010-terminal-tools.sh`. Las teclas están en el panel `SUPER + F1` (`panelGroups`) y en KEYBINDS.md.
+
 ## 8. Cómo depurar rápido
 
 ```sh

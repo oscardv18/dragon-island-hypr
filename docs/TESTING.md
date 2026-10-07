@@ -218,6 +218,11 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - [ ] Batería: respira al cargar y late rojo por debajo del 15 % sin cargar. Rueda sobre la batería = brillo.
 - [ ] Cafeína activa: la pantalla no se apaga ni se bloquea por inactividad (`hypridle`).
 
+## 12f. Terminal (Ghostty)
+
+- [ ] `cd ` + `Tab`: buscador fzf-tab con bordes redondeados, colores Dragonized y vista previa de eza; `git checkout ` + `Tab` lista archivos modificados, ramas y commits con su `git diff` / `git log`; `Ctrl+R` busca en el historial; `Ctrl+T` / `Alt+C` con vista previa; `z` / `zi`; `ll`, `lt`.
+- [ ] El prompt de starship es idéntico al de antes. `bindkey '^I'` → `fzf-tab-complete`.
+
 ## 12e. Tienda de apps (SUPER + I)
 
 - [ ] **Buscar:** `cowsay` lista el oficial primero (insignia Oficial) y luego los del AUR; `Tab` marca y baja; los detalles cargan al parar; en AUR salen votos / popularidad / mantenedor y el aviso de «desactualizado» / «huérfano» si toca; **Ver PKGBUILD** abre el visor con scroll.

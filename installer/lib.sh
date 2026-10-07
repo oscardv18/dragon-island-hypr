@@ -89,7 +89,7 @@ read_plain_list() {
     awk '/^[[:space:]]*(#|$)/ { next } { print $1 }' "$1"
 }
 
-# ensure_omz: oh-my-zsh and the two external plugins used by config/zsh/.zshrc (git clones, as in the
+# ensure_omz: oh-my-zsh and the external plugins (zsh-autosuggestions, zsh-syntax-highlighting, fzf-tab) used by config/zsh/.zshrc (git clones, as in the
 # original setup: they are not pacman packages). Existing clones are left alone.
 ensure_omz() {
     local zsh_dir="${ZSH:-$HOME/.oh-my-zsh}" custom
@@ -99,10 +99,13 @@ ensure_omz() {
         run git clone --depth 1 https://github.com/ohmyzsh/ohmyzsh.git "$zsh_dir"
     fi
     local name
-    for name in zsh-autosuggestions zsh-syntax-highlighting; do
+    local repo
+    for name in zsh-autosuggestions zsh-syntax-highlighting fzf-tab; do
+        repo="zsh-users/$name"
+        [[ "$name" == fzf-tab ]] && repo="Aloxaf/fzf-tab"
         if [[ ! -d "$custom/plugins/$name" ]]; then
             log_info "Clonando el plugin $name"
-            run git clone --depth 1 "https://github.com/zsh-users/$name.git" "$custom/plugins/$name"
+            run git clone --depth 1 "https://github.com/$repo.git" "$custom/plugins/$name"
         fi
     done
 }

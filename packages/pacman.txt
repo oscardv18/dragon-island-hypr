@@ -84,3 +84,9 @@ ttf-jetbrains-mono-nerd
 zsh
 starship
 git
+# Terminal: eza (ls), fzf + fzf-tab (search), zoxide (z / zi), fd + bat (fast finder, previews); fzf-tab itself is a git clone (ensure_omz)
+eza
+fzf
+zoxide
+fd
+bat
