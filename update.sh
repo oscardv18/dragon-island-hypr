@@ -373,7 +373,7 @@ elif $DRY_RUN; then
     ERRORS="(dry-run: no se comprobó)"
 fi
 
-join() { local IFS=", "; echo "$*"; }
+join() { local out="" a; for a in "$@"; do out+="${out:+, }$a"; done; echo "$out"; }
 [[ -d "$BACKUP_DIR" ]] && BACKUPS+=("$BACKUP_DIR")
 
 lines=(
