@@ -374,6 +374,12 @@ Decisiones y trampas:
 - **Contornos:** `components/BorderGradient.qml` (el degradado como fuente) + `components/GradientRing.qml` (anillo enmascarado con `MultiEffect.maskEnabled`) sustituyen al borde blanco de `GlassRim` (que ahora solo da luz y profundidad). El dock lleva el contorno de la franja subtil (0,5), las cápsulas 0,4 (1 si hay ratón encima); el lanzador, el planeta (0,9), las píldoras (0,75; la de delante 2,5 px al 100 %) y la píldora del nombre (0,6).
 - **Dock más fino:** la franja pasa a 48 px (como las islas), 440 × 90, cápsulas de 36 con icono de 22, separación 42 px y 4 huecos por lado.
 
+## 7v. Dock: hover estable y contornos más finos (2026-10-07)
+
+- **Subía y bajaba con el cursor encima:** el `HoverHandler` estaba en un `Item` hermano de las cápsulas; al pasar sobre una cápsula (con su propio `MouseArea`) el dock creía que el cursor salía y se ocultaba, luego reaparecía, etc. Ahora `HoverHandler` y `WheelHandler` cuelgan del propio `arc` (padre de las cápsulas) con margen de 8 px. Verificado: 8 s con el cursor sobre un icono sin parpadeo; se oculta al quitarlo.
+- Contornos más finos: cápsulas 1 px (1,4 al hover), franja 1 px al 40 %; lanzador 1–1,6 px. Máscaras supermuestreadas ×2.
+- Limitación: el borde exterior de la franja se ve algo escalonado porque el recorte alfa de hyprglass (`mask_threshold`) es un corte duro por píxel; no se puede suavizar desde QML.
+
 ## 8. Cómo depurar rápido
 
 ```sh

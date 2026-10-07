@@ -24,6 +24,9 @@ Item {
         border.color: "white"
         visible: false
         layer.enabled: true
+        layer.smooth: true
+        layer.textureSize: Qt.size(Math.max(1, width * 2), Math.max(1, height * 2))
+        antialiasing: true
     }
 
     MultiEffect {

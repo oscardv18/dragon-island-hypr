@@ -108,32 +108,35 @@ PanelWindow {
                 function onMaxOffRChanged() { arc.targetR = Math.min(arc.targetR, win.maxOffR); }
             }
 
-            // the pointer area: the arc plus the strip above it where magnified icons grow
-            Item {
-                id: hit
-                x: -10
-                y: -34
-                width: Theme.dockWidth + 20
-                height: Theme.dockHeight + 34
-                HoverHandler { id: hover; onHoveredChanged: Dock.hover(hovered) }
-                WheelHandler {
-                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                    onWheel: e => {
-                        const dir = e.angleDelta.y > 0 ? 1 : -1;
-                        if (arc.pointerX < Theme.dockWidth / 2) arc.targetL = Math.max(0, Math.min(win.maxOffL, arc.targetL + dir));
-                        else arc.targetR = Math.max(0, Math.min(win.maxOffR, arc.targetR - dir));
-                    }
+            // Pointer: handlers sit on the arc itself (the parent of the capsules), so a capsule's own MouseArea cannot steal
+            // the hover from them — with the handler on a sibling item, hovering a capsule read as "left the dock", the
+            // dock sank, rose again, and so on. The margin covers the rim around the band.
+            HoverHandler { id: hover; margin: 8; onHoveredChanged: Dock.hover(hovered) }
+            WheelHandler {
+                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                onWheel: e => {
+                    const dir = e.angleDelta.y > 0 ? 1 : -1;
+                    if (arc.pointerX < Theme.dockWidth / 2) arc.targetL = Math.max(0, Math.min(win.maxOffL, arc.targetL + dir));
+                    else arc.targetR = Math.max(0, Math.min(win.maxOffR, arc.targetR - dir));
                 }
             }
-            readonly property real pointerX: hover.hovered ? hover.point.position.x - 10 : -1000
+            // geometry that takes the pointer (the window mask): the band's box plus the margin
+            Item {
+                id: hit
+                x: -8
+                y: -8
+                width: Theme.dockWidth + 16
+                height: Theme.dockHeight + 8
+            }
+            readonly property real pointerX: hover.hovered ? hover.point.position.x : -1000
 
             // ---- the glass band (a semi-donut): fill, light from the top, a bright rim and an inset rim ----
             BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; fill: Theme.glassBg }
             BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; light: true }
             // the contour in the window-border gradient, subtle (the same family as the bar islands)
             BorderGradient { id: bandGrad; anchors.fill: parent }
-            BandShape { id: bandMask; anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; stroke: "white"; strokeWidth: 1.5; visible: false; layer.enabled: true }
-            MultiEffect { anchors.fill: parent; source: bandGrad; maskEnabled: true; maskSource: bandMask; opacity: 0.5 }
+            BandShape { id: bandMask; anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; stroke: "white"; strokeWidth: 1; visible: false; layer.enabled: true; layer.smooth: true; layer.textureSize: Qt.size(width * 2, height * 2) }
+            MultiEffect { anchors.fill: parent; source: bandGrad; maskEnabled: true; maskSource: bandMask; opacity: 0.4 }
 
             // ---- an app on the arc ----
             component Slot: Item {
@@ -181,7 +184,7 @@ PanelWindow {
                     color: mouse.containsMouse ? Theme.surfaceHi : Theme.surface2
                     Behavior on color { ColorAnimation { duration: Theme.durHover } }
                     GlassRim { radius: parent.radius; strength: 0.5 }
-                    GradientRing { radius: parent.radius; ringWidth: mouse.containsMouse ? 2 : 1.2; strength: mouse.containsMouse ? 1 : 0.4 }
+                    GradientRing { radius: parent.radius; ringWidth: mouse.containsMouse ? 1.4 : 1; strength: mouse.containsMouse ? 0.95 : 0.3 }
                 }
                 Image {
                     anchors.centerIn: parent
