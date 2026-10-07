@@ -29,5 +29,6 @@ Item {
     AudioPopover         { id: audio; shown: host.panel === "audio";         x: host.xFor(width); originX: host.leftSide ? 0 : width; y: host.popTop }
     BatteryPopover       { id: battery; shown: host.panel === "battery";       x: host.xFor(width); originX: host.leftSide ? 0 : width; y: host.popTop; screenName: host.screenName }
     NotificationCenter   { id: notifs; shown: host.panel === "notifications"; x: host.xFor(width); originX: host.leftSide ? 0 : width; y: host.popTop }
+    PrivacyPopover       { id: privacy; shown: host.panel === "privacy";       x: host.xFor(width); originX: host.leftSide ? 0 : width; y: host.popTop }
     CalendarPopover      { id: calendar; shown: host.panel === "calendar";      x: host.xFor(width); originX: host.leftSide ? 0 : width; y: host.popTop }
 }

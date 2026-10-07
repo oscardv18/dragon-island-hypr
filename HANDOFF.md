@@ -313,6 +313,15 @@ Decisiones y trampas:
 - Otros componentes de Quickshell: barra, notificaciones, popovers, lanzador y selector ya tienen cristal por capa. Los menús de la bandeja (`QsMenuAnchor`, xdg-popups) y el `DebugPanel` (dev) no se han tocado ni comprobado.
 - Migración: no aplica (todo en el repo).
 
+## 7m. Islas dinámicas (2026-10-07)
+
+- **Servicios nuevos:** `Privacy` (PipeWire: nodos `Stream/Input/Audio` que graban de verdad —no monitores de salida, `stream.capture.sink`— = micrófono; `Stream/Input/Video` enlazado a un `Video/Source` = cámara, a un `Stream/Output/Video` del portal = pantalla compartida), `Vpn` (interfaz `proton*`, `tun*`, `wg*`, `ipv6leakintrf*` en `/sys/class/net`), `Caffeine` (+ `IdleInhibitor` en cada ventana de la isla izquierda), `Updates` (`checkupdates` + `paru`/`yay -Qua`, cada 30 min, `run()` abre Ghostty), `BarContext` (la lista de cápsulas contextuales con prioridad), `WorkspacePreview` (estado de la vista previa). `SysStats` guarda el historial de CPU (15 muestras = 30 s) y las velocidades de red (`/proc/net/dev`); `Hypr` expone `submap`, `windowsOn(id)`, `iconFor`, `focusWindow`, `togglePin`, `activeFloating/Pinned`.
+- **Cápsulas contextuales:** un slot fijo por tipo (`ContextChip`), así cada una crece / se encoge con animación de ancho y opacidad. `ContextChips` decide con anchos estimados qué cabe en el espacio que deja la isla izquierda + el notch (`Theme.notchSideReserve`); privacidad y grabación (prio ≤ 2) nunca se agrupan; el resto pasa a `+N`, que despliega sus iconos con el ratón.
+- **Vista previa de escritorio:** ventana propia `dragon-preview` (`PreviewWindow.qml`, con cristal `dragon-panel`) con `ScreencopyView` de cada `Toplevel` (`hyprland-toplevel-export`), instantánea (`live: false`); hay un retardo de 350 ms para abrir y 280 ms para cerrar.
+- **Trampas:** (1) los iconos no se dibujaban tras `update.sh` porque Quickshell arrancó desde un shell sin el entorno de la sesión (sin `QT_QPA_PLATFORMTHEME`): reiniciar con `hyprctl dispatch 'hl.dsp.exec_cmd(...)'` o desde el propio escritorio. (2) `hl.dsp.window.pin` solo vale para ventanas flotantes. (3) Glifos MDI: comprobados renderizándolos (`F0E58` flotar, `F0E51` pantalla; `F0178` y `F0F13` eran otros). (4) La grabación solo se podía iniciar desde el mosaico que el dashboard viejo tenía: ahora `SUPER + SHIFT + R` → `qs ipc call toggles record`.
+- **Verificado en vivo:** micrófono (`parecord`), grabación, VPN, actualizaciones, `+N`, vista previa con captura real, acciones de la ventana, gráfica de CPU, popover de privacidad. **Sin verificar:** cámara y compartir pantalla (no hay cámara ni flujo de portal en este equipo; el código sigue el mismo camino por enlaces), submap (hace falta registrar uno), cafeína frente a `hypridle` (se comprueba que la cápsula aparece, no el bloqueo), pulso de batería baja, auriculares Bluetooth.
+- Capturas en `docs/screenshots/islas/`. Migración `006-dynamic-islands.sh` (`pacman-contrib`).
+
 ## 8. Cómo depurar rápido
 
 ```sh

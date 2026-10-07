@@ -10,6 +10,8 @@
  *   - tempC: int [readonly] (CPU package temperature, -1 if unknown)
  *   - diskPct: int [readonly]  diskUsedGb / diskTotalGb: real [readonly] (root filesystem)
  *   - gpuPct: int [readonly] (-1 if unknown; AMD/Intel sysfs or nvidia-smi)
+ *   - cpuHistory: list<int> [readonly] (last 15 samples, 2 s apart = 30 s, newest last)
+ *   - rxRate / txRate: real [readonly] (bytes per second, all interfaces but lo)
  *   - topProcs: list<var> [readonly] ({ name, cpu, memMb }, 4 entries, only while details are wanted)
  *
  * Functions:
@@ -38,12 +40,23 @@ Singleton {
     property real diskTotalGb: 0.0
     property int gpuPct: -1
     property var topProcs: []
+    property var cpuHistory: []
+    property real rxRate: 0
+    property real txRate: 0
+    property var _net: null     // [rx, tx, timestamp ms]
+
+    function formatRate(bps: real): string {
+        if (bps >= 1048576) return `${(bps / 1048576).toFixed(1)} MB/s`;
+        if (bps >= 1024) return `${Math.round(bps / 1024)} KB/s`;
+        return `${Math.round(bps)} B/s`;
+    }
 
     property var _prev: ({})   // cpu label → [total, idle]
     property int _detailRefs: 0
 
     readonly property string script: `
 echo "#CPU"; grep '^cpu' /proc/stat
+echo "#NET"; awk 'NR>2 && $1 !~ /^lo:/ {rx+=$2; tx+=$10} END {print rx+0, tx+0}' /proc/net/dev
 echo "#MEM"; awk '/MemTotal:/ {t=$2} /MemAvailable:/ {a=$2} END {print t, a}' /proc/meminfo
 echo "#TEMP"
 t=""
@@ -93,6 +106,14 @@ echo "\${g:--1}"
                 next[label] = [total, idle];
                 pct = Math.max(0, Math.min(100, pct));
                 if (label === "cpu") root.cpuPct = pct; else cores.push(pct);
+            } else if (section === "NET") {
+                const now = Date.now(), rx = Number(f[0]), tx = Number(f[1]);
+                if (root._net && now > root._net[2]) {
+                    const dt = (now - root._net[2]) / 1000;
+                    root.rxRate = Math.max(0, (rx - root._net[0]) / dt);
+                    root.txRate = Math.max(0, (tx - root._net[1]) / dt);
+                }
+                root._net = [rx, tx, now];
             } else if (section === "MEM") {
                 const totalKb = Number(f[0]), availKb = Number(f[1]);
                 if (totalKb > 0) {
@@ -118,6 +139,7 @@ echo "\${g:--1}"
         }
         root._prev = next;
         root.corePcts = cores;
+        root.cpuHistory = root.cpuHistory.concat([root.cpuPct]).slice(-15);
         root.statsUpdated();
     }
 

@@ -16,7 +16,14 @@
  *       active  = focused workspace; visible = shown on some monitor (multi-monitor)
  *   - monitors: ObjectModel<HyprlandMonitor> [readonly]
  *
+ *   - submap: string [readonly] (active submap, "" = default; from the `submap` event)
+ *   - activeFloating / activePinned: bool [readonly] (of the active window)
+ *
  * Functions:
+ *   - windowsOn(id: int): list<var> (the windows of workspace id: { toplevel, address, title, appClass, icon, floating })
+ *   - iconFor(appClass: string): string (image source of an app's icon)
+ *   - focusWindow(address: string): void
+ *   - togglePin(): void (pinning needs a floating window)
  *   - focusWorkspace(id: int): void
  *   - focusRelative(delta: int): void (next/previous existing workspace, mouse wheel)
  *   - fullscreenOn(screen): bool      (active workspace of that monitor has a fullscreen window)
@@ -56,6 +63,50 @@ Singleton {
     }
 
     readonly property int workspaceCount: 5
+
+    property string submap: ""
+    readonly property bool activeFloating: activeToplevel?.lastIpcObject?.floating ?? false
+    readonly property bool activePinned: activeToplevel?.lastIpcObject?.pinned ?? false
+
+    Connections {
+        target: Hyprland
+        function onRawEvent(event) {
+            // "submap>>name": empty name when it is reset
+            if (event.name === "submap") root.submap = event.data;
+            // floating / pin state of the active window is only fetched on request
+            else if (event.name === "changefloatingmode" || event.name === "pin" || event.name === "activewindowv2") Hyprland.refreshToplevels();
+        }
+    }
+
+    function iconFor(appClass: string): string {
+        if (!appClass) return Quickshell.iconPath("application-x-executable");
+        const entry = DesktopEntries.heuristicLookup(appClass);
+        return Quickshell.iconPath(entry?.icon || appClass.toLowerCase(), "application-x-executable");
+    }
+
+    function windowsOn(id: int): var {
+        const ws = Hyprland.workspaces.values.find(w => w.id === id);
+        if (!ws) return [];
+        return ws.toplevels.values.map(t => {
+            const cls = t.wayland?.appId || t.lastIpcObject?.class || "";
+            return {
+                toplevel: t,
+                address: t.address,
+                title: t.title,
+                appClass: cls,
+                icon: root.iconFor(cls),
+                floating: t.lastIpcObject?.floating ?? false
+            };
+        });
+    }
+
+    function focusWindow(address: string): void {
+        Hyprland.dispatch(root.usingLua ? `hl.dsp.focus({ window = "address:${address}" })` : `focuswindow address:${address}`);
+    }
+
+    function togglePin(): void {
+        Hyprland.dispatch(root.usingLua ? 'hl.dsp.window.pin({ action = "toggle" })' : "pin");
+    }
 
     readonly property var workspaces: {
         const list = [];

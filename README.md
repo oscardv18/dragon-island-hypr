@@ -22,6 +22,7 @@ Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda 
 | **Notificaciones** | Popups (hasta 3, bajo la isla derecha), un peek del notch y el centro de notificaciones |
 | **Notch expandido** | Pestaña Nook: música, tira de calendario, toggles rápidos (Wi‑Fi, Bluetooth, No molestar, luz nocturna) y estadísticas. Pestaña Tray: la bandeja del sistema |
 | **Popovers** | Rendimiento, Wi‑Fi, Bluetooth, Sonido (con mezclador por app), Batería, Notificaciones y Calendario (eventos de **khal**) |
+| **Islas dinámicas** | Las cápsulas aparecen solo cuando importan: privacidad (micrófono / cámara / pantalla compartida), grabación, VPN, batería de auriculares, cafeína, No molestar, actualizaciones y velocidad de red; si no caben se agrupan en `+N`. Escritorios con los iconos de sus apps y vista previa con miniaturas; el título de la ventana se convierte en acciones; CPU y Wi‑Fi se expanden con el ratón |
 | **Extras** | Lanzador con búsqueda difusa, historial del portapapeles con miniaturas, menú de energía, brillo de monitores externos por DDC/CI, movimiento reducido, fondo de pantalla propio, hyprlock, hypridle, Ghostty con el tema (cristal líquido) |
 
 Versiones de referencia: Hyprland 0.56.2, Quickshell 0.3.1 y gum 2.x (Arch `extra`, octubre de 2026).

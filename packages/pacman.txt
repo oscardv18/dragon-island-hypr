@@ -38,6 +38,8 @@ qt6-svg
 qt6-imageformats
 # Wallpapers: awww (images / GIF), thumbnails (ffmpeg, ffmpegthumbnailer); mpvpaper (video, AUR) needs mpv
 awww
+# Pending-updates counter in the bar (checkupdates)
+pacman-contrib
 ffmpeg
 ffmpegthumbnailer
 mpv

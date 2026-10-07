@@ -20,3 +20,9 @@ singleton Keybinds 1.0 Keybinds.qml
 singleton BarMetrics 1.0 BarMetrics.qml
 singleton Keyboard 1.0 Keyboard.qml
 singleton Wallpaper 1.0 Wallpaper.qml
+singleton Privacy 1.0 Privacy.qml
+singleton Vpn 1.0 Vpn.qml
+singleton Caffeine 1.0 Caffeine.qml
+singleton Updates 1.0 Updates.qml
+singleton BarContext 1.0 BarContext.qml
+singleton WorkspacePreview 1.0 WorkspacePreview.qml

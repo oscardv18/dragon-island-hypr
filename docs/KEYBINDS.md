@@ -14,6 +14,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + D` | Notch: abre / cierra el panel expandido (Nook · Tray). También Esc o clic fuera |
 | `SUPER + W` | Selector de fondos de pantalla (imágenes, GIF y vídeo) |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
+| `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + N` | Centro de notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
@@ -85,10 +86,13 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 | Dónde | Clic | Otros |
 |---|---|---|
 | Botón degradado (izquierda) | Lanzador | Clic derecho: dashboard |
-| Píldora de escritorio | Ir a ese escritorio | Rueda: anterior / siguiente |
-| CPU / RAM | Popover Rendimiento | |
+| Píldora de escritorio (con los iconos de sus apps) | Ir a ese escritorio | Rueda: anterior / siguiente · ratón encima: vista previa con miniaturas de sus ventanas (clic en una = enfocarla) |
+| Título de la ventana activa | | Ratón encima: acciones — cerrar · flotar · fijar (si flota) · mover a un escritorio |
+| Indicador de submap (izquierda) | | Aparece solo con un submap activo |
+| CPU / RAM | Popover Rendimiento | CPU con el ratón encima: gráfica de los últimos 30 s |
 | Cápsula `US` / `LA` | Siguiente distribución de teclado | |
-| Wi‑Fi · Bluetooth · Batería | Su popover | |
+| Wi‑Fi · Bluetooth · Batería | Su popover | Wi‑Fi con el ratón encima: velocidad de bajada / subida · rueda sobre la batería: brillo ±5 % |
+| Cápsulas contextuales (solo cuando aplican) | Micrófono / cámara / pantalla: lista de apps · grabación: parar · VPN: abre Proton VPN · auriculares: Bluetooth · cafeína y No molestar: alternar · actualizaciones: abre Ghostty con la actualización · red: Rendimiento | Las que no caben se agrupan en `+N` (ratón encima: despliega los iconos) |
 | Volumen | Popover Sonido | Rueda: ±5 % · clic derecho o central: silenciar |
 | Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |
 | Campana (punto = no leídas) | Centro de notificaciones | Clic derecho: No molestar |

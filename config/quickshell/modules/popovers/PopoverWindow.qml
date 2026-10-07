@@ -26,7 +26,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
-    readonly property bool open: ["perf", "wifi", "bt", "audio", "battery", "notifications", "calendar"].indexOf(panel) >= 0
+    readonly property bool open: ["perf", "wifi", "bt", "audio", "battery", "notifications", "calendar", "privacy"].indexOf(panel) >= 0
 
     mask: open ? null : idleMask
     Region { id: idleMask }

@@ -1,4 +1,4 @@
-// Quick toggles row: Wi‑Fi, Bluetooth, No molestar, Luz nocturna. Right click on Wi‑Fi / Bluetooth /
+// Quick toggles row: Wi‑Fi, Bluetooth, No molestar, Cafeína, Luz nocturna. Right click on Wi‑Fi / Bluetooth /
 // No molestar opens the related popover.
 import QtQuick
 import QtQuick.Layouts
@@ -97,8 +97,14 @@ RowLayout {
         onSecondaryClicked: ShellState.open("notifications", root.screenName)
     }
     Tile {
+        icon: Icons.coffee
+        label: "Cafeína"
+        checked: Caffeine.enabled
+        onClicked: Caffeine.toggle()
+    }
+    Tile {
         icon: Icons.nightLight
-        label: "Luz nocturna"
+        label: "Noche"
         checked: Toggles.nightLight
         onClicked: Toggles.toggleNightLight()
     }

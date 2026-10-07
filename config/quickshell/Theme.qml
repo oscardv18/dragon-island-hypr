@@ -119,6 +119,7 @@ Singleton {
     readonly property real notchMinWidth:      120
     readonly property real notchRestWidth:     190    // narrowest collapsed width
     readonly property real notchGap:           16     // free space kept on each side towards the bar islands
+    readonly property real notchSideReserve:   232    // free centre kept between the islands for the collapsed notch
     readonly property real notchReserve:       300    // centre gap the left island leaves for the notch
     readonly property real notchPadH:          16     // content padding inside the collapsed body
     readonly property real notchPeekDy:        8      // hover / transient peek: grows down ...
@@ -135,6 +136,9 @@ Singleton {
     readonly property real notchTile:          40
     readonly property real artSmall:     22
     readonly property real artSmallRadius: 7
+
+    // Workspace hover preview
+    readonly property real previewThumbWidth: 180
 
     // Wallpaper picker
     readonly property real wallpaperPanelWidth:   980

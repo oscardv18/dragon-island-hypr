@@ -43,6 +43,11 @@ ShellRoot {
 
     Variants {
         model: Quickshell.screens
+        delegate: Component { PreviewWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
         delegate: Component { PopoverWindow {} }
     }
 

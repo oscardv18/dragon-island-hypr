@@ -197,6 +197,18 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - [ ] Cerrar sesión y volver a entrar (o `pkill awww-daemon mpvpaper`, `awww-daemon &`, `qs kill; qs -d`): vuelve el mismo fondo. Reiniciar Quickshell con un vídeo activo no lo reinicia.
 - [ ] Bloquear (`SUPER + L`): hyprlock usa el fondo actual (con un vídeo, un fotograma).
 
+## 12a. Islas dinámicas
+
+- [ ] **Izquierda:** los escritorios con ventanas muestran los iconos de sus apps (máx. 3); la rueda sobre las píldoras cambia de escritorio; con el ratón sobre un escritorio con ventanas (~0,35 s) aparece una vista previa de cristal con las miniaturas reales (clic = enfocar esa ventana); no aparece en escritorios vacíos.
+- [ ] Ratón sobre el título de la ventana activa: se transforma en cerrar · flotar · fijar (solo si flota; si no hay «no puede fijarse») · mover a 1–5. Al salir vuelve el título.
+- [ ] Un submap de Hyprland activo (p. ej. uno de `resize`) aparece como una cápsula con su nombre.
+- [ ] **Derecha:** CPU con el ratón encima muestra la gráfica de 30 s; Wi‑Fi muestra ↓/↑.
+- [ ] Contextuales: `parecord --device=@DEFAULT_SOURCE@ /dev/null` → punto naranja de micrófono (clic = popover con `parecord`); `SUPER + SHIFT + R` + clic en una salida → cápsula roja pulsante con el contador (clic = parar); VPN activa (interfaz `proton0` / `tun*` / `wg*`) → escudo; auriculares Bluetooth con batería → `🎧 NN%`; cafeína (`qs ipc call caffeine toggle` o el mosaico del notch) → taza; No molestar → campana tachada; `checkupdates` > 0 → contador (clic abre Ghostty); red > 500 KB/s → velocidad.
+- [ ] Cámara y compartir pantalla: abre la cámara en una videollamada (punto verde) y comparte pantalla desde el navegador (punto naranja): salen en el popover «Privacidad».
+- [ ] Si no caben, las menos prioritarias pasan a `+N` (el ratón encima despliega sus iconos); privacidad y grabación nunca se agrupan.
+- [ ] Batería: respira al cargar y late rojo por debajo del 15 % sin cargar. Rueda sobre la batería = brillo.
+- [ ] Cafeína activa: la pantalla no se apaga ni se bloquea por inactividad (`hypridle`).
+
 ## 12b. Popovers bajo su cápsula
 
 - [ ] Los 7 popovers (rendimiento, Wi‑Fi, Bluetooth, sonido, batería, notificaciones, calendario) se abren con su **borde derecho alineado con el de su cápsula** (isla derecha) y nunca a menos de 14 px del borde de la pantalla; el de la isla izquierda alinearía el borde izquierdo. La animación crece desde ese lado.

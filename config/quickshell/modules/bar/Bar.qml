@@ -69,6 +69,12 @@ Scope {
         WlrLayershell.namespace: "dragon-bar"
         WlrLayershell.layer: WlrLayer.Top
 
+        // Caffeine: keeps the session from going idle (hypridle / screen off) while enabled
+        IdleInhibitor {
+            window: leftWindow
+            enabled: Caffeine.enabled
+        }
+
         LeftIsland {
             id: leftIsland
             bar: bar
@@ -98,6 +104,8 @@ Scope {
             id: rightIsland
             bar: bar
             windowX: rightWindow.screenX
+            // the room the left island and the collapsed notch leave it
+            maxWidth: Math.max(0, bar.screenWidth - Theme.barMarginSide * 2 - leftIsland.width - Theme.notchSideReserve)
         }
     }
 }

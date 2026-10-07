@@ -68,7 +68,7 @@ if hl.plugin and hl.plugin.hyprglass then
     -- mask_threshold 0.1: the Quickshell fills are translucent (Theme.glassBg 18 %, panels 30 %), so the glass shows through
     hg.layer("dragon-bar",           { preset = "dragon-bar",   mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-notifications", { preset = "dragon-card",  mask_mode = "alpha", mask_threshold = 0.1 })
-    for _, ns in ipairs({ "dragon-popover", "dragon-launcher", "dragon-wallpapers" }) do
+    for _, ns in ipairs({ "dragon-popover", "dragon-launcher", "dragon-wallpapers", "dragon-preview" }) do
         hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.1 })
     end
 

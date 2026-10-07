@@ -100,4 +100,12 @@ Singleton {
     }
 
     signal toggleChanged(name: string, state: bool)
+
+    // `qs ipc call toggles record` starts / stops the screen recording (SUPER + SHIFT + R); while recording the
+    // bar shows a pulsing capsule with the elapsed time, click it to stop
+    IpcHandler {
+        target: "toggles"
+        function record(): void { root.toggleRecording(); }
+        function recording(): bool { return root.isRecording; }
+    }
 }

@@ -1,4 +1,4 @@
-// Right island: CPU · RAM · keyboard layout · [Wi-Fi | Bluetooth | volume | battery] · bell · tray · clock
+// Right island: [contextual capsules] · CPU · RAM · keyboard layout · [Wi-Fi | Bluetooth | volume | battery] · bell · tray · clock
 // Each capsule opens its own popover through ShellState (one at a time).
 import QtQuick
 import QtQuick.Effects
@@ -13,9 +13,24 @@ Rectangle {
 
     required property var bar
     property real windowX: 0     // screen x of this island's window
+    property real maxWidth: 0    // room the bar leaves it (contextual capsules that do not fit are grouped into "+N")
 
     // popovers of the right island: right edge on the capsule's right edge
     function openPopover(name: string, item): void { bar.openFrom(name, item, "right", windowX); }
+
+    // what each contextual capsule does when clicked
+    function chipAction(key: string, item): void {
+        switch (key) {
+            case "privacy": root.openPopover("privacy", item); break;
+            case "rec":     Toggles.toggleRecording(); break;
+            case "vpn":     Vpn.openApp(); break;
+            case "headset": root.openPopover("bt", item); break;
+            case "caffeine": Caffeine.toggle(); break;
+            case "dnd":     Toggles.toggleDnd(); break;
+            case "updates": Updates.run(); break;
+            case "net":     root.openPopover("perf", item); break;
+        }
+    }
 
     implicitHeight: Theme.barHeight
     height: Theme.barHeight
@@ -28,6 +43,19 @@ Rectangle {
     Row {
         id: row
         x: Theme.barIslandPadH
+        anchors.verticalCenter: parent.verticalCenter
+        spacing: Theme.barIslandGap
+
+        ContextChips {
+            id: chips
+            anchors.verticalCenter: parent.verticalCenter
+            // room left once the always-present capsules are placed (measured separately: no feedback loop)
+            available: root.maxWidth > 0 ? root.maxWidth - Theme.barIslandPadH * 2 - staticRow.implicitWidth - row.spacing : 10000
+            onChipClicked: (key, chip) => root.chipAction(key, chip)
+        }
+
+        Row {
+        id: staticRow
         anchors.verticalCenter: parent.verticalCenter
         spacing: Theme.barIslandGap
 
@@ -44,6 +72,34 @@ Rectangle {
                 text: `${SysStats.cpuPct}%`
                 mono: true
                 size: Theme.sizeBar
+            }
+            // hover: the last 30 s of CPU (15 samples, 2 s apart)
+            Item {
+                id: cpuGraph
+                readonly property real fullWidth: 15 * 3 + 14 * 2
+                anchors.verticalCenter: parent.verticalCenter
+                width: cpuCap.hovered ? fullWidth : 0
+                height: 16
+                opacity: cpuCap.hovered ? 1 : 0
+                visible: width > 0.5
+                clip: true
+                Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
+                Behavior on opacity { NumberAnimation { duration: Theme.durPill } }
+                Row {
+                    anchors.bottom: parent.bottom
+                    spacing: 2
+                    Repeater {
+                        model: SysStats.cpuHistory
+                        delegate: Rectangle {
+                            required property int modelData
+                            width: 3
+                            height: Math.max(2, cpuGraph.height * modelData / 100)
+                            radius: 1
+                            color: modelData > 80 ? Theme.error : (modelData > 50 ? Theme.warn : Theme.cyan)
+                            Behavior on height { NumberAnimation { duration: Theme.durHover } }
+                        }
+                    }
+                }
             }
         }
 
@@ -107,6 +163,27 @@ Rectangle {
                               : Icons.wifiFor(Network.signalStrength, Network.wifiEnabled && Network.hasWifi)
                         color: Network.connected ? Theme.text : Theme.textDim
                     }
+                    // hover: download / upload speed
+                    Item {
+                        id: rates
+                        anchors.verticalCenter: parent.verticalCenter
+                        width: wifiCap.hovered ? rateRow.implicitWidth : 0
+                        height: parent.height
+                        opacity: wifiCap.hovered ? 1 : 0
+                        visible: width > 0.5
+                        clip: true
+                        Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
+                        Behavior on opacity { NumberAnimation { duration: Theme.durPill } }
+                        Row {
+                            id: rateRow
+                            anchors.verticalCenter: parent.verticalCenter
+                            spacing: Theme.spacingXs
+                            Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.arrowDown; size: Theme.iconSm; color: Theme.cyan }
+                            UiText { shadow: true; anchors.verticalCenter: parent.verticalCenter; text: SysStats.formatRate(SysStats.rxRate); mono: true; size: Theme.sizeCaption + 1; width: 62 }
+                            Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.arrowUp; size: Theme.iconSm; color: Theme.violetSoft }
+                            UiText { shadow: true; anchors.verticalCenter: parent.verticalCenter; text: SysStats.formatRate(SysStats.txRate); mono: true; size: Theme.sizeCaption + 1; width: 62 }
+                        }
+                    }
                 }
 
                 Capsule {
@@ -159,14 +236,33 @@ Rectangle {
                     padH: Theme.capsulePadH - 2
                     active: root.bar.isOpen("battery")
                     onClicked: root.openPopover("battery", batCap)
+                    // wheel on the battery = screen brightness (the bar has no brightness capsule)
+                    onWheel: d => Brightness.setLevelFor(root.bar.screenName, Brightness.levelFor(root.bar.screenName) + (d > 0 ? 0.05 : -0.05))
                     readonly property color tone: Power.isCharging ? Theme.ok
                                                  : (Power.batteryPct <= 10 ? Theme.error : (Power.isLow ? Theme.warn : Theme.ok))
+                    readonly property bool critical: !Power.isCharging && Power.batteryPct < 15
                     Glyph {
+                        id: batGlyph
                         shadow: true
                         anchors.verticalCenter: parent.verticalCenter
                         size: Theme.iconMd
                         icon: Icons.batteryFor(Power.batteryPct, Power.isCharging)
                         color: batCap.tone
+                        // charging: a slow breathing glow · below 15 %: a faster warning pulse
+                        SequentialAnimation on opacity {
+                            running: (Power.isCharging || batCap.critical) && Theme.animationsEnabled
+                            loops: Animation.Infinite
+                            onStopped: batGlyph.opacity = 1
+                            NumberAnimation { to: batCap.critical ? 0.3 : 0.55; duration: Theme.ms(batCap.critical ? 450 : 1100); easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1; duration: Theme.ms(batCap.critical ? 450 : 1100); easing.type: Easing.InOutSine }
+                        }
+                        SequentialAnimation on scale {
+                            running: batCap.critical && Theme.animationsEnabled
+                            loops: Animation.Infinite
+                            onStopped: batGlyph.scale = 1
+                            NumberAnimation { to: 1.18; duration: Theme.ms(450); easing.type: Easing.InOutSine }
+                            NumberAnimation { to: 1; duration: Theme.ms(450); easing.type: Easing.InOutSine }
+                        }
                     }
                     UiText {
                         shadow: true
@@ -322,5 +418,6 @@ Rectangle {
                 color: Theme.onBrand
             }
         }
+    }
     }
 }
