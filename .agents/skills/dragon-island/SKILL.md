@@ -97,6 +97,10 @@ See `references/design.md` (tokens, components, motion). It reproduces the appro
 - **Rule: every change that affects an already-installed system must ship with its migration.** Add `migrations/NNN-name.sh` (next number): runs once (recorded in `~/.local/state/dragon-island/migrations.done`), idempotent, backs up what it touches (`backup_copy` / `deploy_item`), honours `DRY_RUN` and `ASSUME_YES`, exits `10` to skip. Helpers live in `installer/lib.sh`; see `migrations/README.md`. A fresh `install.sh` marks every existing migration as done.
 - Symlinked installs already see repo changes; migrations cover what a symlink cannot: copies, files outside the repo (`~/.zshrc`, `~/.config/starship.toml`), packages, services, state files.
 
+## Keyboard shortcuts list (everything at hand)
+- `SUPER + F1` shows the shortcuts panel. Hyprland binds appear on their own from their `description` ("Grupo · Texto") in `config/hypr/binds.lua`: **every new bind needs a description**.
+- Keys that work inside a panel (launcher prefixes, Store, wallpaper picker…) are not binds: add them to `panelGroups` in `services/Keybinds.qml` and to the "Teclado dentro de los paneles" table of `docs/KEYBINDS.md`. Update both whenever a feature adds a shortcut or a panel key.
+
 ## Definition of done (every phase)
 - `hyprctl configerrors` empty (when testable) and Lua syntax checked (`luac -p` if available).
 - Quickshell loads with no errors in `qs -p config/quickshell`.

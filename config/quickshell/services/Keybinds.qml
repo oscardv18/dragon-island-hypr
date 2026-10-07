@@ -93,8 +93,36 @@ Singleton {
                 text: r.text,
                 combos: r.buckets.map(bk => bk.mods.concat([_joinKeys(bk.keys)]))
             }))
-        }));
+        })).concat(root.panelGroups);
     }
+
+    // Keys that work INSIDE the panels (no Hyprland bind): listed here so everything is in one place. Keep in step with
+    // docs/KEYBINDS.md ("Teclado dentro de los paneles").
+    readonly property var panelGroups: [
+        { name: "Lanzador orbital (dentro)", rows: [
+            { text: "Filtrar apps; el mejor resultado pasa al frente", combos: [["escribir"]] },
+            { text: "Girar el anillo", combos: [["←", "→"], ["↑", "↓"], ["Tab"], ["rueda"]] },
+            { text: "Lanzar la app al frente", combos: [["Enter"]] },
+            { text: "Fijar / quitar de favoritos", combos: [["clic derecho"]] },
+            { text: "Calcular (Enter copia)", combos: [["=2*(3+4)"]] },
+            { text: "Ejecutar en Ghostty", combos: [[">comando"]] },
+            { text: "Buscar en la Tienda", combos: [["+nombre", "Enter"]] } ] },
+        { name: "Tienda (dentro)", rows: [
+            { text: "Buscar en repos oficiales y AUR / filtrar", combos: [["escribir"]] },
+            { text: "Mover por la lista", combos: [["↑", "↓"]] },
+            { text: "Marcar y bajar (multi-selección)", combos: [["Tab"], ["Espacio"]] },
+            { text: "Instalar / eliminar / actualizar según la pestaña", combos: [["Enter"]] },
+            { text: "Cerrar visor o diálogo; luego la Tienda", combos: [["Esc"]] } ] },
+        { name: "Fondos de pantalla (dentro)", rows: [
+            { text: "Filtrar por nombre", combos: [["escribir"]] },
+            { text: "Mover la selección", combos: [["←", "→", "↑", "↓"]] },
+            { text: "Aplicar el fondo", combos: [["Enter"], ["clic"]] } ] },
+        { name: "Portapapeles / Menú de energía (dentro)", rows: [
+            { text: "Portapapeles: copiar · borrar entrada (búsqueda vacía)", combos: [["Enter"], ["Supr"]] },
+            { text: "Energía: mover · ejecutar · atajo directo", combos: [["← →"], ["Enter"], ["1–5"]] } ] },
+        { name: "Cualquier panel", rows: [
+            { text: "Cerrar", combos: [["Esc"], ["clic fuera"]] } ] }
+    ]
 
     Process {
         id: proc

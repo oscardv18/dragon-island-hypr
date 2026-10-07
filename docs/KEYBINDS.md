@@ -17,7 +17,9 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
-| `SUPER + Escape` | Menú de energía |
+| `SUPER + Escape` | Tienda (`SUPER + I`) | Escribir busca en repos y AUR · `↑ ↓` · `Tab` (o `Espacio` con el campo vacío) marca · `Enter` instala / elimina / actualiza según la pestaña · `Esc` cierra el visor o el diálogo y luego la Tienda |
+| Fondos de pantalla (`SUPER + W`) | Escribir filtra · `← → ↑ ↓` · `Enter` o clic aplica · `Esc` cierra |
+| Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
 | `Print` | Captura de pantalla completa |
 | `SUPER + SHIFT + S` | Captura de una región |
@@ -149,8 +151,8 @@ El dock se muestra solo cuando el escritorio actual no tiene ventanas en mosaico
 ## IPC (para scripts y atajos propios)
 
 ```sh
-qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery,
-qs ipc call shell open launcher      # notifications, calendar, launcher, power, clipboard, keybinds
+qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery, notifications, calendar,
+qs ipc call shell open launcher      # launcher, power, clipboard, keybinds, wallpapers, store
 qs ipc call shell close
 qs ipc call shell current            # imprime el panel abierto o "none"
 qs ipc call debug toggle             # panel de diagnóstico de servicios (desarrollo)

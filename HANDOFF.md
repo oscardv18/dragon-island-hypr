@@ -444,6 +444,10 @@ Decisiones y trampas:
 - Migración `009-store.sh` (pacman-contrib, enlace de `dragon-pkg`).
 - **Sin probar con sudo real** (no hay terminal para la contraseña desde aquí): la instalación / eliminación reales de `cowsay` y de un paquete AUR quedan para la checklist `docs/TESTING.md` §12e.
 
+## 7r. Lista de atajos al día (2026-10-07)
+
+- El panel `SUPER + F1` lee los binds de Hyprland por su descripción (así ya sale «Shell · Tienda de apps»); las teclas **dentro** de los paneles (lanzador orbital con `=`, `>`, `+`, Tienda, fondos, portapapeles, energía) no son binds: ahora están en `panelGroups` de `services/Keybinds.qml` y se pueden buscar en el panel. `docs/KEYBINDS.md` (tabla «Teclado dentro de los paneles», IPC) igualado. Regla anotada en la skill `dragon-island`: cada atajo o tecla nueva actualiza `binds.lua` (con descripción), `panelGroups` y KEYBINDS.md.
+
 ## 8. Cómo depurar rápido
 
 ```sh
