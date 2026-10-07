@@ -33,19 +33,18 @@ hl.config({
             color        = 0x88000000,
         },
 
+        -- Native blur (no plugin). Only 0.56.2 options: blur.variant / acrylic / glass are git-only.
+        -- It applies to layers through the layer rules in rules.lua (bar, popovers, notifications, launcher).
         blur = {
             enabled           = true,
-            size              = 6,
-            passes            = 2,
-            vibrancy          = 0.1696,
-            noise             = 0.0117,
-            contrast          = 0.8916,
-            brightness        = 0.8172,
-            popups            = true,
-            new_optimizations = true,
-            -- NOTE: decoration.blur.variant (frost, acrylic, etc.) and blur.glass.* / blur.acrylic.*
-            -- DO NOT exist on Hyprland 0.56.2 stable (git-only).
-            -- Standard Kawase dual-filter blur is used here.
+            size              = 8,      -- kernel radius per pass; bigger = softer, more GPU
+            passes            = 3,      -- Kawase iterations; 3 is the quality / cost sweet spot
+            vibrancy          = 0.17,   -- boosts saturation of what shows through the blur
+            noise             = 0.02,   -- fine grain on top: the "frosted acrylic" feel, hides banding
+            contrast          = 0.9,    -- <1 flattens the blurred background so text stays readable
+            brightness        = 0.85,   -- <1 darkens the blurred background (matches the dark palette)
+            popups            = true,   -- also blur xdg popups / context menus
+            new_optimizations = true,   -- cache the blur of static windows (big GPU saving)
         },
     },
 

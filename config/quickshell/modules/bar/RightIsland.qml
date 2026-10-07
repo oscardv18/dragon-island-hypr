@@ -17,9 +17,9 @@ Rectangle {
     height: Theme.barHeight
     width: row.implicitWidth + Theme.barIslandPadH * 2
     radius: Theme.barIslandRadius
-    color: Theme.barIsland
+    color: Theme.glassBg
     border.width: 1
-    border.color: Theme.hairline
+    border.color: Theme.glassBorder
 
     Row {
         id: row

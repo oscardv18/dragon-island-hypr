@@ -15,9 +15,9 @@ Rectangle {
     height: Theme.barHeight
     width: Math.min(row.implicitWidth + Theme.barIslandPadH * 2, maxWidth)
     radius: Theme.barIslandRadius
-    color: Theme.barIsland
+    color: Theme.glassBg
     border.width: 1
-    border.color: Theme.hairline
+    border.color: Theme.glassBorder
     clip: true
 
     readonly property real fixedWidth: launcher.width + workspaces.width + divider.width + row.spacing * 3
