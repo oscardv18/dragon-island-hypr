@@ -284,6 +284,7 @@ Singleton {
 
     // ---------------------------------------------------------------- actions: a floating Ghostty runs bin/dragon-pkg
     function _terminal(action: string, pkgs: var): void {
+        ShellState.close();     // the panel is an overlay: it would cover the floating terminal that asks for the password
         Quickshell.execDetached(["ghostty", "--class=org.dragonisland.Pkg", "--title=Tienda de apps — " + action, "-e", root.pkgBin, action].concat(pkgs));
     }
 
@@ -292,6 +293,7 @@ Singleton {
         const aur = items.filter(i => i.repo === "aur").map(i => i.name);
         // two terminals only when both kinds are asked: the official ones first
         if (official.length > 0 && aur.length > 0) {
+            ShellState.close();
             Quickshell.execDetached(["ghostty", "--class=org.dragonisland.Pkg", "--title=Tienda de apps — instalar", "-e", "sh", "-c",
                 `"$0" install ${official.join(" ")} && "$0" aur ${aur.join(" ")}`, root.pkgBin]);
         } else if (official.length > 0) root._terminal("install", official);
