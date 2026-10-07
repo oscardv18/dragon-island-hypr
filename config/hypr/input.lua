@@ -4,8 +4,12 @@
 
 hl.config({
     input = {
-        kb_layout  = "es,us",
-        kb_variant = "",
+        -- Two layouts: English (US) first (shortcuts are resolved against the first one; put "latam,us"
+        -- here instead if your physical keyboard is Latin American), Spanish (Latin American) second for
+        -- ñ and accents. kb_variant needs one (empty) entry per layout. Alt+Shift toggles the group
+        -- (grp:alt_shift_toggle); SUPER+ALT+Space switches too (binds.lua) and the bar capsule is a button.
+        kb_layout  = "us,latam",
+        kb_variant = ",",
         kb_model   = "",
         kb_options = "grp:alt_shift_toggle",
         kb_rules   = "",

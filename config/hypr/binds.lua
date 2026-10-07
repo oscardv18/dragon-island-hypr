@@ -21,6 +21,9 @@ bind(mainMod .. " + Return", hl.dsp.exec_cmd("kitty"),                          
 bind(mainMod .. " + E",      hl.dsp.exec_cmd("dolphin"),                            "Aplicaciones · Archivos (Dolphin)")
 bind(mainMod .. " + Space",  hl.dsp.exec_cmd("qs ipc call shell toggle launcher"),  "Aplicaciones · Lanzador")
 
+-- Keyboard layout: next one in kb_layout (also Alt+Shift through kb_options, and the bar capsule)
+bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"), "Teclado · Cambiar distribución (US / LA)")
+
 -- Window management
 bind(mainMod .. " + Q",         hl.dsp.window.close(),                                                "Ventanas · Cerrar")
 bind(mainMod .. " + F",         hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }),  "Ventanas · Maximizar / restaurar")

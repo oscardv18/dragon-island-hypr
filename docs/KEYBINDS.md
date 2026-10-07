@@ -46,6 +46,18 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | Deslizar 3 dedos en horizontal | Cambiar de escritorio (touchpad) |
 | Rueda sobre las píldoras de la barra | Escritorio anterior / siguiente |
 
+## Teclado (distribuciones)
+
+Dos distribuciones: **English (US)** (la primera, la que resuelve los atajos) y **Spanish (Latin American)** para escribir ñ y tildes. Se configuran en [`config/hypr/input.lua`](../config/hypr/input.lua) (`kb_layout = "us,latam"`). Si tu teclado físico es latinoamericano, pon `"latam,us"` ahí.
+
+| Atajo | Acción |
+|---|---|
+| `ALT + SHIFT` | Cambiar de distribución (`grp:alt_shift_toggle`, del propio xkb) |
+| `SUPER + ALT + Space` | Cambiar de distribución (`hyprctl switchxkblayout all next`) |
+| Clic en la cápsula `US` / `LA` (isla derecha, antes de Wi‑Fi) | Siguiente distribución |
+
+El bloqueo (hyprlock) usa las mismas dos distribuciones: `ALT + SHIFT` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa.
+
 ## Teclas multimedia (funcionan con la pantalla bloqueada)
 
 | Tecla | Acción |
@@ -55,13 +67,14 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `XF86MonBrightnessUp` / `Down` | Brillo ±5 % (`brightnessctl`) → OSD en la isla |
 | `XF86AudioPlay` / `Pause` / `Next` / `Prev` | Control del reproductor (`playerctl`) |
 
-## Barra y Dynamic Island (ratón)
+## Barra y notch (ratón)
 
 | Dónde | Clic | Otros |
 |---|---|---|
 | Botón degradado (izquierda) | Lanzador | Clic derecho: dashboard |
 | Píldora de escritorio | Ir a ese escritorio | Rueda: anterior / siguiente |
 | CPU / RAM | Popover Rendimiento | |
+| Cápsula `US` / `LA` | Siguiente distribución de teclado | |
 | Wi‑Fi · Bluetooth · Batería | Su popover | |
 | Volumen | Popover Sonido | Rueda: ±5 % · clic derecho o central: silenciar |
 | Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |

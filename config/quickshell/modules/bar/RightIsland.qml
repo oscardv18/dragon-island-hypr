@@ -1,4 +1,4 @@
-// Right island: CPU · RAM · [Wi-Fi | Bluetooth | volume | battery] · bell · tray · clock
+// Right island: CPU · RAM · keyboard layout · [Wi-Fi | Bluetooth | volume | battery] · bell · tray · clock
 // Each capsule opens its own popover through ShellState (one at a time).
 import QtQuick
 import QtQuick.Effects
@@ -54,6 +54,22 @@ Rectangle {
                 text: `${SysStats.memUsedGb.toFixed(1)}G`
                 mono: true
                 size: Theme.sizeBar
+            }
+        }
+
+        // Keyboard layout ("US" / "LA"): click = next layout
+        Capsule {
+            id: kbCap
+            visible: Keyboard.code.length > 0
+            anchors.verticalCenter: parent.verticalCenter
+            padH: Theme.capsulePadH - 2
+            onClicked: Keyboard.next()
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: Keyboard.code
+                mono: true
+                size: Theme.sizeBar
+                weight: Theme.weightSemiBold
             }
         }
 
