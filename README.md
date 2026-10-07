@@ -101,11 +101,23 @@ Detalles:
 - **Portal Secret:** `config/xdg-desktop-portal/hyprland-portals.conf` (en `~/.config/xdg-desktop-portal/`) envía el portal *Secret* a gnome-keyring en Hyprland, porque ni `hyprland` ni `gtk` lo implementan.
 - **Bandeja:** Proton VPN y otras apps se minimizan en la bandeja de la isla derecha (entre la campana y el reloj).
 
+### Actualizar
+
+**`git pull` no basta: usa `./update.sh`** (o `./install.sh --update`). Hace `git pull --ff-only` (se detiene si hay cambios locales sin commit), ejecuta las **migraciones** pendientes de `migrations/` (una sola vez cada una, registradas en `~/.local/state/dragon-island/migrations.done`), instala solo los paquetes que falten (nunca `-Syu` sin preguntar), redespliega los archivos que cambiaron si usas copias (y ofrece pasarlas a symlink), ofrece plugins nuevos como hyprglass (hyprpm en primer plano) y recarga en vivo (`hyprpm reload -n`, `hyprctl reload`, reinicio de Quickshell) sin cerrar sesión. Al final resume migraciones, paquetes, archivos, backups y `hyprctl configerrors`.
+
+```sh
+./update.sh --dry-run     # muestra lo que haría
+./update.sh --yes         # sin preguntas (no instala plugins nuevos)
+```
+
+Regla del proyecto: todo cambio que afecte a sistemas ya instalados viene con su migración (`migrations/README.md`).
+
 ### Opciones
 
 ```sh
 ./install.sh --yes        # sin preguntas (valores por defecto)
 ./install.sh --glass      # incluye el componente opcional «Efecto cristal (hyprglass)»
+./install.sh --update     # alias de ./update.sh
 ./install.sh --uninstall  # quita los enlaces y restaura los respaldos (no desinstala paquetes)
 ```
 

@@ -57,10 +57,7 @@ Gradients:
 
 **Left island:** launcher button (30×30, radius 9, brand gradient) · workspace pills 1–5 · divider (1×18, white 10 %) · active window: app icon + class + title (dim).
 
-**Right island:** CPU capsule (cyan icon, `NN%`) · RAM capsule (violet icon, `N.NG`) · grouped capsule [Wi-Fi | Bluetooth | volume `NN` | battery `NN%` green] — each is its own button · bell (dot = unread, accent with glow) · system tray capsule · clock capsule (brand gradient, `lun 5 oct  16:23`, Spanish locale).
-
-
-**System tray capsule** (between bell and clock; hidden when no app exposes an item): capsule height 28, radius 9, `surface2`, padding 0 4. One 24×24 cell per item (radius 7, hover or menu open = `surfaceHi`, `durHover`) with a 16 px icon (theme name → `Quickshell.iconPath`). Item asking for attention = `warn` dot top-right. Left click activates (opens the menu if the item only has one) · right click opens its menu (`QsMenuAnchor`, 8 px below the icon) · middle = secondary action · wheel = scroll. Passive items are hidden.
+**Right island:** CPU capsule (cyan icon, `NN%`) · RAM capsule (violet icon, `N.NG`) · grouped capsule [Wi-Fi | Bluetooth | volume `NN` | battery `NN%` green] — each is its own button · bell (dot = unread, accent with glow) · clock capsule (brand gradient, `lun 5 oct  16:23`, Spanish locale).
 
 **Island, closed (priority order):** OSD > incoming notification > workspace change > now playing (art 24×24 radius 7, title, `· app`, 4-bar equalizer) > clock with status dot.
 
@@ -75,12 +72,23 @@ Gradients:
 - Notificaciones: DND toggle, cards (icon, title, body, app · time), "Borrar todo".
 - Calendario: month grid (Mon first, `L M X J V S D`), today = brand gradient, days with events = cyan ring, clock with seconds, today's agenda.
 
+## Notch Island v2 (replaces the floating pill — NotchNook / MacBook notch style)
+
+- One overlay window per monitor, anchored **top**, `exclusionMode: Ignore`, namespace `dragon-island`. The shape is **attached to the screen's top edge (y = 0)** — it is never a floating pill.
+- **Collapsed:** opaque black (`island`), width ≈ 210 (grows with content, max = free gap between bar islands − 2×16), height = bar top margin + bar height (10 + 40 = 50) so its bottom lines up with the bar islands' bottom. Bottom corners radius 18. **Concave "ears"** (inverse fillets, r = 12) on both top corners where it meets the edge, drawn with `QtQuick.Shapes` (`ShapePath` + `PathArc`). Content: art 22 px + title, or clock; eq bars. Never overlaps the bar islands.
+- **Hover:** "peek" — grows 8 px down and 16 px wider (spring), shows a second line.
+- **Expanded (click / SUPER+D):** grows from the same top-center anchor to ≈ 720 × 230 (fit 1366×768), top edge still at y = 0, ears kept, bottom radii 34. Layout like NotchNook: top row tabs **Nook | Tray** (left) and a settings gear (right); body = media card (art 96 px, title/album/artist, prev/play/next, app badge) · vertical divider · mini calendar strip (month + 5 days, today accent) with "Nada para hoy"/next event · quick toggles row (Wi‑Fi, BT, DND, night light) and system stats. **Tray** tab = system tray items + recent screenshots/downloads drop area (optional).
+- Expanded may temporarily cover the bar islands (like NotchNook covers the menu bar); no dark scrim. Close on click outside (`HyprlandFocusGrab`), Esc, mouse leaving for 600 ms (setting), or SUPER+D.
+- The island stays **opaque black** (it is the "notch"); glass/blur is for the bar islands, popovers and notifications.
+
 ## Motion
 
 | Animation | Spec |
 |---|---|
-| Island first appearance | from `y = -60` (above the screen edge) to `y = 10`, 700 ms, OutBack (overshoot ~1.6) + slight horizontal squash at the start |
-| Open dashboard ("pour") | shape grows from a narrow strip at the top edge to full size: width OutBack 420 ms, height OutCubic 480 ms; `y` → 0; corner radii animate to (0,0,34,34) |
+| Island first appearance (v2) | **emerges from the top edge**: height 0 → 50 and width 120 → collapsed width, spring (`SpringAnimation` spring 3.5, damping 0.32), no bounce from above |
+| Island first appearance (v1, obsolete) | from `y = -60` (above the screen edge) to `y = 10`, 700 ms, OutBack (overshoot ~1.6) + slight horizontal squash at the start |
+| Expand notch (v2) | width & height spring from the top-center anchor (spring 3.0, damping 0.30, ~450 ms perceived), ears scale with it; content fades in after 40 % (220 ms), collapses content-first then shape |
+| Open dashboard ("pour", v1 obsolete) | shape grows from a narrow strip at the top edge to full size: width OutBack 420 ms, height OutCubic 480 ms; `y` → 0; corner radii animate to (0,0,34,34) |
 | Dashboard content | fade/slide-in starting ~35 % into the open animation, 260 ms |
 | Close | reverse, 300 ms OutCubic; content fades out first (120 ms) |
 | Scrim | black 45 %, fade 220–250 ms |

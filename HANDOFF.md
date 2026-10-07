@@ -233,6 +233,16 @@ Decisiones y trampas:
 - hyprglass 0.9.1 instalado con `installer/glass.sh` en una terminal real: hyprpm escribe su estado con `sudo`, así que no funciona sin tty (ni desde Claude Code). `hyprctl plugin list` → 0.9.1, `layers:enabled` → `set: true`, `hyprctl hyprglass status` → windows / layers on. Stats: ~1 layer draw y ~5 blur passes por fotograma. GPU (AMD Lucienne, `gpu_busy_percent`): ~5 % en reposo y ~11 % abriendo y cerrando el notch en bucle → no hace falta `live_resample = false`.
 - Probado con un monitor headless (`hyprctl output create headless`) además del portátil.
 
+## 7d. Teclado US/Latam, update.sh y migraciones (2026-10-06)
+
+- **Teclado:** `kb_layout = "us,latam"` (el teclado físico del usuario es US; los atajos se resuelven contra el primero), `kb_variant = ","`, `grp:alt_shift_toggle`. `SUPER + ALT + Space` → `hyprctl switchxkblayout all next`. `services/Keyboard.qml` sigue el evento `activelayout` de `Hyprland.rawEvent` y `RightIsland` muestra la cápsula `US` / `LA` (clic = siguiente). hyprlock toma el keymap de Hyprland y muestra `$LAYOUT`.
+  - El grupo xkb por `Alt+Shift` es **por teclado**: el evento `activelayout` llega solo del teclado que lo pulsó; la cápsula muestra el último evento.
+  - Probado con un teclado/ratón virtual (uinput): SUPER+ALT+Space y el clic en la cápsula cambian la distribución del teclado principal; `Alt+Shift` cambió el grupo del dispositivo virtual. Sin probar: escribir ñ físicamente y hyprlock (no se bloqueó la sesión para probarlo).
+- **update.sh** (`./install.sh --update` es un alias): pull → migraciones → paquetes → configs → plugins → recarga → resumen. Las ayudas comunes con `install.sh` viven en `installer/lib.sh`; las migraciones cargan `installer/migration-env.sh` (también se pueden ejecutar solas). `install.sh` ahora guarda `components` y `link-mode` en el estado y marca todas las migraciones como aplicadas en una instalación nueva; en instalaciones anteriores `update.sh` los infiere del manifiesto.
+- **Regla:** todo cambio que afecte a sistemas ya instalados lleva migración (`migrations/NNN-*.sh`, ver `migrations/README.md` y la skill `dragon-island`).
+- `shellcheck` no estaba instalado: se usó `shellcheck-py` en un venv (0.11.0). `update.sh`, `install.sh`, `installer/*.sh` y `migrations/*.sh` pasan `shellcheck -x`.
+- Los cambios locales sin commit (también los de `.agents/skills`) detienen `update.sh`: es lo pedido.
+
 ## 8. Cómo depurar rápido
 
 ```sh

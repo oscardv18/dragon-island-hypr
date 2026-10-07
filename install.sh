@@ -16,9 +16,10 @@ MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
 
 ALL_COMPONENTS=(core shell plugins tools fonts services)
 # Optional components: unchecked by default (--glass checks them), shown with a friendly label
-OPTIONAL_COMPONENTS=(glass)
-declare -A COMPONENT_LABEL=([glass]="Efecto cristal (hyprglass)")
+OPTIONAL_COMPONENTS=(glass zsh)
+declare -A COMPONENT_LABEL=([glass]="Efecto cristal (hyprglass)" [zsh]="Shell: zsh + starship")
 WANT_GLASS=false
+WANT_ZSH=false
 
 DRY_RUN=false
 ASSUME_YES=false
@@ -42,16 +43,27 @@ OPCIONES:
   --dry-run       Muestra las acciones sin ejecutarlas (no pide sudo ni instala nada)
   --yes, -y       Modo desatendido: usa valores por defecto sin preguntas
   --glass         Incluye el componente opcional «Efecto cristal (hyprglass)»
+  --zsh           Incluye el componente opcional «Shell: zsh + starship»
+  --update        Alias de ./update.sh (el resto de opciones se le pasan)
   --uninstall     Desinstala dragon-island y restaura copias de seguridad
   -h, --help      Muestra esta ayuda
 EOF
 }
 
 for arg in "$@"; do
+    [[ "$arg" == "--update" ]] && {
+        args=()
+        for a in "$@"; do [[ "$a" == "--update" ]] || args+=("$a"); done
+        exec "$REPO_DIR/update.sh" "${args[@]}"
+    }
+done
+
+for arg in "$@"; do
     case "$arg" in
         --dry-run)   DRY_RUN=true ;;
         --yes|-y)    ASSUME_YES=true ;;
         --glass)     WANT_GLASS=true ;;
+        --zsh)       WANT_ZSH=true ;;
         --uninstall) MODE="uninstall" ;;
         -h|--help)   usage; exit 0 ;;
         *)           echo "Opción desconocida: $arg" >&2; exit 2 ;;
@@ -65,49 +77,10 @@ exec > >(tee -a "$LOG") 2>&1
 trap 'echo "✗ Error en la línea $LINENO. Revisa el registro en: $LOG" >&2' ERR
 
 # -----------------------------------------------------------------------------
-# Helpers
+# Helpers (run, log_info, box, confirm, read_packages, deploy_item, ensure_omz)
 # -----------------------------------------------------------------------------
-run() {
-    if $DRY_RUN; then
-        printf '[dry-run] %q ' "$@"
-        echo
-    else
-        "$@"
-    fi
-}
-
-has_gum() { command -v gum >/dev/null 2>&1; }
-
-log_info() { if has_gum; then gum log --level info "$1"; else echo ":: $1"; fi; }
-log_warn() { if has_gum; then gum log --level warn "$1"; else echo ":: AVISO: $1"; fi; }
-
-# box <border-color> <line>...   (plain text fallback when gum is missing, e.g. in --dry-run)
-box() {
-    local color="$1"; shift
-    if has_gum; then
-        gum style --border rounded --border-foreground "$color" --padding "1 2" --foreground "#e6e8ef" "$@"
-    else
-        printf '%s\n' "------------------------------------------------------------" "$@" \
-            "------------------------------------------------------------"
-    fi
-}
-
-# confirm <question>  → 0 = yes. In --yes mode (or without gum) always yes.
-confirm() {
-    if $ASSUME_YES || ! has_gum; then return 0; fi
-    gum confirm --affirmative "Sí" --negative "No" "$1"
-}
-
-# read_packages <file> <component>...  → prints the packages of the selected sections
-read_packages() {
-    local file="$1"; shift
-    [[ -f "$file" ]] || return 0
-    awk -v sel=" $* " '
-        /^[[:space:]]*(#|$)/ { next }
-        /^@/ { section = substr($1, 2); next }
-        index(sel, " " section " ") { print $1 }
-    ' "$file"
-}
+# shellcheck source=installer/lib.sh
+. "$REPO_DIR/installer/lib.sh"
 
 # =============================================================================
 # Uninstall (--uninstall): process the manifest in reverse
@@ -218,7 +191,8 @@ if ! $ASSUME_YES; then
 fi
 
 SELECTED_COMPONENTS=("${ALL_COMPONENTS[@]}")
-$WANT_GLASS && SELECTED_COMPONENTS+=("${OPTIONAL_COMPONENTS[@]}")
+$WANT_GLASS && SELECTED_COMPONENTS+=(glass)
+$WANT_ZSH && SELECTED_COMPONENTS+=(zsh)
 if ! $ASSUME_YES; then
     # gum shows labels; map them back to component keys afterwards
     labels=() preselected=() picked=()
@@ -296,38 +270,6 @@ fi
 # =============================================================================
 # Configs: backup + link/copy (idempotent)
 # =============================================================================
-deploy_item() {
-    local src="$1" dest="$2" rel_path
-
-    # Already a symlink to our repo → nothing to do
-    if [[ -L "$dest" && "$(readlink -f "$dest")" == "$(readlink -f "$src")" ]]; then
-        log_info "Ya enlazado: $dest"
-        return 0
-    fi
-    # Copy mode and identical content → nothing to do
-    if [[ "$LINK_MODE" == "copy" && -e "$dest" && ! -L "$dest" ]] && diff -rq -- "$src" "$dest" >/dev/null 2>&1; then
-        log_info "Ya copiado y sin cambios: $dest"
-        return 0
-    fi
-
-    if [[ -e "$dest" || -L "$dest" ]]; then
-        rel_path="${dest#"$HOME"/}"
-        run mkdir -p "$BACKUP_DIR/$(dirname "$rel_path")"
-        run mv -- "$dest" "$BACKUP_DIR/$rel_path"
-        $DRY_RUN || printf 'backup\t%s\t%s\n' "$dest" "$BACKUP_DIR/$rel_path" >> "$MANIFEST"
-        log_info "Respaldo: $dest -> $BACKUP_DIR/$rel_path"
-    fi
-
-    run mkdir -p "$(dirname "$dest")"
-    if [[ "$LINK_MODE" == "symlink" ]]; then
-        run ln -sfn -- "$src" "$dest"
-    else
-        run cp -a -- "$src" "$dest"
-    fi
-    $DRY_RUN || printf 'deploy\t%s\t%s\n' "$dest" "$src" >> "$MANIFEST"
-    log_info "Desplegado ($LINK_MODE): $dest"
-}
-
 log_info "Desplegando configuración..."
 
 if has_component core; then
@@ -370,6 +312,19 @@ if has_component glass; then
         "$STATE_DIR/glass.sh" || log_warn "hyprglass no se instaló: se reintentará en el próximo inicio de sesión en Hyprland."
     else
         log_info "hyprglass se instalará en tu próximo inicio de sesión en Hyprland (terminal visible)."
+    fi
+fi
+
+# Optional: zsh + starship. oh-my-zsh and its plugins are git clones (ensure_omz); the config comes from
+# config/zsh and config/starship. Your own ~/.zshrc / starship.toml are backed up by deploy_item.
+if has_component zsh; then
+    ensure_omz
+    deploy_item "$REPO_DIR/config/zsh/.zshrc" "$HOME/.zshrc"
+    deploy_item "$REPO_DIR/config/starship/starship.toml" "$HOME/.config/starship.toml"
+    if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/usr/bin/zsh" ]]; then
+        if confirm "Tu shell por defecto no es zsh. ¿Cambiarla con chsh -s /usr/bin/zsh? (pide tu contraseña)"; then
+            run chsh -s /usr/bin/zsh || log_warn "chsh falló: ejecútalo a mano: chsh -s /usr/bin/zsh"
+        fi
     fi
 fi
 
@@ -419,6 +374,18 @@ fi
 if has_component fonts && ! $DRY_RUN && command -v fc-list >/dev/null 2>&1; then
     fc-list | grep -qi "Outfit" || log_warn "Fuente Outfit no encontrada (paquete AUR ttf-outfit)."
     fc-list | grep -qi "JetBrainsMono Nerd\|JetBrains Mono Nerd" || log_warn "JetBrains Mono Nerd Font no encontrada (ttf-jetbrains-mono-nerd)."
+fi
+
+# What update.sh needs to know later
+if ! $DRY_RUN; then
+    printf '%s\n' "${SELECTED_COMPONENTS[@]}" > "$STATE_DIR/components"
+    printf '%s\n' "$LINK_MODE" > "$STATE_DIR/link-mode"
+    # a fresh install already contains every migration: do not replay them
+    mkdir -p "$STATE_DIR"
+    touch "$STATE_DIR/migrations.done"
+    for m in "$REPO_DIR"/migrations/[0-9]*.sh; do
+        grep -qxF "$(basename "$m")" "$STATE_DIR/migrations.done" || basename "$m" >> "$STATE_DIR/migrations.done"
+    done
 fi
 
 # =============================================================================

@@ -18,12 +18,14 @@ Read this first on every task in this repo. Then load the specialised skills:
 | Base OS | EndeavourOS (Arch) + KDE Plasma minimal | Hyprland is a **second session** in SDDM |
 | Hyprland | **0.56.x stable** (0.56.2) | **Lua config** `~/.config/hypr/hyprland.lua`. hyprlang `.conf` is deprecated since 0.55 — do not write `.conf` |
 | Quickshell | **0.3.1** (Arch `extra`) | |
+| hyprpm | separate Arch package `hyprpm` | must be in packages/pacman.txt |
 | hyprland-plugins | pinned commit for 0.56.x via hyprpm | only hyprbars, hyprfocus (and borders-plus-plus) |
 | gum | 2.x (Arch `extra`) | |
 
 Baseline syntax: `resources/hyprland-0.56.2-example.lua` is the upstream example config **of the exact stable release**. When the `hyprland` skill (which tracks the wiki's *git* version) and this file disagree, the stable file wins.
 
 ### Things that do NOT exist on 0.56.2 stable
+- `misc.vfr` (moved to `debug.vfr`, default true — just omit it). Check every `misc.*` key against the example file.
 - `decoration.blur.variant` (frost, acrylic, aurora, …) and `blur.glass.*` / `blur.acrylic.*` — **git-only**. Use plain blur (`enabled`, `size`, `passes`, `vibrancy`, `noise`, `contrast`, `brightness`, `popups`) and leave a commented TODO for later.
 - Plugins hyprexpo, hyprscrolling, hyprtrails, hyprwinwrap, xtra-dispatchers (removed). Scrolling layout is native.
 
@@ -33,7 +35,6 @@ Baseline syntax: `resources/hyprland-0.56.2-example.lua` is the upstream example
 - Only one notification daemon per session: our Quickshell `NotificationServer` (Plasma's runs only in Plasma).
 - Polkit in Hyprland: `hyprpolkitagent` (Plasma's agent only autostarts in Plasma).
 - Portals: install `xdg-desktop-portal-hyprland` + `xdg-desktop-portal-gtk`; leave the KDE portal installed for Plasma.
-- Keyring: **one Secret Service, gnome-keyring**, in Plasma and Hyprland (Proton VPN and `plasma-nm` depend on it — never remove it). The display manager's PAM (`pam_gnome_keyring`, already in Plasma Login / SDDM) starts it and unlocks the `login` keyring (same password as the user, no autologin); nothing in `autostart.lua`. KWallet stays Plasma-only with its Secret Service off (`kwalletrc [org.freedesktop.secrets] apiEnabled=false`, user's call). `~/.config/xdg-desktop-portal/hyprland-portals.conf` routes the Secret portal to `gnome-keyring`; Brave gets `--password-store=gnome-libsecret` via `~/.config/brave-flags.conf`.
 - File manager stays Dolphin; terminal is kitty.
 - Qt theming in Hyprland: decide explicitly (KDE platform theme vs `hyprqt6engine`) and set it only via `hl.env`.
 
@@ -46,7 +47,7 @@ config/quickshell/
   Theme.qml               singleton: every color, radius, font, duration (see references/design.md)
   ShellState.qml          singleton: openPanel + IpcHandler (target "shell")
   services/               singletons, data only: Hypr, Media, Audio, Network, Bluetooth, Power, Brightness,
-                          SysStats, Notifs, Osd, Toggles, Apps, Clock, Tray (SNI host)
+                          SysStats, Notifs, Osd, Toggles, Apps, Clock
   components/             Capsule, IconButton, Toggle, Slider, ProgressBar, Card, Popover …
   modules/bar|island|popovers|notifications|launcher|power|lock
   debug/DebugPanel.qml    plain-text dump of all services (dev only, not autostarted)
@@ -90,6 +91,11 @@ OSD is triggered by services reacting to changes (Audio volume, Brightness), not
 
 ## Visual spec
 See `references/design.md` (tokens, components, motion). It reproduces the approved mockup; follow it exactly.
+
+## Updating installed systems (migrations)
+- `./update.sh` (alias `./install.sh --update`) updates an installed system without reinstalling: `git pull --ff-only` → migrations → missing packages → configs → optional plugins → live reload. `git pull` alone is not enough.
+- **Rule: every change that affects an already-installed system must ship with its migration.** Add `migrations/NNN-name.sh` (next number): runs once (recorded in `~/.local/state/dragon-island/migrations.done`), idempotent, backs up what it touches (`backup_copy` / `deploy_item`), honours `DRY_RUN` and `ASSUME_YES`, exits `10` to skip. Helpers live in `installer/lib.sh`; see `migrations/README.md`. A fresh `install.sh` marks every existing migration as done.
+- Symlinked installs already see repo changes; migrations cover what a symlink cannot: copies, files outside the repo (`~/.zshrc`, `~/.config/starship.toml`), packages, services, state files.
 
 ## Definition of done (every phase)
 - `hyprctl configerrors` empty (when testable) and Lua syntax checked (`luac -p` if available).

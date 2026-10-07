@@ -17,6 +17,12 @@ Checked against the 0.3.1 source. Read before declaring a component done.
 - To re-run a polling command, set `running = true` again from a `Timer`; it is a no-op if still running.
 - `StdioCollector` gives the whole output on `onStreamFinished` (`this.text`); `SplitParser` emits per line on `onRead`.
 
+## Enum-typed properties
+- Don't declare properties with a Quickshell enum type (`property NetworkConnectivity c: ...`, `property PowerProfile p: ...`). QML treats those as object pointers and logs `Unable to assign int to qs::...*`. Declare them as `property int` (enum values are ints) and compare against `NetworkConnectivity.Full`, `PowerProfile.Balanced`, etc.
+
+## Tray icons
+- Some apps (e.g. Proton VPN) send an empty `IconPixmap`, producing repeated `Error demarshalling property update ... IconPixmap` warnings. Harmless: use the item's `icon` (it falls back to the icon name). Don't try to "fix" it in QML.
+
 ## IPC
 - `IpcHandler` functions need explicit parameter and return types (`function toggle(name: string): void`). Untyped functions are silently not registered. Check with `qs ipc show`.
 - `target` must be unique per Quickshell instance.
@@ -47,4 +53,3 @@ Checked against the 0.3.1 source. Read before declaring a component done.
 - Keep `qs -p <dir>` running while editing; it hot-reloads and prints `file:line` errors.
 - Create an empty `.qmlls.ini` next to `shell.qml` so qmlls understands Quickshell imports (Quickshell fills it in). Git-ignore it.
 - After changes, test: multiple monitors (`Quickshell.screens`), no battery (desktop), no player, no Bluetooth adapter, Wi-Fi off, 0 notifications and 50 notifications.
-- **Enum-typed properties:** `readonly property NetworkConnectivity x: Networking.connectivity` (same for `PowerProfile`) logs `Unable to assign int to …*`. Declare them as `int`; the enum is still usable in `switch` via `NetworkConnectivity.Full`.
