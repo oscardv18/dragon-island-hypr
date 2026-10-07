@@ -49,7 +49,6 @@ Singleton {
     readonly property bool textShadows:    false                           // MultiEffect shadows on bar text: rendered through a texture, they made it look soft / pixelated
     readonly property color textShadow:    Qt.rgba(0, 0, 0, 0.55)         // text / icon shadow on glass (only inside the islands)
     readonly property color glassBorder:   Qt.rgba(1, 1, 1, 0.08)          // 1 px, white 8 %
-    readonly property color glassRim:      Qt.rgba(1, 1, 1, 0.17)          // dock / launcher: hairline greyish rim that sets the glass shapes apart
     readonly property color pillBg:        alpha(surface2, 0.38)           // dock capsules / launcher pills: translucent, the liquid glass shows through
     readonly property color pillBgHi:      alpha(surfaceHi, 0.55)
     readonly property color popoverBg:     alpha(surface0, popoverAlpha)
@@ -154,17 +153,16 @@ Singleton {
     readonly property real orbitPeriod:   40      // seconds per revolution
     readonly property int  orbitInner:    16      // icons in the main ring; the rest go to the outer ring
 
-    // Arc dock
-    readonly property real dockWidth:      440
-    readonly property real dockHeight:     90     // sagitta of the band (the semi-donut)
-    readonly property real dockBand:       48     // thickness of the band
-    readonly property real dockIcon:       36     // capsule that holds an icon (icon inside: 36)
-    readonly property real dockIconInner:  22
-    readonly property real dockSpacing:    42
-    readonly property int  dockSlotsPerSide: 4    // capsules fully visible on each side of the centre; the rest scroll under the screen edge (mouse wheel)
+    // Dock: a glass tab that sticks out of the screen edge (like the notch, but from the bottom / left / right)
+    readonly property real dockPill:       44     // capsule that holds an icon
+    readonly property real dockIconInner:  28
+    readonly property real dockPitch:      54     // distance between capsules
+    readonly property real dockPad:        14     // along the edge, before the first / after the last capsule
+    readonly property real dockThickness:  66     // how far it sticks out
+    readonly property real dockRadius:     24     // corners away from the edge
+    readonly property int  dockCapacity:   8      // capsules shown at once; more scroll with the mouse wheel
     readonly property int  dockHideDelay:  600    // ms after the pointer leaves
     readonly property real dockEdge:       3      // hot zone thickness, px
-    readonly property real dockWindowHeight: 300  // room for the magnified icons, the menu and the downloads fan
 
     // Workspace hover preview
     readonly property real previewThumbWidth: 180

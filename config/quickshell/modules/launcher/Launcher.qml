@@ -190,8 +190,6 @@ Item {
                     height: width
                     radius: width / 2
                     color: icon.isFront && !root.auto ? Theme.alpha(Theme.accent, 0.35) : Theme.pillBg
-                    border.width: 1
-                    border.color: Theme.glassRim
                     Behavior on color { ColorAnimation { duration: Theme.durFade } }
                 }
                 Image {
@@ -226,8 +224,6 @@ Item {
                     width: Math.min(Theme.orbitIcon * 4.5, nameText.implicitWidth + 28)
                     radius: height / 2
                     color: Theme.popoverBg
-                    border.width: 1
-                    border.color: Theme.glassRim
                     UiText {
                         id: nameText
                         anchors.centerIn: parent
@@ -263,8 +259,6 @@ Item {
             z: 0
             scale: root.planetScale
             color: Theme.popoverBg
-            border.width: 1
-            border.color: Theme.glassRim
 
             // swallow clicks (clicking outside the launcher closes it, the planet must not)
             MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }

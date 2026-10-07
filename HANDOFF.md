@@ -390,6 +390,14 @@ Decisiones y trampas:
 - **Bug real:** la zona sensible era una ventana aparte (`DockEdge`, 3 px). Al pasar el puntero de ella a la ventana del dock, el dock subía y se hundía a la vez y los clics no llegaban (reproducido con uinput: 3 de 3 intentos sin clic). Ahora la franja de 3 px es un `Item` (`strip`) **dentro de `DockWindow`** y entra en la máscara de entrada solo cuando el dock está oculto: una sola superficie, sin traspaso. `DockEdge.qml` eliminado. Verificado: sube, se queda, clic en Ghostty → workspace 3, clic en Brave → workspace 1.
 - **Solo aplicaciones:** quitados el botón del lanzador y la carpeta de descargas (con su abanico). Una sola banda centrada (fijadas primero, luego las abiertas), 8 huecos; la rueda desplaza la banda entera y los extremos se desvanecen bajo el borde.
 
+## 7y. Dock como pestaña de cristal (2026-10-07)
+
+- Se descarta la semidona. El dock es una **pestaña de cristal que sobresale del borde** (abajo, izquierda o derecha, `Dock.position`), como el notch pero desde el otro lado: una capa `dragon-dock` del **tamaño exacto** de la pestaña (así hyprglass dibuja el mismo liquid glass con borde que en Ghostty: preset `dragon-liquid` tal cual), esquinas exteriores redondeadas por un `Rectangle` que se pasa del borde de la pantalla. Se oculta hundiéndose (el contenido sale de la ventana). Sin bordes blancos ni degradados en el dock ni en el lanzador (el lanzador usa también `dragon-liquid`; sus formas siguen sin relieve de borde porque la capa es de pantalla completa).
+- Cápsulas con `Theme.pillBg` (translúcidas), icono de 28 en cápsula de 44, paso de 54, hasta 8 a la vez (`dockCapacity`); más → rueda. Nombre al pasar el ratón y menús como `PopupWindow`.
+- **Menú del dock:** clic derecho sobre el cristal → Abajo / Izquierda / Derecha y «Siempre visible». Clic derecho en una app → su menú (fijar, nueva ventana, cerrar, mover a).
+- Lecciones: (1) `Region { item }` NO sigue el movimiento de un ancestro: usar un `Item` fijo (`hitbox`); (2) la franja sensible debe quedarse en la máscara mientras la pestaña sube y el hover es la unión franja ∪ pestaña; (3) el `index` requerido del delegado pisa una propiedad `index` del Slot (`slotIdx`).
+- Eliminados `BandShape`, `GlassRim`, `GradientRing`, `BorderGradient`.
+
 ## 8. Cómo depurar rápido
 
 ```sh

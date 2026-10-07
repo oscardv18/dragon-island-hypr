@@ -112,6 +112,7 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 | Clic en un icono | Enfocar la app; si ya está enfocada, pasar a su siguiente ventana; abrirla si no está abierta; restaurarla si está minimizada |
 | Clic central | Nueva instancia |
 | Clic derecho | Menú: fijar / quitar del dock · nueva ventana · cerrar todas · mover a un escritorio (1–5) |
+| Clic derecho sobre el cristal del dock | Ajustes del dock: posición (abajo / izquierda / derecha) y siempre visible |
 | Rueda del ratón sobre el dock | Si hay más apps que huecos (8), desplaza la banda; el dock no cambia de tamaño |
 | Arrastrar un icono fijado | Reordenar las apps fijadas |
 | Botón central | Lanzador orbital |
