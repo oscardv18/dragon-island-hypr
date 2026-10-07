@@ -8,6 +8,10 @@
 # Screenshot helper for Hyprland (grim + slurp wrapper)
 grimblast-git
 
+@shell
+# Video wallpapers (uses mpv)
+mpvpaper
+
 @fonts
 # UI typography (Outfit)
 ttf-outfit

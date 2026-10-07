@@ -15,6 +15,8 @@ Singleton {
     // Brand / launcher
     readonly property string apps:          g(0xF003B)
     readonly property string search:        g(0xF0349)
+    readonly property string shuffle:       g(0xF049D)
+    readonly property string folder:        g(0xF024B)
     readonly property string dashboard:     g(0xF056E)
 
     // System

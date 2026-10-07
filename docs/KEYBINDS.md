@@ -12,6 +12,8 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + Space` | Lanzador de aplicaciones |
 | `SUPER + E` | Dolphin |
 | `SUPER + D` | Notch: abre / cierra el panel expandido (Nook · Tray). También Esc o clic fuera |
+| `SUPER + W` | Selector de fondos de pantalla (imágenes, GIF y vídeo) |
+| `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + N` | Centro de notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
@@ -57,6 +59,17 @@ Dos distribuciones: **English (US)** (la primera, la que resuelve los atajos) y 
 | Clic en la cápsula `US` / `LA` (isla derecha, antes de Wi‑Fi) | Siguiente distribución |
 
 El bloqueo (hyprlock) usa las mismas dos distribuciones: `ALT + SHIFT` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa.
+
+## Fondos de pantalla (SUPER + W)
+
+| Tecla | Acción |
+|---|---|
+| Escribir | Filtrar por nombre |
+| `←↑↓→` | Mover la selección (vista previa grande del seleccionado o del que tiene el cursor encima) |
+| `Enter` / clic | Aplicar el fondo |
+| `Esc` | Cerrar |
+
+Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 
 ## Teclas multimedia (funcionan con la pantalla bloqueada)
 

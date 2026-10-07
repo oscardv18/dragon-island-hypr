@@ -15,7 +15,9 @@ if hl.plugin and hl.plugin.hyprglass then
         default_theme = "dark",
         -- soft magenta tint (0xRRGGBBAA, accent #c50ed2 at alpha 0x14 ≈ 8 %): the last two digits are the strength
         tint_color    = 0xc50ed214,
-        layers        = { enabled = true },
+        -- live_resample re-renders the glass when what is behind it changes (a video wallpaper): cap it at
+        -- 12 fps instead of the default 30, saving a few % of GPU with a video wallpaper (measured)
+        layers        = { enabled = true, live_resample_fps = 12 },
     })
 
     -- Own preset for the shell: more blur than `pomme`, moderate refraction and chromatic

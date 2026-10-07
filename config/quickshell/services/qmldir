@@ -19,3 +19,4 @@ singleton Tray 1.0 Tray.qml
 singleton Keybinds 1.0 Keybinds.qml
 singleton BarMetrics 1.0 BarMetrics.qml
 singleton Keyboard 1.0 Keyboard.qml
+singleton Wallpaper 1.0 Wallpaper.qml

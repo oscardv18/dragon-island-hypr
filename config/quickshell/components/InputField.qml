@@ -14,7 +14,9 @@ Rectangle {
     readonly property alias input: input
 
     signal accepted()
+    property bool gridNav: false   // arrows move in a grid: Left / Right / Up / Down emit navigateGrid
     signal navigate(int delta)     // Up / Down / Tab / Shift+Tab
+    signal navigateGrid(int dx, int dy)
     signal escapePressed()
     signal deleteOnEmpty()         // Supr with an empty field (e.g. delete the highlighted entry)
 
@@ -55,8 +57,10 @@ Rectangle {
                 font.pixelSize: Math.round(root.fontSize)
                 clip: true
                 onAccepted: root.accepted()
-                Keys.onUpPressed: root.navigate(-1)
-                Keys.onDownPressed: root.navigate(1)
+                Keys.onUpPressed: root.gridNav ? root.navigateGrid(0, -1) : root.navigate(-1)
+                Keys.onDownPressed: root.gridNav ? root.navigateGrid(0, 1) : root.navigate(1)
+                Keys.onLeftPressed: e => { if (root.gridNav) root.navigateGrid(-1, 0); else e.accepted = false; }
+                Keys.onRightPressed: e => { if (root.gridNav) root.navigateGrid(1, 0); else e.accepted = false; }
                 Keys.onTabPressed: root.navigate(1)
                 Keys.onBacktabPressed: root.navigate(-1)
                 Keys.onEscapePressed: root.escapePressed()

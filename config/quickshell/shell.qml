@@ -27,6 +27,9 @@ ShellRoot {
         value: Settings.motionScale
     }
 
+    // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
+    Component.onCompleted: Wallpaper.init()
+
     Variants {
         model: Quickshell.screens
         delegate: Component { Bar {} }

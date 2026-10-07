@@ -66,6 +66,8 @@ bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), "Ratón · Redimensionar
 
 -- Quickshell interactive panels (via qs ipc)
 bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Notch (Nook / Tray)")
+bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper toggle"), "Shell · Fondos de pantalla")
+bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs ipc call wallpaper random"), "Shell · Fondo aleatorio")
 bind(mainMod .. " + N",      hl.dsp.exec_cmd("qs ipc call shell toggle notifications"), "Shell · Notificaciones")
 bind(mainMod .. " + Escape", hl.dsp.exec_cmd("qs ipc call shell toggle power"),         "Shell · Menú de energía")
 bind(mainMod .. " + F1",     hl.dsp.exec_cmd("qs ipc call shell toggle keybinds"),      "Shell · Esta ayuda de atajos")

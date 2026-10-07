@@ -187,6 +187,16 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - Hyprland: `hyprctl configerrors` y `$XDG_RUNTIME_DIR/hypr/*/hyprland.log`.
 - Plugins: `hyprpm list`, `hyprctl plugin list` y `~/.local/state/dragon-island/firstrun.log`.
 
+## 13. Fondos de pantalla
+
+- [ ] `SUPER + W` abre el selector (cristal solo tras su tarjeta); Esc, clic fuera o `SUPER + W` lo cierran. Las miniaturas aparecen y el fondo actual lleva borde de acento.
+- [ ] Escribir filtra; las flechas mueven la selección; Enter aplica; el cursor sobre una miniatura muestra la vista previa grande (GIF animado).
+- [ ] Imagen → GIF → vídeo → imagen: transición `grow` en imágenes y GIF; `pgrep -cx awww-daemon` y `pgrep -cx mpvpaper` nunca valen 1 a la vez tras el cambio.
+- [ ] Vídeo a pantalla completa en otra ventana (`SUPER + SHIFT + F`): el vídeo del fondo se pausa; al salir se reanuda.
+- [ ] `SUPER + SHIFT + W` pone otro fondo; `qs ipc call wallpaper current` lo confirma.
+- [ ] Cerrar sesión y volver a entrar (o `pkill awww-daemon mpvpaper`, `awww-daemon &`, `qs kill; qs -d`): vuelve el mismo fondo. Reiniciar Quickshell con un vídeo activo no lo reinicia.
+- [ ] Bloquear (`SUPER + L`): hyprlock usa el fondo actual (con un vídeo, un fotograma).
+
 ## 12. Cristal y blur
 
 - [ ] `hyprctl configerrors` vacío; `hyprctl getoption decoration:blur:size` = 8.

@@ -253,6 +253,17 @@ Decisiones y trampas:
 - **Verificado** (píxeles de los huecos y capturas): con hyprglass y con el plugin descargado (`hyprctl plugin unload …/HyprGlass/hyprglass.so` + `hyprctl reload`; luego `plugin load`) los huecos entre islas y entre tarjetas quedan limpios y el notch negro sin halo.
 - Migración `003-remove-stale-qml.sh`: borra de una copia de `~/.config/quickshell` los QML eliminados (`update.sh` nunca borra).
 
+## 7f. Selector de fondos (2026-10-06)
+
+- `services/Wallpaper.qml` + `scripts/wallpapers.sh` + `modules/wallpapers/WallpaperPanel.qml` (hospedado en `LauncherWindow`, panel `wallpapers`), IPC `wallpaper`, `SUPER + W` / `SUPER + SHIFT + W`. awww para imágenes / GIF (`--transition-type grow --transition-pos center --transition-fps 60`), mpvpaper por monitor para vídeo (`-o "no-audio loop hwdec=auto-safe panscan=1.0 input-ipc-server=…"`). El script hace `awww kill` al aplicar un vídeo y `pkill mpvpaper` al aplicar una imagen: nunca conviven.
+- **Pausa del vídeo:** socket IPC de mpv (`components/MpvPause.qml`, `Quickshell.Io.Socket`) por monitor cuando `Hypr.fullscreenOn(monitor)` cambia. Descartado `SIGSTOP` (congela también el bucle Wayland del cliente: no atiende `configure` ni cambios de salida) y el `--auto-pause` de mpvpaper (no distingue monitores ni usa los eventos de Hyprland). Verificado con `get_property pause`: False → True en pantalla completa → False al salir.
+- **Restauración:** awww restaura por su cuenta la última imagen al arrancar el daemon, así que `running` devuelve lo que muestra awww y el servicio solo aplica si no coincide con `wallpaper.json` (probado con vídeo, GIF e imagen guardados tras matar los demonios). Reiniciar Quickshell no reinicia un vídeo activo.
+- hyprlock: `path = ~/.cache/dragon-island/current-wallpaper`; hyprgraphics detecta el formato por bytes mágicos (libmagic), no por extensión. **Sin probar el bloqueo real** (no se bloqueó la sesión).
+- hyprpaper fuera del autostart, de `packages/pacman.txt` y su `.conf` borrado (el paquete sigue instalado). Migración `004-wallpapers.sh`: paquetes, carpeta, fondo personalizado antiguo → `mi-fondo.jpg`, cambio de demonios.
+- **Rendimiento con vídeo** (vídeo de prueba 720p H.264, portátil AMD Lucienne, `gpu_busy_percent`): GPU ~5 % con imagen → 14–20 % con vídeo + hyprglass; mpvpaper ~5–6 % de un núcleo; Hyprland ~8–9 %. `live_resample` desactivado en la barra ahorra ~3 puntos, igual que bajar `live_resample_fps` de 30 a 10: se dejó `live_resample_fps = 12` en `glass.lua` y el cristal sigue vivo.
+- Los fondos de prueba (GIF / mp4 sintéticos) se generaron con ffmpeg y se borraron.
+- Color dominante del fondo con `ColorQuantizer`: no (decisión del usuario).
+
 ## 8. Cómo depurar rápido
 
 ```sh

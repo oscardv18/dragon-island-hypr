@@ -135,6 +135,13 @@ Singleton {
     readonly property real artSmall:     22
     readonly property real artSmallRadius: 7
 
+    // Wallpaper picker
+    readonly property real wallpaperPanelWidth:   980
+    readonly property real wallpaperTabsWidth:    300
+    readonly property real wallpaperGridHeight:   360
+    readonly property real wallpaperPreviewWidth: 280
+    readonly property real wallpaperThumbRadius:  14
+
     // Popovers & cards
     readonly property real popoverWidth:   360
     readonly property real popoverWidthSm: 320

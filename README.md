@@ -140,6 +140,17 @@ Los atajos y los controles con el ratón están en **[docs/KEYBINDS.md](docs/KEY
 
 El shell se controla también por IPC: `qs ipc call shell toggle <panel>`. Los paneles disponibles son `dashboard`, `perf`, `wifi`, `bt`, `audio`, `battery`, `notifications`, `calendar`, `launcher` y `power`.
 
+## Fondos de pantalla
+
+`SUPER + W` abre el selector (pestañas Todos / Imágenes / Animados, búsqueda, miniaturas 16:9 con badges GIF y VIDEO, vista previa grande, «Aleatorio» y «Abrir carpeta»); `SUPER + SHIFT + W` pone uno aleatorio. Los fondos están en `~/Pictures/Wallpapers` (cámbialo con `"wallpaperDir"` en `~/.config/dragon-island/settings.json`); el instalador copia ahí los del repo.
+
+- **Imágenes y GIF** (jpg, png, webp, gif) los muestra **awww** (`awww-daemon` arranca con la sesión) con una transición `grow` desde el centro a 60 fps. **Vídeo** (mp4, webm, mkv): **mpvpaper**, un proceso por monitor, en bucle, sin audio y con aceleración por hardware. Nunca corren los dos a la vez.
+- El fondo actual se guarda en `~/.local/state/dragon-island/wallpaper.json` y se restaura al iniciar sesión. `~/.cache/dragon-island/current-wallpaper` apunta a la imagen actual (un fotograma si es GIF o vídeo): **hyprlock** lo usa como fondo.
+- Con una ventana a pantalla completa en un monitor, el vídeo de ese monitor se pausa solo (por el socket IPC de mpv) y se reanuda al salir.
+- Las miniaturas se crean en `~/.cache/dragon-island/thumbs/` (ffmpeg / ffmpegthumbnailer), solo si faltan o el archivo cambió.
+- Con vídeo y hyprglass, `glass.lua` limita el recálculo del cristal a 12 fps (`live_resample_fps`).
+- Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`. Paquetes: `awww`, `ffmpeg`, `ffmpegthumbnailer`, `mpv` y `mpvpaper` (AUR); hyprpaper ya no se usa.
+
 ## Cristal y blur
 
 Dos capas, y la segunda es opcional:

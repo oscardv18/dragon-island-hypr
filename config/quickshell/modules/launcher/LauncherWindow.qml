@@ -1,7 +1,7 @@
 // =============================================================================
 // dragon-island — LauncherWindow.qml
 // Overlay for the modal panels (namespace "dragon-launcher"), one per monitor: launcher, power menu,
-// clipboard history, keybinds cheat-sheet. Black 45 % scrim, click outside / Esc closes.
+// clipboard history, keybinds cheat-sheet, wallpaper picker. Black 45 % scrim, click outside / Esc closes.
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
@@ -11,6 +11,7 @@ import "../../services"
 import "../power"
 import "../clipboard"
 import "../keybinds"
+import "../wallpapers"
 
 PanelWindow {
     id: win
@@ -28,7 +29,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
-    readonly property bool open: ["launcher", "power", "clipboard", "keybinds"].indexOf(panel) >= 0
+    readonly property bool open: ["launcher", "power", "clipboard", "keybinds", "wallpapers"].indexOf(panel) >= 0
 
     mask: open ? null : idleMask
     Region { id: idleMask }
@@ -39,6 +40,7 @@ PanelWindow {
         Region { item: clipboard.frameItem; radius: Theme.popoverRadius }
         Region { item: keybinds.frameItem; radius: Theme.popoverRadius }
         Region { item: power.frameItem; radius: Theme.popoverRadius }
+        Region { item: wallpapers.frameItem; radius: Theme.popoverRadius }
     }
 
     Rectangle {
@@ -67,6 +69,7 @@ PanelWindow {
         if (panel === "launcher") launcher.focusSearch();
         else if (panel === "clipboard") clipboard.focusSearch();
         else if (panel === "keybinds") keybinds.focusSearch();
+        else if (panel === "wallpapers") wallpapers.focusSearch();
         else if (panel === "power") power.focusMenu();
         else if (open) keys.forceActiveFocus();
     })
@@ -87,6 +90,12 @@ PanelWindow {
         id: keybinds
         anchors.fill: parent
         shown: win.panel === "keybinds"
+    }
+
+    WallpaperPanel {
+        id: wallpapers
+        anchors.fill: parent
+        shown: win.panel === "wallpapers"
     }
 
     PowerMenu {

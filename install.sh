@@ -286,14 +286,14 @@ if has_component shell; then
     deploy_item "$REPO_DIR/config/quickshell" "$HOME/.config/quickshell"
 fi
 
-if has_component core; then
-    # Default wallpaper, only when the user has none (never replaces a custom one)
-    WALLPAPER="${XDG_DATA_HOME:-$HOME/.local/share}/$PROJECT/wallpaper.jpg"
-    if [[ -e "$WALLPAPER" || -L "$WALLPAPER" ]]; then
-        log_info "Fondo de pantalla existente conservado: $WALLPAPER"
-    else
-        deploy_item "$REPO_DIR/assets/wallpapers/dragon-island.jpg" "$WALLPAPER"
-    fi
+if has_component shell; then
+    # Wallpapers live in ~/Pictures/Wallpapers (settings.json "wallpaperDir" changes it). The ones shipped with
+    # the repo are copied there once; existing files are never replaced.
+    WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
+    run mkdir -p "$WALLPAPER_DIR"
+    for wp in "$REPO_DIR"/assets/wallpapers/*; do
+        [[ -e "$WALLPAPER_DIR/$(basename "$wp")" ]] || run cp -n -- "$wp" "$WALLPAPER_DIR/"
+    done
 fi
 
 if has_component plugins; then

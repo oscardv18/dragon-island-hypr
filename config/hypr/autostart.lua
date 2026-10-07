@@ -9,7 +9,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("quickshell")
 
     -- Desktop components
-    hl.exec_cmd("hyprpaper")
+    -- Wallpapers: awww-daemon (images / GIF); Quickshell restores the saved wallpaper and starts mpvpaper for videos
+    hl.exec_cmd("awww-daemon")
     hl.exec_cmd("hypridle")
 
     -- Polkit agent (Arch ships a systemd user unit; Plasma's agent only autostarts in Plasma)

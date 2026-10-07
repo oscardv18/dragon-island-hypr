@@ -10,6 +10,7 @@
  *                 → 1.0
  *   - reducedMotion: bool [readonly] (motionScale === 0)
  *   - source: string [readonly] ("settings" | "kde" | "default")
+ *   - wallpaperDir: string [readonly] (settings.json "wallpaperDir", "~" allowed; default ~/Pictures/Wallpapers)
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -38,6 +39,12 @@ Singleton {
     readonly property string source: _userScale >= 0 ? "settings" : (_kdeScale >= 0 ? "kde" : "default")
 
     property var _data: ({})
+
+    readonly property string wallpaperDir: {
+        const home = Quickshell.env("HOME");
+        const d = typeof root._data.wallpaperDir === "string" && root._data.wallpaperDir.length > 0 ? root._data.wallpaperDir : "~/Pictures/Wallpapers";
+        return d.startsWith("~") ? home + d.slice(1) : d;
+    }
 
     FileView {
         id: settingsFile
