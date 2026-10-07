@@ -305,6 +305,14 @@ Decisiones y trampas:
 - **Verificado** con capturas sobre el fondo "GTA" (detalle: se ve la cara desenfocada a través del calendario y de la notificación) y sobre un fondo casi blanco: cristal visible, esquinas limpias, texto legible gracias a la sombra de texto y al `adaptive_dim`.
 - Aviso: mis pruebas con `awww img …` cambiaban el fondo real sin pasar por el servicio; se restauró con `qs ipc call wallpaper set "$(qs ipc call wallpaper current)"`.
 
+## 7l. Cristal líquido en toda ventana translúcida (2026-10-07)
+
+- `hg.config({ enabled = true, default_preset = "dragon-liquid" })`: ya no es una lista blanca de Ghostty. Exclusiones por regla de ventana (`+hyprglass_disabled`, regex `(?i)` sin distinguir mayúsculas): navegadores, editores de código y IDE (VS Code y derivados, Cursor, Zed, JetBrains, Antigravity, Kate…), pantalla completa y reproductores de vídeo. Probado abriendo ventanas con clase `Code`, `Google-chrome`, `jetbrains-idea`, `Antigravity` y `org.kde.kate`: todas con `hyprglass_disabled`; `neovide` (Neovim GUI) sin la etiqueta. Neovim en terminal hereda el cristal de su terminal.
+- `inactive_opacity` 0.95 → 1.0 en `look.lua`: con 0.95 toda ventana inactiva era translúcida y se habría llenado de cristal.
+- kitty: `background_opacity 0.65` (como Ghostty). No se tocó el proceso de kitty en marcha: el cambio de opacidad se aplica al reiniciarlo; el cristal (compositor) ya actúa sobre su transparencia actual (0.85).
+- Otros componentes de Quickshell: barra, notificaciones, popovers, lanzador y selector ya tienen cristal por capa. Los menús de la bandeja (`QsMenuAnchor`, xdg-popups) y el `DebugPanel` (dev) no se han tocado ni comprobado.
+- Migración: no aplica (todo en el repo).
+
 ## 8. Cómo depurar rápido
 
 ```sh
