@@ -49,6 +49,9 @@ Singleton {
     readonly property bool textShadows:    false                           // MultiEffect shadows on bar text: rendered through a texture, they made it look soft / pixelated
     readonly property color textShadow:    Qt.rgba(0, 0, 0, 0.55)         // text / icon shadow on glass (only inside the islands)
     readonly property color glassBorder:   Qt.rgba(1, 1, 1, 0.08)          // 1 px, white 8 %
+    readonly property color glassRim:      Qt.rgba(1, 1, 1, 0.17)          // dock / launcher: hairline greyish rim that sets the glass shapes apart
+    readonly property color pillBg:        alpha(surface2, 0.38)           // dock capsules / launcher pills: translucent, the liquid glass shows through
+    readonly property color pillBgHi:      alpha(surfaceHi, 0.55)
     readonly property color popoverBg:     alpha(surface0, popoverAlpha)
     readonly property color hairline:      Qt.rgba(1, 1, 1, 0.07)          // island border, white 7 %
     readonly property color divider:       Qt.rgba(1, 1, 1, 0.10)          // divider, white 10 %

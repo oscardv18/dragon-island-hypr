@@ -70,7 +70,8 @@ if hl.plugin and hl.plugin.hyprglass then
     -- 300 px high, the launcher's 768.
     hg.preset("dragon-dock", {
         inherits             = "dragon-liquid",
-        blur_strength        = 2.0,
+        blur_strength        = 4.0,
+        blur_iterations      = 4,
         refraction_strength  = 1.0,
         edge_thickness       = 0.05,
         chromatic_aberration = 0.5,
@@ -87,7 +88,7 @@ if hl.plugin and hl.plugin.hyprglass then
     -- mask_threshold 0.1: the Quickshell fills are translucent (Theme.glassBg 18 %, panels 30 %), so the glass shows through
     hg.layer("dragon-bar",           { preset = "dragon-bar",   mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-notifications", { preset = "dragon-card",  mask_mode = "alpha", mask_threshold = 0.1 })
-    hg.layer("dragon-dock",     { preset = "dragon-dock",  mask_mode = "alpha", mask_threshold = 0.1 })
+    hg.layer("dragon-dock",     { preset = "dragon-dock", mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-launcher", { preset = "dragon-orbit", mask_mode = "alpha", mask_threshold = 0.1 })
     for _, ns in ipairs({ "dragon-popover", "dragon-wallpapers", "dragon-preview" }) do
         hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.1 })

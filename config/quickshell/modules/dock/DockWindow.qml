@@ -133,7 +133,7 @@ PanelWindow {
             // ---- the glass band (a semi-donut): fill, light from the top, a bright rim and an inset rim ----
             BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; fill: Theme.glassBg }
             // the same rim as the bar islands: 1 px Theme.glassBorder
-            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; stroke: Theme.glassBorder; strokeWidth: 1 }
+            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; stroke: Theme.glassRim; strokeWidth: 1 }
 
             // ---- an app on the arc ----
             component Slot: Item {
@@ -178,7 +178,9 @@ PanelWindow {
                 Rectangle {
                     anchors.fill: parent
                     radius: width / 2
-                    color: mouse.containsMouse ? Theme.surfaceHi : Theme.surface2
+                    color: mouse.containsMouse ? Theme.pillBgHi : Theme.pillBg
+                    border.width: 1
+                    border.color: Theme.glassRim
                     Behavior on color { ColorAnimation { duration: Theme.durHover } }
                 }
                 Image {

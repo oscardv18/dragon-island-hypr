@@ -380,6 +380,11 @@ Decisiones y trampas:
 - Contornos más finos: cápsulas 1 px (1,4 al hover), franja 1 px al 40 %; lanzador 1–1,6 px. Máscaras supermuestreadas ×2.
 - Limitación: el borde exterior de la franja se ve algo escalonado porque el recorte alfa de hyprglass (`mask_threshold`) es un corte duro por píxel; no se puede suavizar desde QML.
 
+## 7w. Dock y lanzador: mismo acabado que las islas + cristal visible (2026-10-07)
+
+- Se quitaron los contornos en degradado y los brillos blancos (`GradientRing`, `BorderGradient`, `GlassRim` quedan sin usar). Franja, planeta y píldoras llevan relleno translúcido y un borde de 1 px gris muy tenue (`Theme.glassRim`, blanco 17 %).
+- Las cápsulas del dock y las píldoras del lanzador usan `Theme.pillBg` / `pillBgHi` (surface2 al 38 %) en vez del `surface2` opaco, que tapaba el cristal de hyprglass: ahora se ve el desenfoque detrás de cada píldora. Preset `dragon-dock` con `blur_strength` 4.
+
 ## 8. Cómo depurar rápido
 
 ```sh
