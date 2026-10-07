@@ -68,6 +68,7 @@ SKIPPED_MIGRATIONS=()
 INSTALLED_PKGS=()
 CHANGED_FILES=()
 BACKUPS=()
+NOTES=()
 
 if [[ $EUID -eq 0 ]]; then
     echo "ERROR: Por seguridad, no ejecutes este script como root." >&2
@@ -211,8 +212,12 @@ step_packages() {
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_info "Faltan ${#missing[@]} paquetes de los repositorios: ${missing[*]}"
         if confirm "¿Instalarlos con pacman -S --needed? (no se hace -Syu)"; then
-            run sudo pacman -S --needed --noconfirm "${missing[@]}"
-            INSTALLED_PKGS+=("${missing[@]}")
+            if run sudo pacman -S --needed --noconfirm "${missing[@]}"; then
+                INSTALLED_PKGS+=("${missing[@]}")
+            else
+                log_warn "No se pudieron instalar (¿sin terminal para sudo?). Hazlo a mano: sudo pacman -S --needed ${missing[*]}"
+                NOTES+=("Paquetes pendientes: ${missing[*]}")
+            fi
         fi
     else
         log_info "Paquetes de los repositorios: todo instalado."
@@ -392,6 +397,7 @@ lines+=(
     "  • hyprctl configerrors:   $ERRORS"
     "  • Registro:               $LOG"
 )
+((${#NOTES[@]})) && lines+=("  • Pendiente:              $(join "${NOTES[@]}")")
 if [[ -s "$RELOGIN_FILE" ]]; then
     lines+=("" "  ⚠ Requiere cerrar sesión y volver a entrar:")
     while IFS= read -r l; do lines+=("      - $l"); done < "$RELOGIN_FILE"
