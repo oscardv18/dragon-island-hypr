@@ -64,11 +64,6 @@ ShellRoot {
 
     Variants {
         model: Quickshell.screens
-        delegate: Component { DockEdge {} }
-    }
-
-    Variants {
-        model: Quickshell.screens
         delegate: Component { WallpaperWindow {} }
     }
 

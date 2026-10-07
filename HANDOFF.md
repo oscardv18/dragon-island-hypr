@@ -385,6 +385,11 @@ Decisiones y trampas:
 - Se quitaron los contornos en degradado y los brillos blancos (`GradientRing`, `BorderGradient`, `GlassRim` quedan sin usar). Franja, planeta y píldoras llevan relleno translúcido y un borde de 1 px gris muy tenue (`Theme.glassRim`, blanco 17 %).
 - Las cápsulas del dock y las píldoras del lanzador usan `Theme.pillBg` / `pillBgHi` (surface2 al 38 %) en vez del `surface2` opaco, que tapaba el cristal de hyprglass: ahora se ve el desenfoque detrás de cada píldora. Preset `dragon-dock` con `blur_strength` 4.
 
+## 7x. Dock: arreglo del clic / parpadeo y solo aplicaciones (2026-10-07)
+
+- **Bug real:** la zona sensible era una ventana aparte (`DockEdge`, 3 px). Al pasar el puntero de ella a la ventana del dock, el dock subía y se hundía a la vez y los clics no llegaban (reproducido con uinput: 3 de 3 intentos sin clic). Ahora la franja de 3 px es un `Item` (`strip`) **dentro de `DockWindow`** y entra en la máscara de entrada solo cuando el dock está oculto: una sola superficie, sin traspaso. `DockEdge.qml` eliminado. Verificado: sube, se queda, clic en Ghostty → workspace 3, clic en Brave → workspace 1.
+- **Solo aplicaciones:** quitados el botón del lanzador y la carpeta de descargas (con su abanico). Una sola banda centrada (fijadas primero, luego las abiertas), 8 huecos; la rueda desplaza la banda entera y los extremos se desvanecen bajo el borde.
+
 ## 8. Cómo depurar rápido
 
 ```sh

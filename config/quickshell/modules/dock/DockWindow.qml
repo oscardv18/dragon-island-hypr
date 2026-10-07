@@ -43,16 +43,17 @@ PanelWindow {
 
     // only the arc (and the menu / downloads fan while open) takes the pointer; the rest of the window is click-through
     mask: Region {
-        Region { item: Dock.wanted ? hit : null }
+        Region { item: Dock.wanted ? hit : strip }
         Region { item: menu.visible ? menu : null }
-        Region { item: fan.visible ? fan : null }
     }
 
     // ------------------------------------------------------------ slots along the arc
     readonly property var left: Dock.pinnedItems
     readonly property var right: Dock.openItems
-    readonly property int maxOffL: Math.max(0, left.length - Theme.dockSlotsPerSide)
-    readonly property int maxOffR: Math.max(0, right.length + 1 - Theme.dockSlotsPerSide)   // +1: the downloads button
+    readonly property var items: left.concat(right)                       // pinned first, then the other open apps
+    readonly property int capacity: Theme.dockSlotsPerSide * 2
+    readonly property int maxOff: Math.max(0, items.length - capacity)
+    readonly property real half: (Math.min(items.length, capacity) - 1) / 2    // the visible slots are -half .. +half, centred
 
     // The dock is a semi-donut: a band (like a bar island) bent along a circle. The circle's centre is below the
     // screen edge; the capsules sit on the band's centre line.
@@ -73,7 +74,7 @@ PanelWindow {
 
     Connections {
         target: Dock
-        function onWantedChanged() { if (!Dock.wanted) { win.menuItem = null; fan.open = false; } }
+        function onWantedChanged() { if (!Dock.wanted) { win.menuItem = null;  } }
     }
 
     Item {
@@ -83,6 +84,17 @@ PanelWindow {
         rotation: win.pos === "left" ? 90 : (win.pos === "right" ? -90 : 0)
         x: win.horizontal ? (win.width - width) / 2 : (win.width - width) / 2
         y: win.horizontal ? win.height - height : (win.height - height) / 2
+
+        // The hot zone: a thin strip on the screen edge that takes the pointer while the dock is hidden. It lives in this
+        // window (a separate edge window handed the pointer over to the dock badly: the dock rose and sank at once).
+        Item {
+            id: strip
+            x: arc.x
+            y: frame.height - Theme.dockEdge
+            width: Theme.dockWidth
+            height: Theme.dockEdge
+            HoverHandler { onHoveredChanged: Dock.hover(hovered) }
+        }
 
         // the arc and everything on it, sinking into the edge when hidden
         Item {
@@ -96,16 +108,12 @@ PanelWindow {
 
             // The dock never grows: when there are more apps than slots, the wheel turns the band (each side on its own)
             // and the capsules that run past the ends fade out under the screen edge.
-            property int targetL: 0
-            property int targetR: 0
-            property real offL: targetL
-            property real offR: targetR
-            Behavior on offL { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.005 } }
-            Behavior on offR { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.005 } }
+            property int target: 0
+            property real off: target
+            Behavior on off { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.005 } }
             Connections {
                 target: win
-                function onMaxOffLChanged() { arc.targetL = Math.min(arc.targetL, win.maxOffL); }
-                function onMaxOffRChanged() { arc.targetR = Math.min(arc.targetR, win.maxOffR); }
+                function onMaxOffChanged() { arc.target = Math.min(arc.target, win.maxOff); }
             }
 
             // Pointer: handlers sit on the arc itself (the parent of the capsules), so a capsule's own MouseArea cannot steal
@@ -114,11 +122,7 @@ PanelWindow {
             HoverHandler { id: hover; margin: 8; onHoveredChanged: Dock.hover(hovered) }
             WheelHandler {
                 acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                onWheel: e => {
-                    const dir = e.angleDelta.y > 0 ? 1 : -1;
-                    if (arc.pointerX < Theme.dockWidth / 2) arc.targetL = Math.max(0, Math.min(win.maxOffL, arc.targetL + dir));
-                    else arc.targetR = Math.max(0, Math.min(win.maxOffR, arc.targetR - dir));
-                }
+                onWheel: e => arc.target = Math.max(0, Math.min(win.maxOff, arc.target + (e.angleDelta.y > 0 ? -1 : 1)))
             }
             // geometry that takes the pointer (the window mask): the band's box plus the margin
             Item {
@@ -128,7 +132,6 @@ PanelWindow {
                 width: Theme.dockWidth + 16
                 height: Theme.dockHeight + 8
             }
-            readonly property real pointerX: hover.hovered ? hover.point.position.x : -1000
 
             // ---- the glass band (a semi-donut): fill, light from the top, a bright rim and an inset rim ----
             BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; fill: Theme.glassBg }
@@ -165,9 +168,7 @@ PanelWindow {
                 Behavior on x { enabled: slot.dragOffset === 0; NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
                 // fades towards the centre button and, past the last slot, under the screen edge
                 readonly property real a: Math.abs(slotNo)
-                property int side: 0               // -1 pinned (left of the centre), +1 open apps (right), 0 = the centre button
-                readonly property real fade: slot.side === 0 ? 1
-                    : Math.max(0, Math.min(1, Math.min((slotNo * slot.side - 0.3) / 0.7, 1 - (a - Theme.dockSlotsPerSide) / 1.3)))
+                readonly property real fade: Math.max(0, Math.min(1, 1 - (a - win.half) / 0.8))
                 opacity: (dim ? 0.45 : 1) * fade
                 Behavior on opacity { NumberAnimation { duration: Theme.durFade } }
 
@@ -259,87 +260,19 @@ PanelWindow {
                 }
             }
 
-            // pinned apps (left of the centre)
+            // every app on one band: pinned first, then the other open ones; the wheel scrolls the band
             Repeater {
-                model: win.left
+                model: win.items
                 delegate: Slot {
                     required property var modelData
                     required property int index
                     item: modelData
-                    side: -1
-                    slotNo: -(win.left.length - index) + arc.offL   // the first pinned app is the leftmost; the last is next to the centre button
+                    slotNo: index - arc.off - win.half
                     icon: modelData.icon
                     label: modelData.name
                     dim: modelData.minimizedOnly
                     onClicked: m => win.itemClicked(modelData, m, this)
-                    onDragEnded: dx => Dock.reorder(index, index - Math.round(dx / win.spacing))
-                }
-            }
-
-            // open apps that are not pinned (right of the centre)
-            Repeater {
-                model: win.right
-                delegate: Slot {
-                    required property var modelData
-                    required property int index
-                    item: modelData
-                    side: 1
-                    slotNo: index + 1 - arc.offR
-                    icon: modelData.icon
-                    label: modelData.name
-                    dim: modelData.minimizedOnly
-                    onClicked: m => win.itemClicked(modelData, m, this)
-                }
-            }
-
-            // centre button: the orbital launcher
-            Slot {
-                slotNo: 0
-                glyph: Icons.apps
-                label: "Lanzador"
-                onClicked: ShellState.toggle("launcher", win.screenName)
-            }
-
-            // downloads stack
-            Slot {
-                id: dl
-                side: 1
-                slotNo: win.right.length + 1 - arc.offR
-                glyph: Icons.folder
-                label: "Descargas"
-                onClicked: { Dock.refreshDownloads(); fan.open = !fan.open; win.menuItem = null; }
-            }
-        }
-
-        // ---- downloads fan: the newest files rise from the button along a curve ----
-        Item {
-            id: fan
-            property bool open: false
-            visible: open && Dock.downloads.length > 0
-            x: arc.x + dl.x
-            y: arc.y + dl.y
-            width: dl.width
-            height: dl.height
-            Repeater {
-                model: Dock.downloads
-                delegate: Rectangle {
-                    required property var modelData
-                    required property int index
-                    readonly property real ang: (95 + index * 17) * Math.PI / 180
-                    width: Math.min(190, nameText.implicitWidth + 34)
-                    height: 30
-                    radius: 15
-                    x: fan.width / 2 + 120 * Math.cos(ang) * (fan.open ? 1 : 0) - width + 4
-                    y: fan.height / 2 - 120 * Math.sin(ang) * (fan.open ? 1 : 0) - 8
-                    color: chipMouse.containsMouse ? Theme.surfaceHi : Theme.popoverBg
-                    border.width: 1
-                    border.color: Theme.glassBorder
-                    Behavior on x { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutBack } }
-                    Behavior on y { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutBack } }
-                    transform: Rotation { origin.x: width / 2; origin.y: height / 2; angle: -frame.rotation }
-                    Glyph { x: 9; anchors.verticalCenter: parent.verticalCenter; icon: Icons.folder; size: Theme.iconSm; color: Theme.textSoft }
-                    UiText { id: nameText; x: 28; width: parent.width - 34; anchors.verticalCenter: parent.verticalCenter; text: modelData.name; size: Theme.sizeCaption + 1 }
-                    MouseArea { id: chipMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Dock.open(modelData.path); fan.open = false; } }
+                    onDragEnded: dx => { if (modelData.pinned) Dock.reorder(index, index - Math.round(dx / win.spacing)); }
                 }
             }
         }
@@ -402,14 +335,14 @@ PanelWindow {
 
     function itemClicked(item, m, slot): void {
         if (m.button === Qt.RightButton) {
-            fan.open = false;
+            
             win.menuItem = item;
             win.menuX = slot.x + slot.width / 2 + arc.x;
         } else if (m.button === Qt.MiddleButton) {
             Dock.newInstance(item);
         } else {
             win.menuItem = null;
-            fan.open = false;
+            
             Dock.activate(item);
         }
     }
