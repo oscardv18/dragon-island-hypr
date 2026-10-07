@@ -54,6 +54,11 @@ ShellRoot {
 
     Variants {
         model: Quickshell.screens
+        delegate: Component { PlanetGlass {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
         delegate: Component { LauncherWindow {} }
     }
 

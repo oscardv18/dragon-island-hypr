@@ -1,12 +1,10 @@
 // =============================================================================
 // dragon-island — DockWindow.qml (namespace "dragon-dock")
-// The dock is a glass tab that sticks out of the screen edge (bottom, left or right: Dock.position), like the notch
-// but from the other side. The layer window has exactly the tab's size, so hyprglass draws the same liquid glass
-// (rim, refraction) as on Ghostty; the corners away from the edge are rounded by a Rectangle that runs past the
-// edge, and the translucent fill is what hyprglass masks by (mask_mode = "alpha").
+// The dock is a black tab with the notch's silhouette (NotchShape) that sticks out of the screen edge (bottom, left
+// or right: Dock.position), as thick as the bar islands. Opaque black, like the notch (excluded from hyprglass).
 // Hiding: the tab sinks into the edge (the content slides out of the window); the 3 px hot zone is a strip of this
 // same window, so the pointer never changes surface. Wheel: scrolls the capsules when there are more than
-// Theme.dockCapacity. Right click on a capsule: its menu; on the glass: the dock settings (position, always visible).
+// Theme.dockCapacity. Right click on a capsule: its menu; on the tab: the dock settings (position, always visible).
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
@@ -14,6 +12,7 @@ import QtQuick
 import "../.."
 import "../../services"
 import "../../components"
+import "../island"
 
 PanelWindow {
     id: win
@@ -28,7 +27,7 @@ PanelWindow {
     readonly property var items: Dock.pinnedItems.concat(Dock.openItems)       // pinned first, then the other open apps
     readonly property int shown: Math.max(1, Math.min(items.length, Theme.dockCapacity))
     readonly property int maxOff: Math.max(0, items.length - Theme.dockCapacity)
-    readonly property real length: Theme.dockPad * 2 + shown * Theme.dockPitch - (Theme.dockPitch - Theme.dockPill)
+    readonly property real length: Theme.dockPad * 2 + Theme.notchEarRadius * 2 + shown * Theme.dockPitch - (Theme.dockPitch - Theme.dockPill)
 
     anchors {
         bottom: pos === "bottom"
@@ -84,15 +83,17 @@ PanelWindow {
             function onMaxOffChanged() { content.target = Math.min(content.target, win.maxOff); }
         }
 
-        // The tab: a rounded rectangle that runs past the screen edge, so only the outer corners are rounded.
-        Rectangle {
+        // The tab: the notch's silhouette (concave ears at the edge, rounded far corners), turned towards the edge.
+        // Opaque black like the notch (namespace excluded from hyprglass).
+        Item {
             id: tab
-            x: win.pos === "right" ? 0 : (win.pos === "left" ? -Theme.dockRadius : 0)
-            y: 0
-            width: win.horiz ? win.width : win.width + Theme.dockRadius
-            height: win.horiz ? win.height + Theme.dockRadius : win.height
-            radius: Theme.dockRadius
-            color: Theme.glassBg
+            anchors.fill: parent
+            NotchShape {
+                anchors.centerIn: parent
+                width: win.horiz ? win.width : win.height
+                height: Theme.dockThickness
+                rotation: win.pos === "bottom" ? 180 : (win.pos === "left" ? -90 : 90)
+            }
         }
 
         HoverHandler { id: tabHover }
@@ -120,7 +121,7 @@ PanelWindow {
             readonly property real rel: slotIdx - content.off                    // 0 .. capacity-1 when fully visible
             readonly property real out: Math.max(-rel, rel - (Theme.dockCapacity - 1))
             readonly property real fade: Math.max(0, Math.min(1, 1 - out / 0.8))
-            readonly property real along: Theme.dockPad + Theme.dockPill / 2 + rel * Theme.dockPitch + dragOffset
+            readonly property real along: Theme.dockPad + Theme.notchEarRadius + Theme.dockPill / 2 + rel * Theme.dockPitch + dragOffset
             readonly property real cross: Theme.dockThickness / 2
 
             width: Theme.dockPill
@@ -132,8 +133,8 @@ PanelWindow {
 
             Rectangle {
                 anchors.fill: parent
-                radius: Theme.capsuleRadius + 5
-                color: slot.hovered ? Theme.pillBgHi : Theme.pillBg
+                radius: Theme.capsuleRadius + 1
+                color: slot.hovered ? Theme.surfaceHi : Theme.surface2
                 Behavior on color { ColorAnimation { duration: Theme.durHover } }
             }
             Image {

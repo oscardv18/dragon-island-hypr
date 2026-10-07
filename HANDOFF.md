@@ -398,6 +398,11 @@ Decisiones y trampas:
 - Lecciones: (1) `Region { item }` NO sigue el movimiento de un ancestro: usar un `Item` fijo (`hitbox`); (2) la franja sensible debe quedarse en la máscara mientras la pestaña sube y el hover es la unión franja ∪ pestaña; (3) el `index` requerido del delegado pisa una propiedad `index` del Slot (`slotIdx`).
 - Eliminados `BandShape`, `GlassRim`, `GradientRing`, `BorderGradient`.
 
+## 7z. Dock con la silueta del notch y planeta con ventana propia (2026-10-07)
+
+- **Dock = notch desde el otro borde:** negro opaco (`Theme.island`), misma silueta (`NotchShape`: orejas cóncavas junto al borde y esquinas redondeadas lejos) girada hacia el borde (abajo 180°, izquierda −90°, derecha 90°), grosor 40 px (= altura de las islas), cápsulas de 30 (icono 20) con `surface2` / `surfaceHi` como las de las islas. El namespace `dragon-dock` está **excluido** de hyprglass (`glass.lua`) y fuera de las reglas de blur nativo. Solo aplicaciones. Menú del dock con clic derecho sobre la pestaña.
+- **Planeta del lanzador con cristal real:** `modules/launcher/PlanetGlass.qml`, ventana de 200 × 200 (namespace `dragon-launcher`, centrada, sin entrada, mapeada al arrancar para quedar bajo el anillo) con el disco de cristal; así hyprglass dibuja el relieve de su borde. El disco dentro de `Launcher.qml` quedó transparente (solo conserva el campo de búsqueda). Las píldoras de los iconos siguen dentro de la capa de pantalla completa (sin relieve de borde: haría falta una ventana por icono, que además orbitan).
+
 ## 8. Cómo depurar rápido
 
 ```sh

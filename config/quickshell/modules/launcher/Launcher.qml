@@ -258,7 +258,7 @@ Item {
             radius: width / 2
             z: 0
             scale: root.planetScale
-            color: Theme.popoverBg
+            color: Theme.transparent        // the glass disc is PlanetGlass (its own window, for the rim)
 
             // swallow clicks (clicking outside the launcher closes it, the planet must not)
             MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }

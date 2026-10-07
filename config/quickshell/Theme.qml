@@ -153,13 +153,12 @@ Singleton {
     readonly property real orbitPeriod:   40      // seconds per revolution
     readonly property int  orbitInner:    16      // icons in the main ring; the rest go to the outer ring
 
-    // Dock: a glass tab that sticks out of the screen edge (like the notch, but from the bottom / left / right)
-    readonly property real dockPill:       44     // capsule that holds an icon
-    readonly property real dockIconInner:  28
-    readonly property real dockPitch:      54     // distance between capsules
+    // Dock: an opaque black tab with the notch's silhouette (NotchShape) that sticks out of the screen edge; as thick as the bar islands
+    readonly property real dockPill:       30     // capsule that holds an icon
+    readonly property real dockIconInner:  20
+    readonly property real dockPitch:      38     // distance between capsules
     readonly property real dockPad:        14     // along the edge, before the first / after the last capsule
-    readonly property real dockThickness:  66     // how far it sticks out
-    readonly property real dockRadius:     24     // corners away from the edge
+    readonly property real dockThickness:  40     // how far it sticks out
     readonly property int  dockCapacity:   8      // capsules shown at once; more scroll with the mouse wheel
     readonly property int  dockHideDelay:  600    // ms after the pointer leaves
     readonly property real dockEdge:       3      // hot zone thickness, px

@@ -68,7 +68,6 @@ if hl.plugin and hl.plugin.hyprglass then
     -- mask_threshold 0.1: the Quickshell fills are translucent (Theme.glassBg 18 %, panels 30 %), so the glass shows through
     hg.layer("dragon-bar",           { preset = "dragon-bar",   mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-notifications", { preset = "dragon-card",  mask_mode = "alpha", mask_threshold = 0.1 })
-    hg.layer("dragon-dock",     { preset = "dragon-liquid", mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-launcher", { preset = "dragon-liquid", mask_mode = "alpha", mask_threshold = 0.1 })
     for _, ns in ipairs({ "dragon-popover", "dragon-wallpapers", "dragon-preview" }) do
         hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.1 })
@@ -76,6 +75,7 @@ if hl.plugin and hl.plugin.hyprglass then
 
     -- The notch must stay opaque black; the scrim is a flat dim, not glass
     hg.layer("dragon-island", { exclude = true })
+    hg.layer("dragon-dock",   { exclude = true })   -- the dock is opaque black like the notch
     hg.layer("dragon-scrim",  { exclude = true })
 
     -- ---- windows ----
