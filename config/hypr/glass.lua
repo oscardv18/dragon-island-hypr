@@ -46,35 +46,29 @@ if hl.plugin and hl.plugin.hyprglass then
         dark                 = { brightness = 1.0, contrast = 1.0, saturation = 0.9, adaptive_dim = 0.5 },
     })
 
-    -- ---- bar islands: same approach (flat centre, rim light), small islands need a thicker edge ----
-    hg.preset("dragon-bar", {
-        blur_strength        = 2.2,
-        blur_iterations      = 3,
-        refraction_strength  = 0.6,
-        refraction_spread    = 0.0,
-        refraction_flow      = 0.3,
-        edge_thickness       = 0.2,   -- islands are 40 px high: 0.2 = an 8 px rim
-        lens_distortion      = 0.1,
-        chromatic_aberration = 0.3,
-        specular_strength    = 0.8,
-        fresnel_strength     = 0.5,
-        bevel_strength       = 0.5,
+    -- ---- the layers get the SAME liquid glass as Ghostty (inherit dragon-liquid); only the rim width changes
+    -- with the size of the shape, because edge_thickness is a fraction of its smallest side ----
+    hg.preset("dragon-bar", {         -- bar islands, 40 px high: 0.2 = an 8 px rim
+        inherits             = "dragon-liquid",
+        blur_strength        = 2.0,
+        edge_thickness       = 0.2,
         bevel_size           = 2.0,
-        tint_color           = 0xc50ed214,   -- very faint magenta (accent #c50ed2)
-        dark                 = { brightness = 0.9, saturation = 0.9, adaptive_dim = 0.6 },  -- adaptive_dim: readable text on bright backdrops
     })
-
-    -- ---- notifications, popovers, launcher, wallpaper picker: bigger surfaces, a bit more tint ----
-    hg.preset("dragon-panel", {
-        inherits             = "dragon-bar",
+    hg.preset("dragon-card", {        -- notification cards (~90 px high)
+        inherits             = "dragon-liquid",
+        edge_thickness       = 0.12,
+        bevel_size           = 2.5,
+    })
+    hg.preset("dragon-panel", {       -- popovers, launcher, wallpaper picker (300+ px)
+        inherits             = "dragon-liquid",
         edge_thickness       = 0.06,
-        tint_color           = 0xc50ed233,
-        dark                 = { brightness = 0.85, adaptive_dim = 0.7 },
     })
 
-    hg.layer("dragon-bar", { preset = "dragon-bar", mask_mode = "alpha", mask_threshold = 0.15 })
-    for _, ns in ipairs({ "dragon-popover", "dragon-notifications", "dragon-launcher", "dragon-wallpapers" }) do
-        hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.15 })
+    -- mask_threshold 0.1: the Quickshell fills are translucent (Theme.glassBg 18 %, panels 30 %), so the glass shows through
+    hg.layer("dragon-bar",           { preset = "dragon-bar",   mask_mode = "alpha", mask_threshold = 0.1 })
+    hg.layer("dragon-notifications", { preset = "dragon-card",  mask_mode = "alpha", mask_threshold = 0.1 })
+    for _, ns in ipairs({ "dragon-popover", "dragon-launcher", "dragon-wallpapers" }) do
+        hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.1 })
     end
 
     -- The notch must stay opaque black; the scrim is a flat dim, not glass

@@ -41,9 +41,9 @@ Singleton {
 
     // Derived colors
     readonly property real islandSurfaceAlpha: 0.82                        // spec 72-86 %
-    readonly property real popoverAlpha:       0.42                        // panels / cards: 35-45 %
+    readonly property real popoverAlpha:       0.30                        // panels / cards: the glass shows through
     readonly property real scrimAlpha:         0.45                        // launcher / power menu only (not the notch)
-    readonly property real glassAlpha:         0.30                        // bar islands: 25-35 %, above hyprglass' mask_threshold (0.15)
+    readonly property real glassAlpha:         0.18                        // bar islands: the liquid glass shows through; above mask_threshold (0.1)
     readonly property color barIsland:     alpha(surface0, islandSurfaceAlpha)
     readonly property color glassBg:       alpha(surface0, glassAlpha)     // acrylic island / popover / card background
     readonly property color textShadow:    Qt.rgba(0, 0, 0, 0.55)         // text / icon shadow on glass (only inside the islands)

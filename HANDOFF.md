@@ -298,6 +298,13 @@ Decisiones y trampas:
 - **Corrección:** `bar_blur = false` en `plugins.lua` (la barra, `rgba(161925ee)`, es casi opaca: apenas cambia en el resto de ventanas) y se quita la regla `hyprbars:bar_color` transparente: la barra de Ghostty vuelve a ser idéntica a la de las demás. `edge_thickness` vuelve a 0.06.
 - Sin migración nueva: es solo configuración del repo (symlink o copia con `update.sh`).
 
+## 7k. Las capas con el mismo cristal líquido que Ghostty (2026-10-07)
+
+- **Por qué se veían más sobrias:** las había suavizado yo (refracción 0.6 con `refraction_spread` 0, `adaptive_dim` 0.6–0.7), su relleno de Quickshell (30 % / 42 %) tapaba el cristal, el borde con refracción de una isla de 40 px mide ~8 px y el fondo era liso.
+- **Ahora:** `dragon-bar` (`edge_thickness` 0.2, `bevel_size` 2, blur 2.0), `dragon-card` (notificaciones, 0.12, bevel 2.5) y `dragon-panel` (popovers, lanzador, selector, 0.06) **heredan de `dragon-liquid`** (mismos valores: refracción 0.6 solo en el borde, specular 0.7, fresnel 0.5, bevel 0.5, tinte navy `0x0b102060`, dark brillo 1.0 / `adaptive_dim` 0.5). Rellenos más transparentes: `glassAlpha` 0.18, `popoverAlpha` 0.30; `mask_threshold` 0.1.
+- **Verificado** con capturas sobre el fondo "GTA" (detalle: se ve la cara desenfocada a través del calendario y de la notificación) y sobre un fondo casi blanco: cristal visible, esquinas limpias, texto legible gracias a la sombra de texto y al `adaptive_dim`.
+- Aviso: mis pruebas con `awww img …` cambiaban el fondo real sin pasar por el servicio; se restauró con `qs ipc call wallpaper set "$(qs ipc call wallpaper current)"`.
+
 ## 8. Cómo depurar rápido
 
 ```sh
