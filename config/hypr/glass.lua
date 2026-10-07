@@ -24,46 +24,52 @@ if hl.plugin and hl.plugin.hyprglass then
         layers        = { enabled = true, live_resample_fps = 8 },
     })
 
-    -- ---- liquid glass for Ghostty: strong, visible refraction at the edges (built on `glass`) ----
+    -- ---- liquid glass for Ghostty: the look of hyprglass' README screenshot ----
+    -- Built from the plugin's DEFAULTS (not from `glass`): moderate blur (the backdrop is still recognisable),
+    -- refraction only on the rim (refraction_spread 0 = flat centre, no dome), a soft bevel + specular light on
+    -- the edge, and a dark navy tint with a hint of violet. High spread / lens / blur smears and warps it.
     hg.preset("dragon-liquid", {
-        inherits             = "glass",
-        blur_strength        = 3.0,
-        blur_iterations      = 4,
-        refraction_strength  = 5.0,   -- `glass` goes up to 8.0; raise it for a stronger edge deformation
-        edge_thickness       = 0.10,  -- bezel width (fraction of the smallest dimension)
-        lens_distortion      = 0.6,   -- dome magnification of the centre
-        chromatic_aberration = 0.8,
-        specular_strength    = 0.8,
-        fresnel_strength     = 0.9,
-        bevel_strength       = 0.6,
-        bevel_size           = 8.0,
-        self_sample          = 0.2,   -- a bit of the terminal's own content in its glass
-        tint_color           = 0x14101c40,
-        dark                 = { brightness = 0.9 },
+        blur_strength        = 1.6,
+        blur_iterations      = 3,
+        refraction_strength  = 0.6,
+        refraction_spread    = 0.0,   -- distortion only at the rim
+        refraction_flow      = 0.3,
+        edge_thickness       = 0.06,
+        lens_distortion      = 0.1,   -- no dome magnification
+        chromatic_aberration = 0.4,
+        specular_strength    = 0.7,
+        fresnel_strength     = 0.5,
+        bevel_strength       = 0.5,
+        bevel_size           = 3.0,
+        self_sample          = 0.0,
+        tint_color           = 0x0b102060,   -- dark navy (RRGGBBAA), alpha = strength
+        dark                 = { brightness = 1.0, contrast = 1.0, saturation = 0.9, adaptive_dim = 0.5 },
     })
 
-    -- ---- bar islands: noticeable but readable ----
+    -- ---- bar islands: same approach (flat centre, rim light), small islands need a thicker edge ----
     hg.preset("dragon-bar", {
-        inherits             = "pomme",
-        blur_strength        = 2.8,
-        blur_iterations      = 4,
-        refraction_strength  = 0.8,
+        blur_strength        = 2.2,
+        blur_iterations      = 3,
+        refraction_strength  = 0.6,
+        refraction_spread    = 0.0,
+        refraction_flow      = 0.3,
+        edge_thickness       = 0.2,   -- islands are 40 px high: 0.2 = an 8 px rim
+        lens_distortion      = 0.1,
         chromatic_aberration = 0.3,
         specular_strength    = 0.8,
         fresnel_strength     = 0.5,
-        bevel_strength       = 0.5,   -- the lit line along the edge is the island's border
+        bevel_strength       = 0.5,
         bevel_size           = 2.0,
         tint_color           = 0xc50ed214,   -- very faint magenta (accent #c50ed2)
-        adaptive_dim         = 0.6,   -- dims bright backdrops (light wallpapers, white windows): text stays readable
-        dark                 = { brightness = 0.9 },
+        dark                 = { brightness = 0.9, saturation = 0.9, adaptive_dim = 0.6 },  -- adaptive_dim: readable text on bright backdrops
     })
 
-    -- ---- notifications, popovers, launcher, wallpaper picker: same glass, a bit more tint ----
+    -- ---- notifications, popovers, launcher, wallpaper picker: bigger surfaces, a bit more tint ----
     hg.preset("dragon-panel", {
         inherits             = "dragon-bar",
+        edge_thickness       = 0.06,
         tint_color           = 0xc50ed233,
-        adaptive_dim         = 0.7,
-        dark                 = { brightness = 0.85 },
+        dark                 = { brightness = 0.85, adaptive_dim = 0.7 },
     })
 
     hg.layer("dragon-bar", { preset = "dragon-bar", mask_mode = "alpha", mask_threshold = 0.15 })

@@ -7,9 +7,9 @@
 font-family = JetBrains Mono Nerd Font
 font-size = 11.5
 
-# Transparency: Ghostty only makes its background see-through. The blur / liquid glass behind it is
+# Transparency (0.65 over the glass: the backdrop is still recognisable): Ghostty only makes its background see-through. The blur / liquid glass behind it is
 # done by hyprglass (config/hypr/glass.lua, window tag hyprglass_enabled), so Ghostty's own blur stays off.
-background-opacity = 0.35
+background-opacity = 0.65
 background-blur = false
 
 # Window decorations. Hyprland's hyprbars already draws a title bar with the close / fullscreen / float
@@ -17,6 +17,9 @@ background-blur = false
 # decorations off) keeps one consistent bar and gives the terminal the whole window. (The alternative,
 # `hyprbars:no_bar` for Ghostty, would remove the bar and the window controls instead.)
 window-decoration = none
+# GTK header bar / tab strip: off too, so no opaque strip across the top of the glass (tabs only appear with 2+)
+gtk-titlebar = false
+window-show-tab-bar = auto
 window-padding-x = 12
 window-padding-y = 10
 confirm-close-surface = false

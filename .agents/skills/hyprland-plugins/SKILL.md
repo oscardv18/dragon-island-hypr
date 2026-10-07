@@ -132,6 +132,8 @@ Key facts:
 - Built-in presets: `high_contrast`, `subtle`, `clear`, `glass`, `pomme` (Apple-like).
 - The layer hook uses a private Hyprland function and can break on Hyprland updates → keep the shell usable without the plugin (native blur fallback).
 - Check: `hyprctl getoption plugin:hyprglass:layers:enabled`, `hyprctl hyprglass stats`.
+- **Lua mode:** the README's `hyprctl dispatch tagwindow +tag` examples are hyprlang syntax and FAIL on 0.55+. Use `hyprctl dispatch 'hl.dsp.window.tag({ tag = "+hyprglass_preset_clear" })'` and `hl.dsp.window.clear_tags()`. Clearing tags also removes `hyprglass_enabled` (re-add it when using a whitelist).
+- Look like the official screenshot = defaults + dark tint; keep `refraction_spread` near 0 (rim-only refraction, flat center) and `lens_distortion` low. High spread/lens/blur gives a smeared, warped look.
 
 ## Native blur (no plugin) on 0.56.2
 `decoration.blur`: `enabled, size, passes, vibrancy, vibrancy_darkness, noise, contrast, brightness, popups, popups_ignorealpha, special, xray, ignore_opacity, new_optimizations`. Layer rules: `hl.layer_rule({ match = { namespace = "^dragon-bar$" }, blur = true, ignore_alpha = 0.3 })` (effects: `blur, blur_popups, ignore_alpha, xray, dim_around, no_anim, animation, order, above_lock, no_screen_share`). `blur.variant` / acrylic / glass are **hyprland-git only**.

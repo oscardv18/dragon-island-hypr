@@ -45,3 +45,13 @@ if hl.plugin and hl.plugin.hyprfocus then
     hl.animation({ leaf = "hyprfocusIn",  enabled = true, speed = 1.7, bezier = "easeOutQuint" })
     hl.animation({ leaf = "hyprfocusOut", enabled = true, speed = 1.7, bezier = "easeOutQuint" })
 end
+
+-- Ghostty is a see-through liquid-glass window: its hyprbars title bar must not be a solid strip on top.
+-- A transparent bar keeps the close / fullscreen / float buttons and the title (dynamic hyprbars rule).
+if hl.plugin and hl.plugin.hyprbars then
+    hl.window_rule({
+        name  = "ghostty-transparent-bar",
+        match = { class = "^com\\.mitchellh\\.ghostty$" },
+        ["hyprbars:bar_color"] = "rgba(00000000)",
+    })
+end
