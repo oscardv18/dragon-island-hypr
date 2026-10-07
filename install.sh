@@ -16,10 +16,11 @@ MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
 
 ALL_COMPONENTS=(core shell plugins tools fonts services)
 # Optional components: unchecked by default (--glass checks them), shown with a friendly label
-OPTIONAL_COMPONENTS=(glass zsh)
-declare -A COMPONENT_LABEL=([glass]="Efecto cristal (hyprglass)" [zsh]="Shell: zsh + starship")
+OPTIONAL_COMPONENTS=(glass zsh myapps)
+declare -A COMPONENT_LABEL=([glass]="Efecto cristal (hyprglass)" [zsh]="Shell: zsh + starship" [myapps]="Mis apps (paquetes instalados desde la Tienda)")
 WANT_GLASS=false
 WANT_ZSH=false
+WANT_MYAPPS=false
 
 DRY_RUN=false
 ASSUME_YES=false
@@ -44,6 +45,7 @@ OPCIONES:
   --yes, -y       Modo desatendido: usa valores por defecto sin preguntas
   --glass         Incluye el componente opcional «Efecto cristal (hyprglass)»
   --zsh           Incluye el componente opcional «Shell: zsh + starship»
+  --myapps        Incluye «Mis apps»: los paquetes de packages/user-pacman.txt y user-aur.txt
   --update        Alias de ./update.sh (el resto de opciones se le pasan)
   --uninstall     Desinstala dragon-island y restaura copias de seguridad
   -h, --help      Muestra esta ayuda
@@ -64,6 +66,7 @@ for arg in "$@"; do
         --yes|-y)    ASSUME_YES=true ;;
         --glass)     WANT_GLASS=true ;;
         --zsh)       WANT_ZSH=true ;;
+        --myapps)    WANT_MYAPPS=true ;;
         --uninstall) MODE="uninstall" ;;
         -h|--help)   usage; exit 0 ;;
         *)           echo "Opción desconocida: $arg" >&2; exit 2 ;;
@@ -193,6 +196,7 @@ fi
 SELECTED_COMPONENTS=("${ALL_COMPONENTS[@]}")
 $WANT_GLASS && SELECTED_COMPONENTS+=(glass)
 $WANT_ZSH && SELECTED_COMPONENTS+=(zsh)
+$WANT_MYAPPS && SELECTED_COMPONENTS+=(myapps)
 if ! $ASSUME_YES; then
     # gum shows labels; map them back to component keys afterwards
     labels=() preselected=() picked=()
@@ -227,6 +231,8 @@ has_component() {
 # AUR helper (only if some selected component needs AUR packages)
 # =============================================================================
 mapfile -t AUR_PKGS < <(read_packages "$REPO_DIR/packages/aur.txt" "${SELECTED_COMPONENTS[@]}")
+# optional "Mis apps": what was installed from the Tienda (kept by bin/dragon-pkg)
+if has_component myapps; then mapfile -t -O "${#AUR_PKGS[@]}" AUR_PKGS < <(read_plain_list "$REPO_DIR/packages/user-aur.txt"); fi
 
 AUR_HELPER=""
 for h in paru yay; do
@@ -256,6 +262,7 @@ fi
 # Packages
 # =============================================================================
 mapfile -t PACMAN_PKGS < <(read_packages "$REPO_DIR/packages/pacman.txt" "${SELECTED_COMPONENTS[@]}")
+if has_component myapps; then mapfile -t -O "${#PACMAN_PKGS[@]}" PACMAN_PKGS < <(read_plain_list "$REPO_DIR/packages/user-pacman.txt"); fi
 
 if [[ ${#PACMAN_PKGS[@]} -gt 0 ]]; then
     log_info "Instalando ${#PACMAN_PKGS[@]} paquetes de los repositorios oficiales..."
@@ -276,6 +283,8 @@ if has_component core; then
     deploy_item "$REPO_DIR/config/hypr"  "$HOME/.config/hypr"
     deploy_item "$REPO_DIR/config/kitty" "$HOME/.config/kitty"      # kept, no longer the default terminal
     deploy_item "$REPO_DIR/config/ghostty" "$HOME/.config/ghostty"
+    # Tienda: privileged package actions run in a floating terminal through this script
+    deploy_item "$REPO_DIR/bin/dragon-pkg" "$HOME/.local/bin/dragon-pkg"
     # Icons and themes: Candy + Sweet Folders (Sweet-Purple). Qt: hyprqt6engine (hyprqt6engine.conf lives in
     # config/hypr, env.lua sets QT_QPA_PLATFORMTHEME); GTK: settings.ini (+ dconf below)
     deploy_item "$REPO_DIR/config/gtk-3.0/settings.ini" "$HOME/.config/gtk-3.0/settings.ini"

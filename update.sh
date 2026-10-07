@@ -139,9 +139,10 @@ step_pull() {
         log_warn "No es un clon de git: se omite el pull."
         return 0
     fi
-    if [[ -n "$(git -C "$REPO_DIR" status --porcelain --untracked-files=no)" ]]; then
+    # packages/user-*.txt ("Mis apps") change on their own whenever the Tienda installs something: not a local edit
+    if [[ -n "$(git -C "$REPO_DIR" status --porcelain --untracked-files=no -- . ':!packages/user-pacman.txt' ':!packages/user-aur.txt')" ]]; then
         log_warn "Hay cambios locales sin commit en $REPO_DIR. Haz commit o stash y vuelve a ejecutar."
-        git -C "$REPO_DIR" status --short --untracked-files=no
+        git -C "$REPO_DIR" status --short --untracked-files=no -- . ':!packages/user-pacman.txt' ':!packages/user-aur.txt'
         exit 1
     fi
     if ! git -C "$REPO_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{u}' >/dev/null 2>&1; then
@@ -207,6 +208,8 @@ step_packages() {
     log_info "3/6 · Paquetes"
     local all missing=() p
     mapfile -t all < <(read_packages "$REPO_DIR/packages/pacman.txt" "${SELECTED_COMPONENTS[@]}")
+    # "Mis apps": what was installed from the Tienda (this or another machine) and is not here yet
+    mapfile -t -O "${#all[@]}" all < <(read_plain_list "$REPO_DIR/packages/user-pacman.txt")
     for p in "${all[@]}"; do pkg_present "$p" || missing+=("$p"); done
 
     if [[ ${#missing[@]} -gt 0 ]]; then
@@ -225,6 +228,7 @@ step_packages() {
 
     local aur_all aur_missing=() helper="" h
     mapfile -t aur_all < <(read_packages "$REPO_DIR/packages/aur.txt" "${SELECTED_COMPONENTS[@]}")
+    mapfile -t -O "${#aur_all[@]}" aur_all < <(read_plain_list "$REPO_DIR/packages/user-aur.txt")
     for p in "${aur_all[@]}"; do pacman -Qq "$p" >/dev/null 2>&1 || aur_missing+=("$p"); done
     if [[ ${#aur_missing[@]} -gt 0 ]]; then
         for h in paru yay; do command -v "$h" >/dev/null 2>&1 && { helper="$h"; break; }; done

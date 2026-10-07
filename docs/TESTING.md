@@ -218,6 +218,17 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - [ ] Batería: respira al cargar y late rojo por debajo del 15 % sin cargar. Rueda sobre la batería = brillo.
 - [ ] Cafeína activa: la pantalla no se apaga ni se bloquea por inactividad (`hypridle`).
 
+## 12e. Tienda de apps (SUPER + I)
+
+- [ ] **Buscar:** `cowsay` lista el oficial primero (insignia Oficial) y luego los del AUR; `Tab` marca y baja; los detalles cargan al parar; en AUR salen votos / popularidad / mantenedor y el aviso de «desactualizado» / «huérfano» si toca; **Ver PKGBUILD** abre el visor con scroll.
+- [ ] **Instalar `cowsay`** (Enter): se abre una ventana flotante de Ghostty centrada (900×520, con cristal) que pide la contraseña, ejecuta `sudo pacman -S --needed cowsay` y se cierra a los 3 s; llega la notificación «Instalado: cowsay» y la marca «Instalado» aparece. `packages/user-pacman.txt` gana la línea (cambios sin commit).
+- [ ] **AUR** (p. ej. un paquete pequeño): la terminal usa `yay|paru -S --needed` sin `--noconfirm` y deja revisar el PKGBUILD. Una app nueva con `.desktop` aparece en el lanzador orbital.
+- [ ] **Instalados → Eliminar:** diálogo rojo con las dependencias que se van también; un paquete crítico (p. ej. `hyprland`) pide marcar la casilla de riesgo; `sudo pacman -Rns` en la terminal; la notificación y las listas se actualizan.
+- [ ] **Actualizaciones:** versión actual → nueva con datos reales, contador en la pestaña y en la isla derecha; «Actualizar todo» abre `yay -Syu`.
+- [ ] **Limpieza:** huérfanos y caché con confirmación.
+- [ ] Un fallo (p. ej. paquete inexistente) deja la terminal abierta con «Pulsa una tecla para cerrar» y la notificación trae «Ver registro».
+- [ ] Lanzador orbital: `+hypr` + Enter abre la Tienda buscando «hypr».
+
 ## 12d. Lanzador orbital
 
 - [ ] SUPER+Space: los iconos del lado de atrás del anillo (más pequeños y tenues) pasan **detrás** del disco de cristal (se ven tapados / difuminados por él) y los de delante lo cubren. El nombre del icono delantero sale bajo él; el clic y la rueda funcionan.

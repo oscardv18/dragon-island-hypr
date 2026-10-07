@@ -17,6 +17,8 @@ Rectangle {
     property bool gridNav: false   // arrows move in a grid: Left / Right / Up / Down emit navigateGrid
     signal navigate(int delta)     // Up / Down / Tab / Shift+Tab
     signal navigateGrid(int dx, int dy)
+    property bool selectKeys: false   // Tab (and Space on an empty field) emit toggleRequested instead of moving (fzf-like multi-select)
+    signal toggleRequested()
     signal escapePressed()
     signal deleteOnEmpty()         // Supr with an empty field (e.g. delete the highlighted entry)
 
@@ -61,7 +63,8 @@ Rectangle {
                 Keys.onDownPressed: root.gridNav ? root.navigateGrid(0, 1) : root.navigate(1)
                 Keys.onLeftPressed: e => { if (root.gridNav) root.navigateGrid(-1, 0); else e.accepted = false; }
                 Keys.onRightPressed: e => { if (root.gridNav) root.navigateGrid(1, 0); else e.accepted = false; }
-                Keys.onTabPressed: root.navigate(1)
+                Keys.onTabPressed: root.selectKeys ? root.toggleRequested() : root.navigate(1)
+                Keys.onSpacePressed: e => { if (root.selectKeys && input.text.length === 0) root.toggleRequested(); else e.accepted = false; }
                 Keys.onBacktabPressed: root.navigate(-1)
                 Keys.onEscapePressed: root.escapePressed()
                 Keys.onDeletePressed: e => {

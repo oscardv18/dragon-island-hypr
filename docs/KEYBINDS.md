@@ -15,6 +15,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + W` | Selector de fondos de pantalla (imágenes, GIF y vídeo) |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
+| `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
@@ -60,6 +61,18 @@ Dos distribuciones: **English (US)** (la primera, la que resuelve los atajos) y 
 | Clic en la cápsula `US` / `LA` (isla derecha, antes de Wi‑Fi) | Siguiente distribución |
 
 El bloqueo (hyprlock) usa las mismas dos distribuciones: `ALT + SHIFT` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa.
+
+## Tienda de apps (SUPER + I)
+
+| Tecla | Acción |
+|---|---|
+| Escribir | Buscar en repositorios oficiales y AUR (200 ms de espera) / filtrar la pestaña actual |
+| `↑ ↓` | Mover por la lista (los detalles del enfocado cargan a los 300 ms) |
+| `Tab` (o `Espacio` con el campo vacío) | Marcar / desmarcar y bajar, como fzf |
+| `Enter` | Instalar (Buscar), eliminar con confirmación (Instalados), actualizar todo (Actualizaciones) |
+| `Esc` | Cerrar el visor / el diálogo; si no hay, cerrar la Tienda |
+
+Desde el lanzador orbital: `+hypr` + Enter abre la Tienda buscando «hypr». Por IPC: `qs ipc call shell toggle store`.
 
 ## Fondos de pantalla (SUPER + W)
 

@@ -83,6 +83,12 @@ deploy_item() {
 }
 
 
+# read_plain_list <file>  → one package per line (comments / blank lines skipped): "Mis apps" lists of the Tienda
+read_plain_list() {
+    [[ -f "$1" ]] || return 0
+    awk '/^[[:space:]]*(#|$)/ { next } { print $1 }' "$1"
+}
+
 # ensure_omz: oh-my-zsh and the two external plugins used by config/zsh/.zshrc (git clones, as in the
 # original setup: they are not pacman packages). Existing clones are left alone.
 ensure_omz() {

@@ -7,6 +7,7 @@
 //   typing       : fuzzy search; non-matching icons fade, the rest redistribute; the ring stops with the best
 //                  match in front. A single match grows and glows in the accent colour.
 //   =expression  : the result shows in the planet, Enter copies it      >command : Enter runs it in Ghostty
+//   +name        : Enter opens the Tienda (pacman + AUR) searching for «name»
 //   ← → / wheel  : turn the ring and change the selection · Enter launches · right click = favourite · Esc closes
 // The ring animation only runs while the launcher is open.
 // =============================================================================
@@ -31,7 +32,8 @@ Item {
     readonly property int n2: Math.max(0, ringEntries.length - Theme.orbitInner)
     readonly property string calcResult: query.startsWith("=") ? Apps.calc(query.slice(1)) : ""
     readonly property bool isCommand: query.startsWith(">")
-    readonly property bool special: query.startsWith("=") || isCommand
+    readonly property bool isStore: query.startsWith("+")
+    readonly property bool special: query.startsWith("=") || isCommand || isStore
 
     // ---- rotation: automatic turn + a spring-driven offset for keyboard / wheel selection ----
     property real spinAuto: 0
@@ -89,6 +91,7 @@ Item {
 
     function accept(): void {
         if (calcResult.length > 0) { Apps.copy(calcResult); ShellState.close(); }
+        else if (isStore) { Store.pendingQuery = query.slice(1).trim(); ShellState.close(); ShellState.open("store"); }
         else if (isCommand) { const c = query.slice(1).trim(); if (c.length > 0) { ShellState.close(); Apps.runInTerminal(c); } }
         else launch(frontEntry);
     }
@@ -210,10 +213,10 @@ Item {
                 }
 
                 UiText {
-                    visible: root.isCommand || (root.query.startsWith("=") && root.calcResult.length === 0) || root.ringEntries.length === 0 && root.query.length > 0 && !root.special
+                    visible: root.isCommand || root.isStore || (root.query.startsWith("=") && root.calcResult.length === 0) || root.ringEntries.length === 0 && root.query.length > 0 && !root.special
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
-                    text: root.isCommand ? "Enter: ejecutar en Ghostty" : (root.query.startsWith("=") ? "Escribe una operación" : "Sin resultados")
+                    text: root.isStore ? "Enter: buscar en la Tienda (pacman + AUR)" : root.isCommand ? "Enter: ejecutar en Ghostty" : (root.query.startsWith("=") ? "Escribe una operación" : "Sin resultados")
                     size: Theme.sizeCaption + 1
                     color: Theme.textDim
                 }

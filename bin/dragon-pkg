@@ -1,0 +1,140 @@
+#!/usr/bin/env bash
+# =============================================================================
+# dragon-island — dragon-pkg: privileged package actions for the "Tienda" panel
+# Quickshell never asks for or handles a password: it opens a floating Ghostty window (class org.dragonisland.Pkg)
+# that runs this script, where sudo / the AUR helper ask on their own.
+#   dragon-pkg install <pkg>...   sudo pacman -S --needed            (official repositories)
+#   dragon-pkg aur <pkg>...       <paru|yay> -S --needed             (AUR; NO --noconfirm: review the PKGBUILD / diff)
+#   dragon-pkg remove <pkg>...    sudo pacman -Rns
+#   dragon-pkg update             <paru|yay> -Syu (or sudo pacman -Syu): never a partial upgrade
+#   dragon-pkg clean [orphans|cache|all]   sudo pacman -Rns $(pacman -Qdtq) · sudo paccache -r
+# The result goes to ~/.local/state/dragon-island/pkg-status.json (the panel watches it) and the output to pkg.log.
+# A successful install / removal also keeps packages/user-pacman.txt and user-aur.txt of the repo up to date
+# ("Mis apps"). DRAGON_PKG_DRYRUN=1 prints the commands instead of running them (no sudo, nothing written but the status).
+# =============================================================================
+set -Eeuo pipefail
+
+SELF="$(readlink -f "${BASH_SOURCE[0]}")"
+REPO_DIR="$(dirname "$(dirname "$SELF")")"
+STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island"
+LOG="$STATE_DIR/pkg.log"
+STATUS="$STATE_DIR/pkg-status.json"
+USER_OFFICIAL="$REPO_DIR/packages/user-pacman.txt"
+USER_AUR="$REPO_DIR/packages/user-aur.txt"
+DRY="${DRAGON_PKG_DRYRUN:-0}"
+
+mkdir -p "$STATE_DIR"
+exec > >(tee -a "$LOG") 2>&1
+
+# ---- look: the Dragonized palette in truecolor ----
+c() { printf '\033[38;2;%sm' "$1"; }
+RST=$'\033[0m'; BOLD=$'\033[1m'
+ACCENT="197;14;210"; OK="6;201;147"; WARN="249;174;88"; ERR="237;37;78"; DIM="138;143;163"
+
+banner() {
+    local title="$1" sub="$2"
+    printf '\n  %s%s╭─ %s %s\n' "$(c "$ACCENT")" "$BOLD" "$title" "$RST"
+    printf '  %s│  %s%s\n' "$(c "$ACCENT")" "$RST$(c "$DIM")$sub" "$RST"
+    printf '  %s╰────────────────────────────────────────%s\n\n' "$(c "$ACCENT")" "$RST"
+}
+
+action="${1:-}"
+shift || true
+packages=("$@")
+
+case "$action" in
+    install|aur|remove) [[ ${#packages[@]} -gt 0 ]] || { echo "dragon-pkg $action: no packages" >&2; exit 2; } ;;
+    update|clean) ;;
+    *) echo "usage: dragon-pkg install|aur|remove <pkg>... | update | clean [orphans|cache|all]" >&2; exit 2 ;;
+esac
+for p in "${packages[@]}"; do
+    [[ "$p" =~ ^[A-Za-z0-9@._+-]+$ ]] || { echo "invalid package name: $p" >&2; exit 2; }
+done
+
+helper="$(command -v paru 2>/dev/null || command -v yay 2>/dev/null || true)"
+helper="${helper##*/}"
+
+run() {
+    printf '  %s$ %s%s\n' "$(c "$DIM")" "$*" "$RST"
+    if [[ "$DRY" == 1 ]]; then return 0; fi
+    "$@"
+}
+
+# ---- sudo once, kept alive while the script runs ----
+keepalive_pid=""
+if [[ "$DRY" != 1 ]]; then
+    printf '  %sSe necesita tu contraseña (sudo):%s\n' "$(c "$WARN")" "$RST"
+    sudo -v
+    ( while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done ) 2>/dev/null &
+    keepalive_pid=$!
+fi
+# shellcheck disable=SC2329  # runs from the EXIT trap
+cleanup() { [[ -n "$keepalive_pid" ]] && kill "$keepalive_pid" 2>/dev/null || true; }
+trap cleanup EXIT
+
+rc=0
+case "$action" in
+    install)
+        banner "Instalar" "${packages[*]}"
+        run sudo pacman -S --needed "${packages[@]}" || rc=$? ;;
+    aur)
+        [[ -n "$helper" ]] || { echo "No hay paru ni yay."; exit 1; }
+        banner "Instalar desde el AUR ($helper)" "${packages[*]}"
+        printf '  %sPaquetes de la comunidad: revisa el PKGBUILD y los cambios antes de aceptar.%s\n\n' "$(c "$WARN")" "$RST"
+        run "$helper" -S --needed "${packages[@]}" || rc=$? ;;
+    remove)
+        banner "Eliminar" "${packages[*]}"
+        run sudo pacman -Rns "${packages[@]}" || rc=$? ;;
+    update)
+        banner "Actualizar todo" "sistema completo, sin actualizaciones parciales"
+        if [[ -n "$helper" ]]; then run "$helper" -Syu || rc=$?; else run sudo pacman -Syu || rc=$?; fi ;;
+    clean)
+        what="${packages[0]:-all}"
+        banner "Limpieza" "$what"
+        if [[ "$what" == orphans || "$what" == all ]]; then
+            mapfile -t orphans < <(pacman -Qdtq 2>/dev/null || true)
+            if [[ ${#orphans[@]} -gt 0 ]]; then run sudo pacman -Rns "${orphans[@]}" || rc=$?; else echo "  No hay huérfanos."; fi
+        fi
+        if [[ "$what" == cache || "$what" == all ]]; then
+            if command -v paccache >/dev/null 2>&1; then run sudo paccache -r || rc=$?; else echo "  Falta pacman-contrib (paccache)."; rc=1; fi
+        fi ;;
+esac
+
+# ---- "Mis apps": keep the repo's lists in step with what was installed / removed (not for dry runs) ----
+repo_changed=false
+list_add() {   # list_add <file> <pkg>
+    mkdir -p "$(dirname "$1")"; touch "$1"
+    grep -qxF "$2" "$1" || { printf '%s\n' "$2" >> "$1"; repo_changed=true; }
+}
+list_del() {   # list_del <file> <pkg>
+    [[ -f "$1" ]] && grep -qxF "$2" "$1" && { grep -vxF "$2" "$1" > "$1.tmp" || true; mv -f "$1.tmp" "$1"; repo_changed=true; }
+    return 0
+}
+if [[ $rc -eq 0 && "$DRY" != 1 ]]; then
+    case "$action" in
+        install) for p in "${packages[@]}"; do list_add "$USER_OFFICIAL" "$p"; list_del "$USER_AUR" "$p"; done ;;
+        aur)     for p in "${packages[@]}"; do list_add "$USER_AUR" "$p"; list_del "$USER_OFFICIAL" "$p"; done ;;
+        remove)  for p in "${packages[@]}"; do list_del "$USER_OFFICIAL" "$p"; list_del "$USER_AUR" "$p"; done ;;
+    esac
+fi
+
+# ---- result for the panel ----
+json_pkgs=""
+for p in "${packages[@]}"; do json_pkgs+="${json_pkgs:+,}\"$p\""; done
+printf '{"id":"%s","action":"%s","packages":[%s],"code":%d,"repoChanged":%s,"dryRun":%s}\n' \
+    "$(date +%s%N)" "$action" "$json_pkgs" "$rc" "$repo_changed" "$([[ "$DRY" == 1 ]] && echo true || echo false)" > "$STATUS.tmp"
+mv -f "$STATUS.tmp" "$STATUS"
+
+echo
+if [[ $rc -eq 0 ]]; then
+    printf '  %s✔ Listo.%s\n' "$(c "$OK")$BOLD" "$RST"
+    $repo_changed && printf '  %sLas listas de «Mis apps» del repo cambiaron: hay cambios sin commit en packages/.%s\n' "$(c "$DIM")" "$RST"
+    [[ "${DRAGON_PKG_NOWAIT:-0}" == 1 ]] || { printf '  %sCerrando en 3 s…%s\n' "$(c "$DIM")" "$RST"; sleep 3; }
+else
+    printf '  %s✖ Falló (código %d). Registro: %s%s\n' "$(c "$ERR")$BOLD" "$rc" "$LOG" "$RST"
+    if [[ "${DRAGON_PKG_NOWAIT:-0}" != 1 ]]; then
+        printf '  %sPulsa una tecla para cerrar…%s' "$(c "$DIM")" "$RST"
+        read -r -n1 -s _ </dev/tty || true
+    fi
+fi
+exit "$rc"

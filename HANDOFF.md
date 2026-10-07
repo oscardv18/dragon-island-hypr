@@ -433,6 +433,17 @@ Decisiones y trampas:
 - **Corrección:** `PlanetGlass` pasa a su propio namespace `dragon-planet` con el preset `dragon-planet` (hereda de `dragon-liquid`, con bevel / specular / fresnel / refracción / aberración a 0: solo desenfoque y tinte). Añadido a las listas de reglas nativas de respaldo y de `no_anim`.
 - Nota de operación: lanzar `qs -d` a mano de más deja procesos `qs -d` colgados que bloquean `qs ipc`; reinicia con `kill` del PID y `quickshell`.
 
+## 7q. Tienda de apps (pacman + AUR), SUPER + I (2026-10-07)
+
+- **Piezas:** `services/Store.qml` (datos y acciones), `scripts/store.sh` (lecturas, solo lectura, `LC_ALL=C`), `modules/store/StorePanel.qml` + `StoreWindow.qml` (capa `dragon-store`, liquid glass por alfa con el preset `dragon-panel`), `bin/dragon-pkg` (acciones con privilegios, enlazado en `~/.local/bin`) y la regla de ventana flotante 900×520 para la clase `org.dragonisland.Pkg` (la clase de Ghostty necesita puntos). Atajo `SUPER + I`, IPC `shell toggle store` y prefijo `+nombre` del lanzador orbital (`Store.pendingQuery`).
+- **Búsqueda:** `pacman -Sl` y `paru|yay -Slqa` (121 k nombres; caché en `~/.cache/dragon-island/aur-list.txt`, refresco diario) se buscan con `awk` en un `Process` (≈0,3 s), no en QML; espera de 200 ms; los oficiales van primero y los coincidencias exactas / por prefijo / por subcadena antes que las difusas (estas solo en oficiales). Detalles tras 300 ms (`pacman -Si`, `-Siia`); PKGBUILD con `-Gpa`.
+- **Hechos de las herramientas** (comprobados, no supuestos): `pacman -Rnsp` no existe (`--nosave` y `--print` chocan) → la vista previa de eliminación usa `pacman -Rsp --print-format '%n'`, y cuando una dependencia lo impide muestra el error de pacman; los nombres de campo salen en español sin `LC_ALL=C`; `notify-send -A` implica `--wait` (la acción «Ver registro» corre en un `sh` aparte).
+- **Terminal, nunca Quickshell, para contraseñas:** `dragon-pkg` hace `sudo -v` + keepalive, `pacman -S --needed`, AUR sin `--noconfirm`, `-Rns`, `-Syu` o `paccache -r`; escribe `pkg-status.json` (el panel lo vigila con `FileView`) y `pkg.log`; el panel notifica, refresca las listas, `Updates` y los `.desktop` nuevos aparecen solos en el lanzador. `DRAGON_PKG_DRYRUN=1` ejecuta todo sin sudo (así se probó el flujo completo: ventana flotante, notificación «(simulación)»).
+- **Mis apps:** `dragon-pkg` mantiene `packages/user-pacman.txt` / `user-aur.txt`; componente opcional del instalador (`--myapps`) y `update.sh` ofrece las que falten; esos dos archivos no cuentan como «cambios locales» al comprobar el árbol.
+- **Actualizaciones:** la pestaña carga `checkupdates` + `-Qua` y fija `Updates.repoCount/aurCount` (contador de la isla derecha y de la propia pestaña).
+- Migración `009-store.sh` (pacman-contrib, enlace de `dragon-pkg`).
+- **Sin probar con sudo real** (no hay terminal para la contraseña desde aquí): la instalación / eliminación reales de `cowsay` y de un paquete AUR quedan para la checklist `docs/TESTING.md` §12e.
+
 ## 8. Cómo depurar rápido
 
 ```sh

@@ -18,6 +18,7 @@ import "modules/popovers"
 import "modules/launcher"
 import "modules/notifications"
 import "modules/wallpapers"
+import "modules/store"
 import "modules/dock"
 import "debug"
 
@@ -32,7 +33,7 @@ ShellRoot {
     }
 
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
-    Component.onCompleted: Wallpaper.init()
+    Component.onCompleted: { Wallpaper.init(); Store.init(); }
 
     Variants {
         model: Quickshell.screens
@@ -68,6 +69,11 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { WallpaperWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { StoreWindow {} }
     }
 
     Variants {

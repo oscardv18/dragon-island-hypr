@@ -120,6 +120,7 @@ Regla del proyecto: todo cambio que afecte a sistemas ya instalados viene con su
 ```sh
 ./install.sh --yes        # sin preguntas (valores por defecto)
 ./install.sh --glass      # incluye el componente opcional «Efecto cristal (hyprglass)»
+./install.sh --myapps     # incluye «Mis apps»: los paquetes que instalaste desde la Tienda
 ./install.sh --zsh        # incluye el componente opcional «Shell: zsh + starship»
 ./install.sh --update     # alias de ./update.sh
 ./install.sh --uninstall  # quita los enlaces y restaura los respaldos (no desinstala paquetes)
@@ -144,6 +145,18 @@ Los atajos y los controles con el ratón están en **[docs/KEYBINDS.md](docs/KEY
 | `SUPER + F1` | **Ayuda: todos los atajos** (panel en pantalla) |
 
 El shell se controla también por IPC: `qs ipc call shell toggle <panel>`. Los paneles disponibles son `dashboard`, `perf`, `wifi`, `bt`, `audio`, `battery`, `notifications`, `calendar`, `launcher` y `power`.
+
+## Tienda de apps
+
+`SUPER + I` (o `+nombre` en el lanzador orbital) abre un panel de liquid glass para instalar y gestionar paquetes de **pacman y del AUR**, al estilo de los `omarchy-pkg-*`:
+
+- **Buscar:** repos oficiales (`pacman -Sl`) y AUR (`paru|yay -Slqa`, en caché en `~/.cache/dragon-island/aur-list.txt`, refrescada una vez al día), con insignias Oficial / AUR y la marca «Instalado». Los oficiales van primero. Selección múltiple con `Tab` y detalles al detenerte 300 ms (`pacman -Si`; en AUR también votos, popularidad, mantenedor y si está **desactualizado** o es **huérfano**). **Ver PKGBUILD** abre un visor con scroll; el AUR lleva un aviso fijo.
+- **Instalados** (`pacman -Qqe`, con los de AUR marcados): eliminar con `pacman -Rns` tras un diálogo en rojo con las dependencias que se irán también; los paquetes críticos (base, linux, hyprland, quickshell, pipewire, networkmanager, sddm, plasma…) exigen una confirmación explícita.
+- **Actualizaciones** (`checkupdates` + `yay|paru -Qua`, versión actual → nueva) con «Actualizar todo» (`-Syu`, nunca parcial). Alimenta el contador de la isla derecha.
+- **Limpieza:** huérfanos (`pacman -Qdtq`) y caché (`paccache -r`), con confirmación.
+- **Ejecución:** Quickshell nunca maneja contraseñas. Las acciones con privilegios abren una **ventana flotante de Ghostty** (clase `org.dragonisland.Pkg`) que ejecuta `bin/dragon-pkg` (enlazado en `~/.local/bin`): `sudo -v` con keepalive, `pacman -S --needed`, y en el AUR `paru|yay -S --needed` **sin `--noconfirm`** para que revises los cambios. Escribe el resultado en `~/.local/state/dragon-island/pkg-status.json` (el panel lo vigila, notifica «Instalado: X» o «Error al instalar X» con un botón para ver el registro y refresca las listas, el contador de actualizaciones y el lanzador) y el registro en `pkg.log`.
+- **Mis apps:** cada instalación o desinstalación correcta actualiza `packages/user-pacman.txt` y `packages/user-aur.txt` (te deja cambios sin commit en `packages/`; `update.sh` los ignora al comprobar si hay cambios locales). El instalador tiene el componente opcional «Mis apps» (`./install.sh --myapps`) y `update.sh` ofrece instalar las que falten.
+- Dependencias: `pacman-contrib` (`checkupdates`, `paccache`) y `paru` o `yay`.
 
 ## Fondos de pantalla
 

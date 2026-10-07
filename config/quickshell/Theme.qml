@@ -166,6 +166,11 @@ Singleton {
     // Workspace hover preview
     readonly property real previewThumbWidth: 180
 
+    // Store panel (Tienda)
+    readonly property real storeWidth:      760
+    readonly property real storeBodyHeight: 340
+    readonly property real storeListWidth:  330
+
     // Wallpaper picker
     readonly property real wallpaperPanelWidth:   980
     readonly property real wallpaperTabsWidth:    300
