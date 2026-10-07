@@ -186,7 +186,7 @@ Item {
                 // a circular glass pill behind the icon (the layer is glassed by alpha: hyprglass gives it the liquid-glass look)
                 Rectangle {
                     anchors.centerIn: parent
-                    width: Theme.orbitIcon + 22
+                    width: Theme.orbitIcon + 32
                     height: width
                     radius: width / 2
                     color: icon.isFront && !root.auto ? Theme.alpha(Theme.accent, 0.35) : Theme.popoverBg

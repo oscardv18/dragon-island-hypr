@@ -86,9 +86,13 @@ Singleton {
         };
     }
 
-    readonly property var pinnedItems: root.pinnedIds
-        .map(id => { const e = DesktopEntries.byId(id) ?? DesktopEntries.heuristicLookup(id); return e ? root._item(e.id, e, true) : null; })
-        .filter(i => i !== null)
+    // depends on the entries list too: at login the pinned ids can load before the desktop entries are scanned
+    readonly property var pinnedItems: {
+        const known = DesktopEntries.applications.values;
+        return root.pinnedIds
+            .map(id => { const e = known.find(x => x.id === id) ?? DesktopEntries.heuristicLookup(id); return e ? root._item(e.id, e, true) : null; })
+            .filter(i => i !== null);
+    }
 
     readonly property var openItems: {
         const pinnedKeys = root.pinnedItems.map(i => i.key);

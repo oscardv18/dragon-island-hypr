@@ -51,7 +51,8 @@ PanelWindow {
     // ------------------------------------------------------------ slots along the arc
     readonly property var left: Dock.pinnedItems
     readonly property var right: Dock.openItems
-    readonly property int reach: Math.max(left.length, right.length + 1)   // +1: the downloads button
+    readonly property int maxOffL: Math.max(0, left.length - Theme.dockSlotsPerSide)
+    readonly property int maxOffR: Math.max(0, right.length + 1 - Theme.dockSlotsPerSide)   // +1: the downloads button
 
     // The dock is a semi-donut: a band (like a bar island) bent along a circle. The circle's centre is below the
     // screen edge; the capsules sit on the band's centre line.
@@ -59,7 +60,7 @@ PanelWindow {
     readonly property real innerR: outerR - Theme.dockBand
     readonly property real midR: outerR - Theme.dockBand / 2
     readonly property real innerHalf: Math.sqrt(innerR * innerR - Math.pow(outerR - Theme.dockHeight, 2))   // where the inner edge meets the screen edge
-    readonly property real step: Math.min(Theme.dockSpacing / midR, Theme.dockMaxAngle / Math.max(1, reach))  // rad between neighbours
+    readonly property real step: Theme.dockSpacing / midR                          // rad between neighbours (the band never grows: extra apps scroll away)
     readonly property real spacing: step * midR
 
     function slotAngle(s: int): real { return s * win.step; }
@@ -93,6 +94,20 @@ PanelWindow {
             property real sink: Dock.wanted ? 0 : Theme.dockHeight + 6
             Behavior on sink { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.2 } }
 
+            // The dock never grows: when there are more apps than slots, the wheel turns the band (each side on its own)
+            // and the capsules that run past the ends fade out under the screen edge.
+            property int targetL: 0
+            property int targetR: 0
+            property real offL: targetL
+            property real offR: targetR
+            Behavior on offL { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.005 } }
+            Behavior on offR { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.005 } }
+            Connections {
+                target: win
+                function onMaxOffLChanged() { arc.targetL = Math.min(arc.targetL, win.maxOffL); }
+                function onMaxOffRChanged() { arc.targetR = Math.min(arc.targetR, win.maxOffR); }
+            }
+
             // the pointer area: the arc plus the strip above it where magnified icons grow
             Item {
                 id: hit
@@ -101,6 +116,14 @@ PanelWindow {
                 width: Theme.dockWidth + 20
                 height: Theme.dockHeight + 34
                 HoverHandler { id: hover; onHoveredChanged: Dock.hover(hovered) }
+                WheelHandler {
+                    acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
+                    onWheel: e => {
+                        const dir = e.angleDelta.y > 0 ? 1 : -1;
+                        if (arc.pointerX < Theme.dockWidth / 2) arc.targetL = Math.max(0, Math.min(win.maxOffL, arc.targetL + dir));
+                        else arc.targetR = Math.max(0, Math.min(win.maxOffR, arc.targetR - dir));
+                    }
+                }
             }
             readonly property real pointerX: hover.hovered ? hover.point.position.x - 10 : -1000
 
@@ -150,7 +173,12 @@ PanelWindow {
                 z: grow
                 property real dragOffset: 0
                 Behavior on x { enabled: slot.dragOffset === 0; NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
-                opacity: dim ? 0.45 : 1
+                // fades towards the centre button and, past the last slot, under the screen edge
+                readonly property real a: Math.abs(slotNo)
+                property int side: 0               // -1 pinned (left of the centre), +1 open apps (right), 0 = the centre button
+                readonly property real fade: slot.side === 0 ? 1
+                    : Math.max(0, Math.min(1, Math.min((slotNo * slot.side - 0.3) / 0.7, 1 - (a - Theme.dockSlotsPerSide) / 1.3)))
+                opacity: (dim ? 0.45 : 1) * fade
                 Behavior on opacity { NumberAnimation { duration: Theme.durFade } }
 
                 // the frame is rotated for left / right: keep the icon upright
@@ -210,6 +238,7 @@ PanelWindow {
                     anchors.fill: parent
                     anchors.margins: -6
                     hoverEnabled: true
+                    enabled: slot.fade > 0.4
                     acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                     cursorShape: Qt.PointingHandCursor
                     drag.target: null
@@ -247,7 +276,8 @@ PanelWindow {
                     required property var modelData
                     required property int index
                     item: modelData
-                    slotNo: -(win.left.length - index)   // the first pinned app is the leftmost; the last is next to the centre button
+                    side: -1
+                    slotNo: -(win.left.length - index) + arc.offL   // the first pinned app is the leftmost; the last is next to the centre button
                     icon: modelData.icon
                     label: modelData.name
                     dim: modelData.minimizedOnly
@@ -263,7 +293,8 @@ PanelWindow {
                     required property var modelData
                     required property int index
                     item: modelData
-                    slotNo: index + 1
+                    side: 1
+                    slotNo: index + 1 - arc.offR
                     icon: modelData.icon
                     label: modelData.name
                     dim: modelData.minimizedOnly
@@ -282,7 +313,8 @@ PanelWindow {
             // downloads stack
             Slot {
                 id: dl
-                slotNo: win.right.length + 1
+                side: 1
+                slotNo: win.right.length + 1 - arc.offR
                 glyph: Icons.folder
                 label: "Descargas"
                 onClicked: { Dock.refreshDownloads(); fan.open = !fan.open; win.menuItem = null; }

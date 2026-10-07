@@ -355,6 +355,12 @@ Decisiones y trampas:
 - **Islas con retraso al expandirse / contraerse:** las ventanas de las islas seguían (`implicitWidth`) el ancho animado de la isla, y redimensionar una superficie de capa es un viaje de ida y vuelta al compositor: el contenido se recortaba y la contracción llegaba tarde. Ahora cada ventana tiene un ancho **constante** (izquierda: el máximo que puede ocupar; derecha: 47 % de la pantalla), es transparente alrededor, la isla va anclada dentro (a la derecha, en la derecha) y la máscara de entrada es la isla (`Region { item: isla }`). hyprglass sigue la forma por el alfa, así que el hueco transparente no cuesta nada. `windowX` del popover pasa a ser la `x` constante de la ventana.
 - **Lanzador:** detrás de cada icono hay una **píldora circular** translúcida (`popoverBg` + borde; en el icono de delante, tinte de acento) que la capa del lanzador convierte en cristal líquido.
 
+## 7s. Dock: proporciones y desplazamiento con la rueda (2026-10-07)
+
+- Franja de 72 px, cápsulas de 52 px con el icono a 30 (antes 54 / 36: el icono rozaba el borde); las cápsulas van centradas en la línea media de la franja (radio medio). Las píldoras del lanzador pasan a `orbitIcon + 32`.
+- **Rueda del ratón:** el dock no crece nunca. Hay `Theme.dockSlotsPerSide` (3) huecos por lado; si hay más apps, la rueda gira cada lado por separado (según de qué lado del centro esté el puntero) con un spring y las cápsulas que pasan del último hueco se desvanecen «bajo la pantalla»; hacia el botón central se desvanecen antes de cruzarlo (`side`: −1 fijadas, +1 abiertas, 0 centro). La carpeta de descargas forma parte de la lista de la derecha.
+- Bug: con el estado cargado antes de que `DesktopEntries` terminara de escanear, las apps fijadas quedaban vacías para siempre (la propiedad no dependía de la lista de entradas); ahora `pinnedItems` lee `DesktopEntries.applications.values`.
+
 ## 8. Cómo depurar rápido
 
 ```sh
