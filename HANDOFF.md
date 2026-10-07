@@ -230,6 +230,7 @@ Decisiones y trampas:
 - Los `Layout.fillWidth` de un `ColumnLayout` anidado valen `true` por defecto: hay que ponerlo a `false` para que respete `preferredWidth`.
 - El engranaje del notch abre el menú de energía: es donde fueron a parar bloquear / suspender / apagar de la cabecera del dashboard antiguo. El slider de brillo vive ahora en el popover de batería.
 - Con el hueco libre de 1366 px (isla derecha ancha) el notch colapsado se desplaza unos píxeles del centro si hace falta y su ancho máximo ronda los 250 px; en monitores pequeños queda estrecho (mínimo 120) pero nunca se superpone.
+- hyprglass 0.9.1 instalado con `installer/glass.sh` en una terminal real: hyprpm escribe su estado con `sudo`, así que no funciona sin tty (ni desde Claude Code). `hyprctl plugin list` → 0.9.1, `layers:enabled` → `set: true`, `hyprctl hyprglass status` → windows / layers on. Stats: ~1 layer draw y ~5 blur passes por fotograma. GPU (AMD Lucienne, `gpu_busy_percent`): ~5 % en reposo y ~11 % abriendo y cerrando el notch en bucle → no hace falta `live_resample = false`.
 - Probado con un monitor headless (`hyprctl output create headless`) además del portátil.
 
 ## 8. Cómo depurar rápido
