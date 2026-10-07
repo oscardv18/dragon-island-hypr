@@ -192,6 +192,7 @@ Item {
                     color: icon.isFront && !root.auto ? Theme.alpha(Theme.accent, 0.35) : Theme.popoverBg
                     Behavior on color { ColorAnimation { duration: Theme.durFade } }
                     GlassRim { radius: parent.radius }
+                    GradientRing { radius: parent.radius; ringWidth: icon.isFront && !root.auto ? 2.5 : 1.5; strength: icon.isFront && !root.auto ? 1 : 0.75 }
                 }
                 Image {
                     id: ico
@@ -226,6 +227,7 @@ Item {
                     radius: height / 2
                     color: Theme.popoverBg
                     GlassRim { radius: parent.radius; strength: 0.8 }
+                    GradientRing { radius: parent.radius; strength: 0.6 }
                     UiText {
                         id: nameText
                         anchors.centerIn: parent
@@ -262,6 +264,7 @@ Item {
             scale: root.planetScale
             color: Theme.popoverBg
             GlassRim { radius: parent.radius }
+            GradientRing { radius: parent.radius; ringWidth: 2; strength: 0.9 }
 
             // swallow clicks (clicking outside the launcher closes it, the planet must not)
             MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }

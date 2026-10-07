@@ -117,6 +117,8 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 | Botón central | Lanzador orbital |
 | Carpeta (extremo derecho) | Abanico con las últimas 6 descargas (clic = abrir) |
 
+El icono bajo el ratón se ilumina con el contorno en degradado (sin ampliarse).
+
 El dock se muestra solo cuando el escritorio actual no tiene ventanas en mosaico (vacío, o solo flotantes) y se hunde con una ventana en mosaico o en pantalla completa. Posición y apps fijadas en `~/.local/state/dragon-island/dock.json` (`"position"`: `bottom` · `left` · `right`; `qs ipc call dock position left`).
 
 ## Teclado dentro de los paneles

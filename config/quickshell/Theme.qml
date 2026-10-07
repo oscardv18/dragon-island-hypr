@@ -152,13 +152,13 @@ Singleton {
     readonly property int  orbitInner:    16      // icons in the main ring; the rest go to the outer ring
 
     // Arc dock
-    readonly property real dockWidth:      520
-    readonly property real dockHeight:     112    // sagitta of the band (the semi-donut)
-    readonly property real dockBand:       72     // thickness of the band
-    readonly property real dockIcon:       52     // capsule that holds an icon (icon inside: 36)
-    readonly property real dockIconInner:  30
-    readonly property real dockSpacing:    56
-    readonly property int  dockSlotsPerSide: 3    // capsules fully visible on each side of the centre; the rest scroll under the screen edge (mouse wheel)
+    readonly property real dockWidth:      440
+    readonly property real dockHeight:     90     // sagitta of the band (the semi-donut)
+    readonly property real dockBand:       48     // thickness of the band
+    readonly property real dockIcon:       36     // capsule that holds an icon (icon inside: 36)
+    readonly property real dockIconInner:  22
+    readonly property real dockSpacing:    42
+    readonly property int  dockSlotsPerSide: 4    // capsules fully visible on each side of the centre; the rest scroll under the screen edge (mouse wheel)
     readonly property int  dockHideDelay:  600    // ms after the pointer leaves
     readonly property real dockEdge:       3      // hot zone thickness, px
     readonly property real dockWindowHeight: 300  // room for the magnified icons, the menu and the downloads fan

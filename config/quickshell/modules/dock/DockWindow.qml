@@ -128,9 +128,12 @@ PanelWindow {
             readonly property real pointerX: hover.hovered ? hover.point.position.x - 10 : -1000
 
             // ---- the glass band (a semi-donut): fill, light from the top, a bright rim and an inset rim ----
-            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; fill: Theme.glassBg; stroke: Qt.rgba(1, 1, 1, 0.38); strokeWidth: 1.5 }
+            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; fill: Theme.glassBg }
             BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; light: true }
-            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; inset: 3; stroke: Qt.rgba(1, 1, 1, 0.10); strokeWidth: 1 }
+            // the contour in the window-border gradient, subtle (the same family as the bar islands)
+            BorderGradient { id: bandGrad; anchors.fill: parent }
+            BandShape { id: bandMask; anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; stroke: "white"; strokeWidth: 1.5; visible: false; layer.enabled: true }
+            MultiEffect { anchors.fill: parent; source: bandGrad; maskEnabled: true; maskSource: bandMask; opacity: 0.5 }
 
             // ---- an app on the arc ----
             component Slot: Item {
@@ -148,12 +151,13 @@ PanelWindow {
                 readonly property real cx: win.slotX(slotNo)
                 readonly property real cy: win.slotY(slotNo)
                 readonly property real angle: win.slotAngle(slotNo) * 180 / Math.PI * 0.4     // a gentle tilt along the curve
-                readonly property real grow: 1 + 0.4 * Math.exp(-Math.pow((cx - arc.pointerX) / 56, 2))
+                // no magnification: the hovered capsule lights up with the brand gradient instead
+                readonly property real grow: 1
 
                 width: Theme.dockIcon
                 height: Theme.dockIcon
                 x: cx - width / 2 + dragOffset
-                y: cy - height / 2 - (grow - 1) * 16
+                y: cy - height / 2
                 scale: grow
                 rotation: 0
                 z: grow
@@ -176,7 +180,8 @@ PanelWindow {
                     radius: width / 2
                     color: mouse.containsMouse ? Theme.surfaceHi : Theme.surface2
                     Behavior on color { ColorAnimation { duration: Theme.durHover } }
-                    GlassRim { radius: parent.radius; strength: 0.7 }
+                    GlassRim { radius: parent.radius; strength: 0.5 }
+                    GradientRing { radius: parent.radius; ringWidth: mouse.containsMouse ? 2 : 1.2; strength: mouse.containsMouse ? 1 : 0.4 }
                 }
                 Image {
                     anchors.centerIn: parent

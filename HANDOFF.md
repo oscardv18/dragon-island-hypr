@@ -357,7 +357,7 @@ Decisiones y trampas:
 
 ## 7s. Dock: proporciones y desplazamiento con la rueda (2026-10-07)
 
-- Franja de 72 px, cápsulas de 52 px con el icono a 30 (antes 54 / 36: el icono rozaba el borde); las cápsulas van centradas en la línea media de la franja (radio medio). Las píldoras del lanzador pasan a `orbitIcon + 32`.
+- (Superado por §7u) Franja de 72 px, cápsulas de 52 px con el icono a 30 (antes 54 / 36: el icono rozaba el borde); las cápsulas van centradas en la línea media de la franja (radio medio). Las píldoras del lanzador pasan a `orbitIcon + 32`.
 - **Rueda del ratón:** el dock no crece nunca. Hay `Theme.dockSlotsPerSide` (3) huecos por lado; si hay más apps, la rueda gira cada lado por separado (según de qué lado del centro esté el puntero) con un spring y las cápsulas que pasan del último hueco se desvanecen «bajo la pantalla»; hacia el botón central se desvanecen antes de cruzarlo (`side`: −1 fijadas, +1 abiertas, 0 centro). La carpeta de descargas forma parte de la lista de la derecha.
 - Bug: con el estado cargado antes de que `DesktopEntries` terminara de escanear, las apps fijadas quedaban vacías para siempre (la propiedad no dependía de la lista de entradas); ahora `pinnedItems` lee `DesktopEntries.applications.values`.
 
@@ -367,6 +367,12 @@ Decisiones y trampas:
 - Lanzador: el nombre de la app ya no se pinta sobre el borde de la píldora del icono; va en su **propia píldora de cristal** debajo (`nameText` dentro de un `Rectangle`).
 - **Bordes planos en el dock y el lanzador:** hyprglass calcula el relieve del borde (bisel, especular, fresnel) a partir del **rectángulo de la capa**, no de la forma que hay dentro (la máscara por alfa solo recorta). En las islas se nota porque su ventana tiene casi su tamaño; en el dock (1366 × 300) y el lanzador (pantalla completa) el borde queda fuera de la forma, así que las formas curvas salían planas aunque el preset fuera extremo (probado con `edge_thickness` 0,16 y refracción 3: sin cambio). Solución: `components/GlassRim.qml` (luz que cae desde arriba, borde brillante en la mitad superior, borde tenue completo y una línea oscura bajo el borde inferior) y `components/BandShape.qml` (la semidona dibujada tres veces: relleno, degradado de luz y borde interior de 3 px) pintados en QML encima del cristal de hyprglass (que sigue dando desenfoque y refracción). Presets `dragon-dock` y `dragon-orbit` en `glass.lua` (bisel y especular al máximo; el relieve del rectángulo de la capa sigue sin verse).
 - Pendiente de decisión: las islas de la barra pasaron a ventanas de ancho constante (fluidez), así que su relieve de hyprglass solo aparece en los bordes de la ventana; si quieres el mismo `GlassRim` en las islas hay que añadirlo en `LeftIsland` / `RightIsland`.
+
+## 7u. Dock fino, sin ampliación y contornos en degradado (2026-10-07)
+
+- **Sin ampliación** (efecto macOS): el icono bajo el puntero ya no crece (`grow = 1`); se resalta con su contorno en el degradado de la ventana (accent → violet → cyan), de 1,2 px tenue a 2 px pleno al pasar el ratón. El problema de «intenta ampliarlo pero no pasa» era la escala animada bajo el puntero moviendo el área clicable.
+- **Contornos:** `components/BorderGradient.qml` (el degradado como fuente) + `components/GradientRing.qml` (anillo enmascarado con `MultiEffect.maskEnabled`) sustituyen al borde blanco de `GlassRim` (que ahora solo da luz y profundidad). El dock lleva el contorno de la franja subtil (0,5), las cápsulas 0,4 (1 si hay ratón encima); el lanzador, el planeta (0,9), las píldoras (0,75; la de delante 2,5 px al 100 %) y la píldora del nombre (0,6).
+- **Dock más fino:** la franja pasa a 48 px (como las islas), 440 × 90, cápsulas de 36 con icono de 22, separación 42 px y 4 huecos por lado.
 
 ## 8. Cómo depurar rápido
 
