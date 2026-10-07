@@ -21,6 +21,33 @@ PopoverFrame {
         color: Theme.cyan
     }
 
+    // CPU over the last 30 s (15 samples, 2 s apart)
+    Card {
+        Layout.fillWidth: true
+        UiText { caption: true; text: "CPU · últimos 30 s" }
+        Row {
+            Layout.fillWidth: true
+            Layout.preferredHeight: 36
+            spacing: 3
+            Repeater {
+                model: SysStats.cpuHistory
+                delegate: Item {
+                    required property int modelData
+                    width: (parent.width - 14 * 3) / 15
+                    height: 36
+                    Rectangle {
+                        anchors.bottom: parent.bottom
+                        width: parent.width
+                        height: Math.max(2, parent.height * modelData / 100)
+                        radius: 2
+                        color: modelData > 80 ? Theme.error : (modelData > 50 ? Theme.warn : Theme.cyan)
+                        Behavior on height { NumberAnimation { duration: Theme.durHover } }
+                    }
+                }
+            }
+        }
+    }
+
     // per-core bars
     Card {
         Layout.fillWidth: true

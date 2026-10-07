@@ -21,7 +21,7 @@ Text {
     textFormat: Text.PlainText
     verticalAlignment: Text.AlignVCenter
 
-    layer.enabled: shadow
+    layer.enabled: shadow && Theme.textShadows
     layer.effect: MultiEffect {
         shadowEnabled: true
         shadowColor: Theme.textShadow

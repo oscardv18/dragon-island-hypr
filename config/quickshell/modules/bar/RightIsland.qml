@@ -57,12 +57,13 @@ Rectangle {
         anchors.verticalCenter: parent.verticalCenter
         spacing: Theme.barIslandGap
 
-        // CPU
+        // Performance: one capsule for CPU and RAM. Everything else (cores, GPU, temperature, processes, the last
+        // 30 s of CPU, power profile) is in its popover, nothing expands on hover.
         Capsule {
-            id: cpuCap
+            id: perfCap
             anchors.verticalCenter: parent.verticalCenter
             active: root.bar.isOpen("perf")
-            onClicked: root.openPopover("perf", cpuCap)
+            onClicked: root.openPopover("perf", perfCap)
             Glyph { shadow: true; icon: Icons.cpu; size: Theme.iconSm; color: Theme.cyan; anchors.verticalCenter: parent.verticalCenter }
             UiText {
                 shadow: true
@@ -71,42 +72,6 @@ Rectangle {
                 mono: true
                 size: Theme.sizeBar
             }
-            // hover: the last 30 s of CPU (15 samples, 2 s apart)
-            Item {
-                id: cpuGraph
-                readonly property real fullWidth: 15 * 3 + 14 * 2
-                anchors.verticalCenter: parent.verticalCenter
-                width: cpuCap.hovered ? fullWidth : 0
-                height: 16
-                opacity: cpuCap.hovered ? 1 : 0
-                visible: width > 0.5
-                clip: true
-                Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
-                Behavior on opacity { NumberAnimation { duration: Theme.durPill } }
-                Row {
-                    anchors.bottom: parent.bottom
-                    spacing: 2
-                    Repeater {
-                        model: SysStats.cpuHistory
-                        delegate: Rectangle {
-                            required property int modelData
-                            width: 3
-                            height: Math.max(2, cpuGraph.height * modelData / 100)
-                            radius: 1
-                            color: modelData > 80 ? Theme.error : (modelData > 50 ? Theme.warn : Theme.cyan)
-                            Behavior on height { NumberAnimation { duration: Theme.durHover } }
-                        }
-                    }
-                }
-            }
-        }
-
-        // RAM
-        Capsule {
-            id: ramCap
-            anchors.verticalCenter: parent.verticalCenter
-            active: root.bar.isOpen("perf")
-            onClicked: root.openPopover("perf", ramCap)
             Glyph { shadow: true; icon: Icons.memory; size: Theme.iconSm; color: Theme.violetSoft; anchors.verticalCenter: parent.verticalCenter }
             UiText {
                 shadow: true

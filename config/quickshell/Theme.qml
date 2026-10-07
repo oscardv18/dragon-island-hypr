@@ -46,6 +46,7 @@ Singleton {
     readonly property real glassAlpha:         0.18                        // bar islands: the liquid glass shows through; above mask_threshold (0.1)
     readonly property color barIsland:     alpha(surface0, islandSurfaceAlpha)
     readonly property color glassBg:       alpha(surface0, glassAlpha)     // acrylic island / popover / card background
+    readonly property bool textShadows:    false                           // MultiEffect shadows on bar text: rendered through a texture, they made it look soft / pixelated
     readonly property color textShadow:    Qt.rgba(0, 0, 0, 0.55)         // text / icon shadow on glass (only inside the islands)
     readonly property color glassBorder:   Qt.rgba(1, 1, 1, 0.08)          // 1 px, white 8 %
     readonly property color popoverBg:     alpha(surface0, popoverAlpha)

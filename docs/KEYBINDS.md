@@ -89,7 +89,7 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 | Píldora de escritorio (con los iconos de sus apps) | Ir a ese escritorio | Rueda: anterior / siguiente · ratón encima: vista previa con miniaturas de sus ventanas (clic en una = enfocarla) |
 | Título de la ventana activa | | Ratón encima: acciones — cerrar · flotar · fijar (si flota) · mover a un escritorio |
 | Indicador de submap (izquierda) | | Aparece solo con un submap activo |
-| CPU / RAM | Popover Rendimiento | CPU con el ratón encima: gráfica de los últimos 30 s |
+| Rendimiento (CPU % + RAM en una sola píldora) | Popover Rendimiento (CPU de los últimos 30 s, núcleos, RAM, GPU, temperatura, procesos, perfil de energía) | Nada se expande con el ratón |
 | Cápsula `US` / `LA` | Siguiente distribución de teclado | |
 | Wi‑Fi · Bluetooth · Batería | Su popover | Wi‑Fi con el ratón encima: velocidad de bajada / subida · rueda sobre la batería: brillo ±5 % |
 | Cápsulas contextuales (solo cuando aplican) | Micrófono / cámara / pantalla: lista de apps · grabación: parar · VPN: abre Proton VPN · auriculares: Bluetooth · cafeína y No molestar: alternar · actualizaciones: abre Ghostty con la actualización · red: Rendimiento | Las que no caben se agrupan en `+N` (ratón encima: despliega los iconos) |

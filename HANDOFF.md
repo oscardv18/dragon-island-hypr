@@ -335,6 +335,11 @@ Decisiones y trampas:
 - **Trampa:** el proveedor `image://icon/` devolvía pixmaps en blanco para casi todos los iconos de aplicaciones dentro de la ventana del lanzador (sí iba en la barra); se resuelven a archivos con `scripts/icon-paths.sh` y se dibujan como `file://`. Otras: reiniciar Quickshell al editar a veces exige `touch shell.qml`; una `Behavior on opacity` dentro del repetidor no avanzaba con el elemento invisible (se quitó).
 - **Sin verificar:** `=expresión` y `>comando` (el código está, no se probaron con el teclado virtual), el segundo anillo (hay menos de 16 resultados con el historial actual) y la rueda del ratón.
 
+## 7p. Rendimiento en una píldora y texto nítido (2026-10-07)
+
+- CPU y RAM son **una sola** cápsula (`perfCap`); no se despliega nada con el ratón. El popover de Rendimiento gana la gráfica de CPU de los últimos 30 s.
+- **Texto e iconos pixelados:** lo causaban las sombras `MultiEffect` (`layer.enabled`) de `UiText` / `Glyph`: el texto pasa por una textura y pierde nitidez (se ve borroso y con bordes escalonados). Se apagaron con `Theme.textShadows = false` (el tipo `shadow: true` sigue existiendo por si se quiere probar de nuevo). Comprobado ampliando capturas antes y después.
+
 ## 8. Cómo depurar rápido
 
 ```sh
