@@ -448,6 +448,12 @@ Decisiones y trampas:
 
 - El panel `SUPER + F1` lee los binds de Hyprland por su descripción (así ya sale «Shell · Tienda de apps»); las teclas **dentro** de los paneles (lanzador orbital con `=`, `>`, `+`, Tienda, fondos, portapapeles, energía) no son binds: ahora están en `panelGroups` de `services/Keybinds.qml` y se pueden buscar en el panel. `docs/KEYBINDS.md` (tabla «Teclado dentro de los paneles», IPC) igualado. Regla anotada en la skill `dragon-island`: cada atajo o tecla nueva actualiza `binds.lua` (con descripción), `panelGroups` y KEYBINDS.md.
 
+## 7s. Sistema lento por un vídeo 4K de fondo (2026-10-07)
+
+- **Síntoma:** menús y sistema «lentos» con recursos libres. **Causa:** GPU al 70–78 % (`gpu_busy_percent`) por `mpvpaper` reproduciendo un HEVC de 3840×2160 a 30 fps (16 Mbps) en un portátil de 1366×768 con iGPU; con `kill -STOP` al proceso caía al 9 %. CPU, RAM (11 GB libres) y reloj no eran el problema.
+- **Corrección:** `scripts/wallpapers.sh apply-video` mira la altura del vídeo (`ffprobe`) y, si pasa en más de un 25 % la de la pantalla (`hyprctl monitors`), reproduce el original al momento y en segundo plano (prioridad baja) genera una copia H.264 del tamaño de la pantalla, sin audio, 30 fps, en `~/.cache/dragon-island/video/<hash>.mp4` (7 s para un clip de 14 s); cuando existe, relanza `mpvpaper` con ella si sigue siendo el fondo actual. mpv usa además `profile=fast`. Las siguientes veces usa la copia directamente.
+- **Medido:** GPU 70 % → 12 % con la copia; el cambio automático original → copia comprobado.
+
 ## 8. Cómo depurar rápido
 
 ```sh
