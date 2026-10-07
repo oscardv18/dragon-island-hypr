@@ -137,6 +137,10 @@ Singleton {
     readonly property real artSmall:     22
     readonly property real artSmallRadius: 7
 
+    // Calendar popover (calendar | notifications + updates)
+    readonly property real calendarPopoverWidth:  720
+    readonly property real notificationsListHeight: 250
+
     // Workspace hover preview
     readonly property real previewThumbWidth: 180
 

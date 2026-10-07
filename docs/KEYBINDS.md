@@ -15,7 +15,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + W` | Selector de fondos de pantalla (imágenes, GIF y vídeo) |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
-| `SUPER + N` | Centro de notificaciones |
+| `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
 | `Print` | Captura de pantalla completa |
@@ -95,8 +95,8 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 | Cápsulas contextuales (solo cuando aplican) | Micrófono / cámara / pantalla: lista de apps · grabación: parar · VPN: abre Proton VPN · auriculares: Bluetooth · cafeína y No molestar: alternar · actualizaciones: abre Ghostty con la actualización · red: Rendimiento | Las que no caben se agrupan en `+N` (ratón encima: despliega los iconos) |
 | Volumen | Popover Sonido | Rueda: ±5 % · clic derecho o central: silenciar |
 | Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |
-| Campana (punto = no leídas) | Centro de notificaciones | Clic derecho: No molestar |
-| Reloj | Calendario | Clic en un día: su agenda (khal) · rueda: cambiar de mes |
+| Reloj (marcadores: No molestar · sin leer · actualizaciones) | Calendario, notificaciones y actualizaciones en un solo popover | Clic derecho: No molestar |
+| Reloj (cont.) | Calendario | Clic en un día: su agenda (khal) · rueda: cambiar de mes |
 | Popup de notificación | Acción por defecto (o cerrar el popup) | Central: descartar · pasar el ratón: no caduca |
 | Isla cerrada | Dashboard | Música: clic central = play/pausa |
 | Mosaicos del dashboard | Activar / desactivar | Clic derecho en Wi‑Fi, Bluetooth o No molestar: abre su popover |

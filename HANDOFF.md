@@ -322,6 +322,12 @@ Decisiones y trampas:
 - **Verificado en vivo:** micrófono (`parecord`), grabación, VPN, actualizaciones, `+N`, vista previa con captura real, acciones de la ventana, gráfica de CPU, popover de privacidad. **Sin verificar:** cámara y compartir pantalla (no hay cámara ni flujo de portal en este equipo; el código sigue el mismo camino por enlaces), submap (hace falta registrar uno), cafeína frente a `hypridle` (se comprueba que la cápsula aparece, no el bloqueo), pulso de batería baja, auriculares Bluetooth.
 - Capturas en `docs/screenshots/islas/`. Migración `006-dynamic-islands.sh` (`pacman-contrib`).
 
+## 7n. Isla derecha más estrecha (2026-10-07)
+
+- Sin cápsula de campana: notificaciones y actualizaciones viven en el popover del reloj (`CalendarPopover` = calendario | `NotificationsColumn`: lista, No molestar, «Borrar todo», contador de actualizaciones y «Actualizar»). `ShellState` redirige el panel `notifications` a `calendar` (SUPER+N, mosaicos del notch). El reloj muestra marcadores (No molestar, sin leer, actualizaciones) y el clic derecho alterna No molestar.
+- El micrófono en uso es un punto naranja sobre el icono de volumen y una tarjeta «Micrófono en uso» en el popover de Sonido; la cápsula de privacidad solo sale para cámara y pantalla compartida.
+- Sin migración (todo está en el repo).
+
 ## 8. Cómo depurar rápido
 
 ```sh

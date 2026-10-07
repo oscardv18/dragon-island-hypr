@@ -47,7 +47,11 @@ Singleton {
         return false;
     }
 
+    // notifications live in the calendar popover now: the old panel name still works (SUPER+N, notch tiles)
+    function _alias(name: string): string { return name === "notifications" ? "calendar" : name; }
+
     function open(name: string, screenName): void {
+        name = root._alias(name);
         if (!_valid(name)) return;
         root.anchorX = -1;
         root.anchorSide = "right";
@@ -56,12 +60,14 @@ Singleton {
     }
 
     function toggle(name: string, screenName): void {
+        name = root._alias(name);
         const scr = screenName || Hyprland.focusedMonitor?.name || "";
         if (root.openPanel === name && (root.panelScreen === scr || root.panelScreen === "")) root.close();
         else root.open(name, scr);
     }
 
     function toggleAt(name: string, screenName: string, anchorX: real, side: string): void {
+        name = root._alias(name);
         if (root.openPanel === name && root.panelScreen === screenName) { root.close(); return; }
         root.open(name, screenName);
         root.anchorX = anchorX;
