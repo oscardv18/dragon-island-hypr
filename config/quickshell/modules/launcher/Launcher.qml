@@ -183,6 +183,17 @@ Item {
                     Behavior on opacity { NumberAnimation { duration: Theme.durFade } }
                 }
 
+                // a circular glass pill behind the icon (the layer is glassed by alpha: hyprglass gives it the liquid-glass look)
+                Rectangle {
+                    anchors.centerIn: parent
+                    width: Theme.orbitIcon + 22
+                    height: width
+                    radius: width / 2
+                    color: icon.isFront && !root.auto ? Theme.alpha(Theme.accent, 0.35) : Theme.popoverBg
+                    border.width: 1
+                    border.color: icon.isFront && !root.auto ? Theme.alpha(Theme.accent, 0.7) : Theme.glassBorder
+                    Behavior on color { ColorAnimation { duration: Theme.durFade } }
+                }
                 Image {
                     id: ico
                     anchors.fill: parent

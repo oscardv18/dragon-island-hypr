@@ -35,7 +35,7 @@ Scope {
 
     // Tell the notch where the islands end (screen x)
     readonly property real leftEnd: leftWindow.screenX + leftIsland.width
-    readonly property real rightStart: rightWindow.screenX
+    readonly property real rightStart: bar.screenWidth - Theme.barMarginSide - rightIsland.width
     onLeftEndChanged: BarMetrics.report(screenName, leftEnd, rightStart)
     onRightStartChanged: BarMetrics.report(screenName, leftEnd, rightStart)
     Component.onCompleted: BarMetrics.report(screenName, leftEnd, rightStart)
@@ -54,6 +54,13 @@ Scope {
     }
 
     // ---- left island ----
+    // The island windows keep a CONSTANT size (the most their island can ever need) and are transparent around it:
+    // resizing a layer surface is a compositor round trip, so a window that followed the island's animated width
+    // lagged behind it (clipped, late contractions). The input mask is the island itself, and hyprglass takes
+    // its shape from the alpha, so the empty part of the window costs nothing and shows nothing.
+    readonly property real leftWindowWidth: Math.max(1, (bar.screenWidth - Theme.barMarginSide * 2) / 2 - Theme.notchReserve / 2 - Theme.barIslandGap)
+    readonly property real rightWindowWidth: Math.max(1, Math.round(bar.screenWidth * 0.47))
+
     PanelWindow {
         id: leftWindow
         screen: bar.modelData
@@ -61,7 +68,8 @@ Scope {
 
         anchors { top: true; left: true }
         margins { top: Theme.barMarginTop; left: Theme.barMarginSide }
-        implicitWidth: leftIsland.width
+        implicitWidth: bar.leftWindowWidth
+        mask: Region { item: leftIsland }
         implicitHeight: Theme.barHeight
         exclusionMode: ExclusionMode.Ignore
         color: Theme.transparent
@@ -88,11 +96,12 @@ Scope {
     PanelWindow {
         id: rightWindow
         screen: bar.modelData
-        readonly property real screenX: bar.screenWidth - Theme.barMarginSide - rightIsland.width
+        readonly property real screenX: bar.screenWidth - Theme.barMarginSide - bar.rightWindowWidth
 
         anchors { top: true; right: true }
         margins { top: Theme.barMarginTop; right: Theme.barMarginSide }
-        implicitWidth: rightIsland.width
+        implicitWidth: bar.rightWindowWidth
+        mask: Region { item: rightIsland }
         implicitHeight: Theme.barHeight
         exclusionMode: ExclusionMode.Ignore
         color: Theme.transparent
@@ -103,6 +112,7 @@ Scope {
         RightIsland {
             id: rightIsland
             bar: bar
+            anchors.right: parent.right
             windowX: rightWindow.screenX
             // the room the left island and the collapsed notch leave it
             maxWidth: Math.max(0, bar.screenWidth - Theme.barMarginSide * 2 - leftIsland.width - Theme.notchSideReserve)

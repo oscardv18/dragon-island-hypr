@@ -153,9 +153,12 @@ Singleton {
 
     // Arc dock
     readonly property real dockWidth:      520
-    readonly property real dockHeight:     90
-    readonly property real dockIcon:       44
-    readonly property real dockSpacing:    52
+    readonly property real dockHeight:     112    // sagitta of the band (the semi-donut)
+    readonly property real dockBand:       66     // thickness of the band
+    readonly property real dockIcon:       54     // capsule that holds an icon (icon inside: 36)
+    readonly property real dockIconInner:  36
+    readonly property real dockSpacing:    56
+    readonly property real dockMaxAngle:   0.56   // rad: how far from the top the capsules may go
     readonly property int  dockHideDelay:  600    // ms after the pointer leaves
     readonly property real dockEdge:       3      // hot zone thickness, px
     readonly property real dockWindowHeight: 300  // room for the magnified icons, the menu and the downloads fan

@@ -349,6 +349,12 @@ Decisiones y trampas:
 - **Verificado en vivo:** arco visible en un escritorio vacío, oculto con una ventana en mosaico, zona sensible, ampliación, menú contextual, minimizar + restaurar con un clic, posiciones izquierda y derecha. **Sin verificar:** abanico de descargas, reordenar arrastrando, insignias de notificaciones, clic central, ciclar entre ventanas de una app, `SUPER + M` real (se probó el mismo dispatcher a mano), dock en un segundo monitor.
 - Sin migración: el estado lo crea el propio servicio y los atajos / reglas llegan con `config/hypr`.
 
+## 7r. Dock en semidona, islas fluidas y lanzador con píldoras de cristal (2026-10-07)
+
+- **Dock:** ya no es un segmento relleno sino una **franja** (`Theme.dockBand` 66 px) curvada, hueca por dentro: el `Shape` dibuja el arco exterior, el borde de la pantalla y el arco interior de vuelta, con `Theme.glassBg` y el borde de 1 px como las islas. Cada app va en una **cápsula circular** (`surface2`, 54 px, icono de 36) sobre la línea central de la franja; la inclinación sigue la curva (×0,4) y la ampliación es más contenida (×1,4). Ángulo entre vecinos `min(56 px / R, 0,56 rad / huecos)`.
+- **Islas con retraso al expandirse / contraerse:** las ventanas de las islas seguían (`implicitWidth`) el ancho animado de la isla, y redimensionar una superficie de capa es un viaje de ida y vuelta al compositor: el contenido se recortaba y la contracción llegaba tarde. Ahora cada ventana tiene un ancho **constante** (izquierda: el máximo que puede ocupar; derecha: 47 % de la pantalla), es transparente alrededor, la isla va anclada dentro (a la derecha, en la derecha) y la máscara de entrada es la isla (`Region { item: isla }`). hyprglass sigue la forma por el alfa, así que el hueco transparente no cuesta nada. `windowX` del popover pasa a ser la `x` constante de la ventana.
+- **Lanzador:** detrás de cada icono hay una **píldora circular** translúcida (`popoverBg` + borde; en el icono de delante, tinte de acento) que la capa del lanzador convierte en cristal líquido.
+
 ## 8. Cómo depurar rápido
 
 ```sh

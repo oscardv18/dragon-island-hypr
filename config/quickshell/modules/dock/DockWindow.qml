@@ -52,10 +52,19 @@ PanelWindow {
     readonly property var left: Dock.pinnedItems
     readonly property var right: Dock.openItems
     readonly property int reach: Math.max(left.length, right.length + 1)   // +1: the downloads button
-    readonly property real spacing: Math.min(Theme.dockSpacing, 215 / Math.max(1, reach))
 
-    function slotX(s: int): real { return s * win.spacing; }                    // from the arc's centre
-    function slotY(x: real): real { return 31 + 30 * Math.pow(x / 220, 2); }     // icon centre, arc coordinates
+    // The dock is a semi-donut: a band (like a bar island) bent along a circle. The circle's centre is below the
+    // screen edge; the capsules sit on the band's centre line.
+    readonly property real outerR: (Math.pow(Theme.dockWidth / 2, 2) + Math.pow(Theme.dockHeight, 2)) / (2 * Theme.dockHeight)
+    readonly property real innerR: outerR - Theme.dockBand
+    readonly property real midR: outerR - Theme.dockBand / 2
+    readonly property real innerHalf: Math.sqrt(innerR * innerR - Math.pow(outerR - Theme.dockHeight, 2))   // where the inner edge meets the screen edge
+    readonly property real step: Math.min(Theme.dockSpacing / midR, Theme.dockMaxAngle / Math.max(1, reach))  // rad between neighbours
+    readonly property real spacing: step * midR
+
+    function slotAngle(s: int): real { return s * win.step; }
+    function slotX(s: int): real { return Theme.dockWidth / 2 + win.midR * Math.sin(win.slotAngle(s)); }
+    function slotY(s: int): real { return win.outerR - win.midR * Math.cos(win.slotAngle(s)); }
 
     property int menuIndex: -1
     property var menuItem: null
@@ -99,15 +108,17 @@ PanelWindow {
             Shape {
                 anchors.fill: parent
                 preferredRendererType: Shape.CurveRenderer
+                // the band: outer arc, the screen edge, inner arc back (hollow in the middle), like an island bent into a semi-donut
                 ShapePath {
                     id: arcPath
-                    readonly property real r: (Math.pow(Theme.dockWidth / 2, 2) + Math.pow(Theme.dockHeight, 2)) / (2 * Theme.dockHeight)
-                    fillColor: Theme.popoverBg
+                    fillColor: Theme.glassBg
                     strokeColor: Theme.glassBorder
                     strokeWidth: 1
                     startX: 0
                     startY: Theme.dockHeight
-                    PathArc { x: Theme.dockWidth; y: Theme.dockHeight; radiusX: arcPath.r; radiusY: arcPath.r; direction: PathArc.Clockwise }
+                    PathArc { x: Theme.dockWidth; y: Theme.dockHeight; radiusX: win.outerR; radiusY: win.outerR; direction: PathArc.Clockwise }
+                    PathLine { x: Theme.dockWidth / 2 + win.innerHalf; y: Theme.dockHeight }
+                    PathArc { x: Theme.dockWidth / 2 - win.innerHalf; y: Theme.dockHeight; radiusX: win.innerR; radiusY: win.innerR; direction: PathArc.Counterclockwise }
                     PathLine { x: 0; y: Theme.dockHeight }
                 }
             }
@@ -125,15 +136,15 @@ PanelWindow {
                 signal dragMoved(real dx)
                 signal dragEnded(real dx)
 
-                readonly property real cx: Theme.dockWidth / 2 + win.slotX(slotNo)
-                readonly property real cy: win.slotY(win.slotX(slotNo))
-                readonly property real angle: Math.atan(60 * win.slotX(slotNo) / (220 * 220)) * 180 / Math.PI
-                readonly property real grow: 1 + 0.55 * Math.exp(-Math.pow((cx - arc.pointerX) / 62, 2))
+                readonly property real cx: win.slotX(slotNo)
+                readonly property real cy: win.slotY(slotNo)
+                readonly property real angle: win.slotAngle(slotNo) * 180 / Math.PI * 0.4     // a gentle tilt along the curve
+                readonly property real grow: 1 + 0.4 * Math.exp(-Math.pow((cx - arc.pointerX) / 56, 2))
 
                 width: Theme.dockIcon
                 height: Theme.dockIcon
                 x: cx - width / 2 + dragOffset
-                y: cy - height / 2 - (grow - 1) * 22
+                y: cy - height / 2 - (grow - 1) * 16
                 scale: grow
                 rotation: 0
                 z: grow
@@ -145,31 +156,34 @@ PanelWindow {
                 // the frame is rotated for left / right: keep the icon upright
                 transform: Rotation { origin.x: slot.width / 2; origin.y: slot.height / 2; angle: -frame.rotation + slot.angle }
 
-                Image {
+                // the capsule inside the band (as the capsules inside the bar islands)
+                Rectangle {
                     anchors.fill: parent
+                    radius: width / 2
+                    color: mouse.containsMouse ? Theme.surfaceHi : Theme.surface2
+                    border.width: 1
+                    border.color: Theme.glassBorder
+                    Behavior on color { ColorAnimation { duration: Theme.durHover } }
+                }
+                Image {
+                    anchors.centerIn: parent
+                    width: Theme.dockIconInner
+                    height: Theme.dockIconInner
                     visible: slot.icon.length > 0
                     source: slot.icon
-                    sourceSize: Qt.size(Theme.dockIcon * 2, Theme.dockIcon * 2)
+                    sourceSize: Qt.size(Theme.dockIconInner * 2, Theme.dockIconInner * 2)
                     fillMode: Image.PreserveAspectFit
                     asynchronous: true
                     mipmap: true
                 }
-                Rectangle {
-                    anchors.centerIn: parent
-                    visible: slot.glyph.length > 0
-                    width: Theme.dockIcon - 6
-                    height: width
-                    radius: width / 2
-                    color: mouse.containsMouse ? Theme.surfaceHi : Theme.surface3
-                    Glyph { anchors.centerIn: parent; icon: slot.glyph; size: Theme.iconLg; color: Theme.text }
-                }
+                Glyph { anchors.centerIn: parent; visible: slot.glyph.length > 0; icon: slot.glyph; size: Theme.iconLg; color: Theme.text }
 
                 // open windows: 1 to 3 dots
                 Row {
                     visible: (slot.item?.count ?? 0) > 0
                     anchors.horizontalCenter: parent.horizontalCenter
-                    anchors.top: parent.bottom
-                    anchors.topMargin: 1
+                    anchors.bottom: parent.bottom
+                    anchors.bottomMargin: 5
                     spacing: 3
                     Repeater {
                         model: Math.min(3, slot.item?.count ?? 0)
