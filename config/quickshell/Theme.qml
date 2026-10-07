@@ -141,6 +141,15 @@ Singleton {
     readonly property real calendarPopoverWidth:  720
     readonly property real notificationsListHeight: 250
 
+    // Orbital launcher
+    readonly property real orbitPlanet:   200
+    readonly property real orbitRx:       320
+    readonly property real orbitRy:       90
+    readonly property real orbitTilt:     -10     // degrees
+    readonly property real orbitIcon:     48
+    readonly property real orbitPeriod:   40      // seconds per revolution
+    readonly property int  orbitInner:    16      // icons in the main ring; the rest go to the outer ring
+
     // Workspace hover preview
     readonly property real previewThumbWidth: 180
 

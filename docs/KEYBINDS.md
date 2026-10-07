@@ -106,7 +106,7 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 
 | Panel | Teclas |
 |---|---|
-| Lanzador | Escribir para filtrar (búsqueda difusa) · `↑ ↓` o `Tab` para moverse · `Enter` abre · `Esc` cierra |
+| Lanzador orbital | Escribir filtra (búsqueda difusa; el mejor resultado pasa al frente y el anillo se detiene) · `← →`, `↑ ↓`, `Tab` o la rueda giran el anillo · `Enter` lanza · clic derecho en un icono = favorito · `=2*(3+4)` calcula (Enter copia) · `>comando` se ejecuta en Ghostty · `Esc` o clic fuera cierra |
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
 | Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
 | Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |

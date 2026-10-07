@@ -328,6 +328,13 @@ Decisiones y trampas:
 - El micrófono en uso es un punto naranja sobre el icono de volumen y una tarjeta «Micrófono en uso» en el popover de Sonido; la cápsula de privacidad solo sale para cámara y pantalla compartida.
 - Sin migración (todo está en el repo).
 
+## 7o. Lanzador orbital (2026-10-07)
+
+- `modules/launcher/Launcher.qml` (mismo panel `launcher`, SUPER+Espacio): planeta de cristal de 200 px con el campo de búsqueda y anillo elíptico inclinado (rx 320, ry 90, −10°) de iconos de 48 px que gira una vuelta cada 40 s. Los de atrás (sin(θ) < 0) son más pequeños (≈ 0,6), tenues y pasan **detrás** del planeta (z negativo); los de delante, ≈ 1,15 y nítidos, con su nombre debajo. Búsqueda vacía: favoritos + más usados (con relleno alfabético si hay menos de 8); más de 16 resultados → segundo anillo exterior, más grande y tenue, que gira al revés. Un delegado por app instalada: las que no coinciden se desvanecen y el resto se redistribuye (`aj` / `an` con `SpringAnimation`). Selección con `SpringAnimation` y `modulus` 2π; la rotación automática es un `FrameAnimation` que solo corre con el lanzador abierto. Una sola coincidencia: el anillo se detiene, el icono va al frente, crece (×1,55) y brilla en el acento.
+- `Apps`: favoritos, `ringEntries`, `calc` (solo dígitos y `+ - * / ( ) . % ^`, `Function` en modo estricto), `copy` (`wl-copy`), `runInTerminal` (Ghostty). Estado en `~/.local/state/dragon-island/launcher.json` (migración 007 trae el historial viejo).
+- **Trampa:** el proveedor `image://icon/` devolvía pixmaps en blanco para casi todos los iconos de aplicaciones dentro de la ventana del lanzador (sí iba en la barra); se resuelven a archivos con `scripts/icon-paths.sh` y se dibujan como `file://`. Otras: reiniciar Quickshell al editar a veces exige `touch shell.qml`; una `Behavior on opacity` dentro del repetidor no avanzaba con el elemento invisible (se quitó).
+- **Sin verificar:** `=expresión` y `>comando` (el código está, no se probaron con el teclado virtual), el segundo anillo (hay menos de 16 resultados con el historial actual) y la rueda del ratón.
+
 ## 8. Cómo depurar rápido
 
 ```sh
