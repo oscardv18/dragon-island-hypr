@@ -17,8 +17,9 @@ if hl.plugin and hl.plugin.hyprglass then
     local hg = hl.plugin.hyprglass
 
     hg.config({
-        enabled       = false,   -- windows: whitelist (Ghostty tag below)
-        default_theme = "dark",
+        enabled        = true,   -- windows: every translucent one gets the glass; the exclusions are the tags below
+        default_theme  = "dark",
+        default_preset = "dragon-liquid",   -- one look for every window (skip_opaque_windows, on by default, ignores opaque ones)
         -- live_resample re-renders the glass when what is behind it changes (a video wallpaper): cap it at
         -- a low fps instead of the default 30 (see the measurements in HANDOFF.md)
         layers        = { enabled = true, live_resample_fps = 8 },
@@ -75,21 +76,26 @@ if hl.plugin and hl.plugin.hyprglass then
     hg.layer("dragon-island", { exclude = true })
     hg.layer("dragon-scrim",  { exclude = true })
 
-    -- ---- Ghostty: the only window with glass ----
+    -- ---- windows ----
+    -- Liquid glass goes on every window that is actually translucent (Ghostty, kitty, Quickshell-less GTK/Qt
+    -- apps with transparency, ...). hyprglass skips opaque windows on its own (skip_opaque_windows), so apps
+    -- without transparency cost nothing. Neovim runs inside a terminal, so it gets its terminal's glass.
+    --
+    -- Never glass: browsers and code editors (it looks bad there), whatever the app id / casing.
     hl.window_rule({
-        name  = "glass-ghostty",
-        match = { class = "^com\\.mitchellh\\.ghostty$" },
-        tag   = "+hyprglass_enabled",
+        name  = "glass-off-browsers-and-editors",
+        match = { class = "(?i)^(brave.*|google-chrome.*|chromium.*|chrome.*|firefox.*|librewolf.*|vivaldi.*|microsoft-edge.*|code|code-oss|code-url-handler|codium|vscodium|visual-studio-code|cursor|windsurf.*|antigravity.*|zed|dev\\.zed\\.zed.*|sublime_text|sublime_merge|jetbrains-.*|idea.*|pycharm.*|webstorm.*|clion.*|goland.*|rider.*|phpstorm.*|rustrover.*|datagrip.*|android-studio.*|kate|org\\.kde\\.kate|org\\.kde\\.kwrite|kwrite|org\\.kde\\.kdevelop|gedit|org\\.gnome\\.gedit|org\\.gnome\\.texteditor|gnome-text-editor|emacs|lapce|helix|geany|mousepad|pluma|xed)$" },
+        tag   = "+hyprglass_disabled",
+    })
+    -- No glass on fullscreen windows or video players
+    hl.window_rule({
+        name  = "glass-off-fullscreen",
+        match = { fullscreen = true },
+        tag   = "+hyprglass_disabled",
     })
     hl.window_rule({
-        name  = "glass-ghostty-preset",
-        match = { class = "^com\\.mitchellh\\.ghostty$" },
-        tag   = "+hyprglass_preset_dragon-liquid",
-    })
-    -- ... and none when it is fullscreen (disabled wins over enabled)
-    hl.window_rule({
-        name  = "glass-off-ghostty-fullscreen",
-        match = { class = "^com\\.mitchellh\\.ghostty$", fullscreen = true },
+        name  = "glass-off-video-players",
+        match = { class = "^(mpv|vlc|celluloid|io\\.github\\.celluloid_player\\.Celluloid|haruna|org\\.kde\\.haruna|smplayer|totem|org\\.gnome\\.Totem)$" },
         tag   = "+hyprglass_disabled",
     })
 end

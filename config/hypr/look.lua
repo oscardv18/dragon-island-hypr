@@ -24,7 +24,7 @@ hl.config({
         rounding_power = 2.0,
 
         active_opacity   = 1.0,
-        inactive_opacity = 0.95,
+        inactive_opacity = 1.0,   -- 0.95 made every inactive window translucent: it would get the liquid glass whenever it lost focus
 
         shadow = {
             enabled      = true,
