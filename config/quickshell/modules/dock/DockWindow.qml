@@ -132,11 +132,8 @@ PanelWindow {
 
             // ---- the glass band (a semi-donut): fill, light from the top, a bright rim and an inset rim ----
             BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; fill: Theme.glassBg }
-            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; light: true }
-            // the contour in the window-border gradient, subtle (the same family as the bar islands)
-            BorderGradient { id: bandGrad; anchors.fill: parent }
-            BandShape { id: bandMask; anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; stroke: "white"; strokeWidth: 1; visible: false; layer.enabled: true; layer.smooth: true; layer.textureSize: Qt.size(width * 2, height * 2) }
-            MultiEffect { anchors.fill: parent; source: bandGrad; maskEnabled: true; maskSource: bandMask; opacity: 0.4 }
+            // the same rim as the bar islands: 1 px Theme.glassBorder
+            BandShape { anchors.fill: parent; outerR: win.outerR; innerR: win.innerR; stroke: Theme.glassBorder; strokeWidth: 1 }
 
             // ---- an app on the arc ----
             component Slot: Item {
@@ -183,8 +180,6 @@ PanelWindow {
                     radius: width / 2
                     color: mouse.containsMouse ? Theme.surfaceHi : Theme.surface2
                     Behavior on color { ColorAnimation { duration: Theme.durHover } }
-                    GlassRim { radius: parent.radius; strength: 0.5 }
-                    GradientRing { radius: parent.radius; ringWidth: mouse.containsMouse ? 1.4 : 1; strength: mouse.containsMouse ? 0.95 : 0.3 }
                 }
                 Image {
                     anchors.centerIn: parent
