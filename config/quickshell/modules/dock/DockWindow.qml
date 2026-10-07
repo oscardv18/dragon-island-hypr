@@ -70,7 +70,7 @@ PanelWindow {
         id: content
         width: win.width
         height: win.height
-        property real sink: Dock.wanted ? 0 : Theme.dockThickness + Theme.dockRadius + 6
+        property real sink: Dock.wanted ? 0 : Theme.dockThickness + 6
         Behavior on sink { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.2 } }
         x: win.pos === "left" ? -sink : (win.pos === "right" ? sink : 0)
         y: win.pos === "bottom" ? sink : 0
