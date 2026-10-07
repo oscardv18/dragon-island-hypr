@@ -420,6 +420,13 @@ Decisiones y trampas:
 - Verificado: `hyprctl layers` lista las tres en ese orden (1027×400, 200×200, pantalla) y, en capturas seguidas, los iconos que cruzan por encima del planeta quedan tapados por el disco, mientras los delanteros lo cubren.
 - Sin migración: solo archivos del repo (`update.sh` reinicia Quickshell).
 
+## 7o. Dock y lanzador con los iconos de Candy de verdad (2026-10-07)
+
+- **Causa:** `scripts/icon-paths.sh` (que da a Apps los archivos de icono del dock y del lanzador, porque el image provider devolvía pixmaps vacíos) buscaba primero en `hicolor` y `pixmaps` —los iconos propios de cada app— y solo después en «cualquier tema»: Ghostty, Dolphin y casi todo lo que traía su icono salían con el original aunque Candy lo tuviera. Solo se veía Candy en las apps sin icono hicolor (Brave), por casualidad.
+- **Corrección:** el script lee el tema de `//@ pragma IconTheme` de `shell.qml` (una sola fuente de verdad, `ICON_THEME` lo sustituye), sigue su cadena `Inherits` (Sweet-Purple → candy-icons → breeze-dark → Adwaita …) y solo después usa hicolor / pixmaps / otros temas. Verificado: Ghostty, Dolphin y Brave → `candy-icons/apps/scalable`; pavucontrol (sin icono Candy) → hicolor; carpetas → `Sweet-Purple/Places`.
+- Capturas del dock y del lanzador orbital: todos con el estilo neón de Candy.
+- Sin migración (archivo del repo; `update.sh` reinicia Quickshell).
+
 ## 8. Cómo depurar rápido
 
 ```sh
