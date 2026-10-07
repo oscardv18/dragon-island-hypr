@@ -65,10 +65,23 @@ if hl.plugin and hl.plugin.hyprglass then
         edge_thickness       = 0.06,
     })
 
+    -- The launcher's planet is a CIRCLE in a square window exactly its size, and hyprglass lights the rim from the
+    -- layer's rectangle: the bevel / specular / fresnel only show where the circle touches the square (white
+    -- patches at the top and left). So the planet gets plain liquid glass with no rim light and no edge refraction.
+    hg.preset("dragon-planet", {
+        inherits             = "dragon-liquid",
+        refraction_strength  = 0.0,
+        chromatic_aberration = 0.0,
+        specular_strength    = 0.0,
+        fresnel_strength     = 0.0,
+        bevel_strength       = 0.0,
+    })
+
     -- mask_threshold 0.1: the Quickshell fills are translucent (Theme.glassBg 18 %, panels 30 %), so the glass shows through
     hg.layer("dragon-bar",           { preset = "dragon-bar",   mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-notifications", { preset = "dragon-card",  mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-launcher", { preset = "dragon-liquid", mask_mode = "alpha", mask_threshold = 0.1 })
+    hg.layer("dragon-planet",   { preset = "dragon-planet", mask_mode = "alpha", mask_threshold = 0.1 })
     for _, ns in ipairs({ "dragon-popover", "dragon-wallpapers", "dragon-preview" }) do
         hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.1 })
     end

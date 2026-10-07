@@ -1,10 +1,11 @@
 // =============================================================================
 // dragon-island — PlanetGlass.qml
-// The orbital launcher's planet in a layer window of its own (namespace "dragon-launcher", so it gets the same liquid
-// glass): hyprglass draws the rim relief (bevel, specular, refraction) from the layer's rectangle, so a shape inside a
-// full-screen layer is flat, but a window exactly as big as the disc gets the real edge. The window never changes size
-// (the disc grows inside it). OrbitalLauncher maps it after the back ring and before the launcher window, so the back
-// icons pass behind the disc and the front ones over it.
+// The orbital launcher's planet in a layer window of its own, exactly as big as the disc (namespace "dragon-planet"; it
+// never changes size, the disc grows inside it). Its own namespace because hyprglass lights a rim from the layer's
+// RECTANGLE: on a circle that only shows as white patches where the disc touches the square, so glass.lua gives this
+// namespace plain liquid glass (blur + tint, no bevel / specular / fresnel / refraction).
+// OrbitalLauncher maps it after the back ring and before the launcher window, so the back icons pass behind the
+// disc and the front ones over it.
 // The search field stays in the launcher window (this one takes no input).
 // =============================================================================
 import Quickshell
@@ -28,7 +29,7 @@ PanelWindow {
     mask: Region {}
 
     WlrLayershell.layer: WlrLayer.Overlay
-    WlrLayershell.namespace: "dragon-launcher"
+    WlrLayershell.namespace: "dragon-planet"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     readonly property bool shown: ShellState.openPanel === "launcher" && (ShellState.panelScreen === "" || ShellState.panelScreen === screenName)

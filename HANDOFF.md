@@ -427,6 +427,12 @@ Decisiones y trampas:
 - Capturas del dock y del lanzador orbital: todos con el estilo neón de Candy.
 - Sin migración (archivo del repo; `update.sh` reinicia Quickshell).
 
+## 7p. Planeta del lanzador sin parches blancos (2026-10-07)
+
+- **Causa:** la ventana del planeta mide justo lo que el disco, y hyprglass dibuja el relieve del borde (bevel, specular, fresnel, refracción) a partir del **rectángulo** de la capa: en un círculo solo se ve donde toca el cuadrado (arriba, izquierda…), como parches blancos.
+- **Corrección:** `PlanetGlass` pasa a su propio namespace `dragon-planet` con el preset `dragon-planet` (hereda de `dragon-liquid`, con bevel / specular / fresnel / refracción / aberración a 0: solo desenfoque y tinte). Añadido a las listas de reglas nativas de respaldo y de `no_anim`.
+- Nota de operación: lanzar `qs -d` a mano de más deja procesos `qs -d` colgados que bloquean `qs ipc`; reinicia con `kill` del PID y `quickshell`.
+
 ## 8. Cómo depurar rápido
 
 ```sh
