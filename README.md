@@ -1,6 +1,6 @@
 # dragon-island
 
-Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda sesión junto a KDE Plasma** (Plasma no se toca). Tiene una barra flotante de tres islas, una **Dynamic Island** que se despliega en dashboard, popovers para cada indicador, centro de notificaciones, lanzador, portapapeles y menú de energía. Usa la paleta Sweet / Garuda Dragonized.
+Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda sesión junto a KDE Plasma** (Plasma no se toca). Tiene una barra flotante de tres islas, un **notch** pegado al borde superior que se expande (estilo NotchNook), popovers para cada indicador, centro de notificaciones, lanzador, portapapeles y menú de energía. Usa la paleta Sweet / Garuda Dragonized.
 
 > **Capturas pendientes.** Se añadirán desde EndeavourOS (ver [docs/TESTING.md](docs/TESTING.md)):
 >
@@ -18,9 +18,9 @@ Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda 
 | **Hyprland 0.56** | Configuración en **Lua** (`config/hypr/*.lua`), borde con degradado, blur, animaciones, reglas de capa para el shell |
 | **Plugins** | `hyprbars` (barra de título de 30 px, botones a la izquierda) y `hyprfocus`, instalados con `hyprpm` en el primer inicio |
 | **Barra** | Isla izquierda (lanzador, escritorios 1–5, ventana activa) e isla derecha (CPU, RAM, Wi‑Fi, Bluetooth, volumen, batería, bandeja del sistema, notificaciones, reloj). Los huecos dejan pasar el clic |
-| **Dynamic Island** | Cae desde arriba al arrancar. Muestra OSD, cambio de escritorio, música o el reloj. Al pulsarla se "derrama" el dashboard |
-| **Notificaciones** | Solo como popups (hasta 3, bajo la isla derecha) y en el centro de notificaciones |
-| **Dashboard** | Saludo, música, volumen y brillo, 6 interruptores rápidos, perfil de energía, sistema y últimas notificaciones |
+| **Notch** | Negro opaco pegado al borde superior, con orejas cóncavas; emerge del borde al arrancar y nunca se superpone a las islas de la barra. Al pasar el ratón se asoma (peek). Muestra OSD, notificación, cambio de escritorio, música o el reloj. Al pulsarlo (o SUPER+D) crece hasta ≈720×230 con las pestañas Nook y Tray |
+| **Notificaciones** | Popups (hasta 3, bajo la isla derecha), un peek del notch y el centro de notificaciones |
+| **Notch expandido** | Pestaña Nook: música, tira de calendario, toggles rápidos (Wi‑Fi, Bluetooth, No molestar, luz nocturna) y estadísticas. Pestaña Tray: la bandeja del sistema |
 | **Popovers** | Rendimiento, Wi‑Fi, Bluetooth, Sonido (con mezclador por app), Batería, Notificaciones y Calendario (eventos de **khal**) |
 | **Extras** | Lanzador con búsqueda difusa, historial del portapapeles con miniaturas, menú de energía, brillo de monitores externos por DDC/CI, movimiento reducido, fondo de pantalla propio, hyprlock, hypridle, kitty con el tema |
 
@@ -118,7 +118,7 @@ Los atajos y los controles con el ratón están en **[docs/KEYBINDS.md](docs/KEY
 |---|---|
 | `SUPER + Return` | Terminal |
 | `SUPER + Space` | Lanzador |
-| `SUPER + D` | Dashboard |
+| `SUPER + D` | Notch expandido (Nook · Tray) |
 | `SUPER + N` | Notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear |
@@ -131,7 +131,7 @@ El shell se controla también por IPC: `qs ipc call shell toggle <panel>`. Los p
 ```
 config/hypr/            hyprland.lua + módulos (monitors, env, input, look, animations, rules, binds, plugins, autostart)
 config/quickshell/
-  shell.qml             una barra y una isla por monitor
+  shell.qml             barra, notch, popovers, lanzador y notificaciones por monitor (cada uno en su capa)
   Theme.qml             todos los colores, tamaños, fuentes y duraciones (spec)
   Icons.qml             glifos Nerd Font
   ShellState.qml        panel abierto (uno a la vez) + IPC "shell"
@@ -139,7 +139,7 @@ config/quickshell/
                         SysStats, Notifs, Osd, Toggles, Apps, Clock, Session, IslandState,
                         Settings, Clipboard, Tray, Keybinds
   components/           Capsule, Slider, ToggleTile, PopoverFrame, ListRow…
-  modules/              bar · island (+ dashboard) · popovers · notifications · launcher · power · clipboard · keybinds
+  modules/              bar · island (notch) · popovers · notifications · launcher · power · clipboard · keybinds
   debug/DebugPanel.qml  diagnóstico (qs ipc call debug toggle)
 assets/wallpapers/      fondo por defecto
 installer/ install.sh packages/ docs/

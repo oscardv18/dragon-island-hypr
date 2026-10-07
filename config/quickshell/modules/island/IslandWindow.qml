@@ -1,22 +1,17 @@
 // =============================================================================
-// dragon-island — IslandWindow.qml  (pattern 4: Dynamic Island in its own overlay)
-// One full-screen transparent overlay per monitor. It hosts the island/dashboard, the
-// popovers, the launcher, the power menu and the notification popups.
-//   nothing open → mask = island shape + popups (rest of the screen is click-through)
-//   panel open   → mask = null (whole window): the scrim / click-catcher closes it,
-//                  keyboard focus is Exclusive so Escape closes it.
+// dragon-island — IslandWindow.qml
+// The notch's overlay (namespace "dragon-island"): one per monitor, anchored to the top edge, as wide
+// as the screen but only as tall as the expanded notch. exclusionMode Ignore, so it never moves windows.
+//   mask = the notch shape only → the rest of the screen lets clicks through.
+//   expanded (SUPER+D / click): HyprlandFocusGrab closes it on a click outside, Esc closes it too.
+// Popovers, the launcher and notification popups live in their own windows (own namespaces).
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Hyprland
 import QtQuick
 import "../.."
 import "../../services"
-import "../popovers"
-import "../launcher"
-import "../power"
-import "../notifications"
-import "../clipboard"
-import "../keybinds"
 
 PanelWindow {
     id: win
@@ -25,106 +20,40 @@ PanelWindow {
     screen: modelData
     readonly property string screenName: modelData?.name ?? ""
 
-    anchors { top: true; bottom: true; left: true; right: true }
+    anchors { top: true; left: true; right: true }
+    implicitHeight: Theme.notchWindowHeight
     exclusionMode: ExclusionMode.Ignore
     color: Theme.transparent
 
     WlrLayershell.layer: WlrLayer.Overlay
     WlrLayershell.namespace: "dragon-island"
-    WlrLayershell.keyboardFocus: panelHere ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
+    WlrLayershell.keyboardFocus: expanded ? WlrKeyboardFocus.OnDemand : WlrKeyboardFocus.None
 
-    // Panel shown on this monitor ("none" otherwise)
-    readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
-    readonly property bool panelHere: panel !== "none"
-    readonly property bool modal: panel === "dashboard" || panel === "launcher" || panel === "power" || panel === "clipboard" || panel === "keybinds"
-    readonly property bool isFocusedMonitor: Hypr.focusedMonitorName === "" || Hypr.focusedMonitorName === screenName
+    readonly property bool expanded: ShellState.isOpenOn("dashboard", screenName)
 
-    // hide the closed island over fullscreen windows, except while it shows the OSD
-    readonly property bool islandHidden: Hypr.fullscreenOn(screen) && !panelHere && IslandState.mode !== "osd"
+    // hide the collapsed notch over fullscreen windows, except while it shows the OSD
+    readonly property bool hidden: Hypr.fullscreenOn(screen) && !expanded && IslandState.mode !== "osd"
 
-    mask: panelHere ? null : idleMask
-    Region {
-        id: idleMask
-        item: win.islandHidden ? null : island.shapeItem
-        Region { item: popups }
+    mask: Region { item: win.hidden ? null : notch.shapeItem }
+
+    HyprlandFocusGrab {
+        windows: [win]
+        active: win.expanded
+        onCleared: if (win.expanded) ShellState.close()
     }
 
-    // Scrim: black 45 %, only for modal panels (dashboard, launcher, power)
-    Rectangle {
-        anchors.fill: parent
-        color: Theme.scrim
-        opacity: win.modal ? 1 : 0
-        visible: opacity > 0
-        Behavior on opacity { NumberAnimation { duration: Theme.durScrim; easing.type: Easing.OutCubic } }
-    }
-
-    // Click outside any panel closes it (transparent for popovers)
-    MouseArea {
-        anchors.fill: parent
-        enabled: win.panelHere
-        acceptedButtons: Qt.AllButtons
-        onClicked: ShellState.close()
-    }
-
-    // Keyboard: Escape closes whatever is open
+    // Escape closes the expanded notch
     Item {
-        id: keys
         anchors.fill: parent
         focus: true
         Keys.onEscapePressed: ShellState.close()
     }
 
-    onPanelChanged: Qt.callLater(() => {
-        if (panel === "launcher") launcher.focusSearch();
-        else if (panel === "clipboard") clipboard.focusSearch();
-        else if (panel === "keybinds") keybinds.focusSearch();
-        else if (panel === "power") power.focusMenu();
-        else if (panelHere) keys.forceActiveFocus();
-    })
-
-    NotificationPopups {
-        id: popups
-        anchors.right: parent.right
-        anchors.rightMargin: Theme.barMarginSide
-        y: Theme.barMarginTop + Theme.barHeight + Theme.popoverGap
-        active: win.isFocusedMonitor && !win.panelHere
-    }
-
-    Island {
-        id: island
+    Notch {
+        id: notch
         anchors.fill: parent
         screenName: win.screenName
-        open: win.panel === "dashboard"
-        hidden: win.islandHidden
-    }
-
-    PopoverHost {
-        anchors.fill: parent
-        panel: win.panel
-        screenName: win.screenName
-    }
-
-    Launcher {
-        id: launcher
-        anchors.fill: parent
-        shown: win.panel === "launcher"
-    }
-
-    ClipboardPanel {
-        id: clipboard
-        anchors.fill: parent
-        shown: win.panel === "clipboard"
-    }
-
-    KeybindsPanel {
-        id: keybinds
-        anchors.fill: parent
-        shown: win.panel === "keybinds"
-    }
-
-    PowerMenu {
-        id: power
-        anchors.fill: parent
-        shown: win.panel === "power"
+        open: win.expanded
+        hidden: win.hidden
     }
 }

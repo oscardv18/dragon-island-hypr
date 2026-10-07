@@ -1,14 +1,15 @@
-// Dashboard system card: CPU / RAM / Temp / Disk mini-bars
+// System stats: CPU / RAM / Temp / Disco as one row of compact bars
 import QtQuick
 import QtQuick.Layouts
 import "../.."
 import "../../services"
 import "../../components"
 
-Card {
-    spacing: Theme.spacingSm + Theme.spacingXs / 2
-
-    UiText { caption: true; text: "Sistema" }
+GridLayout {
+    columns: 4
+    columnSpacing: Theme.spacingMd
+    rowSpacing: Theme.spacingXs
+    uniformCellWidths: true
 
     StatBar {
         Layout.fillWidth: true
@@ -22,7 +23,7 @@ Card {
         Layout.fillWidth: true
         icon: Icons.memory
         label: "RAM"
-        valueText: `${SysStats.memUsedGb.toFixed(1)} / ${SysStats.memTotalGb.toFixed(0)} G`
+        valueText: `${SysStats.memUsedGb.toFixed(1)} G`
         value: SysStats.memPct / 100
         color: Theme.violetSoft
     }

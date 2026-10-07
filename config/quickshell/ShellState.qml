@@ -6,7 +6,7 @@
  * Properties:
  *   - openPanel: string [readonly] ("none" or one of `panels`)
  *   - panelScreen: string [readonly] (monitor name where the panel opens; "" = focused monitor)
- *   - panels: list<string> [readonly]
+ *   - panels: list<string> [readonly] ("dashboard" = the expanded notch)
  *   - anyOpen: bool [readonly]
  *   - anchorRight: real [readonly] (screen x of the right edge of the capsule that opened the
  *                   popover; -1 when opened by IPC → popover aligns to the bar's right edge)

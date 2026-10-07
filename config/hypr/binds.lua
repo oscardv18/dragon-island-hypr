@@ -62,7 +62,7 @@ bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   "Ratón · Arrastrar ven
 bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), "Ratón · Redimensionar ventana", { mouse = true })
 
 -- Quickshell interactive panels (via qs ipc)
-bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Dashboard")
+bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Notch (Nook / Tray)")
 bind(mainMod .. " + N",      hl.dsp.exec_cmd("qs ipc call shell toggle notifications"), "Shell · Notificaciones")
 bind(mainMod .. " + Escape", hl.dsp.exec_cmd("qs ipc call shell toggle power"),         "Shell · Menú de energía")
 bind(mainMod .. " + F1",     hl.dsp.exec_cmd("qs ipc call shell toggle keybinds"),      "Shell · Esta ayuda de atajos")

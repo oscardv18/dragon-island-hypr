@@ -10,12 +10,17 @@ Column {
     id: root
 
     property bool active: true
+    readonly property int count: rep.count
+
+    // card Rectangle of the i-th popup (for the window's blur region); `dep` = rep.count, re-evaluates the binding
+    function cardAt(i: int, dep: int): Item { return rep.itemAt(i)?.cardItem ?? null; }
 
     width: Theme.popoverWidth
     spacing: Theme.spacingSm
     visible: active
 
     Repeater {
+        id: rep
         model: ScriptModel {
             values: root.active ? Notifs.popups.slice(0, Theme.maxPopups) : []
             comparisonMode: ObjectComparison.Identity
@@ -23,6 +28,7 @@ Column {
         delegate: Item {
             id: wrap
             required property var modelData
+            readonly property Item cardItem: card
             width: root.width
             height: card.implicitHeight
             opacity: 0

@@ -1,6 +1,7 @@
 // =============================================================================
 // dragon-island — shell.qml
-// One floating bar and one Dynamic Island overlay per monitor.
+// Per monitor: the floating bar, the notch (dragon-island), popovers (dragon-popover), the modal panels
+// (dragon-launcher) and notification popups (dragon-notifications) — each in its own layer window.
 // DebugPanel is not started automatically: `qs ipc call debug toggle` loads it on demand.
 // Animation speed follows the Settings service (`qs ipc call settings motion 0` = no animations).
 // =============================================================================
@@ -11,6 +12,9 @@ import "."
 import "services"
 import "modules/bar"
 import "modules/island"
+import "modules/popovers"
+import "modules/launcher"
+import "modules/notifications"
 import "debug"
 
 ShellRoot {
@@ -31,6 +35,21 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { IslandWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { PopoverWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { LauncherWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { NotificationWindow {} }
     }
 
     LazyLoader {

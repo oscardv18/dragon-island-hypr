@@ -17,3 +17,4 @@ singleton Settings 1.0 Settings.qml
 singleton Clipboard 1.0 Clipboard.qml
 singleton Tray 1.0 Tray.qml
 singleton Keybinds 1.0 Keybinds.qml
+singleton BarMetrics 1.0 BarMetrics.qml

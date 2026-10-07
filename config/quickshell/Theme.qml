@@ -31,7 +31,7 @@ Singleton {
     readonly property color ok:         "#06c993" // battery, success
     readonly property color warn:       "#f9ae58" // warnings, temperature
     readonly property color error:      "#ed254e" // errors, power button
-    readonly property color island:     "#000000" // Dynamic Island & dashboard background
+    readonly property color island:     "#000000" // notch background (always opaque black)
     readonly property color onBrand:    "#ffffff" // text/icons on the brand gradient
     readonly property color transparent: "transparent"
 
@@ -42,12 +42,11 @@ Singleton {
     // Derived colors
     readonly property real islandSurfaceAlpha: 0.82                        // spec 72-86 %
     readonly property real popoverAlpha:       0.94
-    readonly property real scrimAlpha:         0.45
+    readonly property real scrimAlpha:         0.45                        // launcher / power menu only (not the notch)
     readonly property color barIsland:     alpha(surface0, islandSurfaceAlpha)
     readonly property color popoverBg:     alpha(surface0, popoverAlpha)
     readonly property color hairline:      Qt.rgba(1, 1, 1, 0.07)          // island border, white 7 %
     readonly property color divider:       Qt.rgba(1, 1, 1, 0.10)          // divider, white 10 %
-    readonly property color islandBorder:  alpha(accent, 0.32)             // 1 px accent 30-35 %
     readonly property color glow:          alpha(accent, 0.18)             // ~18 %
     readonly property color glowStrong:    alpha(accent, 0.55)             // active pill / unread dot
     readonly property color scrim:         Qt.rgba(0, 0, 0, scrimAlpha)
@@ -107,22 +106,30 @@ Singleton {
     readonly property real pillMinWidth: 22
     readonly property real pillDot:     4
 
-    // Dynamic Island / dashboard
-    readonly property real islandHeight:   36
-    readonly property real islandRadius:   18
-    readonly property real islandY:        10
-    readonly property real islandPadH:     14
-    readonly property real islandHiddenY:  -60
-    readonly property real islandMaxPillWidth: 420
-    readonly property real dashboardWidth: 860
-    readonly property real dashboardRadius: 34
-    readonly property real dashboardPadTop: 22
-    readonly property real dashboardPadH:   24
-    readonly property real dashboardPadBottom: 24
-    readonly property real handleWidth:  48
-    readonly property real handleHeight: 5
-    readonly property real glowBlur:     30
-    readonly property real artSmall:     24
+    // Notch island (v2): attached to the top edge, see references/design.md "Notch Island v2"
+    readonly property real notchHeight:        barMarginTop + barHeight // 50: bottom edge = bar islands' bottom edge
+    readonly property real notchEarRadius:     12     // concave "ears" where it meets the screen edge
+    readonly property real notchRadius:        18     // collapsed bottom corners
+    readonly property real notchExpandedRadius: 34    // expanded bottom corners
+    readonly property real notchBaseWidth:     120    // width at first appearance
+    readonly property real notchMinWidth:      120
+    readonly property real notchRestWidth:     190    // narrowest collapsed width
+    readonly property real notchGap:           16     // free space kept on each side towards the bar islands
+    readonly property real notchReserve:       300    // centre gap the left island leaves for the notch
+    readonly property real notchPadH:          16     // content padding inside the collapsed body
+    readonly property real notchPeekDy:        8      // hover / transient peek: grows down ...
+    readonly property real notchPeekDx:        16      // ... and wider
+    readonly property real notchExpandedWidth: 720
+    readonly property real notchExpandedHeight: 230
+    readonly property real notchWindowHeight:  notchExpandedHeight + 40 // room for spring overshoot
+    readonly property real notchPad:           18     // padding inside the expanded body
+    readonly property real notchColGap:        16
+    readonly property real notchMediaWidth:    252
+    readonly property real notchArt:           96
+    readonly property real notchArtRadius:     16
+    readonly property real notchTabHeight:     28
+    readonly property real notchTile:          40
+    readonly property real artSmall:     22
     readonly property real artSmallRadius: 7
 
     // Popovers & cards
@@ -163,15 +170,9 @@ Singleton {
     readonly property real pillActiveMinWidth: 40
     readonly property var  wsDotColors:       [accent, cyan, violetSoft, ok, warn]
 
-    // Island content
-    readonly property real islandIcon:          20
-    readonly property real islandOsdBar:        120
-    readonly property real islandMediaTitleMax: 200
-
-    // Dashboard content
-    readonly property real dashColumnGap:  14
-    readonly property real artLarge:       64
-    readonly property real artLargeRadius: 14
+    // Notch content
+    readonly property real notchOsdBar:        110
+    readonly property real notchMediaTitleMax: 180
     readonly property real tempMaxC:       100
     readonly property real tempHotC:       85
 
@@ -202,17 +203,14 @@ Singleton {
     readonly property bool animationsEnabled: motionScale > 0
     function ms(v: real): int { return Math.round(v * motionScale); }
 
-    readonly property int durDropIn:       ms(700)  // island first appearance, OutBack
-    readonly property real dropInOvershoot: 1.6
-    readonly property int durDropSquash:   ms(320)  // slight horizontal squash at the start
-    readonly property real dropSquashX:    1.12
-    readonly property real dropSquashY:    0.86
-    readonly property int durOpenWidth:    ms(420)  // pour: width OutBack
-    readonly property int durOpenHeight:   ms(480)  // pour: height OutCubic (also y and radii)
-    readonly property int durContentDelay: ms(168)  // ~35 % into the open animation
+    // Notch springs (SpringAnimation): first appearance and expand / peek
+    readonly property real notchAppearSpring:  3.5
+    readonly property real notchAppearDamping: 0.32
+    readonly property real notchSpring:        3.0
+    readonly property real notchDamping:       0.30
+    readonly property int durContentDelay: ms(220)  // content fades in at ~40 % of the expand animation
     readonly property int durContentIn:    ms(260)
-    readonly property int durClose:        ms(300)  // reverse, OutCubic
-    readonly property int durContentOut:   ms(120)  // content fades out first
+    readonly property int durContentOut:   ms(120)  // content fades out first, then the shape shrinks
     readonly property int durScrim:        ms(240)  // 220-250
     readonly property int durPopover:      ms(280)  // OutBack
     readonly property int durPopoverOut:   ms(160)

@@ -11,7 +11,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + Return` | Terminal (kitty) |
 | `SUPER + Space` | Lanzador de aplicaciones |
 | `SUPER + E` | Dolphin |
-| `SUPER + D` | Dashboard (la Dynamic Island se despliega) |
+| `SUPER + D` | Notch: abre / cierra el panel expandido (Nook · Tray). También Esc o clic fuera |
 | `SUPER + N` | Centro de notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |

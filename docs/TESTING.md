@@ -48,30 +48,33 @@ qs log -f                 # errores de Quickshell con archivo:línea
 - [ ] El reloj muestra el formato `lun 5 oct  16:23`.
 - [ ] Al pasar el ratón por una cápsula, cambia a `surfaceHi` en ~120 ms.
 
-## 4. Dynamic Island
+## 4. Notch (isla pegada al borde superior)
 
-- [ ] **Al arrancar** (o con `qs kill; qs -d`), la isla cae desde arriba con rebote y un leve "aplastamiento" horizontal.
-- [ ] **Clic en la isla o SUPER+D:** el dashboard se "derrama" desde el borde superior (pegado arriba, esquinas inferiores redondeadas). El contenido entra con un pequeño retraso.
-- [ ] Al abrirse aparece el scrim negro. Un clic fuera, **Esc**, el tirador inferior o SUPER+D lo cierran: primero se desvanece el contenido y después se recoge la forma.
-- [ ] Hacer clic en zonas vacías del dashboard **no** lo cierra.
-- [ ] Estados temporales, con su duración:
-  - [ ] Cambiar el volumen o el brillo: OSD con barra y número durante ~2 s.
-  - [ ] SUPER+2: "Escritorio 2" con puntos durante ~2 s.
-  - [ ] Con música (Spotify, mpv con MPRIS): carátula 24×24, título, "· app" y ecualizador animado. Clic central = play/pausa.
+- [ ] **Al arrancar** (o con `qs kill; qs -d`), el notch **emerge del borde superior** (alto 0 → 50, ancho 120 → su ancho colapsado) con un muelle suave. No cae desde arriba ni rebota hacia abajo.
+- [ ] **Colapsado:** negro opaco, pegado al borde (y = 0), con las **orejas cóncavas** en las dos esquinas superiores y su borde inferior alineado con el de las islas de la barra. **Nunca** toca ni tapa las islas de la barra, ni con títulos de canción largos.
+- [ ] **Hover (peek):** crece 8 px hacia abajo y 16 px a lo ancho y muestra una segunda línea (fecha, artista · álbum…). Al salir vuelve solo.
+- [ ] **Clic en el notch o SUPER+D:** crece desde el mismo ancla hasta ≈720×230, siempre pegado arriba, con radios inferiores de 34. El contenido aparece cuando la forma lleva ~40 % de la animación. No hay scrim oscuro.
+- [ ] **Cerrar:** un clic fuera, **Esc** o SUPER+D. Primero desaparece el contenido y después se encoge la forma. El resto de la pantalla deja pasar los clics (el notch solo captura donde está su forma).
+- [ ] Hacer clic en zonas vacías del notch expandido **no** lo cierra.
+- [ ] Pestañas **Nook | Tray** arriba a la izquierda; el engranaje (derecha) abre el menú de energía.
+- [ ] Estados temporales (el notch se asoma como "peek" y vuelve solo):
+  - [ ] Cambiar el volumen o el brillo: OSD con barra y número (+ nombre debajo) durante ~2 s.
+  - [ ] SUPER+2: "Escritorio 2" con puntos y "N ventanas" durante ~2 s.
+  - [ ] `notify-send "Hola" "cuerpo"`: icono + título y el cuerpo debajo durante ~4 s (además del popup).
+  - [ ] Con música (Spotify, mpv con MPRIS): carátula 22×22, título, "· app" y ecualizador animado. Clic central = play/pausa.
   - [ ] Sin nada de lo anterior: reloj con punto de estado (verde; magenta si hay no leídas; gris con No molestar; rojo parpadeante grabando).
-- [ ] La prioridad se respeta: con música sonando, subir el volumen muestra el OSD y luego vuelve a la música.
-- [ ] **Las notificaciones NO aparecen en la isla** (solo como popups, sección 8).
-- [ ] Con un vídeo en pantalla completa, la isla cerrada se oculta (excepto el OSD).
+- [ ] La prioridad se respeta: OSD > notificación > escritorio > música > reloj.
+- [ ] Con un vídeo en pantalla completa, el notch colapsado se oculta (excepto el OSD).
+- [ ] `hyprctl layers`: el notch es la capa `dragon-island` (1366×270 arriba), con `exclusionMode` Ignore: no mueve las ventanas.
 
-## 5. Dashboard
+## 5. Notch expandido (Nook | Tray)
 
-- [ ] La cabecera muestra "Buenas tardes, <tu nombre>", fecha · host · tiempo activo, y los botones bloquear / suspender / apagar (este con tinte rojo; abre el menú de energía).
-- [ ] La tarjeta de música funciona (anterior, play/pausa, siguiente, progreso). Sin reproductor muestra "Nada en reproducción".
-- [ ] Los sliders de volumen y brillo funcionan arrastrando y con la rueda. El de brillo controla **el monitor donde está abierto el dashboard**: la retroiluminación en el portátil y DDC/CI en los monitores externos (sección 9b). Si ese monitor no se puede controlar, no aparece.
-- [ ] Mosaicos: Wi‑Fi, Bluetooth, No molestar, Luz nocturna (pantalla más cálida), Captura (selección de región) y Grabar.
-  - Grabar pide la zona con slurp y muestra el contador. Al pararlo, el archivo queda en `~/Vídeos` (o `~/Videos`) y llega una notificación.
-- [ ] El control segmentado cambia el perfil de energía (`powerprofilesctl get`).
-- [ ] Las barras de CPU, RAM, temperatura y disco tienen sentido, y aparecen las 3 últimas notificaciones.
+- [ ] **Nook:** tarjeta de música (carátula de 96 px, título, artista, álbum, badge de la app, progreso, anterior / play / siguiente). Sin reproductor muestra "Nada en reproducción".
+- [ ] Tira de calendario: mes, 5 días con hoy resaltado (degradado de marca), punto cian en días con eventos y el próximo evento de hoy o "Nada para hoy".
+- [ ] Toggles: Wi‑Fi, Bluetooth, No molestar y Luz nocturna. Clic derecho en Wi‑Fi / Bluetooth / No molestar abre su popover.
+- [ ] Estadísticas: CPU, RAM, temperatura y disco con barras.
+- [ ] **Tray:** los iconos de la bandeja; clic izquierdo activa, derecho abre el menú, central = secundaria, rueda = scroll. Sin apps: "Sin aplicaciones en la bandeja".
+- [ ] Lo que ya no cabe (brillo, perfil de energía, últimas notificaciones, captura / grabación) sigue en los popovers de las cápsulas.
 
 ## 6. Popovers (cada cápsula)
 
@@ -100,7 +103,7 @@ Comprobar en todos: que aparece 8 px bajo su cápsula, alineado a su borde derec
 
 - [ ] `for i in $(seq 1 3); do notify-send "n$i" "cuerpo $i"; done`: se apilan hasta 3 popups bajo la isla derecha (solo en el monitor enfocado) y caducan a los ~4 s. Pasar el ratón por encima pausa el tiempo.
 - [ ] `notify-send -u critical "Crítica" "x"`: el popup se queda (borde rojo) hasta cerrarlo con su ✕ o con clic central.
-- [ ] La isla **no** cambia al llegar una notificación.
+- [ ] Al llegar una notificación el notch se asoma ~4 s con su título (peek) y vuelve solo.
 - [ ] `notify-send -A ok=Aceptar "Acción" "x"`: el botón "Aceptar" funciona.
 - [ ] Con No molestar no salen popups, pero las notificaciones quedan en el centro.
 - [ ] **50 notificaciones:** `for i in $(seq 1 50); do notify-send "n$i" "x"; done`. El centro hace scroll con fluidez y "Borrar todo" las elimina.
@@ -110,15 +113,15 @@ Comprobar en todos: que aparece 8 px bajo su cápsula, alineado a su borde derec
 ## 9. Casos límite
 
 - [ ] **Sin batería** (sobremesa o batería retirada): no hay cápsula de batería y el popover lo explica.
-- [ ] **Sin reproductor:** isla en modo reloj y tarjeta vacía en el dashboard.
+- [ ] **Sin reproductor:** notch en modo reloj y tarjeta vacía en el Nook.
 - [ ] **Sin Bluetooth** (`sudo systemctl stop bluetooth` o sin adaptador): la cápsula se oculta, el mosaico queda desactivado y el popover lo explica.
 - [ ] **Wi‑Fi apagado:** icono tachado, mosaico apagado y popover sin lista. Con el interruptor de hardware se muestra el aviso.
 - [ ] **Solo Ethernet:** icono de cable; el popover muestra "Ethernet" con IP y velocidad.
 - [ ] **Varios monitores:**
-  - [ ] Barra e isla en cada monitor.
-  - [ ] SUPER+D abre el dashboard en el monitor enfocado.
+  - [ ] Barra y notch en cada monitor.
+  - [ ] SUPER+D abre el notch en el monitor enfocado.
   - [ ] Un popover se abre en el monitor de la cápsula pulsada.
-  - [ ] Conectar o desconectar un monitor en caliente recrea la barra y la isla.
+  - [ ] Conectar o desconectar un monitor en caliente recrea la barra y el notch.
 - [ ] **Escalado fraccional** (`scale = 1.25`): textos nítidos y nada recortado.
 
 ## 8b. Panel de atajos (SUPER + F1)
@@ -144,7 +147,7 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 ## 9b. Brillo de monitores externos (DDC/CI)
 
 - [ ] Tras instalar y **reiniciar** (para cargar `i2c-dev`), `ddcutil detect` lista tus monitores con `DRM connector`.
-- [ ] El slider de brillo del dashboard, abierto en el monitor externo, cambia su brillo (tarda ~0,3 s).
+- [ ] El slider de brillo del popover de batería, abierto en el monitor externo, cambia su brillo (tarda ~0,3 s).
 - [ ] En un portátil con un monitor externo, cada monitor controla el suyo: retroiluminación en `eDP-1` y DDC en el externo.
 - [ ] Si el monitor no soporta DDC/CI (o está desactivado en su menú OSD), el slider no aparece en ese monitor.
 
@@ -176,7 +179,7 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 ## 10. Rendimiento
 
 - [ ] Con todo cerrado, `top` muestra quickshell con un uso de CPU bajo (sondeos cada 2 s y lectura de brillo cada 300 ms).
-- [ ] Las animaciones de la isla van fluidas (sin tirones) a 60/120 Hz.
+- [ ] Las animaciones del notch van fluidas (sin tirones) a 60/120 Hz.
 
 ## Si algo falla
 
