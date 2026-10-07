@@ -14,15 +14,18 @@ Item {
     readonly property real popTop: Theme.barMarginTop + Theme.barHeight + Theme.popoverGap
     readonly property real rightEdge: ShellState.anchorRight >= 0 ? ShellState.anchorRight : width - Theme.barMarginSide
 
+    // frame (visible card) of each popover, for the window's blur region; null while hidden
+    readonly property var frames: [perf, wifi, bt, audio, battery, notifs, calendar].map(p => p.visible ? p.frameItem : null)
+
     function xFor(w: real): real {
         return Math.max(Theme.barMarginSide, Math.min(width - w - Theme.barMarginSide, rightEdge - w));
     }
 
-    PerfPopover          { shown: host.panel === "perf";          x: host.xFor(width); y: host.popTop }
-    WifiPopover          { shown: host.panel === "wifi";          x: host.xFor(width); y: host.popTop }
-    BluetoothPopover     { shown: host.panel === "bt";            x: host.xFor(width); y: host.popTop }
-    AudioPopover         { shown: host.panel === "audio";         x: host.xFor(width); y: host.popTop }
-    BatteryPopover       { shown: host.panel === "battery";       x: host.xFor(width); y: host.popTop; screenName: host.screenName }
-    NotificationCenter   { shown: host.panel === "notifications"; x: host.xFor(width); y: host.popTop }
-    CalendarPopover      { shown: host.panel === "calendar";      x: host.xFor(width); y: host.popTop }
+    PerfPopover          { id: perf; shown: host.panel === "perf";          x: host.xFor(width); y: host.popTop }
+    WifiPopover          { id: wifi; shown: host.panel === "wifi";          x: host.xFor(width); y: host.popTop }
+    BluetoothPopover     { id: bt; shown: host.panel === "bt";            x: host.xFor(width); y: host.popTop }
+    AudioPopover         { id: audio; shown: host.panel === "audio";         x: host.xFor(width); y: host.popTop }
+    BatteryPopover       { id: battery; shown: host.panel === "battery";       x: host.xFor(width); y: host.popTop; screenName: host.screenName }
+    NotificationCenter   { id: notifs; shown: host.panel === "notifications"; x: host.xFor(width); y: host.popTop }
+    CalendarPopover      { id: calendar; shown: host.panel === "calendar";      x: host.xFor(width); y: host.popTop }
 }

@@ -31,6 +31,17 @@ PanelWindow {
     mask: open ? null : idleMask
     Region { id: idleMask }
 
+    // Blur (native and hyprglass) only behind the visible popover card
+    BackgroundEffect.blurRegion: Region {
+        Region { item: host.frames[0]; radius: Theme.popoverRadius }
+        Region { item: host.frames[1]; radius: Theme.popoverRadius }
+        Region { item: host.frames[2]; radius: Theme.popoverRadius }
+        Region { item: host.frames[3]; radius: Theme.popoverRadius }
+        Region { item: host.frames[4]; radius: Theme.popoverRadius }
+        Region { item: host.frames[5]; radius: Theme.popoverRadius }
+        Region { item: host.frames[6]; radius: Theme.popoverRadius }
+    }
+
     MouseArea {
         anchors.fill: parent
         enabled: win.open
@@ -48,6 +59,7 @@ PanelWindow {
     onOpenChanged: if (open) Qt.callLater(() => keys.forceActiveFocus())
 
     PopoverHost {
+        id: host
         anchors.fill: parent
         panel: win.panel
         screenName: win.screenName

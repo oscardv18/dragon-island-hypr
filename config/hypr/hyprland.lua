@@ -12,4 +12,5 @@ require("animations")
 require("rules")
 require("binds")
 require("plugins")
+require("glass")   -- hyprglass (optional): a no-op when the plugin is not loaded
 require("autostart")

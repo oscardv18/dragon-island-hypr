@@ -15,6 +15,10 @@ exec > >(tee -a "$LOG") 2>&1
 
 [[ -f "$MARKER" ]] && exit 0
 
+# hyprpm is not re-entrant: wait for glass.sh (hyprglass) if it is running
+exec 9>"$STATE_DIR/hyprpm.lock"
+flock 9
+
 if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
     echo "No se detectó una sesión de Hyprland. Se pospone la configuración de plugins."
     exit 0

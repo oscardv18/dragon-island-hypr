@@ -1,6 +1,6 @@
 # dragon-island — HANDOFF
 
-> **Fecha:** 2026-10-05 · **Rama:** `main` · **Estado:** interfaz completa según la spec; llavero único (gnome-keyring) y bandeja listos, **pendiente de prueba en una sesión Hyprland**.
+> **Fecha:** 2026-10-06 · **Rama:** `main` · **Estado:** interfaz completa según la spec; llavero único (gnome-keyring) y bandeja listos, **pendiente de prueba en una sesión Hyprland**.
 > Todo se escribió y validó en Windows (sin Hyprland ni Quickshell). Lo que exige hardware real está en [docs/TESTING.md](docs/TESTING.md).
 
 ## 1. Resumen
@@ -19,25 +19,22 @@ Fuente de verdad: la skill `.agents/skills/dragon-island` (versiones, arquitectu
 ## 2. Arquitectura del shell
 
 ```
-shell.qml ── Variants(screens) → modules/bar/Bar.qml            (PanelWindow, capa Top, "dragon-bar")
-          └─ Variants(screens) → modules/island/IslandWindow.qml (PanelWindow, capa Overlay, "dragon-island")
-                                   ├─ Island.qml  (forma + PillContent + Dashboard)
-                                   ├─ popovers/PopoverHost.qml  (7 popovers)
-                                   ├─ launcher/Launcher.qml · power/PowerMenu.qml
-                                   └─ notifications/NotificationPopups.qml
+shell.qml ── Variants(screens) → modules/bar/Bar.qml                       (capa Top,     "dragon-bar")
+          ├─ Variants(screens) → modules/island/IslandWindow.qml           (capa Overlay, "dragon-island")  → Notch.qml
+          ├─ Variants(screens) → modules/popovers/PopoverWindow.qml        (capa Overlay, "dragon-popover") → PopoverHost (7 popovers)
+          ├─ Variants(screens) → modules/launcher/LauncherWindow.qml       (capa Overlay, "dragon-launcher") → launcher · power · portapapeles · atajos
+          └─ Variants(screens) → modules/notifications/NotificationWindow.qml (capa Overlay, "dragon-notifications")
 Theme.qml · Icons.qml · ShellState.qml (raíz)      services/*.qml (datos)      components/*.qml (piezas)
 ```
 
-- **Un overlay por monitor (patrón 4).**
-  - Cerrado: la máscara es la forma de la isla más los popups, y el resto deja pasar el clic.
-  - Con un panel abierto: máscara `null`, un atrapa‑clics (con scrim si es modal) cierra el panel y el foco de teclado es `Exclusive` para que Esc funcione.
-- **Popovers:** se dibujan dentro de ese overlay (patrón 5, opción A), bajo la cápsula que los abrió. `Bar.openFrom()` → `ShellState.toggleAt(name, monitor, anchorRight)`.
-- **Un solo panel abierto:** `ShellState.openPanel` + `panelScreen`. El IPC (`qs ipc call shell …`) abre en el monitor enfocado.
-- **Isla cerrada:** el estado lo calcula `services/IslandState.qml` (prioridad OSD > escritorio > música > reloj). Las notificaciones **no** pasan por la isla: solo popups (decisión del usuario, ver §6).
-- **Coreografía de la isla** (`Island.qml`):
-  - Usa `expanded`, `contentShown` y `opening`.
-  - `opening` se fija antes de cambiar la geometría, para que los Behaviors usen la curva correcta: OutBack 420 / OutCubic 480 al abrir y OutCubic 300 al cerrar.
-  - La caída inicial anima `dropOffset` con los Behaviors desactivados.
+- **Cada componente en su capa (namespace propio)**, para poder dar reglas de blur / hyprglass distintas. Salvo el notch, todos llevan `BackgroundEffect.blurRegion` sobre sus tarjetas.
+- **Notch (`modules/island/`):**
+  - `IslandWindow` mide el ancho de la pantalla y `Theme.notchWindowHeight` (270). `exclusionMode: Ignore`, máscara = solo la forma, `HyprlandFocusGrab` + Esc cierran.
+  - `Notch.qml` hace la coreografía (`expanded`, `contentShown`, `appeared`) y anima ancho, alto y x con `SpringAnimation`. `NotchShape.qml` dibuja la silueta con `ShapePath` + `PathArc` (orejas cóncavas r = 12, esquinas inferiores 18 / 34).
+  - `NotchContent.qml` = estado colapsado + línea del peek; `NotchExpanded.qml` = pestañas Nook | Tray + engranaje, con `NookTab` (`MediaNook`, `CalendarStrip`, `NotchToggles`, `NotchStats`) y `TrayTab`.
+  - `services/BarMetrics.qml`: cada `Bar` informa de dónde acaban sus islas; el notch colapsado vive en el hueco libre − 16 px por lado, centrado en la pantalla salvo que una isla lo obligue a desplazarse.
+- **Un solo panel abierto:** `ShellState.openPanel` + `panelScreen` (el panel `dashboard` es el notch expandido). El IPC (`qs ipc call shell …`) abre en el monitor enfocado.
+- **Estados temporales:** `services/IslandState.qml` (OSD > notificación > escritorio > música > reloj). Los transitorios hacen que el notch se "asome" (peek) y vuelva solo.
 - **Degradado de marca:** `components/BrandFill.qml` usa `QtQuick.Shapes` (`PathRectangle` + `LinearGradient` a 135°). Se descartó Qt5Compat `LinearGradient` porque no pintaba en la verificación offscreen y añadía una dependencia.
 
 ## 3. Lo que se hizo, por fase
@@ -192,12 +189,12 @@ Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pint
 - `SUPER + L` = bloquear; Vim = `SUPER + ALT + HJKL` (conflicto dentro de la propia spec).
 - Tema Qt: plataforma `kde` en Hyprland, porque Plasma ya está instalado.
 - `IslandState` vive en `services/` para evitar un ciclo de imports entre la raíz y `services`.
-- Notificaciones: **solo popups** y centro (decisión del usuario). La isla no las muestra.
+- Notificaciones: popups + centro, y desde la v2 del notch también un peek de ~4 s con el título (pedido en "Notch Island v2").
 - Calendario: **khal** como fuente de eventos; la sincronización (vdirsyncer) la configura el usuario.
 - Grabación: `wf-recorder` sobre una zona o salida elegida con `slurp -o`, guardada en la carpeta XDG de vídeos.
 - Historial del portapapeles: panel propio en Quickshell (rofi ya no se instala).
 - Movimiento reducido: el usuario manda (`settings.json`); si no, se sigue a Plasma.
-- Blur: solo por reglas de capa (no `BackgroundEffect`), siguiendo la skill.
+- Blur: reglas de capa nativas (`ignore_alpha` 0.3) **y** `BackgroundEffect.blurRegion` en cada ventana, para que el blur / cristal solo aparezca tras las islas y tarjetas (con hyprglass `mask_mode = "region"` lo exige).
 - Llavero: **un único Secret Service, gnome-keyring**, abierto por PAM en las dos sesiones (Proton VPN y `plasma-nm` dependen de él). KWallet queda solo para Plasma, sin Secret Service. El repo no edita `/etc` ni PAM.
 
 ## 7. Siguientes pasos
@@ -218,6 +215,22 @@ Gracias al render se detectó y corrigió que Qt5Compat `LinearGradient` no pint
 - Los avisos de `IconPixmap` (Proton) y `printer.svg` (Humanity) son inofensivos.
 - Verificado: `hyprctl configerrors` vacío, hyprbars y hyprfocus cargados, `qs log` sin errores desde la recarga, isla visible y dashboard abierto/cerrado por IPC (lo que ejecuta SUPER+D).
 - Sin probar: el clic físico sobre la isla (usa el mismo `ShellState.toggle`).
+
+## 7c. Notch v2, blur nativo y hyprglass (2026-10-06)
+
+Tres commits, uno por parte:
+
+1. **Notch (`feat(island)`).** Sustituye a la píldora flotante y al dashboard. Emerge del borde (alto 0 → 50, ancho 120 → colapsado, `SpringAnimation`), peek al pasar el ratón (+8 px alto, +16 px ancho), expandido ≈720×230 con pestañas Nook | Tray. Popovers, lanzador / menús modales y popups de notificaciones salen del overlay de la isla a sus propias ventanas.
+2. **Blur nativo (`feat(blur)`).** `decoration.blur` comentado valor a valor, reglas de capa por namespace, `Theme.glassBg` + borde 8 %, kitty 0.85, reglas de opacidad por app (comentadas) y ventanas opacas en pantalla completa / vídeo.
+3. **hyprglass (`feat(glass)`).** Componente opcional del instalador (`installer/glass.sh`), `config/hypr/glass.lua` guardado con `hl.plugin.hyprglass` y `BackgroundEffect.blurRegion` en barra, popovers, notificaciones y lanzador.
+
+Decisiones y trampas:
+- `HyprlandFocusGrab` se limpiaba al instante si la ventana pedía foco de teclado `Exclusive`: el notch usa `OnDemand`. Con eso Esc y el clic fuera funcionan (probados con un teclado / ratón virtual por uinput).
+- `transient` es palabra reservada de QML (`IslandState.isTransient`).
+- Los `Layout.fillWidth` de un `ColumnLayout` anidado valen `true` por defecto: hay que ponerlo a `false` para que respete `preferredWidth`.
+- El engranaje del notch abre el menú de energía: es donde fueron a parar bloquear / suspender / apagar de la cabecera del dashboard antiguo. El slider de brillo vive ahora en el popover de batería.
+- Con el hueco libre de 1366 px (isla derecha ancha) el notch colapsado se desplaza unos píxeles del centro si hace falta y su ancho máximo ronda los 250 px; en monitores pequeños queda estrecho (mínimo 120) pero nunca se superpone.
+- Probado con un monitor headless (`hyprctl output create headless`) además del portátil.
 
 ## 8. Cómo depurar rápido
 

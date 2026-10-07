@@ -15,6 +15,10 @@ BACKUP_DIR="$STATE_DIR/backups/$TS"
 MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
 
 ALL_COMPONENTS=(core shell plugins tools fonts services)
+# Optional components: unchecked by default (--glass checks them), shown with a friendly label
+OPTIONAL_COMPONENTS=(glass)
+declare -A COMPONENT_LABEL=([glass]="Efecto cristal (hyprglass)")
+WANT_GLASS=false
 
 DRY_RUN=false
 ASSUME_YES=false
@@ -37,6 +41,7 @@ Instalador modular con interfaz TUI para dragon-island en Arch Linux / Endeavour
 OPCIONES:
   --dry-run       Muestra las acciones sin ejecutarlas (no pide sudo ni instala nada)
   --yes, -y       Modo desatendido: usa valores por defecto sin preguntas
+  --glass         Incluye el componente opcional «Efecto cristal (hyprglass)»
   --uninstall     Desinstala dragon-island y restaura copias de seguridad
   -h, --help      Muestra esta ayuda
 EOF
@@ -46,6 +51,7 @@ for arg in "$@"; do
     case "$arg" in
         --dry-run)   DRY_RUN=true ;;
         --yes|-y)    ASSUME_YES=true ;;
+        --glass)     WANT_GLASS=true ;;
         --uninstall) MODE="uninstall" ;;
         -h|--help)   usage; exit 0 ;;
         *)           echo "Opción desconocida: $arg" >&2; exit 2 ;;
@@ -195,7 +201,7 @@ fi
 # Welcome and choices
 # =============================================================================
 box "#c50ed2" "dragon-island — Instalador" \
-    "Hyprland 0.56 (Lua) + Quickshell 0.3.1 (barra + Dynamic Island)" \
+    "Hyprland 0.56 (Lua) + Quickshell 0.3.1 (barra + notch)" \
     "EndeavourOS / Arch Linux, junto a KDE Plasma"
 
 # One full upgrade first (never partial upgrades); default yes in --yes mode
@@ -212,11 +218,24 @@ if ! $ASSUME_YES; then
 fi
 
 SELECTED_COMPONENTS=("${ALL_COMPONENTS[@]}")
+$WANT_GLASS && SELECTED_COMPONENTS+=("${OPTIONAL_COMPONENTS[@]}")
 if ! $ASSUME_YES; then
-    mapfile -t SELECTED_COMPONENTS < <(gum choose --no-limit \
+    # gum shows labels; map them back to component keys afterwards
+    labels=() preselected=() picked=()
+    for c in "${ALL_COMPONENTS[@]}" "${OPTIONAL_COMPONENTS[@]}"; do
+        labels+=("${COMPONENT_LABEL[$c]:-$c}")
+    done
+    for c in "${SELECTED_COMPONENTS[@]}"; do preselected+=("${COMPONENT_LABEL[$c]:-$c}"); done
+    mapfile -t picked < <(gum choose --no-limit \
         --header "Componentes (Espacio marca/desmarca, Enter confirma):" \
-        --selected "$(IFS=,; echo "${ALL_COMPONENTS[*]}")" \
-        "${ALL_COMPONENTS[@]}")
+        --selected "$(IFS=,; echo "${preselected[*]}")" \
+        "${labels[@]}")
+    SELECTED_COMPONENTS=()
+    for p in "${picked[@]}"; do
+        key="$p"
+        for c in "${OPTIONAL_COMPONENTS[@]}"; do [[ "${COMPONENT_LABEL[$c]}" == "$p" ]] && key="$c"; done
+        SELECTED_COMPONENTS+=("$key")
+    done
 fi
 if [[ ${#SELECTED_COMPONENTS[@]} -eq 0 ]]; then
     log_warn "No se seleccionó ningún componente. Saliendo."
@@ -341,6 +360,19 @@ if has_component plugins; then
     deploy_item "$REPO_DIR/installer/firstrun.sh" "$STATE_DIR/firstrun.sh"
 fi
 
+# Optional: hyprglass (acrylic / liquid glass). hyprpm needs a running Hyprland, so inside Hyprland it
+# runs now in the foreground; otherwise autostart.lua runs it at the next login (glass.pending).
+if has_component glass; then
+    run chmod +x "$REPO_DIR/installer/glass.sh"
+    deploy_item "$REPO_DIR/installer/glass.sh" "$STATE_DIR/glass.sh"
+    if ! $DRY_RUN; then touch "$STATE_DIR/glass.pending"; fi
+    if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && ! $DRY_RUN && confirm "Estás dentro de Hyprland: ¿instalar hyprglass ahora (en primer plano)?"; then
+        "$STATE_DIR/glass.sh" || log_warn "hyprglass no se instaló: se reintentará en el próximo inicio de sesión en Hyprland."
+    else
+        log_info "hyprglass se instalará en tu próximo inicio de sesión en Hyprland (terminal visible)."
+    fi
+fi
+
 # =============================================================================
 # Services (system units; skipped when already enabled)
 # =============================================================================
@@ -362,7 +394,7 @@ if has_component shell && ! $DRY_RUN; then
     if command -v qs >/dev/null 2>&1; then
         log_info "Quickshell: $(qs --version 2>/dev/null | head -n1)"
     else
-        log_warn "No se encontró 'qs' (quickshell). La barra y la isla no se mostrarán."
+        log_warn "No se encontró 'qs' (quickshell). La barra y el notch no se mostrarán."
     fi
 
     # Only one notification daemon per session: ours (Quickshell). Others may be D-Bus activated.
@@ -399,10 +431,11 @@ box "#06c993" "dragon-island instalado" \
     "  • Registro: $LOG" \
     "" \
     "Para empezar: cierra sesión → en la pantalla de inicio (SDDM o Plasma Login) elige «Hyprland»." \
-    "En el primer arranque se abre una terminal que compila hyprbars/hyprfocus." \
+    "En el primer arranque se abre una terminal que compila hyprbars/hyprfocus" \
+    "(y hyprglass, si marcaste «Efecto cristal»)." \
     "" \
     "  SUPER + Return  terminal      SUPER + Space   lanzador" \
-    "  SUPER + D       dashboard     SUPER + N       notificaciones" \
+    "  SUPER + D       notch         SUPER + N       notificaciones" \
     "  SUPER + Escape  energía       SUPER + L       bloquear" \
     "" \
     "Llavero: gnome-keyring, el mismo en Plasma y Hyprland; PAM lo abre al entrar." \

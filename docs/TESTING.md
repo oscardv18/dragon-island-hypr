@@ -186,3 +186,15 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - QML: `qs log` muestra el `archivo:línea`. `qs ipc call debug toggle` abre el panel con el valor en vivo de todos los servicios.
 - Hyprland: `hyprctl configerrors` y `$XDG_RUNTIME_DIR/hypr/*/hyprland.log`.
 - Plugins: `hyprpm list`, `hyprctl plugin list` y `~/.local/state/dragon-island/firstrun.log`.
+
+## 12. Cristal y blur
+
+- [ ] `hyprctl configerrors` vacío; `hyprctl getoption decoration:blur:size` = 8.
+- [ ] Sin hyprglass: las islas de la barra se ven acrílicas (60 %, borde blanco 8 %) y el fondo se desenfoca **solo detrás de las islas**, no en los huecos. Lo mismo con un popover, una notificación (`notify-send`) y el lanzador (solo tras la tarjeta, no tras el scrim).
+- [ ] El notch sigue negro opaco, sin blur.
+- [ ] kitty se ve al 85 % de opacidad; en pantalla completa (SUPER+SHIFT+F) y con mpv / vlc las ventanas quedan opacas.
+- [ ] Con hyprglass (`./install.sh --glass`): `hyprctl plugin list` muestra hyprglass **0.9.1**; `hyprctl getoption plugin:hyprglass:layers:enabled` → `set: true`; `hyprctl hyprglass status` → `layers: on`.
+- [ ] La barra, los popovers, las notificaciones y el lanzador tienen cristal con tinta magenta suave y el texto se lee; el notch (`dragon-island`) sigue negro.
+- [ ] En pantalla completa y con vídeo no hay cristal (`+hyprglass_disabled`).
+- [ ] `hyprctl hyprglass stats` y el uso de GPU (`intel_gpu_top`, `nvtop` o `radeontop`) son razonables en reposo; si no, `live_resample = false` en `hg.layer("dragon-bar", …)`.
+- [ ] `hyprpm disable hyprglass` + `hyprctl reload`: todo sigue viéndose bien solo con el blur nativo.

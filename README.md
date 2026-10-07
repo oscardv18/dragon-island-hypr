@@ -105,6 +105,7 @@ Detalles:
 
 ```sh
 ./install.sh --yes        # sin preguntas (valores por defecto)
+./install.sh --glass      # incluye el componente opcional «Efecto cristal (hyprglass)»
 ./install.sh --uninstall  # quita los enlaces y restaura los respaldos (no desinstala paquetes)
 ```
 
@@ -125,6 +126,20 @@ Los atajos y los controles con el ratón están en **[docs/KEYBINDS.md](docs/KEY
 | `SUPER + F1` | **Ayuda: todos los atajos** (panel en pantalla) |
 
 El shell se controla también por IPC: `qs ipc call shell toggle <panel>`. Los paneles disponibles son `dashboard`, `perf`, `wifi`, `bt`, `audio`, `battery`, `notifications`, `calendar`, `launcher` y `power`.
+
+## Cristal y blur
+
+Dos capas, y la segunda es opcional:
+
+1. **Blur nativo de Hyprland (base, sin plugins).** `decoration.blur` en `config/hypr/look.lua` (size 8, passes 3, vibrancy 0.17, noise 0.02, contrast 0.9, brightness 0.85, popups) y reglas de capa con `blur = true` e `ignore_alpha = 0.3` para `dragon-bar`, `dragon-popover`, `dragon-notifications` y `dragon-launcher` (`config/hypr/rules.lua`). El notch (`dragon-island`) queda negro opaco, sin blur.
+   - Las islas de la barra son acrílicas: `Theme.glassBg` (= `surface0` al 60 %, ajusta `Theme.glassAlpha` entre 0.55 y 0.65) y un borde de 1 px blanco al 8 %. Popovers y tarjetas de notificación van al 82 %.
+   - Cada ventana de Quickshell declara `BackgroundEffect.blurRegion` solo sobre sus islas / tarjetas, así el blur no se aplica a la parte transparente.
+   - kitty usa `background_opacity 0.85`. Para opacidad por app hay reglas comentadas al final de `rules.lua`; las ventanas en pantalla completa y los reproductores de vídeo siempre quedan opacos.
+2. **hyprglass (acrílico / liquid glass real, opcional).** Marca la casilla **«Efecto cristal (hyprglass)»** del instalador (o `./install.sh --glass`): ejecuta `hyprpm add https://github.com/hyprnux/hyprglass` y `hyprpm enable hyprglass` en una terminal visible. hyprpm instala la v0.9.1, la fijada para Hyprland 0.56.2.
+   - La configuración vive en `config/hypr/glass.lua`, dentro de `if hl.plugin.hyprglass then … end`: tinta magenta suave, preset propio `dragon-bar` (más blur: `blur_strength` 2.8, 4 iteraciones, refracción y aberración moderadas) y `mask_mode = "region"` para barra, popovers, notificaciones y lanzador. El notch está excluido y las pantallas completas y los reproductores llevan `+hyprglass_disabled`.
+   - **Respaldo:** sin el plugin, o si una actualización de Hyprland lo rompe, todo se ve bien solo con el blur nativo. El gancho de capas de hyprglass usa una función privada de Hyprland, así que puede fallar tras actualizar.
+   - Comprobación: `hyprctl plugin list` · `hyprctl getoption plugin:hyprglass:layers:enabled` · `hyprctl hyprglass status` · `hyprctl hyprglass stats`. Si consume demasiada GPU, pon `live_resample = false` en `hg.layer("dragon-bar", …)`.
+   - Quitarlo: `hyprpm disable hyprglass`.
 
 ## Estructura
 

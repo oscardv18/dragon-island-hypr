@@ -28,4 +28,8 @@ hl.on("hyprland.start", function()
     local state = "${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island"
     hl.exec_cmd("test -f " .. state .. "/firstrun.done || { test -x " .. state .. "/firstrun.sh && "
         .. "kitty --class dragon-island-setup --title 'dragon-island: primer arranque' " .. state .. "/firstrun.sh; }")
+
+    -- Optional "Efecto cristal" component: install hyprglass in a visible terminal while glass.pending exists
+    hl.exec_cmd("test -f " .. state .. "/glass.pending && test -x " .. state .. "/glass.sh && "
+        .. "kitty --class dragon-island-setup --title 'dragon-island: efecto cristal' " .. state .. "/glass.sh")
 end)

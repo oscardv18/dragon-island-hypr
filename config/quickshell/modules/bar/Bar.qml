@@ -36,6 +36,12 @@ PanelWindow {
         Region { item: rightIsland }
     }
 
+    // Blur (native and hyprglass) only behind the islands, not behind the whole transparent window
+    BackgroundEffect.blurRegion: Region {
+        Region { item: leftIsland; radius: Theme.barIslandRadius }
+        Region { item: rightIsland; radius: Theme.barIslandRadius }
+    }
+
     // x (screen-local) of an item's right edge: popovers align their right edge to it
     function anchorRightOf(item): real {
         return item.mapToItem(null, item.width, 0).x + Theme.barMarginSide;

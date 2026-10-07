@@ -33,6 +33,14 @@ PanelWindow {
     mask: open ? null : idleMask
     Region { id: idleMask }
 
+    // Blur (native and hyprglass) only behind the visible card, not behind the whole scrim
+    BackgroundEffect.blurRegion: Region {
+        Region { item: launcher.frameItem; radius: Theme.popoverRadius }
+        Region { item: clipboard.frameItem; radius: Theme.popoverRadius }
+        Region { item: keybinds.frameItem; radius: Theme.popoverRadius }
+        Region { item: power.frameItem; radius: Theme.popoverRadius }
+    }
+
     Rectangle {
         anchors.fill: parent
         color: Theme.scrim

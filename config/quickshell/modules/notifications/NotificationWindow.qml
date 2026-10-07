@@ -33,6 +33,13 @@ PanelWindow {
 
     mask: Region { item: popups }
 
+    // Blur (native and hyprglass) only behind each card (up to Theme.maxPopups = 3)
+    BackgroundEffect.blurRegion: Region {
+        Region { item: popups.cardAt(0, popups.count); radius: Theme.rowRadius + Theme.spacingXs }
+        Region { item: popups.cardAt(1, popups.count); radius: Theme.rowRadius + Theme.spacingXs }
+        Region { item: popups.cardAt(2, popups.count); radius: Theme.rowRadius + Theme.spacingXs }
+    }
+
     NotificationPopups {
         id: popups
         active: win.isFocusedMonitor && !win.panelHere
