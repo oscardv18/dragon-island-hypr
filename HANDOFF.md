@@ -412,6 +412,14 @@ Decisiones y trampas:
 - `update.sh`: un `git pull` fallido (sin red / sin clave SSH: el remoto ahora es `git@github.com`) y un paquete que no se puede instalar sin terminal son avisos, no abortan; el paquete queda anotado en el resumen.
 - Migración `008-icon-theme.sh`: paquetes AUR, `settings.ini`, gsettings y aviso de reiniciar las apps Qt abiertas.
 
+## 7n. Lanzador orbital: los iconos de atrás pasan DETRÁS del planeta (2026-10-07)
+
+- **Causa:** el disco de cristal es `PlanetGlass`, una ventana propia; los iconos eran hijos de `LauncherWindow`, que se mapea después, así que **todos** (también los de `depth < 0`, cuyo `z` negativo solo cuenta dentro de su propia ventana) se dibujaban por encima del disco.
+- **Corrección:** el anillo se reparte en dos ventanas y el orden de mapeo (las ventanas de una misma capa se apilan en ese orden) pasa a ser: `OrbitBack` (iconos con `depth < -0.15`, ventana de 1027×400 centrada, sin entrada) → `PlanetGlass` → `LauncherWindow` (iconos delanteros + buscador). `OrbitIcon.qml` es el delegado común (`half: "back" | "front"`, misma matemática desde el estado del `Launcher`); un icono solo se ve en una de las dos. Los de atrás se ven desenfocados a través del cristal del planeta.
+- **Orquestación:** `OrbitalLauncher.qml` (un `Scope` por monitor) mapea las tres ventanas por etapas con 45 ms de diferencia y las desmapea 900 ms tras cerrar; cerrado, ninguna está mapeada (también ahorra GPU: `PlanetGlass` antes estaba siempre mapeada). La ventana del lanzador espera a la etapa 3 solo para el panel `launcher`; el menú de energía, el portapapeles y los atajos abren como antes.
+- Verificado: `hyprctl layers` lista las tres en ese orden (1027×400, 200×200, pantalla) y, en capturas seguidas, los iconos que cruzan por encima del planeta quedan tapados por el disco, mientras los delanteros lo cubren.
+- Sin migración: solo archivos del repo (`update.sh` reinicia Quickshell).
+
 ## 8. Cómo depurar rápido
 
 ```sh

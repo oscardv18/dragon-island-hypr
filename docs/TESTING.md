@@ -218,6 +218,11 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - [ ] Batería: respira al cargar y late rojo por debajo del 15 % sin cargar. Rueda sobre la batería = brillo.
 - [ ] Cafeína activa: la pantalla no se apaga ni se bloquea por inactividad (`hypridle`).
 
+## 12d. Lanzador orbital
+
+- [ ] SUPER+Space: los iconos del lado de atrás del anillo (más pequeños y tenues) pasan **detrás** del disco de cristal (se ven tapados / difuminados por él) y los de delante lo cubren. El nombre del icono delantero sale bajo él; el clic y la rueda funcionan.
+- [ ] Cerrado, `hyprctl layers | grep dragon-launcher` no lista nada.
+
 ## 12c. Iconos (Candy + Sweet Folders)
 
 - [ ] `hyprctl dispatch 'hl.dsp.exec_cmd("dolphin")'` y `tr '\0' '\n' < /proc/$(pgrep -x dolphin)/environ | grep QT_QPA` → `hyprqt6engine`. Dolphin muestra carpetas moradas de Sweet, iconos Candy y tema oscuro. En Plasma sigue como antes.

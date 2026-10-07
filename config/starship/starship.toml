@@ -3,7 +3,8 @@
 # ok #06c993, warn #f9ae58, error #ed254e). Original colors are in the backup made by migration 002.
 add_newline = true
 command_timeout = 200
-format = "$os$username$hostname${custom.location}$directory$git_branch$git_state$git_status$nodejs$deno$bun$python$rust$golang$java$kotlin$php$ruby$lua$c$dart$elixir$haskell$swift$zig$docker_context$package$kubernetes$terraform$aws$nix_shell$conda$character"
+#format = "$os$username$hostname${custom.location}$directory$git_branch$git_state$git_status$nodejs$deno$bun$python$rust$golang$java$kotlin$php$ruby$lua$c$dart$elixir$haskell$swift$zig$docker_context$package$kubernetes$terraform$aws$nix_shell$conda$character"
+format = "$username$hostname${custom.location}$directory$git_branch$git_state$git_status$nodejs$deno$bun$python$rust$golang$java$kotlin$php$ruby$lua$c$dart$elixir$haskell$swift$zig$docker_context$package$kubernetes$terraform$aws$nix_shell$conda$character"
 right_format = "$status$cmd_duration$jobs$time"
 
 [os]

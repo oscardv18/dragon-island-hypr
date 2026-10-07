@@ -3,7 +3,8 @@
 // The orbital launcher's planet in a layer window of its own (namespace "dragon-launcher", so it gets the same liquid
 // glass): hyprglass draws the rim relief (bevel, specular, refraction) from the layer's rectangle, so a shape inside a
 // full-screen layer is flat, but a window exactly as big as the disc gets the real edge. The window never changes size
-// (the disc grows inside it); it is mapped at startup, before the launcher window, so the ring is drawn above it.
+// (the disc grows inside it). OrbitalLauncher maps it after the back ring and before the launcher window, so the back
+// icons pass behind the disc and the front ones over it.
 // The search field stays in the launcher window (this one takes no input).
 // =============================================================================
 import Quickshell
