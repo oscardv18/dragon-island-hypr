@@ -1,9 +1,11 @@
+//@ pragma IconTheme Sweet-Purple
 // =============================================================================
 // dragon-island — shell.qml
 // Per monitor: the floating bar, the notch (dragon-island), popovers (dragon-popover), the modal panels
 // (dragon-launcher) and notification popups (dragon-notifications) — each in its own layer window.
 // DebugPanel is not started automatically: `qs ipc call debug toggle` loads it on demand.
 // Animation speed follows the Settings service (`qs ipc call settings motion 0` = no animations).
+// Icons: the pragma on line 1 pins Quickshell.iconPath / IconImage to Candy + Sweet Folders, independent of KDE.
 // =============================================================================
 import Quickshell
 import Quickshell.Io

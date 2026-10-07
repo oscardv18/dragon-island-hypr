@@ -17,10 +17,11 @@ hl.env("QT_WAYLAND_DISABLE_WINDOWDECORATION", "1")
 hl.env("SDL_VIDEODRIVER", "wayland,x11")
 hl.env("CLUTTER_BACKEND", "wayland")
 
--- Qt theming (decision): reuse the KDE platform theme that Plasma already installs,
--- so Dolphin and other Qt/KDE apps look the same as in the Plasma session (Breeze, fonts, icons).
--- Only set here, so it never leaks into Plasma. Alternative (not used): hyprqt6engine.
-hl.env("QT_QPA_PLATFORMTHEME", "kde")
+-- Qt theming: hyprqt6engine (AUR), configured in hyprqt6engine.conf next to this file (icon theme
+-- Sweet-Purple = Candy + Sweet Folders). It replaces the former "kde" platform theme, so the Hyprland
+-- session no longer reads KDE's preferences (kdeglobals). Only set here (hl.env), never in /etc/environment
+-- or ~/.profile, so it cannot leak into Plasma, which keeps its own platform theme.
+hl.env("QT_QPA_PLATFORMTHEME", "hyprqt6engine")
 
 -- Cursor
 hl.env("XCURSOR_SIZE", "24")

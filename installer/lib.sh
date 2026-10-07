@@ -124,3 +124,13 @@ add_component() {
     $DRY_RUN && return 0
     grep -qxF "$1" "$file" || printf '%s\n' "$1" >> "$file"
 }
+
+# apply_icon_theme: GTK apps in every session read this dconf key (settings.ini covers the rest)
+ICON_THEME="Sweet-Purple"
+apply_icon_theme() {
+    if ! command -v gsettings >/dev/null 2>&1; then
+        log_warn "gsettings no está instalado: solo se usa settings.ini para el tema de iconos GTK."
+        return 0
+    fi
+    run gsettings set org.gnome.desktop.interface icon-theme "$ICON_THEME" || log_warn "gsettings no pudo fijar el tema de iconos."
+}

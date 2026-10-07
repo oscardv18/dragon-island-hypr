@@ -11,7 +11,12 @@ grimblast-git
 @shell
 # Video wallpapers (uses mpv)
 mpvpaper
+# Qt platform theme for Hyprland (icons / colors without KDE's settings)
+hyprqt6engine
 
 @fonts
 # UI typography (Outfit)
 ttf-outfit
+# Icons: Candy + Sweet Folders (theme name Sweet-Purple inherits candy-icons)
+candy-icons-git
+sweet-folders-icons-git

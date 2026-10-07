@@ -73,6 +73,8 @@ gcc
 # Optional helpers (deselect the "tools" component to skip them)
 # GUI for the keyring: check the "login" keyring, change its password
 seahorse
+# GTK settings GUI for manual tweaks (the theme itself comes from config/gtk-3.0 and gtk-4.0)
+nwg-look
 
 @fonts
 ttf-jetbrains-mono-nerd

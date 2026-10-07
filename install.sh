@@ -276,6 +276,11 @@ if has_component core; then
     deploy_item "$REPO_DIR/config/hypr"  "$HOME/.config/hypr"
     deploy_item "$REPO_DIR/config/kitty" "$HOME/.config/kitty"      # kept, no longer the default terminal
     deploy_item "$REPO_DIR/config/ghostty" "$HOME/.config/ghostty"
+    # Icons and themes: Candy + Sweet Folders (Sweet-Purple). Qt: hyprqt6engine (hyprqt6engine.conf lives in
+    # config/hypr, env.lua sets QT_QPA_PLATFORMTHEME); GTK: settings.ini (+ dconf below)
+    deploy_item "$REPO_DIR/config/gtk-3.0/settings.ini" "$HOME/.config/gtk-3.0/settings.ini"
+    deploy_item "$REPO_DIR/config/gtk-4.0/settings.ini" "$HOME/.config/gtk-4.0/settings.ini"
+    apply_icon_theme
     # Keyring: the Secret portal → gnome-keyring in Hyprland (Plasma keeps kde-portals.conf),
     # and Brave forced to libsecret so both sessions share its passwords and cookies
     deploy_item "$REPO_DIR/config/xdg-desktop-portal/hyprland-portals.conf" \
