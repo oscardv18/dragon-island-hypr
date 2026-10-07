@@ -197,6 +197,15 @@ Preparación: `khal configure` (y, si sincronizas, `vdirsyncer discover && vdirs
 - [ ] Cerrar sesión y volver a entrar (o `pkill awww-daemon mpvpaper`, `awww-daemon &`, `qs kill; qs -d`): vuelve el mismo fondo. Reiniciar Quickshell con un vídeo activo no lo reinicia.
 - [ ] Bloquear (`SUPER + L`): hyprlock usa el fondo actual (con un vídeo, un fotograma).
 
+## 12c. Dock en arco
+
+- [ ] En un escritorio vacío (o solo con ventanas flotantes) el arco está visible; con una ventana en mosaico o en pantalla completa se hunde con un spring; el ratón en el borde inferior (3 px) lo trae de vuelta y, al salir, se oculta a los 600 ms. `SUPER + X` lo fija.
+- [ ] Apps fijadas a la izquierda del botón central (el primero, el más a la izquierda), abiertas no fijadas a la derecha; 1–3 puntos por ventanas abiertas; el icono bajo el ratón y sus vecinos crecen siguiendo la curva.
+- [ ] Clic enfoca / cicla; clic central = nueva instancia; clic derecho = menú; arrastrar reordena las fijadas; botón central = lanzador orbital; carpeta = abanico de descargas.
+- [ ] `SUPER + M` minimiza la ventana activa: su icono sale atenuado con punto gris y un clic la devuelve al escritorio actual.
+- [ ] Insignia con el número de notificaciones sin leer de la app (`notify-send -a Brave …`).
+- [ ] `qs ipc call dock position left` y `right`: el arco gira 90° y los iconos siguen derechos.
+
 ## 12a. Islas dinámicas
 
 - [ ] **Izquierda:** los escritorios con ventanas muestran los iconos de sus apps (máx. 3); la rueda sobre las píldoras cambia de escritorio; con el ratón sobre un escritorio con ventanas (~0,35 s) aparece una vista previa de cristal con las miniaturas reales (clic = enfocar esa ventana); no aparece en escritorios vacíos.

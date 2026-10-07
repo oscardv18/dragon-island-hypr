@@ -101,6 +101,9 @@ Singleton {
     function dismiss(n): void { n?.dismiss(); }
     function dismissById(id: int): void { server.trackedNotifications.values.find(n => n.id === id)?.dismiss(); }
 
+    // notifications that arrived since the center was last opened
+    function unreadList(): var { return root.notifications.filter(n => (root._arrivals[n.id] ?? 0) > root._lastRead); }
+
     function markAllRead(): void { root._lastRead = Date.now(); }
 
     function dismissPopup(n): void {

@@ -100,8 +100,11 @@ Singleton {
         });
     }
 
+    // HyprlandToplevel.address has no 0x prefix; the dispatchers want one
+    function addr(address: string): string { return address.startsWith("0x") ? address : `0x${address}`; }
+
     function focusWindow(address: string): void {
-        Hyprland.dispatch(root.usingLua ? `hl.dsp.focus({ window = "address:${address}" })` : `focuswindow address:${address}`);
+        Hyprland.dispatch(root.usingLua ? `hl.dsp.focus({ window = "address:${root.addr(address)}" })` : `focuswindow address:${root.addr(address)}`);
     }
 
     function togglePin(): void {

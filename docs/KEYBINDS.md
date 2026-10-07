@@ -102,6 +102,22 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 | Mosaicos del dashboard | Activar / desactivar | Clic derecho en Wi‑Fi, Bluetooth o No molestar: abre su popover |
 | Fuera de un panel / `Esc` | Cierra el panel | |
 
+## Dock en arco
+
+| Atajo / gesto | Acción |
+|---|---|
+| `SUPER + X` | Fijar el dock (siempre visible) o dejarlo en modo automático |
+| `SUPER + M` | Minimizar la ventana activa (al escritorio especial `minimized`; sale atenuada en el dock, un clic la restaura) |
+| Ratón en el borde inferior (3 px) | El dock emerge; al salir espera 600 ms y se oculta |
+| Clic en un icono | Enfocar la app; si ya está enfocada, pasar a su siguiente ventana; abrirla si no está abierta; restaurarla si está minimizada |
+| Clic central | Nueva instancia |
+| Clic derecho | Menú: fijar / quitar del dock · nueva ventana · cerrar todas · mover a un escritorio (1–5) |
+| Arrastrar un icono fijado | Reordenar las apps fijadas |
+| Botón central | Lanzador orbital |
+| Carpeta (extremo derecho) | Abanico con las últimas 6 descargas (clic = abrir) |
+
+El dock se muestra solo cuando el escritorio actual no tiene ventanas en mosaico (vacío, o solo flotantes) y se hunde con una ventana en mosaico o en pantalla completa. Posición y apps fijadas en `~/.local/state/dragon-island/dock.json` (`"position"`: `bottom` · `left` · `right`; `qs ipc call dock position left`).
+
 ## Teclado dentro de los paneles
 
 | Panel | Teclas |

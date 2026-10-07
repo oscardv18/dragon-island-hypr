@@ -340,6 +340,15 @@ Decisiones y trampas:
 - CPU y RAM son **una sola** cápsula (`perfCap`); no se despliega nada con el ratón. El popover de Rendimiento gana la gráfica de CPU de los últimos 30 s.
 - **Texto e iconos pixelados:** lo causaban las sombras `MultiEffect` (`layer.enabled`) de `UiText` / `Glyph`: el texto pasa por una textura y pierde nitidez (se ve borroso y con bordes escalonados). Se apagaron con `Theme.textShadows = false` (el tipo `shadow: true` sigue existiendo por si se quiere probar de nuevo). Comprobado ampliando capturas antes y después.
 
+## 7q. Dock en arco (2026-10-07)
+
+- `services/Dock.qml` (estado `~/.local/state/dragon-island/dock.json`), `modules/dock/DockWindow.qml` (namespace `dragon-dock`, capa Top: una ventana de pantalla completa a lo largo del borde con máscara solo en el arco / menú / abanico) y `DockEdge.qml` (`dragon-dock-edge`, zona sensible de 3 px, sin píxeles). Arco = `Shape` + `PathArc` de 520 × 90 rellenos con `Theme.popoverBg` (cristal `dragon-panel`); los iconos van por una parábola poco profunda con ligera inclinación y la ampliación es una gaussiana a lo largo del arco. Para `left` / `right` se gira el marco 90° y los iconos se contragiran.
+- **Ocultado:** `workspaceFree` = el escritorio enfocado no tiene ventanas que no floten (se reevalúa ~300 ms después de los eventos `openwindow`, `closewindow`, `movewindow`, `workspace`, `fullscreen`, `changefloatingmode`, refrescando `Hyprland.refreshToplevels()`); se hunde con un `SpringAnimation`.
+- **Minimizar:** `hl.dsp.window.move({ workspace = "special:minimized", follow = false })`; las ventanas con ese escritorio salen atenuadas y un clic las trae al escritorio actual.
+- **Trampas:** `HyprlandToplevel.address` no lleva `0x` (los dispatchers lo exigen: `Hypr.addr()`); la propiedad `index` de un delegado del `Repeater` tapa a una propia llamada `index` (ahora `slotNo`); un `Shape` no tiene `parent` en sus `ShapePath` (usar `id`); con `left` / `right` la ventana debe anclarse arriba **y** abajo.
+- **Verificado en vivo:** arco visible en un escritorio vacío, oculto con una ventana en mosaico, zona sensible, ampliación, menú contextual, minimizar + restaurar con un clic, posiciones izquierda y derecha. **Sin verificar:** abanico de descargas, reordenar arrastrando, insignias de notificaciones, clic central, ciclar entre ventanas de una app, `SUPER + M` real (se probó el mismo dispatcher a mano), dock en un segundo monitor.
+- Sin migración: el estado lo crea el propio servicio y los atajos / reglas llegan con `config/hypr`.
+
 ## 8. Cómo depurar rápido
 
 ```sh

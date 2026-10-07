@@ -16,6 +16,7 @@ import "modules/popovers"
 import "modules/launcher"
 import "modules/notifications"
 import "modules/wallpapers"
+import "modules/dock"
 import "debug"
 
 ShellRoot {
@@ -54,6 +55,16 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { LauncherWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { DockWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { DockEdge {} }
     }
 
     Variants {

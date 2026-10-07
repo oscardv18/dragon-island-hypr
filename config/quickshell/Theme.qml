@@ -151,6 +151,15 @@ Singleton {
     readonly property real orbitPeriod:   40      // seconds per revolution
     readonly property int  orbitInner:    16      // icons in the main ring; the rest go to the outer ring
 
+    // Arc dock
+    readonly property real dockWidth:      520
+    readonly property real dockHeight:     90
+    readonly property real dockIcon:       44
+    readonly property real dockSpacing:    52
+    readonly property int  dockHideDelay:  600    // ms after the pointer leaves
+    readonly property real dockEdge:       3      // hot zone thickness, px
+    readonly property real dockWindowHeight: 300  // room for the magnified icons, the menu and the downloads fan
+
     // Workspace hover preview
     readonly property real previewThumbWidth: 180
 

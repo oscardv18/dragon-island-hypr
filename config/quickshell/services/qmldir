@@ -26,3 +26,4 @@ singleton Caffeine 1.0 Caffeine.qml
 singleton Updates 1.0 Updates.qml
 singleton BarContext 1.0 BarContext.qml
 singleton WorkspacePreview 1.0 WorkspacePreview.qml
+singleton Dock 1.0 Dock.qml
