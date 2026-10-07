@@ -153,7 +153,11 @@ step_pull() {
         run git -C "$REPO_DIR" pull --ff-only
         return 0
     fi
-    git -C "$REPO_DIR" pull --ff-only
+    # offline or no SSH key available (no passphrase prompt in a script): keep going with the local copy
+    if ! GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git -C "$REPO_DIR" pull --ff-only; then
+        log_warn "No se pudo hacer git pull (¿sin red o sin clave SSH?): se continúa con la copia local."
+        return 0
+    fi
     after="$(git -C "$REPO_DIR" rev-parse HEAD)"
     if [[ "$before" == "$after" ]]; then
         log_info "Ya estás al día."
