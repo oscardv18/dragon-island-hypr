@@ -1,0 +1,89 @@
+# dragon-island — starship prompt (imported from the user's own config, colors mapped to the
+# Dragonized palette of references/design.md: accent #c50ed2, violetSoft #a855f7, cyan #00c1e4,
+# ok #06c993, warn #f9ae58, error #ed254e). Original colors are in the backup made by migration 002.
+add_newline = true
+command_timeout = 200
+format = "$os$username$hostname${custom.location}$directory$git_branch$git_state$git_status$nodejs$deno$bun$python$rust$golang$java$kotlin$php$ruby$lua$c$dart$elixir$haskell$swift$zig$docker_context$package$kubernetes$terraform$aws$nix_shell$conda$character"
+right_format = "$status$cmd_duration$jobs$time"
+
+[os]
+disabled = false
+format = "[$symbol](bold #00c1e4) "
+
+[os.symbols]
+Arch = ""
+Linux = ""
+
+[username]
+show_always = true
+format = "[$user](bold #c50ed2) "
+
+[hostname]
+ssh_only = true
+format = "[󰒋 $hostname](bold #f9ae58) "
+
+[character]
+error_symbol = "[✗](bold #ed254e)"
+success_symbol = "[❯❯](bold #06c993)"
+
+[custom.location]
+command = 'if [ "$PWD" = "$HOME" ]; then printf ""; else printf "󰉋"; fi'
+when = "true"
+format = "[$output](bold #00c1e4) "
+
+[directory]
+truncation_length = 2
+truncation_symbol = "…/"
+home_symbol = "~"
+read_only = "󰌾"
+style = "bold #a855f7"
+format = "[$path]($style)[$read_only]($read_only_style) "
+repo_root_style = "bold #a855f7"
+repo_root_format = "[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
+
+[git_branch]
+format = "[ $branch]($style) "
+style = "italic #00c1e4"
+
+[git_state]
+format = "[󰘬 $state( $progress_current/$progress_total)]($style) "
+style = "bold #f9ae58"
+
+[git_status]
+format     = '[$all_status]($style)'
+style      = "#00c1e4"
+ahead      = "⇡${count} "
+diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
+behind     = "⇣${count} "
+conflicted = " "
+up_to_date = " "
+untracked  = "? "
+modified   = " "
+stashed    = ""
+staged     = ""
+renamed    = ""
+deleted    = ""
+
+[status]
+disabled = false
+format = "[$symbol$status]($style) "
+symbol = "✗ "
+style = "bold #ed254e"
+
+[cmd_duration]
+min_time = 500
+format = "[󰔛 $duration]($style) "
+style = "#f9ae58"
+
+[jobs]
+format = "[$symbol$number]($style) "
+symbol = "󰜎 "
+style = "#00c1e4"
+number_threshold = 1
+symbol_threshold = 1
+
+[time]
+disabled = false
+time_format = "%H:%M"
+format = "[ $time]($style)"
+style = "dimmed #00c1e4"

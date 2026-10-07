@@ -117,6 +117,7 @@ Regla del proyecto: todo cambio que afecte a sistemas ya instalados viene con su
 ```sh
 ./install.sh --yes        # sin preguntas (valores por defecto)
 ./install.sh --glass      # incluye el componente opcional «Efecto cristal (hyprglass)»
+./install.sh --zsh        # incluye el componente opcional «Shell: zsh + starship»
 ./install.sh --update     # alias de ./update.sh
 ./install.sh --uninstall  # quita los enlaces y restaura los respaldos (no desinstala paquetes)
 ```
@@ -152,6 +153,15 @@ Dos capas, y la segunda es opcional:
    - **Respaldo:** sin el plugin, o si una actualización de Hyprland lo rompe, todo se ve bien solo con el blur nativo. El gancho de capas de hyprglass usa una función privada de Hyprland, así que puede fallar tras actualizar.
    - Comprobación: `hyprctl plugin list` · `hyprctl getoption plugin:hyprglass:layers:enabled` · `hyprctl hyprglass status` · `hyprctl hyprglass stats`. Si consume demasiada GPU, pon `live_resample = false` en `hg.layer("dragon-bar", …)`.
    - Quitarlo: `hyprpm disable hyprglass`.
+
+## Shell: zsh + starship
+
+Componente opcional del instalador (casilla «Shell: zsh + starship» o `--zsh`). Instala `zsh` y `starship`, clona **oh-my-zsh** y sus plugins `zsh-autosuggestions` y `zsh-syntax-highlighting` (son clones de git, no paquetes), despliega `config/zsh/.zshrc` en `~/.zshrc` y `config/starship/starship.toml` en `~/.config/starship.toml` (con backup de los tuyos) y pregunta antes de `chsh -s /usr/bin/zsh`.
+
+- Lo privado (tokens, alias personales, rutas) va en `~/.zshrc.local`, fuera del repo: el `.zshrc` lo carga si existe.
+- Los colores de starship usan la paleta Dragonized (accent, violetSoft, cyan, ok, warn, error).
+- kitty abre zsh si está instalado (si no, tu shell de login). Plasma no se toca: solo cambian tus dotfiles de usuario.
+- En un sistema ya instalado lo aplica la migración `002-zsh-starship.sh` con `./update.sh`.
 
 ## Estructura
 

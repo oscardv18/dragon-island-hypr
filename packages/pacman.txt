@@ -69,3 +69,9 @@ seahorse
 
 @fonts
 ttf-jetbrains-mono-nerd
+
+@zsh
+# Optional component "Shell: zsh + starship" (oh-my-zsh and its two external plugins are git clones, see ensure_omz)
+zsh
+starship
+git
