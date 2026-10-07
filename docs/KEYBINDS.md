@@ -139,14 +139,32 @@ El dock se muestra solo cuando el escritorio actual no tiene ventanas en mosaico
 
 ## Terminal (zsh en Ghostty)
 
+Completar (`Tab` abre el buscador fzf-tab; `Enter` elige, `Esc` cancela). La vista previa cambia según el comando:
+
+| Escribes + `Tab` | Qué pasa |
+|---|---|
+| `cd`, `z`, `ls`, rutas | Vista previa de la carpeta con eza (con iconos) |
+| un archivo (`nvim`, `cat`…) | Vista previa con bat: 200 líneas con números |
+| `git add` / `diff` / `restore` | El `git diff` del archivo |
+| `git checkout` / `switch` / `merge` | Archivos modificados, ramas y commits, con su `git diff` / `git log` / `git show` |
+| `git log` | El historial de la rama en gráfico |
+| `kill`, `ps` | Detalles del proceso: usuario, CPU, memoria, tiempo y comando |
+| `export`, `unset`, `$VAR` | El valor de la variable |
+| `pacman`, `yay`, `paru` | La ficha del paquete (`pacman -Si` / `yay -Si`) |
+
+Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas) · `<` `>` cambian de grupo de resultados.
+
 | Atajo | Acción |
 |---|---|
-| `Tab` | Búsqueda avanzada (fzf-tab) con vista previa: carpetas (eza), archivos (bat), git, variables, procesos, paquetes |
-| `/` | Aceptar la carpeta y seguir completando |
-| `<` `>` | Cambiar de grupo de resultados |
-| `Ctrl + R` / `Ctrl + T` / `Alt + C` | Historial · archivos · carpetas con fzf |
-| `z dir` · `zi` | Saltar a una carpeta (zoxide) · elegirla con fzf |
-| `ls` `ll` `la` `lt` | eza: lista · larga con git · con ocultos · árbol |
+| `Ctrl + R` | Busca en el historial (200 000 comandos compartidos entre terminales); `Enter` lo pega en la línea |
+| `Ctrl + T` | Busca archivos (con `fd`, incluye ocultos) y pega la ruta; vista previa con bat / eza |
+| `Alt + C` | Busca carpetas y entra en ella; vista previa del árbol con eza |
+| `z dir` | Salta a la carpeta más usada que contenga «dir» (zoxide); `cd` sigue siendo el normal |
+| `zi` | Elige entre tus carpetas más usadas con fzf y salta |
+| `→` o `End` | Acepta la sugerencia gris del historial |
+| ` comando` (espacio delante) | No se guarda en el historial |
+| `ls` · `ll` · `la` · `lt` | eza: lista con iconos · larga con git · con ocultos · árbol de 2 niveles |
+| `cat archivo` | Se muestra con bat (colores, sin paginador) |
 
 ## Teclado dentro de los paneles
 

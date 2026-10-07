@@ -120,13 +120,32 @@ Singleton {
         { name: "Portapapeles / Menú de energía (dentro)", rows: [
             { text: "Portapapeles: copiar · borrar entrada (búsqueda vacía)", combos: [["Enter"], ["Supr"]] },
             { text: "Energía: mover · ejecutar · atajo directo", combos: [["← →"], ["Enter"], ["1–5"]] } ] },
-        { name: "Terminal zsh (Ghostty)", rows: [
-            { text: "Búsqueda avanzada con vista previa (fzf-tab)", combos: [["Tab"]] },
-            { text: "Aceptar la carpeta y seguir completando", combos: [["/"]] },
-            { text: "Cambiar de grupo de resultados", combos: [["<", ">"]] },
-            { text: "Historial · archivos · carpetas (fzf)", combos: [["Ctrl", "R"], ["Ctrl", "T"], ["Alt", "C"]] },
-            { text: "Saltar a una carpeta · elegirla (zoxide)", combos: [["z dir"], ["zi"]] },
-            { text: "eza: lista · larga con git · árbol", combos: [["ls"], ["ll"], ["lt"]] } ] },
+        { name: "Terminal zsh: completar con Tab", rows: [
+            { text: "Abre el buscador (Enter elige, Esc cancela)", combos: [["Tab"]] },
+            { text: "Carpeta: vista previa con eza", combos: [["cd", "Tab"]] },
+            { text: "Archivo: vista previa con bat", combos: [["nvim", "Tab"]] },
+            { text: "git: el diff del archivo", combos: [["git add", "Tab"]] },
+            { text: "git: ramas y commits con su log", combos: [["git checkout", "Tab"]] },
+            { text: "git: historial en gráfico", combos: [["git log", "Tab"]] },
+            { text: "Proceso: usuario, CPU, memoria", combos: [["kill", "Tab"]] },
+            { text: "Variable: su valor", combos: [["export", "Tab"]] },
+            { text: "Paquete: su ficha (-Si)", combos: [["pacman -S", "Tab"]] },
+            { text: "Aceptar la carpeta y seguir dentro", combos: [["/"]] },
+            { text: "Cambiar de grupo de resultados", combos: [["<"], [">"]] } ] },
+        { name: "Terminal zsh: fzf y zoxide", rows: [
+            { text: "Buscar en el historial", combos: [["Ctrl", "R"]] },
+            { text: "Buscar archivos y pegar la ruta", combos: [["Ctrl", "T"]] },
+            { text: "Buscar carpetas y entrar", combos: [["Alt", "C"]] },
+            { text: "Saltar a la carpeta más usada", combos: [["z dir"]] },
+            { text: "Elegir una carpeta frecuente", combos: [["zi"]] },
+            { text: "Aceptar la sugerencia gris", combos: [["→"], ["End"]] },
+            { text: "No guardar el comando en el historial", combos: [["␣comando"]] } ] },
+        { name: "Terminal zsh: eza", rows: [
+            { text: "Lista con iconos", combos: [["ls"]] },
+            { text: "Larga: permisos, tamaño, git", combos: [["ll"]] },
+            { text: "Larga con ocultos", combos: [["la"]] },
+            { text: "Árbol de 2 niveles", combos: [["lt"]] },
+            { text: "Mostrar archivo con bat", combos: [["cat archivo"]] } ] },
         { name: "Cualquier panel", rows: [
             { text: "Cerrar", combos: [["Esc"], ["clic fuera"]] } ] }
     ]
