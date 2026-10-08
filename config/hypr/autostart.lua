@@ -24,13 +24,9 @@ hl.on("hyprland.start", function()
     -- hyprbars buttons (guarded in plugins.lua) are applied now that the plugins exist.
     hl.exec_cmd("hyprpm reload -n && hyprctl reload")
 
-    -- First session only: build/enable plugins with hyprpm in a visible terminal
-    -- (hyprpm may ask for the sudo password to install headers). No-op once the marker exists.
+    -- Plugins not installed yet (plugins.pending, written by install.sh outside Hyprland): build them with hyprpm in a
+    -- visible terminal (hyprpm asks for the sudo password to install headers). No-op once the marker is gone.
     local state = "${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island"
-    hl.exec_cmd("test -f " .. state .. "/firstrun.done || { test -x " .. state .. "/firstrun.sh && "
-        .. "ghostty --class=org.dragonisland.Setup --title='dragon-island: primer arranque' -e " .. state .. "/firstrun.sh; }")
-
-    -- Optional "Efecto cristal" component: install hyprglass in a visible terminal while glass.pending exists
-    hl.exec_cmd("test -f " .. state .. "/glass.pending && test -x " .. state .. "/glass.sh && "
-        .. "ghostty --class=org.dragonisland.Setup --title='dragon-island: efecto cristal' -e " .. state .. "/glass.sh")
+    hl.exec_cmd("test -f " .. state .. "/plugins.pending && test -x " .. state .. "/plugins-foreground.sh && "
+        .. "ghostty --class=org.dragonisland.Setup --title='dragon-island: plugins' -e " .. state .. "/plugins-foreground.sh")
 end)

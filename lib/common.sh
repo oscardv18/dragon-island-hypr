@@ -11,7 +11,7 @@
 # -----------------------------------------------------------------------------
 run() {
     if $DRY_RUN; then
-        printf '[dry-run] %q ' "$@"
+        printf '[dry-run]'; printf ' %q' "$@"
         echo
     else
         "$@"
