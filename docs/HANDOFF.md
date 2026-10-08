@@ -550,3 +550,10 @@ todos retirados por el commit "remove the bottom islands"). Lo aprovechable pas�
 herdr 0.9.3 (solo lectura): estados `idle|working|blocked|done|unknown`; no expone modelo ni tiempos.
 **Decisiones abiertas**: los chips contextuales de la barra (privacidad, grabación, caffeine…) siguen arriba.
 **Revertir**: `git revert` de los commits de esta sección; `rm ~/.config/dragon-island/background-apps*.json`.
+
+## 7ab. Panel de referencia de herdr (2026-10-08)
+`SUPER + SHIFT + A` (o `qs ipc call shell toggle herdrhelp`): panel como la Tienda (ventana `dragon-herdr-help`, mismo cristal), solo para leer.
+Pestañas **Atajos** (los de fábrica leídos de `herdr --default-config` + lo que cambies en `~/.config/herdr/config.toml`, con "●" si es tuyo y "sin asignar" si no tiene tecla),
+**Comandos** (uso y descripción tal cual los imprime `herdr <grupo>` / `--help`: workspace, tab, pane, agent, worktree, notification, session, machine; las descripciones salen en inglés porque herdr las da así)
+y **Conceptos y estados**. Solo el texto en español de cada atajo está escrito a mano (`labels` en `services/HerdrHelp.qml`); un atajo nuevo de herdr aparece en "Otros".
+Nunca arranca ni para herdr ni escribe su config. Verificado con capturas de las tres pestañas. No verificado: el atajo `SUPER + SHIFT + A` con el teclado (bind recargado por Hyprland), pulsar Tab dentro del campo de búsqueda.

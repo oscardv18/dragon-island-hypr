@@ -28,7 +28,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
-    readonly property bool open: ["launcher", "power", "clipboard", "keybinds", "wallpapers", "store"].indexOf(panel) >= 0
+    readonly property bool open: ["launcher", "power", "clipboard", "keybinds", "wallpapers", "store", "herdrhelp"].indexOf(panel) >= 0
 
     // fully hidden (surface unmapped) while nothing is open: a transparent full-screen layer costs nothing
     visible: open || scrim.opacity > 0

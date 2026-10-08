@@ -16,6 +16,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
+| `SUPER + SHIFT + A` | Referencia de herdr: atajos (los de fábrica y los que cambiaste), comandos de la CLI y estados de los agentes. Solo lectura |
 | `SUPER + A` | Agentes: abre herdr en el escritorio 5 («agentes») o, si ya hay una ventana, la enfoca. Las sesiones sobreviven al cerrar la ventana |
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
 | `SUPER + Escape` | Menú de energía |
@@ -187,6 +188,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 |---|---|
 | Lanzador orbital | Escribir filtra (búsqueda difusa; el mejor resultado pasa al frente y el anillo se detiene) · `← →`, `↑ ↓`, `Tab` o la rueda giran el anillo · `Enter` lanza · `Ctrl+F` fija / quita de favoritos la app del frente · `Ctrl+I` sin resultados (o `+nombre`) abre la Tienda con la búsqueda · `=2*(3+4)` calcula (Enter copia) · `>comando` se ejecuta en Ghostty · `Esc` o clic fuera cierra |
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
+| Referencia de herdr (`SUPER + SHIFT + A`) | Escribir filtra · `Tab` cambia de pestaña (Atajos · Comandos · Conceptos y estados) · `↑ ↓` desplazar · `Esc` cierra |
 | Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
 | Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |

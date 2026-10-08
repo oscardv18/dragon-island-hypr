@@ -71,6 +71,7 @@ bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs ipc call wallpaper random"),
 bind(mainMod .. " + X", hl.dsp.exec_cmd("qs ipc call dock toggle"), "Dock · Fijar / liberar el dock")
 bind(mainMod .. " + M", hl.dsp.exec_cmd("qs ipc call dock minimize"), "Dock · Minimizar la ventana (escritorio especial)")
 bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("qs ipc call toggles record"), "Shell · Grabar pantalla (iniciar / parar)")
+bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd("qs ipc call shell toggle herdrhelp"), "Agentes · Atajos y funciones de herdr (referencia)")
 bind(mainMod .. " + I",         hl.dsp.exec_cmd("qs ipc call shell toggle store"), "Shell · Tienda de apps (pacman + AUR)")
 bind(mainMod .. " + A",         hl.dsp.exec_cmd("$HOME/.local/bin/dragon-herdr"), "Agentes · Abrir o enfocar herdr (escritorio 5)")
 bind(mainMod .. " + N",      hl.dsp.exec_cmd("qs ipc call shell toggle notifications"), "Shell · Notificaciones")

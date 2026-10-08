@@ -69,7 +69,7 @@ if hl.plugin and hl.plugin.hyprglass then
     hg.layer("dragon-bar",           { preset = "dragon-bar",   mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-notifications", { preset = "dragon-card",  mask_mode = "alpha", mask_threshold = 0.1 })
     hg.layer("dragon-launcher", { preset = "dragon-liquid", mask_mode = "alpha", mask_threshold = 0.1 })
-    for _, ns in ipairs({ "dragon-popover", "dragon-wallpapers", "dragon-preview", "dragon-store" }) do
+    for _, ns in ipairs({ "dragon-popover", "dragon-wallpapers", "dragon-preview", "dragon-store", "dragon-herdr-help" }) do
         hg.layer(ns, { preset = "dragon-panel", mask_mode = "alpha", mask_threshold = 0.1 })
     end
 

@@ -19,6 +19,7 @@ import "modules/launcher"
 import "modules/notifications"
 import "modules/wallpapers"
 import "modules/store"
+import "modules/herdrhelp"
 import "modules/dock"
 import "modules/lock"
 import "debug"
@@ -75,6 +76,11 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { StoreWindow {} }
+    }
+
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { HerdrHelpWindow {} }
     }
 
     Variants {
