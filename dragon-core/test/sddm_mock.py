@@ -94,7 +94,7 @@ view.engine().warnings.connect(lambda ws: warnings.extend(w.toString() for w in 
 ctx = view.rootContext()
 sddm = Sddm(); kb = Keyboard()
 users = ListModel(["name", "realName", "homeDir", "icon", "needsPassword"],
-                  [{"name": "oddv", "realName": "", "homeDir": "/home/oddv", "icon": os.environ.get('FACE',''), "needsPassword": True}], 0)
+                  [{"name": os.environ.get("USER", "user"), "realName": "", "homeDir": os.path.expanduser("~"), "icon": os.environ.get('FACE',''), "needsPassword": True}], 0)
 sessions = ListModel(["name", "file", "type", "exec", "comment"],
                      [{"name": "Hyprland", "file": "hyprland.desktop", "type": 0, "exec": "", "comment": ""},
                       {"name": "Plasma (Wayland)", "file": "plasma.desktop", "type": 0, "exec": "", "comment": ""},

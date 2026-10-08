@@ -9,7 +9,7 @@ Read this first on every task in this repo. Then load the specialised skills:
 - `hyprland` (full official wiki, Lua config) → any Hyprland config question
 - `hyprland-plugins` → hyprpm, hyprbars, hyprfocus
 - `quickshell` → any QML / Quickshell work (API reference for 0.3.1 included)
-- `arch-tui-installer` → install.sh and installer/
+- `arch-tui-installer` → install.sh, lib/ and modules/
 
 ## Target versions (verified 2026-10-05)
 
@@ -18,7 +18,7 @@ Read this first on every task in this repo. Then load the specialised skills:
 | Base OS | EndeavourOS (Arch) + KDE Plasma minimal | Hyprland is a **second session** in SDDM |
 | Hyprland | **0.56.x stable** (0.56.2) | **Lua config** `~/.config/hypr/hyprland.lua`. hyprlang `.conf` is deprecated since 0.55 — do not write `.conf` |
 | Quickshell | **0.3.1** (Arch `extra`) | |
-| hyprpm | separate Arch package `hyprpm` | must be in packages/pacman.txt |
+| hyprpm | separate Arch package `hyprpm` | must be in packages/pacman-plugins.txt |
 | hyprland-plugins | pinned commit for 0.56.x via hyprpm | only hyprbars, hyprfocus (and borders-plus-plus) |
 | gum | 2.x (Arch `extra`) | |
 
@@ -31,11 +31,11 @@ Baseline syntax: `resources/hyprland-0.56.2-example.lua` is the upstream example
 
 ## Coexistence with KDE Plasma (must not break it)
 - Put session-specific environment variables in the Hyprland config (`hl.env(...)`), never in `~/.profile`, `~/.bashrc`, `~/.config/environment.d/` or `/etc/environment`.
-- Don't uninstall or mask Plasma packages/services. Don't change SDDM settings.
+- Don't uninstall or mask Plasma packages/services. Don't change SDDM, PAM or `/etc` except in the **opt-in** installer modules `login`, `keyring` and `keyboard`, which show what they do, ask before each sudo step and keep a `.bak-dragon` copy.
 - Only one notification daemon per session: our Quickshell `NotificationServer` (Plasma's runs only in Plasma).
 - Polkit in Hyprland: `hyprpolkitagent` (Plasma's agent only autostarts in Plasma).
 - Portals: install `xdg-desktop-portal-hyprland` + `xdg-desktop-portal-gtk`; leave the KDE portal installed for Plasma.
-- File manager stays Dolphin; terminal is kitty.
+- File manager stays Dolphin; the default terminal is Ghostty (kitty is kept as an alternative).
 - Qt theming in Hyprland: decide explicitly (KDE platform theme vs `hyprqt6engine`) and set it only via `hl.env`.
 
 ## Architecture contract
@@ -51,7 +51,11 @@ config/quickshell/
   components/             Capsule, IconButton, Toggle, Slider, ProgressBar, Card, Popover …
   modules/bar|island|popovers|notifications|launcher|power|lock
   debug/DebugPanel.qml    plain-text dump of all services (dev only, not autostarted)
-installer/ install.sh packages/ docs/ HANDOFF.md
+pre-instalation.md          what to do BEFORE install.sh (12 steps; tests/check-docs.sh keeps it coherent with lib/checks.sh)
+install.sh update.sh uninstall.sh doctor.sh bootstrap.sh
+lib/  modules/  packages/  scripts/  migrations/  tests/  docs/ (INSTALL, TROUBLESHOOTING, KEYBINDS, TESTED-VERSIONS, HANDOFF)
+shared/neural-core/         single source of NeuralCore.qml / CoreIcon.qml (scripts/sync-shared.sh copies them to Quickshell and SDDM)
+local overrides (never versioned): ~/.config/hypr/local.lua (loaded last by hyprland.lua) and ~/.config/dragon-island/local.conf
 ```
 
 Rules:
@@ -71,7 +75,7 @@ OSD is triggered by services reacting to changes (Audio volume, Brightness), not
 
 | Keys | Action |
 |---|---|
-| Return | kitty |
+| Return | Ghostty |
 | Space | launcher (`shell toggle launcher`) |
 | E | Dolphin |
 | Q | close window |
@@ -105,4 +109,4 @@ See `references/design.md` (tokens, components, motion). It reproduces the appro
 - `hyprctl configerrors` empty (when testable) and Lua syntax checked (`luac -p` if available).
 - Quickshell loads with no errors in `qs -p config/quickshell`.
 - `shellcheck -x` clean on all scripts.
-- HANDOFF.md updated: what was done, verified, not verified, decisions.
+- docs/HANDOFF.md updated: what was done, verified, not verified, decisions.

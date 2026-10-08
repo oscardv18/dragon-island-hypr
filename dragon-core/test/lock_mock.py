@@ -16,7 +16,7 @@ if v.status() == QQuickView.Error:
     [print("ERROR", e.toString()) for e in v.errors()]; sys.exit(1)
 v.show(); r = v.rootObject()
 def wait(ms): l = QEventLoop(); QTimer.singleShot(ms, l.quit); l.exec()
-for k, val in dict(userName="oddv", hostName="darkdev", layoutLabel="US", monoFont="JetBrains Mono",
+for k, val in dict(userName=os.environ.get("USER", "user"), hostName=os.uname().nodename, layoutLabel="US", monoFont="JetBrains Mono",
                    hasMedia=True, mediaTitle="Lo-fi para concentrarse", mediaArtist="Chillhop", mediaPlaying=True,
                    notifCount=3, batteryPct=86.0).items():
     r.setProperty(k, val)
