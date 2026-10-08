@@ -3,15 +3,19 @@
 // Service: the agents running in herdr (agents multiplexer) — state for the "Agentes" capsule and the notch peek
 // =============================================================================
 /**
- * Zero cost while there is no herdr server: a 30 s timer only checks whether the API socket file exists (no log
+ * Zero cost while there is no herdr server: a timer with growing wait (2 s → 30 s) only checks whether the API socket file exists (no log
  * noise). When it does, the state is read with the CLI (`herdr agent list`, `herdr workspace list`, JSON) and kept
  * up to date by a socket subscription (`events.subscribe`: pane.agent_status_changed of every known pane, plus
  * pane / workspace lifecycle). Events are only invalidation signals: each one schedules a debounced re-read.
  *
  * Properties:
  *   - running: bool [readonly] (the server answers)
- *   - agents: list<var> [readonly] ({ pane, name, agent, workspace (label), workspaceId, tab, state, focused, cwd })
- *   - counts: var [readonly] ({ working, blocked, done, idle })
+ *   - agents: list<var> [readonly] ({ pane, name, agent, workspace (label), workspaceId, tab, state, focused, cwd,
+ *       title (terminal title of the pane = the task, "" if unknown), since (ms epoch when THIS service saw it enter
+ *       `state`; herdr exposes no timestamps, so it is "observed since", not the real start) })
+ *   - workspaces: list<var> [readonly] ({ id, label, number, state (agent_status), panes, tabs, focused })
+ *   - counts: var [readonly] ({ working, blocked, done, idle, unknown })
+ *   - longestWorking: var [readonly] (the agent working since the earliest `since`, or null)
  *   - active: bool [readonly] (there is at least one agent)
  *
  * Signals:
@@ -38,15 +42,21 @@ Singleton {
 
     property bool running: false
     property var agents: []
+    property var workspaces: []
     property bool _loaded: false
     property bool _resub: false     // reconnecting only to subscribe to a new set of panes (state is kept)
 
     readonly property var counts: {
-        const c = { working: 0, blocked: 0, done: 0, idle: 0 };
+        const c = { working: 0, blocked: 0, done: 0, idle: 0, unknown: 0 };
         for (const a of root.agents) if (c[a.state] !== undefined) c[a.state]++;
         return c;
     }
     readonly property bool active: root.agents.length > 0
+    readonly property var longestWorking: {
+        let best = null;
+        for (const a of root.agents) if (a.state === "working" && (best === null || a.since < best.since)) best = a;
+        return best;
+    }
 
     signal attention(var agent, string kind)
 
@@ -71,11 +81,12 @@ Singleton {
         command: ["test", "-S", root.socketPath]
         onExited: code => {
             if (code === 0) { if (!sock.connected) sock.connected = true; }
-            else root._down();
+            else { root._down(); retry.interval = Math.min(30000, retry.interval * 2); }
         }
     }
-    Timer {
-        interval: 30000
+    Timer {     // herdr not running: look again after 4, 8, 16 s … up to 30 s (a file test, no log noise)
+        id: retry
+        interval: 2000
         running: !root.running
         repeat: true
         onTriggered: probe.running = true
@@ -85,6 +96,7 @@ Singleton {
         root.running = false;
         root._loaded = false;
         if (root.agents.length > 0) root.agents = [];
+        if (root.workspaces.length > 0) root.workspaces = [];
     }
 
     // ---- 2) state: agents + workspaces (two JSON lines) ----
@@ -97,22 +109,29 @@ Singleton {
     }
 
     function _parse(text: string): void {
-        let agents = [], spaces = {};
+        let agents = [], spaces = {}, wsList = [];
         for (const line of text.split("\n")) {
             if (line.length === 0) continue;
             let r;
             try { r = JSON.parse(line).result; } catch (e) { continue; }
             if (!r) continue;
             if (r.agents) agents = r.agents;
-            if (r.workspaces) for (const w of r.workspaces) spaces[w.workspace_id] = w.label;
+            if (r.workspaces) for (const w of r.workspaces) {
+                spaces[w.workspace_id] = w.label;
+                wsList.push({ id: w.workspace_id, label: w.label, number: w.number, state: w.agent_status, panes: w.pane_count, tabs: w.tab_count, focused: w.focused === true });
+            }
         }
-        const old = {};
-        for (const a of root.agents) old[a.pane] = a.state;
+        const old = {}, oldSince = {};
+        for (const a of root.agents) { old[a.pane] = a.state; oldSince[a.pane] = a.since; }
+        const now = Date.now();
         const next = agents.map(a => ({
             pane: a.pane_id, agent: a.agent, workspaceId: a.workspace_id, tab: a.tab_id,
             workspace: spaces[a.workspace_id] ?? a.workspace_id,
-            name: a.agent, state: a.agent_status, focused: a.focused === true, cwd: a.cwd ?? ""
+            name: a.agent, state: a.agent_status, focused: a.focused === true, cwd: a.cwd ?? "",
+            title: a.terminal_title_stripped ?? "",
+            since: old[a.pane] === a.agent_status ? oldSince[a.pane] : now
         }));
+        root.workspaces = wsList;
         const first = !root._loaded;
         root._loaded = true;
         const prevPanes = root.agents.map(a => a.pane).join(",");
@@ -151,6 +170,7 @@ Singleton {
         onConnectedChanged: {
             if (connected) {
                 root.running = true;
+                retry.interval = 2000;
                 if (!root._loaded) reader.running = true;
                 root._subscribe();
             } else if (root._resub) {

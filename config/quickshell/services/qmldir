@@ -31,3 +31,4 @@ singleton Store 1.0 Store.qml
 singleton Herdr 1.0 Herdr.qml
 singleton BottomConfig 1.0 BottomConfig.qml
 singleton BackgroundApps 1.0 BackgroundApps.qml
+singleton EditorWatcher 1.0 EditorWatcher.qml

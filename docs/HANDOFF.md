@@ -525,3 +525,37 @@ qs ipc show                         # funciones IPC registradas (shell, debug)
 qs ipc call debug toggle            # valores en vivo de los servicios
 hyprctl configerrors; hyprpm list; hyprctl plugin list
 ```
+
+## 7aa. Islas inferiores ocultas: apps en segundo plano (derecha) y herdr (izquierda) (2026-10-08)
+
+**Hecho**
+- `modules/bottomislands/`: `BottomIslands.qml` (IPC `bottomislands`: `reveal|hide|toggle <left|right|both>`, `state()`), `BottomWindow.qml` (una ventana de capa
+  transparente por monitor, namespace `dragon-bottom-islands`, `ExclusionMode.Ignore`, capa `top` u `overlay` según el JSON), `HoverReveal.qml` (máquina
+  `hidden → revealing → shown → hiding`, intención 100 ms, gracia 350 ms, sin timers sueltos), vistas puras `AppsIsland`, `AppChip`, `HerdrIsland`, `AgentRow`.
+- Oculta: la máscara de entrada solo cubre las dos franjas (`stripHeight`, 4 px por defecto); visible: isla ∪ margen ∪ franja en un solo rectángulo. El cursor se lee con `HoverHandler`.
+  Las islas quedan a `dockMaxLength/2 + 16 px` del centro (constante en `Theme`: el dock no expone su ancho real).
+- Servicios: `BottomConfig` (JSON con hot-reload + `bottom-islands.local.json`), `BackgroundApps` (tray + ventanas fuera del workspace visible + procesos vigilados, `ps` cada 10 s solo con la isla visible),
+  `EditorWatcher` (clases de ventana + procesos de terminal), `Herdr` ampliado (workspaces, título de tarea, `since` observado, `longestWorking`, espera creciente 2→30 s si herdr no corre).
+- Barra superior: se quitó el tray. Arriba quedan rendimiento, teclado, Wi‑Fi, Bluetooth, volumen, batería y reloj (con notificaciones) + los chips contextuales (ver decisiones).
+- Config: `config/dragon-island/bottom-islands.json` (migración 014 y módulo `core` la crean si falta; nunca se sobrescribe). `doctor.sh` comprueba IPC, JSON y herdr.
+- Vidrio: `hg.layer("dragon-bottom-islands", preset dragon-bar, alpha)` en `glass.lua`; blur nativo y `no_anim` en `rules.lua`.
+
+**Verificado**
+- La shell carga sin errores; `qs ipc show` lista `bottomislands`; `reveal`/`hide` con capturas reales (ambas islas, con datos reales de herdr y Proton VPN en la bandeja).
+- Renders offscreen (`tests/qml/render-mocks.sh <dir>`): derecha con 0/3/12 chips (+N), izquierda offline / 0 agentes / varios estados.
+- `doctor.sh`, `shellcheck`, `luac -p` limpios.
+
+**No verificado (hay que probarlo con el cursor real)**
+1. En reposo no se ve nada abajo. 2. Franja izquierda solo sube la izquierda; la derecha, igual. 3. Salir → desaparece en ~350 ms; volver antes no parpadea.
+4. Con popover/menú abierto no se oculta (y un clic fuera lo cierra). 5. Con una ventana a pantalla completa: no se muestra con `layer: "top"`, sí con `"overlay"`.
+6. Las ventanas no se mueven al aparecer. 7. Un clic en el resto del borde inferior llega a las ventanas. 8. Dos monitores independientes.
+9. Abrir/cerrar OBS, Telegram y Proton VPN actualiza chips sin recargar. 10. Cerrar la ventana de una app que sigue en la bandeja → "solo bandeja".
+Además: enfocar ventanas de workspaces especiales, popover "Estado de IA" (clic en un agente → `Herdr.focusAgent`), clic en editores, Esc (necesita un clic previo en la isla: el foco de teclado es `OnDemand`).
+Si OBS o Proton VPN no aparecen en la bandeja no se adivina la causa: `qs log | grep StatusNotifier` y revisar "minimizar a bandeja" en OBS / `libappindicator` en la app.
+
+**herdr (solo lectura, 0.9.3)**: estados `idle|working|blocked|done|unknown` (no existe "error"); no expone modelo ni tiempos: se muestra el tipo de agente y el tiempo "observado desde" que el servicio vio el cambio.
+`resources/hyprland-0.56.2-example.lua` no existe en el repo: para enfocar se reutiliza `Hypr.focusWindow` (`hl.dsp.focus({ window = "address:0x…" })`) ya usado por el dock.
+
+**Decisiones abiertas**: los chips contextuales de la barra (privacidad, grabación, VPN, caffeine…) siguen arriba; la pestaña Tray del notch sigue (no es la barra). Fase 2 (adaptadores OBS / Proton VPN) no se hizo.
+
+**Revertir**: `git revert` de los commits `feat(bottomislands)`, `refactor(bar)` y los de herdr/izquierda; `rm ~/.config/dragon-island/bottom-islands*.json`; quitar `BottomIslands {}` de `shell.qml` basta para desactivarlo.

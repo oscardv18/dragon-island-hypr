@@ -33,7 +33,7 @@ Scope {
         function hide(side: string): void { root._all("hide", side); }
         function toggle(side: string): void { root._all("toggle", side); }
         function state(): string {
-            return windows.instances.map(w => `${w.screenName} right=${w.rightPhase}`).join("\n");
+            return windows.instances.map(w => `${w.screenName} left=${w.leftPhase} right=${w.rightPhase}`).join("\n");
         }
     }
 }

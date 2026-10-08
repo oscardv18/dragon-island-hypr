@@ -167,6 +167,25 @@ Singleton {
     readonly property int  durBottomHide:     ms(200)
     readonly property real bottomChip:        30             // chip footprint (the app icon is bottomChip - 6)
     readonly property real bottomPopoverW:    300
+    // herdr agent states (herdr has no "error" state): working · blocked (needs an answer) · done / idle (ready) · unknown
+    function agentColor(state: string): color {
+        switch (state) {
+            case "working": return cyan;
+            case "blocked": return warn;
+            case "done":    return ok;
+            case "unknown": return violetSoft;
+            default:        return textDim;
+        }
+    }
+    function agentLabel(state: string): string {
+        switch (state) {
+            case "working": return "trabajando";
+            case "blocked": return "esperando respuesta";
+            case "done":    return "terminado";
+            case "idle":    return "inactivo";
+            default:        return "sin clasificar";
+        }
+    }
 
     // Workspace hover preview
     readonly property real previewThumbWidth: 180
