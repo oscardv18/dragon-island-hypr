@@ -19,6 +19,10 @@ Rectangle {
     readonly property var shownEntries: overflow ? entries.slice(0, Math.max(0, capacity - 1)) : entries
     readonly property var hiddenEntries: overflow ? entries.slice(Math.max(0, capacity - 1)) : []
 
+    // Qt gives hover to the chip's MouseArea and not to the HoverHandler of the zone behind it: the window ORs this in
+    property string hoveredKey: ""
+    readonly property bool pointerOver: hoveredKey !== "" || moreMouse.containsMouse
+
     signal chipActivated(var entry, Item chip)
     signal chipSecondary(var entry)
     signal chipContext(var entry, Item chip)
@@ -53,7 +57,8 @@ Rectangle {
                 onSecondary: root.chipSecondary(modelData)
                 onContext: root.chipContext(modelData, chip)
                 onScrolled: (dx, dy) => root.chipScrolled(modelData, dx, dy)
-                onHoveredChanged: root.chipHovered(modelData, chip, hovered)
+                onHoveredChanged: { root.chipHovered(modelData, chip, hovered); if (hovered) root.hoveredKey = modelData.key; else if (root.hoveredKey === modelData.key) root.hoveredKey = ""; }
+                Component.onDestruction: if (root.hoveredKey === modelData.key) root.hoveredKey = ""
             }
         }
 

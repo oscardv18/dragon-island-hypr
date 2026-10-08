@@ -28,6 +28,9 @@ Rectangle {
         return order;
     }
 
+    // see AppsIsland.pointerOver: hover belongs to the capsules' MouseAreas, not to the zone behind them
+    readonly property bool pointerOver: offCap.hovered || aiCap.hovered || edCap.hovered
+
     signal agentsClicked(Item chip)
     signal editorsClicked(Item chip)
 

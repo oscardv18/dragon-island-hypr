@@ -17,6 +17,7 @@
  *       status: "active" | "passive" | "attention" | "none"   (tray status; "none" = no tray item)
  *       workspace: string (label of the first background window's workspace, "" if unknown)
  *       wsShort: string (what fits in a miniature: "3", "S" for a special workspace)
+ *       vpn: "on" | "off" | "" (Proton VPN adapter: the chip gets a green ring while connected)
  *       extra: string (adapter status line, "" = none; only with BottomConfig.adapter("protonvpn") for the protonvpn entry)
  *       pid: int (0 = unknown)   desktopId: string (watched `desktop`)   attention: bool
  *   - count: int [readonly]
@@ -101,7 +102,7 @@ Singleton {
         const order = [];
         const mk = (key, id, label, idx) => {
             const e = { key, id, label, kind: "window", trayItem: null, hasWindow: false, windows: [], status: "none",
-                        workspace: "", wsShort: "", extra: "", pid: 0, desktopId: "", attention: false, _idx: idx };
+                        workspace: "", wsShort: "", extra: "", vpn: "", pid: 0, desktopId: "", attention: false, _idx: idx };
             byKey[key] = e; order.push(e);
             return e;
         };
@@ -173,7 +174,7 @@ Singleton {
         // adapter: Proton VPN state from its network interface (services/Vpn.qml, which already watches /sys/class/net)
         if (BottomConfig.adapter("protonvpn")) {
             const p = byKey["w:protonvpn"];
-            if (p) p.extra = Vpn.active ? `VPN conectada (${Vpn.iface})` : "VPN desconectada";
+            if (p) { p.vpn = Vpn.active ? "on" : "off"; p.extra = Vpn.active ? `VPN conectada (${Vpn.iface})` : "VPN desconectada"; }
         }
         order.sort((a, b) => a._idx !== b._idx ? a._idx - b._idx : a.label.localeCompare(b.label));
         return order;

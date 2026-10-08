@@ -37,6 +37,8 @@ PanelWindow {
 
     readonly property string rightPhase: rightRev.phase
     readonly property string leftPhase: leftRev.phase
+    readonly property bool rightHovered: rightRev.pointerInside
+    readonly property bool leftHovered: leftRev.pointerInside
     readonly property real strip: BottomConfig.stripHeight
 
     function command(action: string, side: string): void {
@@ -97,13 +99,13 @@ PanelWindow {
     // ------------------------------------------------------------ state machine
     HoverReveal {
         id: rightRev
-        pointerInside: rightHover.hovered
+        pointerInside: rightHover.hovered || rightIsland.pointerOver
         holdOpen: win.popupOpen
     }
 
     HoverReveal {
         id: leftRev
-        pointerInside: leftHover.hovered
+        pointerInside: leftHover.hovered || leftIsland.pointerOver
         holdOpen: win.aiOpen || win.edOpen
     }
     readonly property bool leftOn: leftRev.active
@@ -127,8 +129,9 @@ PanelWindow {
     // ------------------------------------------------------------ the right island
     Item {
         id: rightHolder
-        x: win.rightX
-        y: win.islandY + (1 - Math.min(1.15, rightRev.progress)) * Theme.bottomRise
+        parent: rightZone       // inside the zone: its HoverHandler then sees the pointer over the chips too (no flapping)
+        x: 0
+        y: (1 - Math.min(1.15, rightRev.progress)) * Theme.bottomRise
         width: rightIsland.width
         height: Theme.barHeight
         visible: rightRev.progress > 0.002
@@ -152,8 +155,9 @@ PanelWindow {
     // ------------------------------------------------------------ the left island
     Item {
         id: leftHolder
-        x: win.leftX
-        y: win.islandY + (1 - Math.min(1.15, leftRev.progress)) * Theme.bottomRise
+        parent: leftZone
+        x: 0
+        y: (1 - Math.min(1.15, leftRev.progress)) * Theme.bottomRise
         width: leftIsland.width
         height: Theme.barHeight
         visible: leftRev.progress > 0.002

@@ -31,6 +31,8 @@ Item {
         anchors.fill: parent
         radius: Theme.capsuleRadius
         color: root.open || root.hovered ? Theme.surfaceHi : Theme.surface2
+        border.width: root.entry?.vpn === "on" ? 1.5 : 0      // Proton VPN adapter: connected
+        border.color: Theme.ok
         Behavior on color { ColorAnimation { duration: Theme.durHover } }
     }
 
