@@ -36,12 +36,10 @@ PanelWindow {
 
     // Unmapped while nothing is open (and for the close animation after): an idle full-screen layer would
     // still be rendered into hyprglass' alpha mask every frame (GPU), for nothing
-    // the launcher panel waits for the back ring and the planet to be mapped first (OrbitalLauncher stage)
-    property bool orbitReady: true
-    readonly property alias launcher: launcher
-    visible: (open && (panel !== "launcher" || orbitReady)) || lingering.running
+    // (the launcher view fades out over 560 ms)
+    visible: open || lingering.running
     onOpenChanged: if (!open) lingering.restart()
-    Timer { id: lingering; interval: Theme.durPopover + 200 }
+    Timer { id: lingering; interval: Math.max(Theme.durPopover, 560) + 200 }
 
     MouseArea {
         anchors.fill: parent

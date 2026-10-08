@@ -55,10 +55,10 @@ ShellRoot {
         delegate: Component { PopoverWindow {} }
     }
 
-    // orbital launcher + power menu + clipboard + shortcuts: back ring, planet, launcher window (mapped in that order)
+    // orbital launcher (neural core) + power menu + clipboard + shortcuts: one window per monitor
     Variants {
         model: Quickshell.screens
-        delegate: Component { OrbitalLauncher {} }
+        delegate: Component { LauncherWindow {} }
     }
 
     Variants {

@@ -462,6 +462,33 @@ Decisiones y trampas:
 - **Probado en Ghostty con teclado virtual:** `cd ` + Tab (fzf-tab con bordes redondeados, colores Dragonized y vista previa de eza), `git checkout ` + Tab (archivos modificados / head local / ramas remotas con su `git diff`), `Ctrl+R`. El prompt de starship no cambió.
 - Paquetes: `eza fzf zoxide fd bat` en `@zsh`; `fzf-tab` por `ensure_omz` (git). Migración `010-terminal-tools.sh`. Las teclas están en el panel `SUPER + F1` (`panelGroups`) y en KEYBINDS.md.
 
+## 7za. dragon-core: bloqueo de Quickshell y tema de login (2026-10-07)
+
+- **Qué es:** pantalla de bloqueo propia (`config/quickshell/modules/lock/`: `Lock.qml` = `WlSessionLock` + `PamContext` + IPC `lock`; `LockView.qml` = la UI) y tema SDDM Qt6 (`sddm/dragon-core/`), con el mismo núcleo neural animado. hyprlock **no se borra**: es el respaldo, re-tematizado con la misma paleta (`config/hypr/hyprlock.conf`, fondo estático `config/hypr/assets/core.png` = el núcleo solo, renderizado con `qml6` desde `shared/neural-core/`; `preview.png` no sirve de fondo porque lleva el reloj y el campo de contraseña dentro).
+- **Fuente única del núcleo:** `shared/neural-core/{NeuralCore,CoreIcon}.qml` → `installer/sync-neural-core.sh` los copia a `config/quickshell/components/` y `sddm/dragon-core/components/` (lo llaman `install.sh` y `update.sh`; con `--dry-run` solo comprueban con `diff`; `installer/sync-neural-core.sh --check` sale con 1 si divergen).
+- **Cableado:** `shell.qml` → `Lock { id: lock; notifCount: Notifs.unreadCount }` (único `WlSessionLock`). `SUPER + L` → `qs ipc call lock lock || hyprlock`. `hypridle.conf`: `lock_cmd = pidof hyprlock || qs ipc call lock lock || hyprlock` (`before_sleep_cmd` ya era `loginctl lock-session`; `after_sleep_cmd` sigue con `dpms({ action = "enable" })`, verificado en 0.56.2; `"on"` también devuelve ok pero el repo ya usaba `enable`). `look.lua` → `misc.allow_session_lock_restore = true`. PAM: `/etc/pam.d/hyprlock` (`auth include login`), con caída a `login` si falta. No se toca `/etc`.
+- **Migración `012-dragon-core.sh`** (el repo usa `migrations/NNN-*.sh`, no bloques run-once dentro de `update.sh`): sincroniza el núcleo, reinicia `hypridle` (solo lee `lock_cmd` al arrancar) y **pregunta con gum** «¿Instalar el tema de login dragon-core? (pide sudo)»; solo con terminal interactiva y un «Sí» explícito ejecuta `sddm/install-theme.sh` en primer plano (`--yes`, sin gum o sin TTY: no lo instala y lo avisa). `install.sh --dry-run` lo lista sin ejecutarlo.
+- **Si el bloqueo muere (pantalla roja):** `Ctrl + Alt + F3` → iniciar sesión; `hyprctl --instance 0 dispatch 'hl.dsp.exec_cmd("hyprlock")'` (sintaxis comprobada en 0.56.2 con `exec_cmd("true")`; con `allow_session_lock_restore` hyprlock recupera el bloqueo); `Ctrl + Alt + F1` para volver y desbloquear.
+- **Verificado:** `qs -p config/quickshell` carga sin errores (`Configuration Loaded`); el shell vivo expone `target lock` (`lock`, `isLocked`); `hyprctl reload` → `configerrors` vacío; `allow_session_lock_restore: true`; `sddm/install-theme.sh --test` abre el greeter (1366×768, núcleo animado, sin errores en el log); migración 012 en dry-run; `sync-neural-core.sh --check` en verde.
+- **Probado por el usuario (2026-10-07):** el bloqueo real de Quickshell funciona y le gusta; el detalle de cada caso (contraseña mala, Bloq Mayús, etiqueta US/LATAM, reproductor) no se anotó caso por caso.
+- **NO verificado:** `hyprlock` como respaldo con el nuevo tema (sin confirmar); 2 monitores (esta máquina tiene 1); rendimiento (si va lento: `pointCount` a 160 en `LockView.pointCount` / `theme.conf`); la instalación del tema SDDM (`sudo`, no ejecutada). Aviso aparte: Quickshell está compilado contra Qt 6.11.2 y el sistema tiene 6.12.0; hay que recompilar el paquete `quickshell`.
+- **Revertir:** `sddm/install-theme.sh --uninstall` (tema de login). Bloqueo: quitar `Lock {}` de `shell.qml` y devolver `SUPER + L` a `loginctl lock-session`; hyprlock sigue funcionando.
+
+## 7zb. Lanzador orbital sobre el núcleo neural (2026-10-07)
+
+- **Hecho:** `modules/launcher/LauncherView.qml` (sin tocar, copiado de dragon-core) pinta el lanzador; `Launcher.qml` pasa a ser solo lógica y vive dentro de `LauncherWindow` (una sola ventana `dragon-launcher`, junto a energía / portapapeles / atajos). `shell.qml` instancia `LauncherWindow` directamente.
+- **Lógica conservada:** orden `Apps` (anclados → más lanzadas → alfabético) como orden base del anillo, `Apps.launchById` (terminal, contador de uso), `=cálculo` (Enter copia), `>comando` (Enter en Ghostty), `+nombre` (abre la Tienda), IPC `shell toggle launcher`. Los prefijos se resuelven con `Shortcut` (Enter) en el wrapper, sin tocar la vista.
+- **Atajos nuevos:** `Ctrl+I` sin coincidencias → Tienda con la búsqueda; `Ctrl+F` ancla/desancla la app del frente (sustituye al clic derecho).
+- **Eliminado:** `OrbitalLauncher`, `OrbitBack`, `OrbitIcon`, `PlanetGlass`, tokens `Theme.orbit*`, namespace/preset `dragon-planet` (rules.lua, glass.lua).
+- **Verificado (sesión Hyprland real, instancia `qs -p` aparte):** carga sin errores de QML; SUPER+Space (IPC) abre; núcleo + anillo + iconos reales + app en frente (orden por frecuencia, Brave); cierra por IPC.
+- **No verificado (no hay wtype/ydotool para teclear):** filtrar, ←/→/Tab/rueda, Enter, Esc doble, clic fuera, 1–2 resultados, núcleo rojo/verde, `reducedMotion`, nitidez en movimiento, `=`/`>`/`+`, Ctrl+I/Ctrl+F, y que la ventana vaya fluida.
+- **Riesgos / diferencias a revisar:**
+  - La vista pinta un velo oscuro a pantalla completa dentro de `dragon-launcher`, que tiene regla hyprglass (máscara alfa): puede aplicar cristal a toda la pantalla (GPU). Si pasa: quitar el velo de la vista (cambio mínimo: opción `backdrop: false`) porque `dragon-scrim` ya oscurece.
+  - La vista filtra solo por nombre/subtítulo: se pierden coincidencias por palabras clave y el bonus por uso en la búsqueda (solo desempata). Cambio mínimo: propiedad `externalFilter` para pasar `Apps.search(query)` ya ordenada.
+  - Con `=`/`>`/`+` el núcleo se pone rojo y el contador muestra 0 (la vista los trata como «sin resultados»).
+  - Hay solo una pila de teclas: el hint inferior usa glifos (⏎) que pueden salir como cuadro con la fuente actual.
+- **Revertir:** `git revert` del commit (aún sin hacer commit; hasta entonces `git checkout -- config/quickshell config/hypr` y restaurar los 4 archivos borrados con `git checkout HEAD -- config/quickshell/modules/launcher`).
+
 ## 8. Cómo depurar rápido
 
 ```sh

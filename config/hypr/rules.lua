@@ -40,7 +40,7 @@ hl.window_rule({
 -- ignore_alpha = 0.3: pixels with less alpha than that are not blurred. The notch (dragon-island) is
 -- opaque black: no blur rule, ever. dragon-scrim (the 45 % black scrim) never gets blur either.
 if not (hl.plugin and hl.plugin.hyprglass) then
-    for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher", "dragon-planet", "dragon-wallpapers", "dragon-preview", "dragon-store" }) do
+    for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher", "dragon-wallpapers", "dragon-preview", "dragon-store" }) do
         hl.layer_rule({
             name         = "blur-" .. ns,
             match        = { namespace = "^" .. ns .. "$" },
@@ -80,7 +80,7 @@ hl.window_rule({
 -- The notch, popovers and panels animate themselves in QML: no compositor layer animation
 hl.layer_rule({
     name    = "no-anim-dragon-island",
-    match   = { namespace = "^dragon-(island|popover|launcher|planet|notifications|wallpapers|store|scrim|preview|dock|dock-edge)$" },
+    match   = { namespace = "^dragon-(island|popover|launcher|notifications|wallpapers|store|scrim|preview|dock|dock-edge)$" },
     no_anim = true,
 })
 
