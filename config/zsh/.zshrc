@@ -1,6 +1,7 @@
 # =============================================================================
 # dragon-island — ~/.zshrc (imported from the user's own, plus the terminal setup of config/zsh/*.zsh)
-# Load order (it matters):
+# Only the oh-my-zsh part lives here; the load order of the rest is documented in dragon.zsh.
+# Load order of that part (it matters):
 #   1. oh-my-zsh (+ the `git` plugin); oh-my-zsh.sh runs compinit AFTER loading the `plugins` array, so
 #      zsh-autosuggestions and zsh-syntax-highlighting are NOT in that array: they have to come after fzf-tab.
 #   2. fzf         key bindings (Ctrl+R / Ctrl+T / Alt+C); `fzf --zsh` also binds Tab to fzf-completion ...
@@ -27,21 +28,5 @@ fi
 
 source $ZSH/oh-my-zsh.sh   # runs compinit
 
-# --- dragon-island terminal: files of config/zsh (deployed to ~/.config/dragon-island/zsh) ---
-_dragon_zsh="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh"
-_dragon_plugins="${ZSH_CUSTOM:-$ZSH/custom}/plugins"
-
-[[ -f $_dragon_zsh/history.zsh ]] && source $_dragon_zsh/history.zsh
-[[ -f $_dragon_zsh/fzf.zsh ]] && source $_dragon_zsh/fzf.zsh               # fzf first ...
-[[ -f $_dragon_zsh/completion.zsh ]] && source $_dragon_zsh/completion.zsh # ... fzf-tab after it, before the two below
-[[ -f $_dragon_plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh ]] && source $_dragon_plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh
-[[ -f $_dragon_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh ]] && source $_dragon_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh
-[[ -f $_dragon_zsh/aliases.zsh ]] && source $_dragon_zsh/aliases.zsh
-
-# zoxide: `z dir` / `zi` (interactive); `cd` stays the normal cd
-command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
-
-eval "$(starship init zsh)"
-
-# Private bits (tokens, personal aliases, machine paths) live outside the repo
-[[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
+# --- dragon-island terminal: everything else lives in dragon.zsh (config/zsh, deployed to ~/.config/dragon-island/zsh) ---
+[[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh/dragon.zsh" ]] && source "${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh/dragon.zsh"

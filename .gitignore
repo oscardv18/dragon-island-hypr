@@ -5,3 +5,6 @@
 .agents/skills/hyprland/
 *.zip
 out/
+
+# Per-machine Hyprland overrides (monitors, GPU, keyboard) written by install.sh
+config/hypr/local.lua

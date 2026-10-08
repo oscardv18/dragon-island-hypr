@@ -14,3 +14,7 @@ require("binds")
 require("plugins")
 require("glass")   -- hyprglass (optional): a no-op when the plugin is not loaded
 require("autostart")
+
+-- Per-machine overrides (monitors, scale, GPU variables, keyboard layouts), written by install.sh and never
+-- versioned (gitignored). Loaded last so it wins over the defaults above; a missing file is fine.
+pcall(require, "local")

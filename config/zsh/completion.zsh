@@ -1,6 +1,6 @@
 # Tab = fzf-tab (advanced search). Sourced after compinit (oh-my-zsh.sh) and fzf, before zsh-autosuggestions and
 # zsh-syntax-highlighting. If the plugin is missing the normal zsh completion keeps working.
-_fzf_tab="${ZSH_CUSTOM:-$ZSH/custom}/plugins/fzf-tab/fzf-tab.plugin.zsh"
+_fzf_tab="${_dragon_plugins:-${ZSH_CUSTOM:-$ZSH/custom}/plugins}/fzf-tab/fzf-tab.plugin.zsh"
 [[ -f $_fzf_tab ]] || return 0
 
 (( $+LS_COLORS )) || eval "$(dircolors -b 2>/dev/null)"
