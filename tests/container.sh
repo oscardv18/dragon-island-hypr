@@ -27,7 +27,7 @@ done
 echo "== 2. paquetes AUR =="
 aur=$(cat /repo/packages/aur-*.txt | awk "/^[[:space:]]*(#|\$)/ { next } { print \$1 }"; awk "/^@/ { next } /^[[:space:]]*(#|\$)/ { next } { split(\$1, a, \":\"); if (a[1] == \"aur\") print a[2] }" /repo/packages/extras.txt)
 q=""; for p in $aur; do q="$q&arg[]=$p"; done
-found=$(curl -fsS "https://aur.archlinux.org/rpc/v5/info?${q#&}" | jq -r ".results[].Name")
+found=$(curl -fsSg "https://aur.archlinux.org/rpc/v5/info?${q#&}" | jq -r ".results[].Name")
 for p in $aur; do grep -qx "$p" <<<"$found" || { echo "✘ no existe en el AUR: $p"; fails=$((fails + 1)); }; done
 echo "AUR: $(wc -w <<<"$aur") paquetes, $(wc -l <<<"$found") encontrados"
 echo "== 3. install.sh --dry-run =="
