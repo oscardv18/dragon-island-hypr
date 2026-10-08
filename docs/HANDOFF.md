@@ -489,6 +489,33 @@ Decisiones y trampas:
   - Hay solo una pila de teclas: el hint inferior usa glifos (⏎) que pueden salir como cuadro con la fuente actual.
 - **Revertir:** `git revert` del commit (aún sin hacer commit; hasta entonces `git checkout -- config/quickshell config/hypr` y restaurar los 4 archivos borrados con `git checkout HEAD -- config/quickshell/modules/launcher`).
 
+## 7zc. Repo ordenado e instalador modular (2026-10-07)
+
+- **Hecho:**
+  - **Repo:** una sola copia de los skills (`.agents/skills/`; se borraron las de la raíz y `dragon-island-skills/`), `lib/`, `modules/`, `scripts/`, `tests/`, `docs/`; `installer/` desaparece; `dragon-core/` se fusionó (prompts, mocks, referencia) y se versiona; `shared/neural-core/` es la fuente de NeuralCore/CoreIcon (`scripts/sync-shared.sh [--check]`); LICENSE MIT; `.gitignore` (`out/`, `*.zip`, `config/hypr/local.lua`).
+  - **Scripts:** `install.sh` (menú gum, plan, `--dry-run/--yes/--modules/--extras/--no-sudo/--copy`), `update.sh` (por módulos; `hyprpm update` solo si cambió Hyprland), `uninstall.sh` (por módulo; paquetes solo con `--remove-packages`), `doctor.sh` / `doctor.sh --pre`, `bootstrap.sh`.
+  - **Módulos:** core, shell, theme, plugins, login, keyring, keyboard, extras (`desc/sudo/check/plan/apply/revert/packages`). Cada paso con sudo se explica y se confirma (`confirm_sudo`); PAM y `/etc` solo en módulos opt-in con diff y `.bak-dragon`. Ajustes por máquina: `~/.config/hypr/local.lua` (se carga el último, probado en la sesión real) y `~/.config/dragon-island/local.conf`.
+  - **`pre-instalation.md`** (12 pasos) hecho a partir de esta máquina; `lib/checks.sh` tiene la tabla única comprobación → paso y cada fallo imprime «ver pre-instalation.md, Paso N».
+  - **Plugins:** `scripts/plugins-foreground.sh` (hyprbars + hyprfocus + hyprglass, en primer plano) sustituye a `installer/firstrun.sh` + `glass.sh`; `autostart.lua` usa `plugins.pending`. **Migración 013** reenlaza el estado y traduce componentes → módulos.
+  - **Paquetes:** `packages/` troceado y verificado; la lista `desc` (apps personales) queda fuera; `opencode`/`genoffice-bin` siguen en «Mis apps» (`user-*.txt`).
+  - **Docs:** README, INSTALL, TROUBLESHOOTING, TESTED-VERSIONS, KEYBINDS (con referencia generada por `scripts/gen-keybinds.sh`; se reparó una fila rota de `SUPER + Escape`) y el skill del proyecto.
+  - Teclas del lanzador `Ctrl+F` / `Ctrl+I` añadidas al panel `SUPER + F1` y a KEYBINDS (faltaban).
+- **Verificado en esta máquina** (`tests/run-all.sh`, sin root):
+  - shellcheck limpio en 44 scripts, `bash -n`, `luac -p`, `qmllint` en lanzador / núcleo / bloqueo.
+  - `tests/check-docs.sh`: 29 bloques bash de `pre-instalation.md` con `bash -n`, cada paso citado por el código existe con el mismo título, el Paso 3 es `packages/base.txt`, los paquetes de los comandos existen (`pacman -Si` / `yay -Si`), tabla generada al día.
+  - Los nombres de `packages/*.txt` existen (`pacman -Si`, `yay -Si`, y el AUR RPC con la misma consulta que usa el contenedor).
+  - `tests/idempotency.sh`: core, shell, theme, plugins, keyboard, keyring y extras dos veces en un `$HOME` temporal con shims (sin sudo real): árbol idéntico, un solo bloque en `~/.zshrc`, líneas propias intactas, respaldo creado.
+  - `./install.sh --dry-run --yes` completo (los 8 módulos): termina bien, `git status` idéntico y ningún archivo de configuración tocado. `./update.sh --dry-run`, `./uninstall.sh --dry-run`.
+  - `./doctor.sh --pre` y `./doctor.sh`: todo ✔ en esta máquina.
+- **No verificado** (necesita una instalación limpia o root):
+  - Contenedor Arch: `tests/container.sh` está escrito pero **no se ejecutó** (el daemon de docker está parado y `sudo` pide contraseña). Para correrlo: `sudo systemctl start docker && DOCKER="sudo docker" tests/container.sh`.
+  - Instalación REAL de punta a punta: `pacman -Syu`, `pacman -S`, `yay -S`, servicios con sudo, `hyprpm update` en una máquina limpia, `sddm/install-theme.sh`, el cambio de PAM (`keyring`), `localectl`, `chsh`, drivers NVIDIA / Intel, Plasma Login Manager, Arch puro (yay vía AUR) y CachyOS.
+  - Los menús interactivos de gum (solo se probaron las rutas `--yes` / `--dry-run`).
+  - `./update.sh` y `./uninstall.sh` reales (la migración 013 se probó solo con `DRY_RUN=true`; en esta máquina se aplicará con el próximo `./update.sh`) y `bootstrap.sh` (`curl | bash`).
+  - El procedimiento de TTY para un bloqueo trabado (TROUBLESHOOTING).
+  - **Cómo probarlo todo en una VM de EndeavourOS:** instala la ISO siguiendo `pre-instalation.md` **al pie de la letra** (Pasos 1–9, sin saltarte ninguno), `./doctor.sh --pre`, `./install.sh --dry-run`, `./install.sh` con los módulos por defecto, cierra sesión y entra en Hyprland, `./doctor.sh`; luego repite con `--modules login,keyring,extras` y por último `./uninstall.sh` y `./update.sh`. Anota cada paso que no se pudo seguir tal cual: es un error de la guía.
+- **Cómo revertir:** cada cambio es un commit (desde `afde345` hasta el último de esta sección); `git revert <rango>` o `git revert <commit>`. Tu instalación actual no se tocó: sigue enlazada a `config/` y `bin/`, que no se movieron. Estado local: `~/.local/state/dragon-island/firstrun.sh` apunta a un archivo que ya no existe (inocuo: `firstrun.done` existe); lo arregla la migración 013.
+
 ## 8. Cómo depurar rápido
 
 ```sh
