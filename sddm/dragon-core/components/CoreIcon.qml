@@ -38,6 +38,8 @@ Item {
         next:    "M5 4l10 8-10 8zM19 5v14",
         play:    "M6 4l14 8-14 8z",
         pause:   "M7 4h3v16H7zM14 4h3v16h-3z",
-        bell:    "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0"
+        bell:    "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0",
+        grid:    "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",      // tiling: dwindle
+        columns: "M3 3h18v18H3zM9 3v18M15 3v18"                              // tiling: scrolling
     })
 }

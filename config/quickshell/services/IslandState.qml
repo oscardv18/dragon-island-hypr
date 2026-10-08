@@ -7,7 +7,7 @@
 // =============================================================================
 /**
  * Properties:
- *   - mode: string [readonly] ("osd" | "notification" | "workspace" | "media" | "clock")
+ *   - mode: string [readonly] ("osd" | "tiling" | "notification" | "workspace" | "media" | "clock")
  *   - isTransient: bool [readonly] (mode is osd / notification / workspace → the notch peeks)
  *   - workspaceId: int [readonly] (the one shown in "workspace" mode)
  *   - notification: Notification [readonly] (the one shown in "notification" mode)
@@ -24,18 +24,21 @@ Singleton {
     property int workspaceId: Hypr.focusedWorkspaceId
     property bool notifFlash: false
     property var notification: null
+    property bool tilingFlash: false
+    property string tilingText: ""
     property bool agentFlash: false
     property var agentEvent: null     // { agent, kind: "blocked" | "done" }
 
     readonly property string mode: {
         if (Osd.visible) return "osd";
+        if (tilingFlash) return "tiling";
         if (agentFlash && agentEvent) return "agent";   // above notifications: herdr's own system toast says the same
         if (notifFlash && notification) return "notification";
         if (workspaceFlash) return "workspace";
         if (Media.hasPlayer && Media.title.length > 0) return "media";
         return "clock";
     }
-    readonly property bool isTransient: mode === "osd" || mode === "notification" || mode === "agent" || mode === "workspace"
+    readonly property bool isTransient: mode === "osd" || mode === "tiling" || mode === "notification" || mode === "agent" || mode === "workspace"
 
     // ignore the initial workspace report at startup
     property bool _armed: false
@@ -45,6 +48,22 @@ Singleton {
         id: wsTimer
         interval: Theme.durTransient
         onTriggered: root.workspaceFlash = false
+    }
+
+    Timer {
+        id: tilingTimer
+        interval: Theme.durTransient
+        onTriggered: root.tilingFlash = false
+    }
+
+    // the tiling mode of the workspace was switched (SUPER + T, the bar chip, IPC): "Modo scroll" / "Modo dwindle"
+    Connections {
+        target: Tiling
+        function onChanged(mode) {
+            root.tilingText = Tiling.notice;
+            root.tilingFlash = true;
+            tilingTimer.restart();
+        }
     }
 
     Timer {

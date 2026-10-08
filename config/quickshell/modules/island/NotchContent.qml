@@ -39,6 +39,7 @@ Item {
         sourceComponent: {
             switch (root.mode) {
                 case "osd":          return osdView;
+                case "tiling":       return tilingView;
                 case "notification": return notifView;
                 case "agent":        return agentView;
                 case "workspace":    return workspaceView;
@@ -219,6 +220,25 @@ Item {
             PeekLine {
                 anchors.horizontalCenter: parent.horizontalCenter
                 text: Osd.label
+            }
+        }
+    }
+
+    // ---- tiling mode switched: icon · text (no sound) ----
+    Component {
+        id: tilingView
+        Row {
+            spacing: Theme.spacingSm
+            CoreIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: Tiling.scrolling ? "columns" : "grid"
+                size: Theme.iconLg
+                color: Theme.text
+            }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: IslandState.tilingText
+                weight: Theme.weightSemiBold
             }
         }
     }

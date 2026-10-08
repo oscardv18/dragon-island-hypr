@@ -3,6 +3,7 @@
 // Each capsule opens its own popover through ShellState (one at a time).
 import QtQuick
 import QtQuick.Effects
+import Quickshell
 import "../.."
 import "../../services"
 import "../../components"
@@ -96,6 +97,48 @@ Rectangle {
                 mono: true
                 size: Theme.sizeBar
                 weight: Theme.weightSemiBold
+            }
+        }
+
+        // Tiling mode of the focused workspace: dwindle ↔ scrolling (click or SUPER + T)
+        Capsule {
+            id: tilingCap
+            anchors.verticalCenter: parent.verticalCenter
+            padH: Theme.capsulePadH - 2
+            onClicked: Tiling.toggle()
+            CoreIcon {
+                anchors.verticalCenter: parent.verticalCenter
+                name: Tiling.scrolling ? "columns" : "grid"
+                size: Theme.iconSm
+                color: Tiling.scrolling ? Theme.cyan : Theme.textSoft
+            }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: Tiling.label
+                mono: true
+                size: Theme.sizeBar
+                weight: Theme.weightSemiBold
+            }
+
+            // tooltip: what a click does and the shortcut
+            Timer { id: tipDelay; interval: 450; running: tilingCap.hovered; onTriggered: tilingTip.visible = true }
+            onHoveredChanged: if (!hovered) tilingTip.visible = false
+            PopupWindow {
+                id: tilingTip
+                visible: false
+                anchor.item: tilingCap
+                anchor.edges: Edges.Bottom
+                anchor.gravity: Edges.Bottom
+                anchor.margins.bottom: Theme.popoverGap
+                implicitWidth: tipText.implicitWidth + 24
+                implicitHeight: 28
+                color: Theme.transparent
+                Rectangle {
+                    anchors.fill: parent
+                    radius: height / 2
+                    color: Theme.alpha(Theme.surface0, 0.92)
+                    UiText { id: tipText; anchors.centerIn: parent; text: `Alternar Dwindle / Scrolling · ${Tiling.shortcut}`; size: Theme.sizeBody }
+                }
             }
         }
 
