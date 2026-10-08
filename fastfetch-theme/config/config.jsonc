@@ -1,0 +1,159 @@
+{
+  "$schema": "https://github.com/fastfetch-cli/fastfetch/raw/dev/doc/json_schema.json",
+  "logo": {
+    "type": "file",
+    "source": "~/.config/fastfetch/dragon-logo.txt",
+    "color": {
+      "1": "38;2;197;14;210",
+      "2": "38;2;124;58;237",
+      "3": "38;2;0;193;228",
+      "4": "38;2;138;143;163"
+    },
+    "padding": {
+      "top": 1,
+      "left": 2,
+      "right": 4
+    }
+  },
+  "display": {
+    "separator": "  ",
+    "color": {
+      "output": "38;2;230;232;239",
+      "separator": "38;2;138;143;163"
+    }
+  },
+  "modules": [
+    {
+      "type": "title",
+      "format": "{#38;2;124;58;237}╭─{#}  {user-name-colored}{at-symbol-colored}{host-name-colored}  {#38;2;124;58;237}─────────────────{#}",
+      "color": {
+        "user": "38;2;197;14;210",
+        "at": "38;2;138;143;163",
+        "host": "38;2;0;193;228"
+      }
+    },
+    {
+      "type": "custom",
+      "format": "{#38;2;124;58;237}│{#}  {#38;2;6;201;147}●{#} {#38;2;230;232;239}núcleo en línea{#}{#38;2;138;143;163}  ·  dragon-island{#}"
+    },
+    {
+      "type": "custom",
+      "format": "{#38;2;124;58;237}├─{#} {#38;2;197;14;210}SISTEMA{#} {#38;2;124;58;237}───────────────────{#}"
+    },
+    {
+      "type": "os",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;197;14;210}  SO         {#}",
+      "format": "{pretty-name}"
+    },
+    {
+      "type": "kernel",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;197;14;210}  Kernel     {#}",
+      "format": "{release}"
+    },
+    {
+      "type": "uptime",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;197;14;210}  Activo     {#}"
+    },
+    {
+      "type": "packages",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;197;14;210}  Paquetes   {#}"
+    },
+    {
+      "type": "shell",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;197;14;210}  Shell      {#}"
+    },
+    {
+      "type": "custom",
+      "format": "{#38;2;124;58;237}├─{#} {#38;2;197;14;210}ESCRITORIO{#} {#38;2;124;58;237}────────────────{#}"
+    },
+    {
+      "type": "wm",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Hyprland   {#}",
+      "format": "{pretty-name} {version}"
+    },
+    {
+      "type": "command",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Quickshell {#}",
+      "text": "out=$(qs --version 2>/dev/null | awk '{print $2}' | tr -d ','); echo \"${out:-—}\""
+    },
+    {
+      "type": "command",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Plugins    {#}",
+      "text": "out=$(hyprctl plugin list 2>/dev/null | awk '/^Plugin /{print $2}' | paste -sd' '); echo \"${out:-—}\""
+    },
+    {
+      "type": "terminal",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Terminal   {#}",
+      "format": "{pretty-name} {version}"
+    },
+    {
+      "type": "theme",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Tema       {#}",
+      "format": "{theme1}"
+    },
+    {
+      "type": "icons",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Iconos     {#}",
+      "format": "{icons1}"
+    },
+    {
+      "type": "font",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Fuente     {#}",
+      "format": "{font1}"
+    },
+    {
+      "type": "display",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Pantalla   {#}",
+      "format": "{width}×{height} @ {refresh-rate}Hz"
+    },
+    {
+      "type": "command",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Teclado    {#}",
+      "text": "out=$(hyprctl devices -j 2>/dev/null | jq -r '[.keyboards[]|select(.main)][0].active_keymap' 2>/dev/null); echo \"${out:-—}\""
+    },
+    {
+      "type": "command",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;168;85;247}  Login      {#}",
+      "text": "out=$(grep -h '^Current=' /etc/sddm.conf.d/*.conf /etc/sddm.conf 2>/dev/null | tail -1 | cut -d= -f2); echo \"${out:-—}\""
+    },
+    {
+      "type": "custom",
+      "format": "{#38;2;124;58;237}├─{#} {#38;2;197;14;210}HARDWARE{#} {#38;2;124;58;237}──────────────────{#}"
+    },
+    {
+      "type": "cpu",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;0;193;228}  CPU        {#}",
+      "format": "{name} ({cores-physical}c/{cores-logical}t)"
+    },
+    {
+      "type": "gpu",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;0;193;228}  GPU        {#}",
+      "format": "{name}"
+    },
+    {
+      "type": "memory",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;0;193;228}  Memoria    {#}",
+      "format": "{used} / {total} ({percentage})"
+    },
+    {
+      "type": "disk",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;0;193;228}  Disco      {#}",
+      "folders": "/",
+      "format": "{size-used} / {size-total} ({size-percentage})"
+    },
+    {
+      "type": "battery",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;0;193;228}  Batería    {#}",
+      "format": "{capacity} · {status}"
+    },
+    {
+      "type": "wifi",
+      "key": "{#38;2;124;58;237}│{#}  {#38;2;0;193;228}  Wi‑Fi      {#}",
+      "format": "{ssid} · {protocol} · {signal-quality}"
+    },
+    {
+      "type": "custom",
+      "format": "{#38;2;124;58;237}╰─{#}  {#38;2;197;14;210}███ {#}{#38;2;124;58;237}███ {#}{#38;2;168;85;247}███ {#}{#38;2;0;193;228}███ {#}{#38;2;6;201;147}███ {#}{#38;2;249;174;88}███ {#}{#38;2;237;37;78}███ {#}"
+    }
+  ]
+}
