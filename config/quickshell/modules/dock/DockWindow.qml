@@ -34,8 +34,12 @@ PanelWindow {
         left: pos === "left"
         right: pos === "right"
     }
-    implicitWidth: horiz ? length : Theme.dockThickness
-    implicitHeight: horiz ? Theme.dockThickness : length
+    // the window is dockMagRoom thicker than the tab: the enlarged capsules rise above it (macOS-style)
+    readonly property real size: Theme.dockThickness + Theme.dockMagRoom
+    // centre of the tab across the dock's thickness (the tab hugs the screen edge)
+    readonly property real tabCenter: pos === "left" ? Theme.dockThickness / 2 : size - Theme.dockThickness / 2
+    implicitWidth: horiz ? length : size
+    implicitHeight: horiz ? size : length
     exclusionMode: ExclusionMode.Ignore
     color: Theme.transparent
 
@@ -46,11 +50,20 @@ PanelWindow {
     // visible tab, or only the hot-zone strip while hidden
     mask: Region {
         Region { item: strip }                  // always: while the tab is still rising the pointer is on the strip
-        Region { item: Dock.wanted ? hitbox : null }
+        // the tab's band; the whole window (room for the enlarged capsules) only while the pointer is on it, so the
+        // empty room above the dock never blocks clicks
+        Region { item: Dock.wanted ? (tabHover.hovered ? hitbox : band) : null }
     }
 
     // the window's own rectangle (the tab moves while it rises, a Region does not follow the movement of an ancestor)
     Item { id: hitbox; anchors.fill: parent }
+    Item {
+        id: band
+        x: win.pos === "left" ? 0 : (win.pos === "right" ? win.width - Theme.dockThickness : 0)
+        y: win.pos === "bottom" ? win.height - Theme.dockThickness : 0
+        width: win.horiz ? win.width : Theme.dockThickness
+        height: win.horiz ? Theme.dockThickness : win.height
+    }
 
     // the hot zone: a thin strip on the screen edge
     Item {
@@ -72,8 +85,9 @@ PanelWindow {
         height: win.height
         property real sink: Dock.wanted ? 0 : Theme.dockThickness + 6
         Behavior on sink { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.2 } }
-        x: win.pos === "left" ? -sink : (win.pos === "right" ? sink : 0)
-        y: win.pos === "bottom" ? sink : 0
+        // never below 0: the spring overshoots, and a negative value lifts the tab off the screen edge
+        x: win.pos === "left" ? -Math.max(0, sink) : (win.pos === "right" ? Math.max(0, sink) : 0)
+        y: win.pos === "bottom" ? Math.max(0, sink) : 0
 
         property int target: 0
         property real off: target
@@ -90,6 +104,8 @@ PanelWindow {
             anchors.fill: parent
             NotchShape {
                 anchors.centerIn: parent
+                anchors.verticalCenterOffset: win.horiz ? win.tabCenter - win.height / 2 : 0
+                anchors.horizontalCenterOffset: win.horiz ? 0 : win.tabCenter - win.width / 2
                 width: win.horiz ? win.width : win.height
                 height: Theme.dockThickness
                 rotation: win.pos === "bottom" ? 180 : (win.pos === "left" ? -90 : 90)
@@ -122,7 +138,17 @@ PanelWindow {
             readonly property real out: Math.max(-rel, rel - (Theme.dockCapacity - 1))
             readonly property real fade: Math.max(0, Math.min(1, 1 - out / 0.8))
             readonly property real along: Theme.dockPad + Theme.notchEarRadius + Theme.dockPill / 2 + rel * Theme.dockPitch + dragOffset
-            readonly property real cross: Theme.dockThickness / 2
+            readonly property real cross: win.tabCenter
+
+            // macOS-style magnification: the capsules near the pointer grow away from the screen edge
+            readonly property real pointerAlong: win.horiz ? tabHover.point.position.x : tabHover.point.position.y
+            readonly property real away: Math.abs(pointerAlong - along + dragOffset)
+            readonly property real mag: tabHover.hovered && dragOffset === 0 ? 1 + Theme.dockMagnify * Math.exp(-(away * away) / (2 * Theme.dockMagSigma * Theme.dockMagSigma)) : 1
+            property real magSmooth: mag
+            Behavior on magSmooth { NumberAnimation { duration: Theme.ms(70) } }
+            scale: magSmooth
+            transformOrigin: win.pos === "bottom" ? Item.Bottom : (win.pos === "left" ? Item.Left : Item.Right)
+            z: magSmooth
 
             width: Theme.dockPill
             height: Theme.dockPill

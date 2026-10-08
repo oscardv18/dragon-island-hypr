@@ -145,14 +145,17 @@ Singleton {
     readonly property real notificationsListHeight: 250
 
     // Dock: an opaque black tab with the notch's silhouette (NotchShape) that sticks out of the screen edge; as thick as the bar islands
-    readonly property real dockPill:       30     // capsule that holds an icon
-    readonly property real dockIconInner:  20
-    readonly property real dockPitch:      38     // distance between capsules
+    readonly property real dockPill:       34     // capsule that holds an icon
+    readonly property real dockIconInner:  24
+    readonly property real dockPitch:      42     // distance between capsules
     readonly property real dockPad:        14     // along the edge, before the first / after the last capsule
     readonly property real dockThickness:  40     // how far it sticks out
     readonly property int  dockCapacity:   8      // capsules shown at once; more scroll with the mouse wheel
     readonly property int  dockHideDelay:  600    // ms after the pointer leaves
     readonly property real dockEdge:       3      // hot zone thickness, px
+    readonly property real dockMagnify:    0.45   // extra scale of the capsule under the pointer (macOS-style magnification)
+    readonly property real dockMagSigma:   52     // px along the dock over which the magnification fades out
+    readonly property real dockMagRoom:    26     // room the window keeps beyond the tab for the enlarged capsules
     // herdr agent states (herdr has no "error" state): working · blocked (needs an answer) · done / idle (ready) · unknown
     function agentColor(state: string): color {
         switch (state) {

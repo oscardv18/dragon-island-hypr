@@ -151,6 +151,7 @@ Item {
 
         // expanded: swallow clicks on empty areas
         MouseArea {
+            z: -1      // BEHIND the content (tabs, buttons): it only catches what the content leaves free
             anchors.fill: parent
             enabled: root.expanded
             acceptedButtons: Qt.AllButtons
