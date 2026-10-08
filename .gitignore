@@ -3,3 +3,5 @@
 
 # Community "hyprland" skill: it is its own git clone, fetched/updated by install-skills.sh
 .agents/skills/hyprland/
+*.zip
+out/
