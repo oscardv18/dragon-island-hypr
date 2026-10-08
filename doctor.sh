@@ -81,7 +81,7 @@ if command -v qs >/dev/null 2>&1; then
     if [[ -n "$(qs list 2>/dev/null)" ]]; then
         good "Quickshell en marcha"
         ipc="$(qs ipc show 2>&1 || true)"
-        for t in shell lock; do ck "IPC «$t» disponible" "reinicia la shell: qs kill; qs -d" has "target $t" "$ipc"; done
+        for t in shell lock bottomislands; do ck "IPC «$t» disponible" "reinicia la shell: qs kill; qs -d" has "target $t" "$ipc"; done
         log="$(qs log 2>/dev/null | tail -n 400 || true)"
         if has "Failed to load configuration|is not a type" "$log"; then bad "Quickshell registró errores de carga" "qs log | less ; docs/TROUBLESHOOTING.md"
         else good "Quickshell sin errores de carga en el registro"; fi
@@ -89,6 +89,20 @@ if command -v qs >/dev/null 2>&1; then
         bad "Quickshell no está en marcha" "qs -d (o cierra sesión y vuelve a entrar)"
     fi
 else bad "No existe qs (quickshell)" "sudo pacman -S quickshell"; fi
+
+echo "Islas inferiores (apps en segundo plano · herdr)"
+bi="$CFG/dragon-island/bottom-islands.json"
+if [[ -f "$bi" ]]; then
+    ck "JSON válido: $bi" "corrige la sintaxis (la shell conserva los valores anteriores); defaults en config/dragon-island/bottom-islands.json" python3 -m json.tool "$bi"
+else bad "Falta $bi" "./update.sh (migración 014) o cp config/dragon-island/bottom-islands.json $bi"; fi
+if [[ -f "$CFG/dragon-island/bottom-islands.local.json" ]]; then
+    ck "JSON válido: bottom-islands.local.json" "corrige la sintaxis del archivo local" python3 -m json.tool "$CFG/dragon-island/bottom-islands.local.json"
+fi
+if command -v herdr >/dev/null 2>&1; then
+    if herdr status server 2>/dev/null | grep -q 'status: running'; then
+        ck "herdr: servidor alcanzable (la isla izquierda muestra datos)" "herdr status server" herdr agent list
+    else printf '  - herdr no está en marcha: la isla izquierda muestra «herdr sin conexión» (correcto, sin errores)\n'; fi
+else printf '  - herdr no instalado: la isla izquierda muestra «herdr sin conexión»\n'; fi
 
 echo "Tema y fuentes"
 fonts="$(fc-list 2>/dev/null || true)"

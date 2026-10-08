@@ -45,6 +45,11 @@ core_apply() {
     deploy_item "$REPO_DIR/config/kitty"     "$CFG/kitty"
     deploy_item "$REPO_DIR/config/ghostty"   "$CFG/ghostty"
     deploy_item "$REPO_DIR/config/quickshell" "$CFG/quickshell"
+    # settings of the bottom islands: only created, never overwritten (it is the user's file)
+    if [[ ! -e "$CFG/dragon-island/bottom-islands.json" ]]; then
+        run mkdir -p "$CFG/dragon-island"
+        run cp -- "$REPO_DIR/config/dragon-island/bottom-islands.json" "$CFG/dragon-island/bottom-islands.json"
+    fi
     deploy_item "$REPO_DIR/bin/dragon-pkg"   "$HOME/.local/bin/dragon-pkg"
     core_gpu_env
 

@@ -20,6 +20,7 @@ import "modules/notifications"
 import "modules/wallpapers"
 import "modules/store"
 import "modules/dock"
+import "modules/bottomislands"
 import "modules/lock"
 import "debug"
 
@@ -66,6 +67,9 @@ ShellRoot {
         model: Quickshell.screens
         delegate: Component { DockWindow {} }
     }
+
+    // the two hidden islands at the sides of the dock (apps in the background · herdr): one window per monitor
+    BottomIslands {}
 
     Variants {
         model: Quickshell.screens
