@@ -109,17 +109,9 @@ Rectangle {
             CoreIcon {
                 anchors.verticalCenter: parent.verticalCenter
                 name: Tiling.scrolling ? "columns" : "grid"
-                size: Theme.iconSm
+                size: Theme.iconMd
                 color: Tiling.scrolling ? Theme.cyan : Theme.textSoft
             }
-            UiText {
-                anchors.verticalCenter: parent.verticalCenter
-                text: Tiling.label
-                mono: true
-                size: Theme.sizeBar
-                weight: Theme.weightSemiBold
-            }
-
             // tooltip: what a click does and the shortcut
             Timer { id: tipDelay; interval: 450; running: tilingCap.hovered; onTriggered: tilingTip.visible = true }
             onHoveredChanged: if (!hovered) tilingTip.visible = false
@@ -137,7 +129,7 @@ Rectangle {
                     anchors.fill: parent
                     radius: height / 2
                     color: Theme.alpha(Theme.surface0, 0.92)
-                    UiText { id: tipText; anchors.centerIn: parent; text: `Alternar Dwindle / Scrolling · ${Tiling.shortcut}`; size: Theme.sizeBody }
+                    UiText { id: tipText; anchors.centerIn: parent; text: `${Tiling.scrolling ? "Scrolling" : "Dwindle"} · clic o ${Tiling.shortcut} para alternar`; size: Theme.sizeBody }
                 }
             }
         }
