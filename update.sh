@@ -329,6 +329,11 @@ step_plugins() {
         log_info "Hyprland $now sin cambios y plugins cargados: nada que reconstruir."
         return 0
     fi
+    if [[ -z "$before" ]] && hyprctl plugin list 2>/dev/null | grep -qi hyprbars && [[ ! -f "$STATE_DIR/plugins.pending" ]]; then
+        $DRY_RUN || printf '%s\n' "$now" > "$STATE_DIR/hyprland-version"
+        log_info "Plugins ya cargados con Hyprland $now: se registra la versión, sin reconstruir."
+        return 0
+    fi
     log_info "Hyprland ${before:-?} → $now (o plugins pendientes): hay que repetir hyprpm update."
     if $DRY_RUN; then run "$REPO_DIR/scripts/plugins-foreground.sh"; return 0; fi
     if confirm "[sudo] hyprpm va a reinstalar las cabeceras (pide tu contraseña). ¿Reconstruir los plugins ahora, en primer plano?"; then

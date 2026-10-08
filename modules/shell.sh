@@ -57,6 +57,8 @@ shell_apply() {
 
 shell_revert() {
     marker_unset "$HOME/.zshrc" zsh "#"
+    # legacy install: ~/.zshrc itself was a link to the repo's file (the old migration 002 backed yours up)
+    [[ "$(readlink -f "$HOME/.zshrc")" == "$(readlink -f "$REPO_DIR/config/zsh/.zshrc")" ]] && undeploy "$HOME/.zshrc"
     undeploy "$SHELL_CFG/dragon-island/zsh"
     undeploy "$SHELL_CFG/starship.toml"
     log_info "shell: línea retirada de ~/.zshrc. Si cambiaste el shell: chsh -s /bin/bash (o el que tuvieras)."

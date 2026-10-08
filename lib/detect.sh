@@ -25,7 +25,7 @@ detect_gpu() {
     GPU_VENDOR="unknown"; GPU_NAME=""; GPU_DRIVER_LOADED=false
     command -v lspci >/dev/null 2>&1 || return 0
     local line
-    line="$(lspci -nnk | awk 'BEGIN{IGNORECASE=1} /(vga|3d|display)/ {print; getline; print; getline; print; getline; print; exit}')"
+    line="$(lspci -nnk 2>/dev/null | awk 'BEGIN{IGNORECASE=1} /(vga|3d|display)/ {print; getline; print; getline; print; getline; print; exit}' || true)"
     GPU_NAME="$(head -n1 <<<"$line" | sed -E 's/^[^ ]+ [^:]+: //')"
     case "${line,,}" in
         *nvidia*)                GPU_VENDOR="nvidia" ;;
