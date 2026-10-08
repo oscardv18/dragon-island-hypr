@@ -34,6 +34,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + F` | Maximizar / restaurar (conserva los huecos) |
 | `SUPER + SHIFT + F` | Pantalla completa real |
 | `SUPER + V` | Alternar flotante |
+| `SUPER + T` | Alternar el modo de mosaico del escritorio: **Dwindle** (árbol, por defecto) ↔ **Scrolling** (columnas en una cinta horizontal, layout nativo de Hyprland 0.56). Cada escritorio recuerda el suyo (`~/.local/state/dragon-island/tiling.json`); también la cápsula `DWINDLE` / `SCROLL` de la barra y `qs ipc call tiling toggle\|set dwindle\|set scrolling\|get` |
 | `SUPER + ←↑→↓` | Mover el foco |
 | `SUPER + ALT + H/J/K/L` | Mover el foco (estilo Vim) |
 | `SUPER + SHIFT + ←↑→↓` · `SUPER + SHIFT + H/J/K/L` | Mover la ventana |
@@ -181,6 +182,18 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | ` comando` (espacio delante) | No se guarda en el historial |
 | `ls` · `ll` · `la` · `lt` | eza: lista con iconos · larga con git · con ocultos · árbol de 2 niveles |
 | `cat archivo` | Se muestra con bat (colores, sin paginador) |
+
+## Modo Scrolling (solo en escritorios en modo scroll; en dwindle estas teclas no hacen nada)
+
+`SUPER + izquierda / derecha` cambia de columna y `SUPER + arriba / abajo` de ventana dentro de la columna; `SUPER + SHIFT + flechas` mueve la ventana. Además:
+
+| Teclas | Acción |
+|---|---|
+| `SUPER + CTRL + izquierda / derecha` | Mover la columna entera |
+| `SUPER + coma / punto` | Unir la ventana a la columna anterior / siguiente, o sacarla de su columna si no está sola |
+| `SUPER + P` | La ventana pasa a su propia columna |
+| `SUPER + R` | Ciclar el ancho de la columna: 1/3, 1/2, 2/3, completo |
+| `SUPER + C` | Centrar la columna |
 
 ## Teclado dentro de los paneles
 

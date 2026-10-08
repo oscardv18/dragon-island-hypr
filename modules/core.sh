@@ -17,7 +17,7 @@ core_check() {
 
 core_plan() {
     echo "  · paquetes oficiales: $(pkg_list "$REPO_DIR/packages/pacman-core.txt" | wc -l) · AUR: $(pkg_list "$REPO_DIR/packages/aur-core.txt" | tr '\n' ' ')"
-    echo "  · enlaces (con respaldo): ~/.config/{hypr,kitty,ghostty,quickshell}, ~/.local/bin/dragon-pkg"
+    echo "  · enlaces (con respaldo): ~/.config/{hypr,kitty,ghostty,quickshell}, ~/.local/bin/{dragon-pkg,dragon-tiling}"
     echo "  · servicios del sistema (sudo, confirmado uno a uno): NetworkManager, bluetooth, power-profiles-daemon"
     echo "  · servicios de usuario: pipewire, pipewire-pulse, wireplumber"
     echo "  · GPU: solo escribe variables en ~/.config/hypr/local.lua si es NVIDIA (no instala drivers)"
@@ -51,6 +51,7 @@ core_apply() {
         run cp -- "$REPO_DIR/config/dragon-island/background-apps.json" "$CFG/dragon-island/background-apps.json"
     fi
     deploy_item "$REPO_DIR/bin/dragon-pkg"   "$HOME/.local/bin/dragon-pkg"
+    deploy_item "$REPO_DIR/scripts/tiling.sh" "$HOME/.local/bin/dragon-tiling"    # SUPER + T, the bar chip, `qs ipc call tiling`
     core_gpu_env
 
     # the neural core has one source (shared/neural-core): re-sync both copies
@@ -76,7 +77,7 @@ core_apply() {
 
 core_revert() {
     local t
-    for t in "$CFG/hypr" "$CFG/kitty" "$CFG/ghostty" "$CFG/quickshell" "$HOME/.local/bin/dragon-pkg"; do undeploy "$t"; done
+    for t in "$CFG/hypr" "$CFG/kitty" "$CFG/ghostty" "$CFG/quickshell" "$HOME/.local/bin/dragon-pkg" "$HOME/.local/bin/dragon-tiling"; do undeploy "$t"; done
     marker_unset "$HYPR_LOCAL" gpu "--"
     log_info "core: enlaces retirados. Paquetes y servicios se dejan (ver uninstall.sh --remove-packages)."
 }

@@ -54,6 +54,26 @@ bind(mainMod .. " + SHIFT + J", hl.dsp.window.move({ direction = "down" }),  "Ve
 bind(mainMod .. " + SHIFT + K", hl.dsp.window.move({ direction = "up" }),    "Ventanas · Mover la ventana (Vim)")
 bind(mainMod .. " + SHIFT + L", hl.dsp.window.move({ direction = "right" }), "Ventanas · Mover la ventana (Vim)")
 
+-- Tiling modes: dwindle (default) <-> scrolling (native columns on a horizontal tape), per workspace.
+-- scripts/tiling.sh does the work (Quickshell's `tiling` IPC first: chip + notch notice; the script if it does not answer).
+bind(mainMod .. " + T", hl.dsp.exec_cmd("qs ipc call tiling toggle || $HOME/.local/bin/dragon-tiling toggle"), "Ventanas · Alternar modo Dwindle / Scrolling")
+
+-- Scrolling-only binds (layout messages, hl.dsp.layout): they do nothing on a dwindle workspace.
+-- Left / right (and SUPER + SHIFT + arrows) already change column / move the window in both modes.
+local function scrolling_only(msg)
+    return function()
+        local ws = hl.get_active_workspace()
+        if ws and ws.tiled_layout == "scrolling" then hl.dispatch(hl.dsp.layout(msg)) end
+    end
+end
+bind(mainMod .. " + CTRL + left",  scrolling_only("swapcol l"),                "Scrolling · Mover la columna a la izquierda")
+bind(mainMod .. " + CTRL + right", scrolling_only("swapcol r"),                "Scrolling · Mover la columna a la derecha")
+bind(mainMod .. " + comma",        scrolling_only("consume_or_expel prev"),    "Scrolling · Unir la ventana a la columna anterior / sacarla de la columna")
+bind(mainMod .. " + period",       scrolling_only("consume_or_expel next"),    "Scrolling · Unir la ventana a la columna siguiente / sacarla de la columna")
+bind(mainMod .. " + P",            scrolling_only("promote"),                  "Scrolling · Ventana a su propia columna")
+bind(mainMod .. " + R",            scrolling_only("colresize +conf"),          "Scrolling · Ancho de columna (1/3, 1/2, 2/3, completo)")
+bind(mainMod .. " + C",            scrolling_only("center"),                   "Scrolling · Centrar la columna")
+
 -- Workspace switching (1-5) and move window to workspace (SHIFT + 1-5)
 for i = 1, 5 do
     bind(mainMod .. " + " .. i,         hl.dsp.focus({ workspace = i }),       "Escritorios · Ir al escritorio")

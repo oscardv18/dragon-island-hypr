@@ -104,6 +104,18 @@ if command -v herdr >/dev/null 2>&1; then
     else printf '  - herdr no está en marcha: la pestaña IA muestra «herdr sin conexión» (correcto, sin errores)\n'; fi
 else printf '  - herdr no instalado: la pestaña IA muestra «herdr sin conexión»\n'; fi
 
+echo "Modos de tiling (dwindle ↔ scrolling)"
+if in_hyprland && command -v hyprctl >/dev/null 2>&1; then
+    hv="$(hyprctl version -j 2>/dev/null | jq -r '.tag // empty' 2>/dev/null || true)"
+    # shellcheck disable=SC2016
+    ck "Hyprland ≥ 0.56 (${hv:-?})" "actualiza Hyprland: el layout scrolling nativo llegó en 0.56" bash -c '[[ "$(printf "%s\nv0.56.0\n" "$1" | sort -V | head -n1)" == v0.56.0 ]]' _ "${hv:-v0}"
+    ck "El layout «scrolling» existe en esta versión" "hyprctl getoption scrolling:column_width debería responder" has "float" "$(hyprctl getoption scrolling:column_width 2>&1)"
+fi
+ck "dragon-tiling instalado en \$HOME/.local/bin" "./install.sh --modules core" test -x "$HOME/.local/bin/dragon-tiling"
+ts="${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island/tiling.json"
+if [[ -f "$ts" ]]; then ck "Estado del tiling: JSON válido ($ts)" "bórralo: se vuelve a dwindle sin errores" jq -e '.workspaces | type == "object"' "$ts"
+else printf '  - sin estado guardado: todos los escritorios en dwindle (correcto)\n'; fi
+
 echo "Tema y fuentes"
 fonts="$(fc-list 2>/dev/null || true)"
 ck "Fuente Outfit" "yay -S ttf-outfit (módulo theme)" has "outfit" "$fonts"

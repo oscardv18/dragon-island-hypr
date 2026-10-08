@@ -253,6 +253,10 @@ Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo s
 
 `fd` es el buscador de fzf (`--hidden --follow --exclude .git`). Arranque medido: ~60 ms antes, ~71 ms después (+11 ms). Aplica en un sistema ya instalado la migración `010-terminal-tools.sh`.
 
+## Modos de mosaico: Dwindle ↔ Scrolling
+
+`SUPER + T` (o la cápsula `DWINDLE` / `SCROLL` de la barra) alterna el escritorio actual entre **Dwindle** (árbol binario, el de siempre) y **Scrolling** (columnas en una cinta horizontal que se desplaza; layout nativo de Hyprland 0.56, sin plugins). El modo es por escritorio, se guarda en `~/.local/state/dragon-island/tiling.json` y se restaura al iniciar sesión o recargar la config. El notch avisa «Modo scroll» / «Modo dwindle». Las teclas del modo scroll están en [docs/KEYBINDS.md](docs/KEYBINDS.md). Lo hace `scripts/tiling.sh` (`~/.local/bin/dragon-tiling`).
+
 ## herdr (agentes)
 
 [herdr](https://herdr.dev) es un multiplexor de terminal para agentes de IA (Claude Code, Codex…): varios agentes en paneles, sesiones que sobreviven al cerrar la ventana y el estado de cada uno (trabajando, te necesita, terminó).

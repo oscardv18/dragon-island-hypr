@@ -11,6 +11,7 @@ require("look")
 require("animations")
 require("rules")
 require("binds")
+require("tiling")   -- dwindle <-> scrolling per workspace: restores the saved modes (binds are in binds.lua)
 require("plugins")
 require("glass")   -- hyprglass (optional): a no-op when the plugin is not loaded
 require("autostart")

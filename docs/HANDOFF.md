@@ -557,3 +557,19 @@ Pestañas **Atajos** (los de fábrica leídos de `herdr --default-config` + lo q
 **Comandos** (uso y descripción tal cual los imprime `herdr <grupo>` / `--help`: workspace, tab, pane, agent, worktree, notification, session, machine; las descripciones salen en inglés porque herdr las da así)
 y **Conceptos y estados**. Solo el texto en español de cada atajo está escrito a mano (`labels` en `services/HerdrHelp.qml`); un atajo nuevo de herdr aparece en "Otros".
 Nunca arranca ni para herdr ni escribe su config. Verificado con capturas de las tres pestañas. No verificado: el atajo `SUPER + SHIFT + A` con el teclado (bind recargado por Hyprland), pulsar Tab dentro del campo de búsqueda.
+
+## 7ac. Modos de mosaico Dwindle ↔ Scrolling (2026-10-08)
+**Hecho.** Layout nativo `scrolling` (sin plugins) conmutable **por escritorio** con `hl.workspace_rule({ workspace = "name:N", layout = ... })`, aplicado con `hyprctl eval`
+(`scripts/tiling.sh` → `~/.local/bin/dragon-tiling`: `get [--json] | set dwindle|scrolling | toggle | restore`, opción `--workspace NAME`). Estado en `~/.local/state/dragon-island/tiling.json`
+(dwindle = sin entrada; archivo ausente o corrupto = todo dwindle, sin error). `config/hypr/tiling.lua` restaura con `hyprland.start` y `config.reloaded` (una recarga borra las reglas en caliente).
+Atajo **`SUPER + T`** (libre; `SUPER+SHIFT+L` ya mueve la ventana a la derecha) → `qs ipc call tiling toggle || dragon-tiling toggle`. Binds solo-scrolling (función Lua que comprueba `tiled_layout`, no hacen nada en dwindle):
+`SUPER+CTRL+←/→` swapcol, `SUPER+,/.` consume_or_expel, `SUPER+P` promote, `SUPER+R` colresize +conf, `SUPER+C` center. Bloque `scrolling` en `look.lua` (`fullscreen_on_one_column = true`, `column_width = 0.5`, el resto comentado).
+Quickshell: `services/Tiling.qml` (IPC `tiling`: toggle / set / get / refresh; se refresca con los eventos raw `workspace`, `focusedmon`, `activewindow`; sin polling), cápsula en la isla derecha con `CoreIcon` (`grid` / `columns`, añadidos a `shared/neural-core/CoreIcon.qml`) y tooltip, aviso en el notch (modo `tiling` de `IslandState`).
+Instalador: `modules/core.sh` despliega el script, migración **015-tiling-modes** (el nombre del repo sigue la numeración de la carpeta), `jq` añadido a `packages/pacman-core.txt`, `doctor.sh` (Hyprland ≥ 0.56, `scrolling` existe, JSON válido).
+**Verificado** (5 ventanas kitty en el escritorio 8, en vivo): `hyprctl reload` sin errores; alternar un escritorio no toca a otro; scrolling con 5 ventanas: foco, `colresize`, `center`, `swapcol`, `consume_or_expel`, `promote` y `window.move` funcionan;
+volver a dwindle conserva las 5 ventanas (el árbol se reconstruye: la disposición concreta cambia, no se pierde ninguna); una flotante sigue flotante; la restauración tras `hyprctl reload` (regla borrada → vuelve a scrolling);
+cápsula, IPC (`toggle`, `set`, `get`) y aviso del notch con capturas; hyprbars (barra de título), esquinas redondeadas, bordes y cristal de hyprglass se ven bien en scrolling.
+**Lo que cambia / no pude probar**: una ventana en **pantalla completa pierde el estado fullscreen** al cambiar de layout (el scrolling tiene su propio manejo de pantalla completa). Mini-tira de columnas (puntos): **omitida** (opcional).
+No probado: reiniciar la sesión (el evento `hyprland.start` usa la misma orden que se probó con `config.reloaded`), segundo monitor (solo hay `eDP-1`), SUPER + T pulsado con el teclado, hyprfocus en scrolling (no se ve a simple vista), `install.sh --dry-run`.
+**Omarchy**: no se comparó con su implementación; esto describe solo la de aquí.
+**Revertir**: quitar el bind `SUPER + T` y los binds «Scrolling ·» de `binds.lua`, `require("tiling")` de `hyprland.lua`, y `layout = "dwindle"` ya es el valor de `look.lua`; `rm ~/.local/state/dragon-island/tiling.json ~/.local/bin/dragon-tiling`.

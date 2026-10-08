@@ -52,6 +52,20 @@ hl.config({
         preserve_split = true,
     },
 
+    -- Scrolling: the native layout of 0.56 (columns on a horizontal tape), the second tiling mode. Which workspaces use
+    -- it is chosen at run time (SUPER + T, scripts/tiling.sh); dwindle stays the default. Same gaps / border / rounding.
+    scrolling = {
+        fullscreen_on_one_column = true,   -- a single column fills the screen
+        column_width             = 0.5,    -- default width of a column
+        -- focus_fit_method      = 1,      -- 0 = centre the focused column, 1 = just fit it into view
+        -- follow_focus          = true,   -- scroll the tape to the window that gets the focus
+        -- follow_min_visible    = 0.4,
+        -- explicit_column_widths = "0.333, 0.5, 0.667, 1.0",   -- what SUPER + R cycles through
+        -- wrap_focus            = true,   -- left / right past the last column wraps around
+        -- wrap_swapcol          = true,
+        -- direction             = "right",
+    },
+
     misc = {
         disable_hyprland_logo    = true,
         disable_splash_rendering = true,

@@ -46,3 +46,4 @@ power-profiles-daemon
 upower
 khal
 ddcutil
+jq
