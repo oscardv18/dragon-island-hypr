@@ -1,0 +1,10 @@
+# dragon-island — base: must exist BEFORE running install.sh (pre-instalation.md, step 3)
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+git
+base-devel
+curl
+unzip
+gum
+github-cli
+yay            # EndeavourOS repo; on plain Arch it is an AUR package (build it by hand, see pre-instalation.md)

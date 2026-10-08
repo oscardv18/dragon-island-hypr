@@ -1,0 +1,5 @@
+# dragon-island — module theme: fonts, icons, Qt/GTK theming
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+ttf-jetbrains-mono-nerd
+nwg-look

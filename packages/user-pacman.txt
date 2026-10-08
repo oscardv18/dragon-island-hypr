@@ -7,3 +7,4 @@ btop
 nautilus
 telegram-desktop
 github-cli
+shellcheck

@@ -1,0 +1,48 @@
+# dragon-island — module core: session, shell and the services it reads
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+# Compositor and session
+hyprland
+hyprlock
+hypridle
+hyprpolkitagent
+xdg-desktop-portal-hyprland
+xdg-desktop-portal-gtk
+# Keyring: gnome-keyring is the only Secret Service (see module keyring)
+gnome-keyring
+libsecret
+# Terminals and file manager
+ghostty
+kitty
+dolphin
+# Clipboard, screenshots, recording, night light, notifications
+wl-clipboard
+cliphist
+grim
+slurp
+wf-recorder
+hyprsunset
+libnotify
+# Quickshell and the Qt modules the shell imports
+quickshell
+qt6-svg
+qt6-imageformats
+# Wallpapers (images / GIF / video thumbnails), pending-updates counter
+awww
+mpv
+ffmpeg
+ffmpegthumbnailer
+pacman-contrib
+# Data sources of the shell services
+pipewire
+pipewire-pulse
+wireplumber
+playerctl
+brightnessctl
+networkmanager
+bluez
+bluez-utils
+power-profiles-daemon
+upower
+khal
+ddcutil

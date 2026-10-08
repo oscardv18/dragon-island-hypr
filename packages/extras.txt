@@ -1,0 +1,8 @@
+# dragon-island — module extras: optional, one section per app (install.sh asks for each)
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+# Format: "<source>:<package>" where source is pacman or aur. herdr has no package: modules/extras.sh uses its official installer.
+@brave
+aur:brave-bin
+@protonvpn
+pacman:proton-vpn-gtk-app

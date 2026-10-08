@@ -1,0 +1,6 @@
+# dragon-island — module login: SDDM and what the dragon-core theme imports (QtQuick, QtQuick.Shapes)
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+sddm
+qt6-declarative
+qt6-svg

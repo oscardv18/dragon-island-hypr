@@ -1,0 +1,11 @@
+# dragon-island — module plugins: what hyprpm needs to build hyprbars, hyprfocus and hyprglass
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+hyprpm
+cpio
+cmake
+meson
+ninja
+gcc
+pkgconf
+git

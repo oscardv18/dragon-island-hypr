@@ -1,0 +1,7 @@
+# dragon-island — module theme (AUR)
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+ttf-outfit              # UI typography
+candy-icons-git         # icon theme Sweet-Purple inherits from this one
+sweet-folders-icons-git # folders of Sweet-Purple
+hyprqt6engine           # Qt platform theme for the Hyprland session

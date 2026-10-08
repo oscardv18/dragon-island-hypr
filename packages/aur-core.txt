@@ -1,0 +1,5 @@
+# dragon-island — module core (AUR)
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+grimblast-git   # screenshot helper (grim + slurp)
+mpvpaper        # video wallpapers

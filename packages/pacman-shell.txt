@@ -1,0 +1,10 @@
+# dragon-island — module shell: zsh + terminal tools (fzf-tab and zsh plugins are git clones, see modules/shell.sh)
+# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
+
+zsh
+starship
+eza
+fzf
+zoxide
+fd
+bat
