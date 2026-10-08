@@ -45,7 +45,7 @@ check_base() {
     for t in "${BASE_TOOLS[@]}"; do
         command -v "$t" >/dev/null 2>&1 || { fail_step base "Falta $t."; rc=1; }
     done
-    pacman -Qqg base-devel >/dev/null 2>&1 || { fail_step base "Falta el grupo base-devel."; rc=1; }
+    pkg_installed base-devel || { fail_step base "Falta base-devel."; rc=1; }
     command -v gh >/dev/null 2>&1 || log_warn "github-cli (gh) no está: solo hace falta si clonas por HTTPS con gh (Paso 8)."
     return $rc
 }

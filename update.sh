@@ -15,7 +15,8 @@ TS="$(date +%Y%m%d-%H%M%S)"
 BACKUP_DIR="$STATE_DIR/backups/$TS"
 MANIFEST="$STATE_DIR/manifest"          # lines: <action>\t<target>\t<backup-or-source>
 MIGRATIONS_DONE="$STATE_DIR/migrations.done"
-COMPONENTS_FILE="$STATE_DIR/components"
+COMPONENTS_FILE="$STATE_DIR/components"   # legacy (pre-modules); migration 013 translates it
+MODULES_FILE="$STATE_DIR/modules"
 RELOGIN_FILE="$STATE_DIR/needs-relogin"
 
 DRY_RUN=false
@@ -39,7 +40,8 @@ configuraciones, plugins opcionales y recarga en vivo (también: ./install.sh --
 
 OPCIONES:
   --dry-run       Muestra lo que haría sin ejecutarlo (no pide sudo ni cambia nada)
-  --yes, -y       Modo desatendido: respuestas por defecto (no instala plugins nuevos)
+  --yes, -y       Modo desatendido: respuestas por defecto (los pasos con sudo se confirman igual)
+  --no-sudo       Omite los pasos que necesiten sudo
   -h, --help      Muestra esta ayuda
 EOF
 }
@@ -48,6 +50,7 @@ for arg in "$@"; do
     case "$arg" in
         --dry-run) DRY_RUN=true ;;
         --yes|-y)  ASSUME_YES=true ;;
+        --no-sudo) NO_SUDO=true ;;
         -h|--help) usage; exit 0 ;;
         *)         echo "Opción desconocida: $arg" >&2; exit 2 ;;
     esac
@@ -55,12 +58,21 @@ done
 
 [[ -t 0 && -t 1 ]] || ASSUME_YES=true
 
-mkdir -p "$STATE_DIR"
-exec > >(tee -a "$LOG") 2>&1
+# dry-run must not write anywhere
+if ! $DRY_RUN; then
+    mkdir -p "$STATE_DIR"
+    exec > >(tee -a "$LOG") 2>&1
+fi
 trap 'echo "✗ Error en la línea $LINENO. Revisa el registro en: $LOG" >&2' ERR
 
 # shellcheck source=lib/common.sh
 . "$REPO_DIR/lib/common.sh"
+# shellcheck source=lib/detect.sh
+. "$REPO_DIR/lib/detect.sh"
+for m in "$REPO_DIR"/modules/*.sh; do
+    # shellcheck source=/dev/null
+    . "$m"
+done
 
 # Summary counters
 APPLIED_MIGRATIONS=()
@@ -82,27 +94,22 @@ $DRY_RUN && log_info "Modo --dry-run: no se cambiará nada."
 # State inference (installs made before update.sh existed have no components / link-mode files)
 # =============================================================================
 infer_state() {
-    if [[ -f "$COMPONENTS_FILE" ]]; then
-        mapfile -t SELECTED_COMPONENTS < "$COMPONENTS_FILE"
+    if [[ -f "$MODULES_FILE" ]]; then
+        mapfile -t SELECTED_COMPONENTS < "$MODULES_FILE"
     else
-        SELECTED_COMPONENTS=()
-        local action target
-        if [[ -f "$MANIFEST" ]]; then
-            while IFS=$'\t' read -r action target _; do
-                [[ "$action" == "deploy" ]] || continue
-                case "$target" in
-                    */.config/hypr|*/.config/kitty|*/.config/ghostty) SELECTED_COMPONENTS+=(core) ;;
-                    */.config/quickshell)           SELECTED_COMPONENTS+=(shell) ;;
-                    */firstrun.sh)                  SELECTED_COMPONENTS+=(plugins) ;;
-                    */glass.sh)                     SELECTED_COMPONENTS+=(glass) ;;
-                    */.zshrc)                       SELECTED_COMPONENTS+=(zsh) ;;
+        # installs made before the modular installer: translate the old component names
+        SELECTED_COMPONENTS=(core)
+        local c
+        if [[ -f "$COMPONENTS_FILE" ]]; then
+            while read -r c; do
+                case "$c" in
+                    zsh) SELECTED_COMPONENTS+=(shell) ;;
+                    fonts) SELECTED_COMPONENTS+=(theme) ;;
+                    plugins|glass) SELECTED_COMPONENTS+=(plugins) ;;
+                    tools|myapps) SELECTED_COMPONENTS+=(extras) ;;
                 esac
-            done < "$MANIFEST"
+            done < "$COMPONENTS_FILE"
         fi
-        # tools / fonts / services leave no file: assume the defaults of install.sh
-        SELECTED_COMPONENTS+=(tools fonts services)
-        [[ -L "$HOME/.config/hypr" || -d "$HOME/.config/hypr" ]] && SELECTED_COMPONENTS+=(core)
-        [[ -L "$HOME/.config/quickshell" || -d "$HOME/.config/quickshell" ]] && SELECTED_COMPONENTS+=(shell)
         mapfile -t SELECTED_COMPONENTS < <(printf '%s\n' "${SELECTED_COMPONENTS[@]}" | sort -u)
     fi
 
@@ -123,12 +130,12 @@ has_component() {
 
 save_state() {
     $DRY_RUN && return 0
-    printf '%s\n' "${SELECTED_COMPONENTS[@]}" > "$COMPONENTS_FILE"
+    printf '%s\n' "${SELECTED_COMPONENTS[@]}" > "$MODULES_FILE"
     printf '%s\n' "$LINK_MODE" > "$STATE_DIR/link-mode"
 }
 
 infer_state
-log_info "Componentes: ${SELECTED_COMPONENTS[*]} · despliegue: $LINK_MODE"
+log_info "Módulos: ${SELECTED_COMPONENTS[*]} · despliegue: $LINK_MODE"
 
 # =============================================================================
 # 1. git pull --ff-only
@@ -206,45 +213,36 @@ pkg_present() {
 
 step_packages() {
     log_info "3/6 · Paquetes"
-    local all missing=() p
-    mapfile -t all < <(read_packages "$REPO_DIR/packages/pacman.txt" "${SELECTED_COMPONENTS[@]}")
-    # "Mis apps": what was installed from the Tienda (this or another machine) and is not here yet
-    mapfile -t -O "${#all[@]}" all < <(read_plain_list "$REPO_DIR/packages/user-pacman.txt")
-    for p in "${all[@]}"; do pkg_present "$p" || missing+=("$p"); done
+    local m p missing=() aur_missing=() helper
+    helper="$(aur_helper)"
+    for m in "${SELECTED_COMPONENTS[@]}"; do
+        declare -F "${m}_packages" >/dev/null || continue
+        while read -r p; do
+            if [[ -z "$p" ]] || pkg_installed "$p"; then continue; fi
+            if pacman -Si "$p" >/dev/null 2>&1; then missing+=("$p"); else aur_missing+=("$p"); fi
+        done < <("${m}_packages")
+    done
+    # "Mis apps" (the Tienda's lists) belong to the extras module
+    if has_component extras; then
+        while read -r p; do pkg_installed "$p" || missing+=("$p"); done < <(read_plain_list "$REPO_DIR/packages/user-pacman.txt")
+        while read -r p; do pkg_installed "$p" || aur_missing+=("$p"); done < <(read_plain_list "$REPO_DIR/packages/user-aur.txt")
+    fi
+    mapfile -t missing < <(printf '%s\n' "${missing[@]}" | sort -u | sed '/^$/d')
+    mapfile -t aur_missing < <(printf '%s\n' "${aur_missing[@]}" | sort -u | sed '/^$/d')
 
     if [[ ${#missing[@]} -gt 0 ]]; then
         log_info "Faltan ${#missing[@]} paquetes de los repositorios: ${missing[*]}"
-        if confirm "¿Instalarlos con pacman -S --needed? (no se hace -Syu)"; then
-            if run sudo pacman -S --needed --noconfirm "${missing[@]}"; then
-                INSTALLED_PKGS+=("${missing[@]}")
-            else
-                log_warn "No se pudieron instalar (¿sin terminal para sudo?). Hazlo a mano: sudo pacman -S --needed ${missing[*]}"
-                NOTES+=("Paquetes pendientes: ${missing[*]}")
-            fi
-        fi
+        if ensure_pacman "${missing[@]}"; then INSTALLED_PKGS+=("${missing[@]}")
+        else NOTES+=("Paquetes pendientes: ${missing[*]}"); fi
     else
         log_info "Paquetes de los repositorios: todo instalado."
     fi
-
-    local aur_all aur_missing=() helper="" h
-    mapfile -t aur_all < <(read_packages "$REPO_DIR/packages/aur.txt" "${SELECTED_COMPONENTS[@]}")
-    mapfile -t -O "${#aur_all[@]}" aur_all < <(read_plain_list "$REPO_DIR/packages/user-aur.txt")
-    for p in "${aur_all[@]}"; do pacman -Qq "$p" >/dev/null 2>&1 || aur_missing+=("$p"); done
     if [[ ${#aur_missing[@]} -gt 0 ]]; then
-        for h in paru yay; do command -v "$h" >/dev/null 2>&1 && { helper="$h"; break; }; done
-        if [[ -z "$helper" ]]; then
-            log_warn "Faltan paquetes de AUR (${aur_missing[*]}) y no hay yay/paru: instálalos a mano."
-        elif confirm "Faltan paquetes de AUR: ${aur_missing[*]}. ¿Instalarlos con $helper?"; then
-            run "$helper" -S --needed --noconfirm "${aur_missing[@]}"
-            INSTALLED_PKGS+=("${aur_missing[@]}")
-        fi
+        AUR_HELPER="$helper"
+        if ensure_aur "${aur_missing[@]}"; then INSTALLED_PKGS+=("${aur_missing[@]}"); else NOTES+=("AUR pendientes: ${aur_missing[*]}"); fi
     fi
 }
 
-# =============================================================================
-# 4. Configs
-# =============================================================================
-# deployed items from the manifest: "<target>\t<source>" (the last record of each target wins)
 deployed_items() {
     [[ -f "$MANIFEST" ]] || return 0
     awk -F'\t' '$1 == "deploy" { src[$2] = $3 } END { for (t in src) print t "\t" src[t] }' "$MANIFEST" | sort
@@ -318,29 +316,25 @@ step_configs() {
 # =============================================================================
 step_plugins() {
     log_info "5/6 · Plugins"
+    has_component plugins || { log_info "Módulo plugins no instalado: se omite."; return 0; }
     if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || ! command -v hyprpm >/dev/null 2>&1; then
         log_info "Fuera de Hyprland o sin hyprpm: se omiten los plugins."
         return 0
     fi
-    if hyprctl plugin list 2>/dev/null | grep -qi "hyprglass"; then
-        log_info "hyprglass ya está cargado."
+    # hyprpm update again only when Hyprland itself changed (plugins are built per Hyprland version), or if some are pending
+    local now before=""
+    now="$(installed_version hyprland)"
+    [[ -f "$STATE_DIR/hyprland-version" ]] && before="$(< "$STATE_DIR/hyprland-version")"
+    if [[ "$now" == "$before" && ! -f "$STATE_DIR/plugins.pending" ]] && hyprctl plugin list 2>/dev/null | grep -qi hyprbars; then
+        log_info "Hyprland $now sin cambios y plugins cargados: nada que reconstruir."
         return 0
     fi
-    # --yes never installs new plugins on its own; with the component already chosen it retries
-    local want=false
-    if has_component glass; then want=true
-    elif ! $ASSUME_YES && confirm "Hay un plugin opcional nuevo: hyprglass (efecto cristal). ¿Instalarlo ahora, en primer plano?"; then want=true
-    fi
-    $want || return 0
-    run chmod +x "$REPO_DIR/installer/glass.sh"
-    if $DRY_RUN; then
-        run "$REPO_DIR/installer/glass.sh"
-        return 0
-    fi
-    "$REPO_DIR/installer/glass.sh" || log_warn "hyprglass no se instaló (¿terminal sin sudo?). Ejecuta installer/glass.sh en una terminal."
-    if hyprctl plugin list 2>/dev/null | grep -qi "hyprglass" && ! has_component glass; then
-        SELECTED_COMPONENTS+=(glass)
-        save_state
+    log_info "Hyprland ${before:-?} → $now (o plugins pendientes): hay que repetir hyprpm update."
+    if $DRY_RUN; then run "$REPO_DIR/scripts/plugins-foreground.sh"; return 0; fi
+    if confirm "[sudo] hyprpm va a reinstalar las cabeceras (pide tu contraseña). ¿Reconstruir los plugins ahora, en primer plano?"; then
+        run chmod +x "$REPO_DIR/scripts/plugins-foreground.sh"
+        if "$REPO_DIR/scripts/plugins-foreground.sh"; then printf '%s\n' "$now" > "$STATE_DIR/hyprland-version"
+        else log_warn "Los plugins no se reconstruyeron (¿terminal sin sudo?). Ejecuta scripts/plugins-foreground.sh en una terminal."; fi
     fi
 }
 

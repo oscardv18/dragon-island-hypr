@@ -29,7 +29,7 @@ keyboard_apply() {
         ,us,*) ;;
         *) layouts="us,${layouts//,us/}"; layouts="${layouts%,}" ;;
     esac
-    if [[ ! "$layouts" =~ ^[a-z]{2,3}(,[a-z]{2,3})*$ ]]; then log_warn "Distribuciones no válidas («$layouts»): se usa $KB_DEFAULT."; layouts="$KB_DEFAULT"; fi
+    if [[ ! "$layouts" =~ ^[a-z]{2,10}(,[a-z]{2,10})*$ ]]; then log_warn "Distribuciones no válidas («$layouts»): se usa $KB_DEFAULT."; layouts="$KB_DEFAULT"; fi
 
     if $DRY_RUN; then echo "[dry-run] KB_LAYOUTS=$layouts en $LOCAL_CONF"
     else mkdir -p "$(dirname "$LOCAL_CONF")"; grep -v '^KB_LAYOUTS=' "$LOCAL_CONF" 2>/dev/null > "$LOCAL_CONF.tmp" || true
@@ -42,7 +42,8 @@ keyboard_apply() {
         marker_set "$HYPR_LOCAL" keyboard "--" "hl.config({ input = { kb_layout = \"$layouts\", kb_variant = \"${variants//[^,]/}\", kb_options = \"grp:alt_shift_toggle\" } })"
     fi
 
-    if command -v localectl >/dev/null 2>&1 && [[ "$(localectl status 2>/dev/null | awk -F': *' '/X11 Layout/ {print $2}')" != "$layouts" ]]; then
+    # the login keymap is opt-in: never in unattended mode unless DRAGON_KB_LOGIN=1
+    if { ! $ASSUME_YES || [[ "${DRAGON_KB_LOGIN:-0}" == 1 ]]; } && command -v localectl >/dev/null 2>&1 && [[ "$(localectl status 2>/dev/null | awk -F': *' '/X11 Layout/ {print $2}')" != "$layouts" ]]; then
         confirm "¿Fijar también el teclado del login a «$layouts»? (sudo localectl set-x11-keymap)" \
             && { confirm_sudo "Teclado del login (SDDM / TTY): $layouts" localectl set-x11-keymap "$layouts" || true; }
     fi
