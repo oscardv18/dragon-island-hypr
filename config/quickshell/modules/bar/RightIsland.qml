@@ -1,9 +1,8 @@
-// Right island: [contextual capsules] · CPU · RAM · keyboard layout · [Wi-Fi | Bluetooth | volume | battery] · tray · clock
+// Right island: [contextual capsules] · CPU · RAM · keyboard layout · [Wi-Fi | Bluetooth | volume | battery] · clock
+// (the system tray and the apps in the background live in the hidden bottom island: modules/bottomislands)
 // Each capsule opens its own popover through ShellState (one at a time).
 import QtQuick
 import QtQuick.Effects
-import Quickshell
-import Quickshell.Widgets
 import "../.."
 import "../../services"
 import "../../components"
@@ -237,91 +236,6 @@ Rectangle {
                         mono: true
                         size: Theme.sizeBar
                         color: batCap.tone
-                    }
-                }
-            }
-        }
-
-        // System tray (StatusNotifierItems), before the clock. Left = activate (or menu if
-        // the item only has one), right = menu (QsMenuAnchor), middle = secondary, wheel = scroll.
-        // Hidden when no app exposes an item. Logic lives in services/Tray.qml.
-        Rectangle {
-            id: tray
-            visible: Tray.hasItems
-            anchors.verticalCenter: parent.verticalCenter
-            height: Theme.capsuleHeight
-            width: trayRow.implicitWidth + Theme.spacingXs * 2
-            radius: Theme.capsuleRadius
-            color: Theme.surface2
-
-            Row {
-                id: trayRow
-                anchors.centerIn: parent
-                spacing: 0
-
-                Repeater {
-                    model: ScriptModel {
-                        values: Tray.items
-                        comparisonMode: ObjectComparison.Identity
-                    }
-                    delegate: Item {
-                        id: trayItem
-                        required property var modelData
-                        // Apps swap icons (e.g. VPN connected): retry the primary source each time
-                        readonly property string rawIcon: modelData.icon
-                        property bool iconFailed: false
-                        onRawIconChanged: iconFailed = false
-                        width: Theme.capsuleHeight - Theme.spacingXs
-                        height: Theme.capsuleHeight - Theme.spacingXs
-
-                        Rectangle {
-                            anchors.fill: parent
-                            radius: Theme.capsuleRadius - 2
-                            color: trayMouse.containsMouse || menuAnchor.visible ? Theme.surfaceHi : Theme.transparent
-                            Behavior on color { ColorAnimation { duration: Theme.durHover } }
-                        }
-                        IconImage {
-                            anchors.centerIn: parent
-                            source: Tray.iconSource(trayItem.modelData, trayItem.iconFailed)
-                            implicitSize: Theme.iconMd
-                            asynchronous: true
-                            onStatusChanged: if (status === Image.Error) trayItem.iconFailed = true
-                        }
-                        Rectangle {
-                            visible: Tray.needsAttention(trayItem.modelData)
-                            width: Theme.pillDot
-                            height: width
-                            radius: width / 2
-                            color: Theme.warn
-                            anchors.right: parent.right
-                            anchors.top: parent.top
-                        }
-
-                        // Menu opens below the icon, one popover gap away
-                        Item {
-                            id: menuSpot
-                            y: trayItem.height + Theme.popoverGap
-                            width: trayItem.width
-                        }
-                        QsMenuAnchor {
-                            id: menuAnchor
-                            menu: trayItem.modelData.menu
-                            anchor.item: menuSpot
-                        }
-
-                        MouseArea {
-                            id: trayMouse
-                            anchors.fill: parent
-                            hoverEnabled: true
-                            cursorShape: Qt.PointingHandCursor
-                            acceptedButtons: Qt.LeftButton | Qt.RightButton | Qt.MiddleButton
-                            onClicked: m => {
-                                if (m.button === Qt.RightButton) Tray.openMenu(menuAnchor);
-                                else if (m.button === Qt.MiddleButton) Tray.secondaryActivate(trayItem.modelData);
-                                else Tray.click(trayItem.modelData, menuAnchor);
-                            }
-                            onWheel: w => Tray.scroll(trayItem.modelData, w.angleDelta.x, w.angleDelta.y)
-                        }
                     }
                 }
             }
