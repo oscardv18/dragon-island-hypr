@@ -5,8 +5,8 @@
 # The prompt (starship) is not touched. Only for people who use the zsh component: skipped otherwise.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 # only if config/zsh/.zshrc is the user's ~/.zshrc (migration 002 / the zsh component)
 if [[ "$(readlink -f "$HOME/.zshrc")" != "$(readlink -f "$REPO_DIR/config/zsh/.zshrc")" ]]; then

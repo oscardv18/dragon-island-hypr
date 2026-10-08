@@ -82,8 +82,8 @@ trap 'echo "✗ Error en la línea $LINENO. Revisa el registro en: $LOG" >&2' ER
 # -----------------------------------------------------------------------------
 # Helpers (run, log_info, box, confirm, read_packages, deploy_item, ensure_omz)
 # -----------------------------------------------------------------------------
-# shellcheck source=installer/lib.sh
-. "$REPO_DIR/installer/lib.sh"
+# shellcheck source=lib/common.sh
+. "$REPO_DIR/lib/common.sh"
 
 # =============================================================================
 # Uninstall (--uninstall): process the manifest in reverse
@@ -165,8 +165,8 @@ fi
 if $DRY_RUN && ! has_gum; then ASSUME_YES=true; fi
 
 # the neural core has one source (shared/neural-core); dry-run only checks it, a real run re-syncs both copies
-if $DRY_RUN; then "$REPO_DIR/installer/sync-neural-core.sh" --check || log_warn "NeuralCore/CoreIcon: copias desincronizadas (se corrigen al instalar)."
-else "$REPO_DIR/installer/sync-neural-core.sh"; fi
+if $DRY_RUN; then "$REPO_DIR/scripts/sync-shared.sh" --check || log_warn "NeuralCore/CoreIcon: copias desincronizadas (se corrigen al instalar)."
+else "$REPO_DIR/scripts/sync-shared.sh"; fi
 if $DRY_RUN; then log_info "[dry-run] Opcional (pide sudo, solo tras confirmar): tema de login dragon-core → sddm/install-theme.sh (migración 012)."; fi
 
 if ! has_gum; then

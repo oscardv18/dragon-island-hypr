@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 # dragon-island — single source for the neural core: shared/neural-core/*.qml is copied to the two places that
 # need it (Quickshell lock screen and the SDDM theme) so they never drift apart.
-#   sync-neural-core.sh          copy the shared files over both destinations
-#   sync-neural-core.sh --check  only compare (exit 1 on drift); safe for dry-run / CI
+#   sync-shared.sh          copy the shared files over both destinations
+#   sync-shared.sh --check  only compare (exit 1 on drift); safe for dry-run / CI
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
 SRC="$REPO_DIR/shared/neural-core"

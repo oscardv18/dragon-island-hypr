@@ -5,8 +5,8 @@
 # session. The Quickshell restart at the end of update.sh restores the saved wallpaper.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 WALLPAPER_DIR="$HOME/Pictures/Wallpapers"
 OLD="$HOME/.local/share/dragon-island/wallpaper.jpg"

@@ -5,8 +5,8 @@
 # Optional: applied when the "zsh" component is installed, or when you confirm. Exit 10 = skipped.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 SRC_ZSHRC="$REPO_DIR/config/zsh/.zshrc"
 SRC_STARSHIP="$REPO_DIR/config/starship/starship.toml"

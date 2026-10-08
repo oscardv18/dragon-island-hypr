@@ -4,8 +4,8 @@
 # installs see the repo directly). update.sh itself never deletes files; this does, with a backup.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 QS_DIR="$HOME/.config/quickshell"
 STALE=(

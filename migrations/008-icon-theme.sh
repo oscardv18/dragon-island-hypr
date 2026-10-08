@@ -7,8 +7,8 @@
 # Qt apps that are already open keep the old theme until they are restarted.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 # ---- packages ----
 aur_missing=()

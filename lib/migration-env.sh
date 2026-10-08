@@ -16,5 +16,5 @@ COMPONENTS_FILE="${COMPONENTS_FILE:-$STATE_DIR/components}"
 RELOGIN_FILE="${RELOGIN_FILE:-$STATE_DIR/needs-relogin}"
 [[ -t 0 && -t 1 ]] || ASSUME_YES=true
 mkdir -p "$STATE_DIR"
-# shellcheck source=installer/lib.sh
-. "$REPO_DIR/installer/lib.sh"
+# shellcheck source=lib/common.sh
+. "$REPO_DIR/lib/common.sh"

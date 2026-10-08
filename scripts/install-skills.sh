@@ -8,7 +8,7 @@
 #   ./install-skills.sh --global                 # Antigravity global: ~/.gemini/config/skills
 set -Eeuo pipefail
 
-HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+HERE="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 SKILLS=(dragon-island quickshell hyprland-plugins arch-tui-installer)
 HYPR_SKILL_REPO="https://github.com/marceloeatworld/hyprland-ai-skill"
 
@@ -25,7 +25,7 @@ for t in "${targets[@]}"; do
   mkdir -p "$t"
   for s in "${SKILLS[@]}"; do
     rm -rf "${t:?}/$s"
-    cp -a "$HERE/$s" "$t/$s"
+    cp -a "$HERE/.agents/skills/$s" "$t/$s"
     echo "✓ $s → $t/$s"
   done
   if [[ -d "$t/hyprland/.git" ]]; then

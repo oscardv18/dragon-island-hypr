@@ -6,8 +6,8 @@
 # applied by the live reload at the end of update.sh. kitty stays installed and configured.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 if ! pacman -Qq ghostty >/dev/null 2>&1; then
     if confirm "Ghostty no está instalado. ¿Instalarlo con pacman?"; then

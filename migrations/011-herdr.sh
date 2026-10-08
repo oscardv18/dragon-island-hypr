@@ -3,8 +3,8 @@
 # the dragon-herdr launcher (SUPER + A), and the zsh completion (~/.zfunc/_herdr). herdr updates itself: `herdr update`.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 ensure_herdr || { log_info "Se reintentará la próxima vez."; exit 10; }
 deploy_herdr

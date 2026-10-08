@@ -94,7 +94,7 @@ See `references/design.md` (tokens, components, motion). It reproduces the appro
 
 ## Updating installed systems (migrations)
 - `./update.sh` (alias `./install.sh --update`) updates an installed system without reinstalling: `git pull --ff-only` → migrations → missing packages → configs → optional plugins → live reload. `git pull` alone is not enough.
-- **Rule: every change that affects an already-installed system must ship with its migration.** Add `migrations/NNN-name.sh` (next number): runs once (recorded in `~/.local/state/dragon-island/migrations.done`), idempotent, backs up what it touches (`backup_copy` / `deploy_item`), honours `DRY_RUN` and `ASSUME_YES`, exits `10` to skip. Helpers live in `installer/lib.sh`; see `migrations/README.md`. A fresh `install.sh` marks every existing migration as done.
+- **Rule: every change that affects an already-installed system must ship with its migration.** Add `migrations/NNN-name.sh` (next number): runs once (recorded in `~/.local/state/dragon-island/migrations.done`), idempotent, backs up what it touches (`backup_copy` / `deploy_item`), honours `DRY_RUN` and `ASSUME_YES`, exits `10` to skip. Helpers live in `lib/common.sh`; see `migrations/README.md`. A fresh `install.sh` marks every existing migration as done.
 - Symlinked installs already see repo changes; migrations cover what a symlink cannot: copies, files outside the repo (`~/.zshrc`, `~/.config/starship.toml`), packages, services, state files.
 
 ## Keyboard shortcuts list (everything at hand)

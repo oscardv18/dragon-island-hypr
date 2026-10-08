@@ -59,8 +59,8 @@ mkdir -p "$STATE_DIR"
 exec > >(tee -a "$LOG") 2>&1
 trap 'echo "✗ Error en la línea $LINENO. Revisa el registro en: $LOG" >&2' ERR
 
-# shellcheck source=installer/lib.sh
-. "$REPO_DIR/installer/lib.sh"
+# shellcheck source=lib/common.sh
+. "$REPO_DIR/lib/common.sh"
 
 # Summary counters
 APPLIED_MIGRATIONS=()
@@ -369,8 +369,8 @@ step_reload() {
 
 step_pull
 # the neural core has one source (shared/neural-core); dry-run only checks it
-if $DRY_RUN; then "$REPO_DIR/installer/sync-neural-core.sh" --check || log_warn "NeuralCore/CoreIcon: copias desincronizadas."
-else "$REPO_DIR/installer/sync-neural-core.sh"; fi
+if $DRY_RUN; then "$REPO_DIR/scripts/sync-shared.sh" --check || log_warn "NeuralCore/CoreIcon: copias desincronizadas."
+else "$REPO_DIR/scripts/sync-shared.sh"; fi
 step_migrations
 step_packages
 step_configs

@@ -4,8 +4,8 @@
 # Everything else (QML, scripts/icon-paths.sh) comes with the repo; the live reload applies it.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 NEW="$STATE_DIR/launcher.json"
 if [[ -e "$NEW" ]]; then

@@ -5,8 +5,8 @@
 # (class org.dragonisland.Pkg) and the glass for the dragon-store layer arrive with the repo.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 if ! pacman -Qq pacman-contrib >/dev/null 2>&1; then
     if confirm "Falta pacman-contrib (checkupdates y paccache para la Tienda). ¿Instalarlo con pacman?"; then

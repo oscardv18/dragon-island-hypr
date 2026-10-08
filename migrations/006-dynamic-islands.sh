@@ -6,8 +6,8 @@
 # record the screen) and layer rules (dragon-preview) arrive with config/hypr.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 if ! pacman -Qq pacman-contrib >/dev/null 2>&1; then
     if confirm "Falta pacman-contrib (checkupdates, contador de actualizaciones). ¿Instalarlo con pacman?"; then

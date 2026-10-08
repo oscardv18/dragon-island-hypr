@@ -4,8 +4,8 @@
 # (input.lua and binds.lua) that still has the old layout. Custom layouts are left alone.
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 HYPR_DIR="$HOME/.config/hypr"
 INPUT="$HYPR_DIR/input.lua"

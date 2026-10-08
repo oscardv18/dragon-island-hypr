@@ -5,14 +5,14 @@
 # session pick the changes up, and OFFERS the login theme (sudo, interactive: never run without an explicit yes).
 set -Eeuo pipefail
 REPO_DIR="${REPO_DIR:-$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)}"
-# shellcheck source=installer/migration-env.sh
-. "$REPO_DIR/installer/migration-env.sh"
+# shellcheck source=lib/migration-env.sh
+. "$REPO_DIR/lib/migration-env.sh"
 
 # 1. one source for NeuralCore/CoreIcon → Quickshell components + SDDM theme
 if $DRY_RUN; then
-    "$REPO_DIR/installer/sync-neural-core.sh" --check || log_warn "NeuralCore/CoreIcon desincronizados (se copiarían)."
+    "$REPO_DIR/scripts/sync-shared.sh" --check || log_warn "NeuralCore/CoreIcon desincronizados (se copiarían)."
 else
-    "$REPO_DIR/installer/sync-neural-core.sh"
+    "$REPO_DIR/scripts/sync-shared.sh"
 fi
 
 # 2. the Quickshell files must be where the shell reads them (symlinked dirs already are; copy mode: update.sh syncs them)
