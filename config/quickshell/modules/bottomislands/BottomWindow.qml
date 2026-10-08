@@ -6,7 +6,8 @@
 // so clicks everywhere else reach the windows below. While an island is on its way in / out / shown, its mask is the
 // whole zone: island ∪ the margin under it ∪ the strip — one rectangle, so there is no gap to flicker in.
 // The pointer is read with HoverHandlers inside this window (Wayland has no global cursor position).
-// The islands sit at the sides of the dock: inner edge = screen centre ∓ (Theme.dockMaxLength / 2 + Theme.bottomDockGap).
+// The islands are notch-shaped black tabs like the dock, as thick as it (Theme.dockThickness) and flush with the screen edge:
+// they sit at the same level as the dock. They sit at the sides of the dock: inner edge = screen centre ∓ (Theme.dockMaxLength / 2 + Theme.bottomDockGap).
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
@@ -26,7 +27,7 @@ PanelWindow {
     readonly property real riseRoom: 6                          // room above the island for the OutBack overshoot
     readonly property real islandY: riseRoom
     anchors { bottom: true; left: true; right: true }
-    implicitHeight: riseRoom + Theme.barHeight + Theme.bottomMargin
+    implicitHeight: riseRoom + Theme.dockThickness
     exclusionMode: ExclusionMode.Ignore
     color: Theme.transparent
 
@@ -52,10 +53,10 @@ PanelWindow {
 
     // ------------------------------------------------------------ geometry
     readonly property real rightX: win.width / 2 + Theme.dockMaxLength / 2 + Theme.bottomDockGap
-    readonly property real rightMax: Math.max(0, win.width - Theme.barMarginSide - rightX)
+    readonly property real rightMax: Math.min(Theme.bottomIslandMax, Math.max(0, win.width - Theme.barMarginSide - rightX))
 
     readonly property real leftEdge: win.width / 2 - Theme.dockMaxLength / 2 - Theme.bottomDockGap   // the island's right edge
-    readonly property real leftMax: Math.max(0, leftEdge - Theme.barMarginSide)
+    readonly property real leftMax: Math.min(Theme.bottomIslandMax, Math.max(0, leftEdge - Theme.barMarginSide))
     readonly property real leftX: leftEdge - leftIsland.width
 
     // detection strips + zones (invisible items: only their geometry matters)
@@ -133,7 +134,7 @@ PanelWindow {
         x: 0
         y: (1 - Math.min(1.15, rightRev.progress)) * Theme.bottomRise
         width: rightIsland.width
-        height: Theme.barHeight
+        height: Theme.dockThickness
         visible: rightRev.progress > 0.002
         opacity: Math.max(0, Math.min(1, rightRev.progress))
 
@@ -141,6 +142,7 @@ PanelWindow {
             id: rightIsland
             entries: BackgroundApps.entries
             maxWidth: win.rightMax
+            fixedWidth: win.rightMax
             iconProvider: (e, failed) => BackgroundApps.icon(e, failed)
             openKey: win.moreOpen ? "+more" : (win.menuEntry && (win.ctxOpen || trayMenu.visible) ? win.menuEntry.key : "")
             onChipActivated: (e, chip) => { win.pick(e, chip); BackgroundApps.activate(e, trayMenu); }
@@ -159,12 +161,13 @@ PanelWindow {
         x: 0
         y: (1 - Math.min(1.15, leftRev.progress)) * Theme.bottomRise
         width: leftIsland.width
-        height: Theme.barHeight
+        height: Theme.dockThickness
         visible: leftRev.progress > 0.002
         opacity: Math.max(0, Math.min(1, leftRev.progress))
 
         HerdrIsland {
             id: leftIsland
+            fixedWidth: win.leftMax
             online: Herdr.running
             agents: Herdr.agents
             workspaces: Herdr.workspaces

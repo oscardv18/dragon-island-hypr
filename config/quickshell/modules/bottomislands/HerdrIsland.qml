@@ -5,9 +5,12 @@
 import QtQuick
 import "../.."
 import "../../components"
+import "../island"
 
-Rectangle {
+Item {
     id: root
+
+    property real fixedWidth: 0      // the island is at least this wide (the tab is as wide as the top islands)
 
     property bool online: false
     property var agents: []
@@ -34,17 +37,19 @@ Rectangle {
     signal agentsClicked(Item chip)
     signal editorsClicked(Item chip)
 
-    implicitHeight: Theme.barHeight
-    height: Theme.barHeight
-    width: Theme.barIslandPadH * 2 + row.implicitWidth
-    radius: Theme.barIslandRadius
-    color: Theme.glassBg
-    border.width: 1
-    border.color: Theme.glassBorder
+    implicitHeight: Theme.dockThickness
+    height: Theme.dockThickness
+    width: Math.max(fixedWidth, Theme.notchEarRadius * 2 + Theme.barIslandPadH * 2 + row.implicitWidth)
+
+    // the dock's silhouette (concave ears at the screen edge, rounded far corners), opaque black like the notch
+    NotchShape {
+        anchors.fill: parent
+        rotation: 180
+    }
 
     Row {
         id: row
-        x: Theme.barIslandPadH
+        x: Theme.notchEarRadius + Theme.barIslandPadH
         anchors.verticalCenter: parent.verticalCenter
         spacing: Theme.barIslandGap
 
