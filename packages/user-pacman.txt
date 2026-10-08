@@ -8,3 +8,7 @@ nautilus
 telegram-desktop
 github-cli
 shellcheck
+thunar
+vlc
+obs-studio
+obsidian
