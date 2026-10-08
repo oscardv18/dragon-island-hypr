@@ -18,9 +18,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
 | `SUPER + A` | Agentes: abre herdr en el escritorio 5 («agentes») o, si ya hay una ventana, la enfoca. Las sesiones sobreviven al cerrar la ventana |
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
-| `SUPER + Escape` | Tienda (`SUPER + I`) | Escribir busca en repos y AUR · `↑ ↓` · `Tab` (o `Espacio` con el campo vacío) marca · `Enter` instala / elimina / actualiza según la pestaña · `Esc` cierra el visor o el diálogo y luego la Tienda |
-| Fondos de pantalla (`SUPER + W`) | Escribir filtra · `← → ↑ ↓` · `Enter` o clic aplica · `Esc` cierra |
-| Menú de energía |
+| `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
 | `Print` | Captura de pantalla completa |
 | `SUPER + SHIFT + S` | Captura de una región |
@@ -187,7 +185,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 
 | Panel | Teclas |
 |---|---|
-| Lanzador orbital | Escribir filtra (búsqueda difusa; el mejor resultado pasa al frente y el anillo se detiene) · `← →`, `↑ ↓`, `Tab` o la rueda giran el anillo · `Enter` lanza · clic derecho en un icono = favorito · `=2*(3+4)` calcula (Enter copia) · `>comando` se ejecuta en Ghostty · `Esc` o clic fuera cierra |
+| Lanzador orbital | Escribir filtra (búsqueda difusa; el mejor resultado pasa al frente y el anillo se detiene) · `← →`, `↑ ↓`, `Tab` o la rueda giran el anillo · `Enter` lanza · `Ctrl+F` fija / quita de favoritos la app del frente · `Ctrl+I` sin resultados (o `+nombre`) abre la Tienda con la búsqueda · `=2*(3+4)` calcula (Enter copia) · `>comando` se ejecuta en Ghostty · `Esc` o clic fuera cierra |
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
 | Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
 | Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
@@ -205,3 +203,109 @@ qs ipc call debug toggle             # panel de diagnóstico de servicios (desar
 qs ipc call settings motion 0        # sin animaciones (0), normal (1), lentas (2); -1 = seguir a KDE
 qs ipc call settings current         # velocidad de animación actual y de dónde sale
 ```
+
+## Referencia completa de atajos de Hyprland
+
+Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita Hyprland en marcha); es lo mismo que muestra `SUPER + F1`.
+
+<!-- binds:begin (generado por scripts/gen-keybinds.sh desde hyprctl binds -j; no editar a mano) -->
+### Agentes
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + A` | Abrir o enfocar herdr (escritorio 5) |
+
+### Aplicaciones
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + E` | Archivos (Dolphin) |
+| `SUPER + Space` | Lanzador |
+| `SUPER + Return` | Terminal (Ghostty) |
+
+### Capturas
+
+| Atajo | Acción |
+|---|---|
+| `Print` | Pantalla completa |
+| `SUPER + SHIFT + S` | Región |
+
+### Dock
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + X` | Fijar / liberar el dock |
+| `SUPER + M` | Minimizar la ventana (escritorio especial) |
+
+### Escritorios
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + SHIFT + 1` · `SUPER + SHIFT + 2` · `SUPER + SHIFT + 3` · `SUPER + SHIFT + 4` · `SUPER + SHIFT + 5` | Enviar la ventana al escritorio |
+| `SUPER + 1` · `SUPER + 2` · `SUPER + 3` · `SUPER + 4` · `SUPER + 5` | Ir al escritorio |
+
+### Foco
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + down` · `SUPER + left` · `SUPER + right` · `SUPER + up` | Mover el foco |
+| `SUPER + ALT + H` · `SUPER + ALT + J` · `SUPER + ALT + K` · `SUPER + ALT + L` | Mover el foco (Vim) |
+
+### Multimedia
+
+| Atajo | Acción |
+|---|---|
+| `XF86MonBrightnessDown` | Bajar brillo |
+| `XF86AudioLowerVolume` | Bajar volumen |
+| `XF86AudioPrev` | Pista anterior |
+| `XF86AudioPause` · `XF86AudioPlay` | Reproducir / pausar |
+| `XF86AudioNext` | Siguiente pista |
+| `XF86AudioMute` | Silenciar |
+| `XF86AudioMicMute` | Silenciar micrófono |
+| `XF86MonBrightnessUp` | Subir brillo |
+| `XF86AudioRaiseVolume` | Subir volumen |
+
+### Ratón
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + mouse:272` | Arrastrar ventana |
+| `SUPER + mouse:273` | Redimensionar ventana |
+
+### Shell
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + F1` | Esta ayuda de atajos |
+| `SUPER + SHIFT + W` | Fondo aleatorio |
+| `SUPER + W` | Fondos de pantalla |
+| `SUPER + SHIFT + R` | Grabar pantalla (iniciar / parar) |
+| `SUPER + SHIFT + V` | Historial del portapapeles |
+| `SUPER + Escape` | Menú de energía |
+| `SUPER + D` | Notch (Nook / Tray) |
+| `SUPER + N` | Notificaciones |
+| `SUPER + I` | Tienda de apps (pacman + AUR) |
+
+### Sistema
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + L` | Bloquear la sesión |
+
+### Teclado
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + ALT + Space` | Cambiar distribución (US / LA) |
+
+### Ventanas
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + V` | Alternar flotante |
+| `SUPER + Q` | Cerrar |
+| `SUPER + F` | Maximizar / restaurar |
+| `SUPER + SHIFT + down` · `SUPER + SHIFT + left` · `SUPER + SHIFT + right` · `SUPER + SHIFT + up` | Mover la ventana |
+| `SUPER + SHIFT + H` · `SUPER + SHIFT + J` · `SUPER + SHIFT + K` · `SUPER + SHIFT + L` | Mover la ventana (Vim) |
+| `SUPER + SHIFT + F` | Pantalla completa |
+<!-- binds:end -->
