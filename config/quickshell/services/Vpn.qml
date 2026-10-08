@@ -31,7 +31,8 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const names = this.text.split(/\s+/).filter(n => n.length > 0);
-                root.iface = names.find(n => /^(proton|tun\d|wg\d|ipv6leakintrf)/.test(n)) ?? "";
+                // the tunnel first: ipv6leakintrf0 (the kill-switch dummy) only counts when nothing else is up
+                root.iface = names.find(n => /^(proton|tun\d|wg\d)/.test(n)) ?? names.find(n => /^ipv6leakintrf/.test(n)) ?? "";
             }
         }
     }

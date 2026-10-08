@@ -29,6 +29,6 @@ singleton WorkspacePreview 1.0 WorkspacePreview.qml
 singleton Dock 1.0 Dock.qml
 singleton Store 1.0 Store.qml
 singleton Herdr 1.0 Herdr.qml
-singleton BottomConfig 1.0 BottomConfig.qml
+singleton AppsConfig 1.0 AppsConfig.qml
 singleton BackgroundApps 1.0 BackgroundApps.qml
 singleton EditorWatcher 1.0 EditorWatcher.qml

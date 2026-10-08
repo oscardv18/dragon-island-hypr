@@ -3,9 +3,9 @@
 // Service: code editors that are open (left bottom island)
 // =============================================================================
 /**
- * GUI editors: Hyprland windows whose class matches BottomConfig.editorClasses (VS Code, Cursor, Zed, Kate, JetBrains…).
- * Terminal editors (nvim, helix, emacs…): processes whose name matches BottomConfig.editorProcesses, read with `ps`
- * only while the island is on screen (10 s, plus once on reveal). They have no window of their own, so they are
+ * GUI editors: Hyprland windows whose class matches AppsConfig.editorClasses (VS Code, Cursor, Zed, Kate, JetBrains…).
+ * Terminal editors (nvim, helix, emacs…): processes whose name matches AppsConfig.editorProcesses, read with `ps`
+ * only while the Apps tab is open (10 s, plus once on reveal). They have no window of their own, so they are
  * listed but cannot be focused.
  *
  * Properties:
@@ -52,7 +52,7 @@ Singleton {
         const out = [], byClass = {};
         for (const t of Hyprland.toplevels.values) {
             const cls = t.wayland?.appId || t.lastIpcObject?.class || "";
-            if (!BottomConfig.anyMatches(BottomConfig.editorClasses, cls)) continue;
+            if (!AppsConfig.anyMatches(AppsConfig.editorClasses, cls)) continue;
             const key = cls.toLowerCase();
             if (byClass[key]) { byClass[key].count++; continue; }
             const de = DesktopEntries.heuristicLookup(cls);
@@ -62,7 +62,7 @@ Singleton {
         }
         if (root._watching) {
             for (const n of Object.keys(root._procs))
-                if (BottomConfig.anyMatches(BottomConfig.editorProcesses, n))
+                if (AppsConfig.anyMatches(AppsConfig.editorProcesses, n))
                     out.push({ key: `p:${n}`, name: n, kind: "process", count: root._procs[n], toplevel: null, workspace: "" });
         }
         return out;

@@ -1,15 +1,13 @@
 // =============================================================================
-// dragon-island — BottomConfig.qml
-// Service: settings of the bottom islands (watched apps, editors, strip height, layer)
+// dragon-island — AppsConfig.qml
+// Service: settings of the apps / AI tabs of the notch dashboard (watched apps, editors, adapters)
 // =============================================================================
 /**
- * Reads ~/.config/dragon-island/bottom-islands.json (defaults live in the repo: config/dragon-island/, copied by
- * migration 014 / the core module) and, on top of it, bottom-islands.local.json (never versioned: its top-level keys
+ * Reads ~/.config/dragon-island/background-apps.json (defaults live in the repo: config/dragon-island/, copied by
+ * migration 014 / the core module) and, on top of it, background-apps.local.json (never versioned: its top-level keys
  * replace the ones above). Both files hot-reload. A missing or broken file leaves the previous values in place.
  *
  * File format:
- *   layer: "top" | "overlay"      (overlay = also above fullscreen windows)
- *   stripHeight: number           (px of the invisible detection strip, clamped 1..24)
  *   watched: [{ id, label, match: { class?, tray?, desktop?, process? } }]
  *   hideTray: [regex]             (tray items whose id / title match are not shown)
  *   editors: { classes: [regex], processes: [regex] }
@@ -18,7 +16,6 @@
  * (window class / initialClass, tray item id or title, process name; `desktop` is a desktop entry id, used for the icon).
  *
  * Properties:
- *   - layer: string [readonly], stripHeight: real [readonly]
  *   - watched: list<var> [readonly]  hideTray: list<string> [readonly]  editorClasses / editorProcesses: list<string> [readonly]
  *   - ready: bool [readonly] (a valid user file was read)  error: string [readonly] (last parse error, "" when fine)
  *
@@ -36,8 +33,8 @@ Singleton {
     id: root
 
     readonly property string configHome: Quickshell.env("XDG_CONFIG_HOME") || `${Quickshell.env("HOME")}/.config`
-    readonly property string userPath: `${configHome}/dragon-island/bottom-islands.json`
-    readonly property string localPath: `${configHome}/dragon-island/bottom-islands.local.json`
+    readonly property string userPath: `${configHome}/dragon-island/background-apps.json`
+    readonly property string localPath: `${configHome}/dragon-island/background-apps.local.json`
 
     property var _user: ({})
     property var _local: ({})
@@ -46,11 +43,6 @@ Singleton {
 
     readonly property var _merged: Object.assign({}, root._user, root._local)
 
-    readonly property string layer: root._merged.layer === "overlay" ? "overlay" : "top"
-    readonly property real stripHeight: {
-        const v = Number(root._merged.stripHeight);
-        return isNaN(v) || v <= 0 ? 4 : Math.max(1, Math.min(24, Math.round(v)));
-    }
     readonly property var watched: Array.isArray(root._merged.watched) ? root._merged.watched.filter(w => w && w.id && w.match) : []
     readonly property var hideTray: Array.isArray(root._merged.hideTray) ? root._merged.hideTray : []
     readonly property var editorClasses: Array.isArray(root._merged.editors?.classes) ? root._merged.editors.classes : []

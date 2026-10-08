@@ -1,7 +1,7 @@
 // =============================================================================
 // dragon-island — BarContext.qml
 // Service: the contextual capsules of the right island — shown only while they are relevant
-// (agents and VPN state live in the bottom islands now)
+// (agents live in the notch dashboard IA tab, apps in the background in its Apps tab)
 // =============================================================================
 /**
  * (Microphone use is a dot on the volume capsule; No molestar, unread notifications and updates are markers on

@@ -76,7 +76,6 @@ if hl.plugin and hl.plugin.hyprglass then
     -- The notch must stay opaque black; the scrim is a flat dim, not glass
     hg.layer("dragon-island", { exclude = true })
     hg.layer("dragon-dock",   { exclude = true })   -- the dock is opaque black like the notch
-    hg.layer("dragon-bottom-islands", { exclude = true })   -- the bottom islands are black tabs like the dock
     hg.layer("dragon-scrim",  { exclude = true })
 
     -- ---- windows ----

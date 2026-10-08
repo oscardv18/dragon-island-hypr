@@ -1,9 +1,9 @@
 // =============================================================================
 // dragon-island — BackgroundApps.qml
-// Service: apps that are "closed but alive" — tray items + windows elsewhere + watched processes (right bottom island)
+// Service: apps that are "closed but alive" — tray items + windows elsewhere + watched processes (Apps tab of the notch dashboard)
 // =============================================================================
 /**
- * Joins three sources into one list without repeating an app (see BottomConfig for the `watched` list):
+ * Joins three sources into one list without repeating an app (see AppsConfig for the `watched` list):
  *   1. the system tray: every StatusNotifierItem (Passive ones too), except `hideTray`;
  *   2. windows of watched apps that are NOT on a visible workspace (other workspace / special workspace);
  *   3. watched apps with a `process` match that have neither a tray item nor a window (process table, `ps`).
@@ -18,12 +18,12 @@
  *       workspace: string (label of the first background window's workspace, "" if unknown)
  *       wsShort: string (what fits in a miniature: "3", "S" for a special workspace)
  *       vpn: "on" | "off" | "" (Proton VPN adapter: the chip gets a green ring while connected)
- *       extra: string (adapter status line, "" = none; only with BottomConfig.adapter("protonvpn") for the protonvpn entry)
+ *       extra: string (adapter status line, "" = none; only with AppsConfig.adapter("protonvpn") for the protonvpn entry)
  *       pid: int (0 = unknown)   desktopId: string (watched `desktop`)   attention: bool
  *   - count: int [readonly]
  *
  * Functions:
- *   - setWatching(on: bool): void   (the process table is only read while the island is on screen: 10 s, plus once on reveal)
+ *   - setWatching(on: bool): void   (the process table is only read while the Apps tab is open: 10 s, plus once on reveal)
  *   - activate(entry, menuAnchor): void   left click: focus the window → tray activate() → open the desktop entry
  *   - secondaryActivate(entry): void      middle click
  *   - scroll(entry, dx: int, dy: int): void
@@ -74,7 +74,7 @@ Singleton {
 
     function _procPid(pattern: string): int {
         if (!pattern) return 0;
-        for (const name of Object.keys(root._procs)) if (BottomConfig.matches(pattern, name)) return root._procs[name];
+        for (const name of Object.keys(root._procs)) if (AppsConfig.matches(pattern, name)) return root._procs[name];
         return 0;
     }
 
@@ -97,7 +97,7 @@ Singleton {
     }
 
     readonly property var entries: {
-        const cfg = BottomConfig.watched;
+        const cfg = AppsConfig.watched;
         const byKey = {};
         const order = [];
         const mk = (key, id, label, idx) => {
@@ -108,13 +108,13 @@ Singleton {
         };
         const watchedFor = (field, ...values) => {
             for (let i = 0; i < cfg.length; i++)
-                for (const v of values) if (v && BottomConfig.matches(cfg[i].match[field] ?? "", v)) return i;
+                for (const v of values) if (v && AppsConfig.matches(cfg[i].match[field] ?? "", v)) return i;
             return -1;
         };
 
         // 1) tray
         for (const item of SystemTray.items.values) {
-            if (BottomConfig.anyMatches(BottomConfig.hideTray, item.id) || BottomConfig.anyMatches(BottomConfig.hideTray, item.title)) continue;
+            if (AppsConfig.anyMatches(AppsConfig.hideTray, item.id) || AppsConfig.anyMatches(AppsConfig.hideTray, item.title)) continue;
             const wi = watchedFor("tray", item.id, item.title);
             let e = null;
             if (wi >= 0 && !byKey[`w:${cfg[wi].id}`]) e = mk(`w:${cfg[wi].id}`, cfg[wi].id, cfg[wi].label ?? cfg[wi].id, wi);
@@ -172,7 +172,7 @@ Singleton {
 
         for (const e of order) if (e.windows.length > 0 && !e.trayItem) e.kind = "window";
         // adapter: Proton VPN state from its network interface (services/Vpn.qml, which already watches /sys/class/net)
-        if (BottomConfig.adapter("protonvpn")) {
+        if (AppsConfig.adapter("protonvpn")) {
             const p = byKey["w:protonvpn"];
             if (p) { p.vpn = Vpn.active ? "on" : "off"; p.extra = Vpn.active ? `VPN conectada (${Vpn.iface})` : "VPN desconectada"; }
         }

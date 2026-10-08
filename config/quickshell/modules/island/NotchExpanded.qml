@@ -1,5 +1,5 @@
-// Expanded notch content (NotchNook layout): top row = tabs "Nook | Tray" (left) and a gear (right);
-// body = Nook tab (media · divider · calendar strip + quick toggles + system stats) or Tray tab.
+// Expanded notch content (NotchNook layout): top row = tabs "Nook | Apps | IA" (left) and a gear (right);
+// body = Nook tab (media · divider · calendar strip + quick toggles + system stats) Apps tab (apps in the background) or IA tab (herdr agents + editors).
 // Width is the notch body (shape width minus the ears); the height is fixed by the shape.
 import QtQuick
 import QtQuick.Layouts
@@ -11,7 +11,7 @@ Item {
     id: root
 
     property string screenName: ""
-    property string tab: "nook"   // "nook" | "tray"
+    property string tab: "nook"   // "nook" | "apps" | "ia"
 
     implicitWidth: Theme.notchExpandedWidth
 
@@ -25,7 +25,7 @@ Item {
         spacing: Theme.spacingSm
 
         Repeater {
-            model: [{ key: "nook", label: "Nook" }, { key: "tray", label: "Tray" }]
+            model: [{ key: "nook", label: "Nook" }, { key: "apps", label: "Apps" }, { key: "ia", label: "IA" }]
             delegate: Item {
                 id: tabItem
                 required property var modelData
@@ -80,10 +80,11 @@ Item {
 
         Loader {
             anchors.fill: parent
-            sourceComponent: root.tab === "tray" ? trayTab : nookTab
+            sourceComponent: root.tab === "apps" ? appsTab : (root.tab === "ia" ? aiTab : nookTab)
         }
     }
 
     Component { id: nookTab; NookTab { screenName: root.screenName } }
-    Component { id: trayTab; TrayTab {} }
+    Component { id: appsTab; AppsTab {} }
+    Component { id: aiTab; AiTab {} }
 }

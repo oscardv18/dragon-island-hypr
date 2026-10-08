@@ -80,7 +80,7 @@ hl.window_rule({
 -- The notch, popovers and panels animate themselves in QML: no compositor layer animation
 hl.layer_rule({
     name    = "no-anim-dragon-island",
-    match   = { namespace = "^dragon-(island|popover|launcher|notifications|wallpapers|store|scrim|preview|dock|dock-edge|bottom-islands)$" },
+    match   = { namespace = "^dragon-(island|popover|launcher|notifications|wallpapers|store|scrim|preview|dock|dock-edge)$" },
     no_anim = true,
 })
 

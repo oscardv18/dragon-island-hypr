@@ -153,21 +153,6 @@ Singleton {
     readonly property int  dockCapacity:   8      // capsules shown at once; more scroll with the mouse wheel
     readonly property int  dockHideDelay:  600    // ms after the pointer leaves
     readonly property real dockEdge:       3      // hot zone thickness, px
-    // widest the dock can ever be along the bottom edge (DockWindow.length with Theme.dockCapacity capsules)
-    readonly property real dockMaxLength:  dockPad * 2 + notchEarRadius * 2 + dockCapacity * dockPitch - (dockPitch - dockPill)
-
-    // Bottom islands (always hidden, shown by the pointer): the two islands at the sides of the dock
-    readonly property real bottomMargin:      0              // flush with the screen edge, like the dock (the islands are notch-shaped tabs)
-    readonly property real bottomDockGap:     16             // between the dock's widest extent and an island
-    readonly property real bottomStripMin:    1              // detection strip, px (the configured value is clamped to 1..24)
-    readonly property real bottomRise:        dockThickness  // the island sinks fully into the edge, like the dock
-    readonly property int  bottomIntentMs:    100            // pointer must stay in the strip this long before the island appears
-    readonly property int  bottomGraceMs:     350            // pointer must stay away this long before the island hides
-    readonly property int  durBottomShow:     ms(300)        // OutBack
-    readonly property int  durBottomHide:     ms(200)
-    readonly property real bottomChip:        30             // chip footprint (the app icon is bottomChip - 6)
-    readonly property real bottomPopoverW:    300
-    readonly property real bottomIslandMax:   480            // width of an island (the top islands' width); never wider than the room beside the dock
     // herdr agent states (herdr has no "error" state): working · blocked (needs an answer) · done / idle (ready) · unknown
     function agentColor(state: string): color {
         switch (state) {
