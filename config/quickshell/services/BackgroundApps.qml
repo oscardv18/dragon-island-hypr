@@ -17,6 +17,7 @@
  *       status: "active" | "passive" | "attention" | "none"   (tray status; "none" = no tray item)
  *       workspace: string (label of the first background window's workspace, "" if unknown)
  *       wsShort: string (what fits in a miniature: "3", "S" for a special workspace)
+ *       extra: string (adapter status line, "" = none; only with BottomConfig.adapter("protonvpn") for the protonvpn entry)
  *       pid: int (0 = unknown)   desktopId: string (watched `desktop`)   attention: bool
  *   - count: int [readonly]
  *
@@ -100,7 +101,7 @@ Singleton {
         const order = [];
         const mk = (key, id, label, idx) => {
             const e = { key, id, label, kind: "window", trayItem: null, hasWindow: false, windows: [], status: "none",
-                        workspace: "", wsShort: "", pid: 0, desktopId: "", attention: false, _idx: idx };
+                        workspace: "", wsShort: "", extra: "", pid: 0, desktopId: "", attention: false, _idx: idx };
             byKey[key] = e; order.push(e);
             return e;
         };
@@ -169,6 +170,11 @@ Singleton {
         }
 
         for (const e of order) if (e.windows.length > 0 && !e.trayItem) e.kind = "window";
+        // adapter: Proton VPN state from its network interface (services/Vpn.qml, which already watches /sys/class/net)
+        if (BottomConfig.adapter("protonvpn")) {
+            const p = byKey["w:protonvpn"];
+            if (p) p.extra = Vpn.active ? `VPN conectada (${Vpn.iface})` : "VPN desconectada";
+        }
         order.sort((a, b) => a._idx !== b._idx ? a._idx - b._idx : a.label.localeCompare(b.label));
         return order;
     }
@@ -183,6 +189,7 @@ Singleton {
 
     function stateText(entry): string {
         if (!entry) return "";
+        if (entry.extra) return entry.extra;
         if (entry.attention) return "Requiere atención";
         if (entry.windows.length > 0) return `Ventana en el workspace ${entry.workspace}`;
         if (entry.kind === "tray") return entry.status === "passive" ? "Solo en la bandeja (pasiva)" : "Solo en la bandeja";

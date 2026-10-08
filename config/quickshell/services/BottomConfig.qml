@@ -13,6 +13,7 @@
  *   watched: [{ id, label, match: { class?, tray?, desktop?, process? } }]
  *   hideTray: [regex]             (tray items whose id / title match are not shown)
  *   editors: { classes: [regex], processes: [regex] }
+ *   adapters: { protonvpn: bool }  (per-app status adapters, all OFF unless set; there is no OBS adapter, see HANDOFF)
  * Every match value is a case-insensitive regular expression that must match the WHOLE value
  * (window class / initialClass, tray item id or title, process name; `desktop` is a desktop entry id, used for the icon).
  *
@@ -22,6 +23,7 @@
  *   - ready: bool [readonly] (a valid user file was read)  error: string [readonly] (last parse error, "" when fine)
  *
  * Functions:
+ *   - adapter(name: string): bool
  *   - matches(pattern: string, value: string): bool   (whole-value, case-insensitive; an invalid regex never matches)
  *   - anyMatches(patterns: list<string>, value: string): bool
  */
@@ -53,6 +55,8 @@ Singleton {
     readonly property var hideTray: Array.isArray(root._merged.hideTray) ? root._merged.hideTray : []
     readonly property var editorClasses: Array.isArray(root._merged.editors?.classes) ? root._merged.editors.classes : []
     readonly property var editorProcesses: Array.isArray(root._merged.editors?.processes) ? root._merged.editors.processes : []
+
+    function adapter(name: string): bool { return root._merged.adapters?.[name] === true; }
 
     function matches(pattern: string, value: string): bool {
         if (!pattern || !value) return false;

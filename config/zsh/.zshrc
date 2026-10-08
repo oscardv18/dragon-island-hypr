@@ -30,3 +30,7 @@ source $ZSH/oh-my-zsh.sh   # runs compinit
 
 # --- dragon-island terminal: everything else lives in dragon.zsh (config/zsh, deployed to ~/.config/dragon-island/zsh) ---
 [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh/dragon.zsh" ]] && source "${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh/dragon.zsh"
+
+# >>> dragon-island fastfetch >>>
+[[ -f "/home/oddv/.config/dragon-island/zsh/fastfetch.zsh" ]] && source "/home/oddv/.config/dragon-island/zsh/fastfetch.zsh"
+# <<< dragon-island fastfetch <<<

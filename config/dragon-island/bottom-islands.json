@@ -2,22 +2,116 @@
   "layer": "top",
   "stripHeight": 4,
   "watched": [
-    { "id": "obs",         "label": "OBS Studio",  "match": { "class": "com\\.obsproject\\.Studio|obs", "tray": "obs.*", "desktop": "com.obsproject.Studio", "process": "obs" } },
-    { "id": "protonvpn",   "label": "Proton VPN",  "match": { "class": "protonvpn.*|proton\\.vpn.*|com\\.protonvpn.*|proton-vpn.*", "tray": "proton.*", "desktop": "proton.vpn.app.gtk", "process": "protonvpn-app|protonvpn.*" } },
-    { "id": "telegram",    "label": "Telegram",    "match": { "class": "org\\.telegram\\.desktop|telegram.*|telegramdesktop", "tray": "telegram.*", "desktop": "org.telegram.desktop", "process": "Telegram|telegram-desktop" } },
-    { "id": "discord",     "label": "Discord",     "match": { "class": "discord|vesktop|webcord", "tray": "discord.*|vesktop", "desktop": "discord", "process": "Discord|discord|vesktop" } },
-    { "id": "spotify",     "label": "Spotify",     "match": { "class": "spotify", "tray": "spotify.*", "desktop": "spotify", "process": "spotify" } },
-    { "id": "steam",       "label": "Steam",       "match": { "class": "steam", "tray": "steam.*", "desktop": "steam", "process": "steam" } },
-    { "id": "qbittorrent", "label": "qBittorrent", "match": { "class": "org\\.qbittorrent\\.qBittorrent|qbittorrent", "tray": "qbittorrent.*", "desktop": "org.qbittorrent.qBittorrent", "process": "qbittorrent" } },
-    { "id": "syncthing",   "label": "Syncthing",   "match": { "class": "syncthing.*", "tray": "syncthing.*", "desktop": "syncthing-gtk", "process": "syncthing" } },
-    { "id": "kdeconnect",  "label": "KDE Connect", "match": { "class": "org\\.kde\\.kdeconnect.*|kdeconnect.*", "tray": "kdeconnect.*", "desktop": "org.kde.kdeconnect.app", "process": "kdeconnectd" } }
+    {
+      "id": "obs",
+      "label": "OBS Studio",
+      "match": {
+        "class": "com\\.obsproject\\.Studio|obs",
+        "tray": "obs.*",
+        "desktop": "com.obsproject.Studio",
+        "process": "obs"
+      }
+    },
+    {
+      "id": "protonvpn",
+      "label": "Proton VPN",
+      "match": {
+        "class": "protonvpn.*|proton\\.vpn.*|com\\.protonvpn.*|proton-vpn.*",
+        "tray": "proton.*",
+        "desktop": "proton.vpn.app.gtk",
+        "process": "protonvpn-app|protonvpn.*"
+      }
+    },
+    {
+      "id": "telegram",
+      "label": "Telegram",
+      "match": {
+        "class": "org\\.telegram\\.desktop|telegram.*|telegramdesktop",
+        "tray": "telegram.*",
+        "desktop": "org.telegram.desktop",
+        "process": "Telegram|telegram-desktop"
+      }
+    },
+    {
+      "id": "discord",
+      "label": "Discord",
+      "match": {
+        "class": "discord|vesktop|webcord",
+        "tray": "discord.*|vesktop",
+        "desktop": "discord",
+        "process": "Discord|discord|vesktop"
+      }
+    },
+    {
+      "id": "spotify",
+      "label": "Spotify",
+      "match": {
+        "class": "spotify",
+        "tray": "spotify.*",
+        "desktop": "spotify",
+        "process": "spotify"
+      }
+    },
+    {
+      "id": "steam",
+      "label": "Steam",
+      "match": {
+        "class": "steam",
+        "tray": "steam.*",
+        "desktop": "steam",
+        "process": "steam"
+      }
+    },
+    {
+      "id": "qbittorrent",
+      "label": "qBittorrent",
+      "match": {
+        "class": "org\\.qbittorrent\\.qBittorrent|qbittorrent",
+        "tray": "qbittorrent.*",
+        "desktop": "org.qbittorrent.qBittorrent",
+        "process": "qbittorrent"
+      }
+    },
+    {
+      "id": "syncthing",
+      "label": "Syncthing",
+      "match": {
+        "class": "syncthing.*",
+        "tray": "syncthing.*",
+        "desktop": "syncthing-gtk",
+        "process": "syncthing"
+      }
+    },
+    {
+      "id": "kdeconnect",
+      "label": "KDE Connect",
+      "match": {
+        "class": "org\\.kde\\.kdeconnect.*|kdeconnect.*",
+        "tray": "kdeconnect.*",
+        "desktop": "org.kde.kdeconnect.app",
+        "process": "kdeconnectd"
+      }
+    }
   ],
   "hideTray": [],
   "editors": {
     "classes": [
       "code|code-oss|code-url-handler|codium|vscodium|visual-studio-code",
-      "cursor", "windsurf.*", "zed|dev\\.zed\\.zed.*", "kate|org\\.kde\\.kate", "jetbrains-.*"
+      "cursor",
+      "windsurf.*",
+      "zed|dev\\.zed\\.zed.*",
+      "kate|org\\.kde\\.kate",
+      "jetbrains-.*"
     ],
-    "processes": ["nvim", "hx", "helix", "emacs", "vim"]
+    "processes": [
+      "nvim",
+      "hx",
+      "helix",
+      "emacs",
+      "vim"
+    ]
+  },
+  "adapters": {
+    "protonvpn": false
   }
 }
