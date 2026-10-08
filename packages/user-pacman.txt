@@ -12,3 +12,4 @@ thunar
 vlc
 obs-studio
 obsidian
+vlc-plugin-ffmpeg
