@@ -464,6 +464,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `upower` | core | oficial |
 | `khal` | core | oficial |
 | `ddcutil` | core | oficial |
+| `jq` | core | oficial |
 | `grimblast-git` | core | AUR |
 | `mpvpaper` | core | AUR |
 | `zsh` | shell | oficial |
@@ -495,7 +496,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `herdr` | extras | instalador oficial (sin root, ~/.local/bin) |
 | `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |
 | `hyprbars`, `hyprfocus`, `hyprglass` | plugins | hyprpm |
-| Mis apps: opencode eza zoxide bat btop nautilus telegram-desktop github-cli shellcheck thunar vlc obs-studio obsidian genoffice-bin  | extras (myapps) | lo que instalaste desde la Tienda |
+| Mis apps: opencode eza zoxide bat btop nautilus telegram-desktop github-cli shellcheck thunar vlc obs-studio obsidian vlc-plugin-ffmpeg genoffice-bin  | extras (myapps) | lo que instalaste desde la Tienda |
 <!-- packages:end -->
 
 Lo que ya tengas instalado no se reinstala (`pacman -S --needed`). Los paquetes **no** se desinstalan al revertir salvo que lo pidas
