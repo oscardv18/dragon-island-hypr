@@ -368,6 +368,9 @@ step_reload() {
 }
 
 step_pull
+# the neural core has one source (shared/neural-core); dry-run only checks it
+if $DRY_RUN; then "$REPO_DIR/installer/sync-neural-core.sh" --check || log_warn "NeuralCore/CoreIcon: copias desincronizadas."
+else "$REPO_DIR/installer/sync-neural-core.sh"; fi
 step_migrations
 step_packages
 step_configs

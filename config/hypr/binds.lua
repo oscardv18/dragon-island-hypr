@@ -78,7 +78,7 @@ bind(mainMod .. " + Escape", hl.dsp.exec_cmd("qs ipc call shell toggle power"), 
 bind(mainMod .. " + F1",     hl.dsp.exec_cmd("qs ipc call shell toggle keybinds"),      "Shell · Esta ayuda de atajos")
 
 -- Session lock & system
-bind(mainMod .. " + L", hl.dsp.exec_cmd("loginctl lock-session"), "Sistema · Bloquear la sesión")
+bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc call lock lock || hyprlock"), "Sistema · Bloquear la sesión")
 
 -- Screenshots (grimblast / grim + slurp)
 bind("Print",                   hl.dsp.exec_cmd("grimblast --notify copysave output"), "Capturas · Pantalla completa")

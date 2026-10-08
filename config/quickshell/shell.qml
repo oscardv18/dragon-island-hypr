@@ -20,6 +20,7 @@ import "modules/notifications"
 import "modules/wallpapers"
 import "modules/store"
 import "modules/dock"
+import "modules/lock"
 import "debug"
 
 ShellRoot {
@@ -84,6 +85,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { NotificationWindow {} }
+    }
+
+    // session lock (replaces hyprlock, which stays as fallback). IPC: `qs ipc call lock lock`. Only one WlSessionLock may exist.
+    Lock {
+        id: lock
+        notifCount: Notifs.unreadCount
     }
 
     LazyLoader {

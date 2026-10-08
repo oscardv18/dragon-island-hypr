@@ -3,3 +3,7 @@ opencode
 eza
 zoxide
 bat
+btop
+nautilus
+telegram-desktop
+github-cli

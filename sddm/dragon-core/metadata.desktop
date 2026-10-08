@@ -1,0 +1,15 @@
+[SddmGreeterTheme]
+Name=dragon-core
+Description=dragon-island neural core login (animated AI core, Sweet/Dragonized palette)
+Author=oscardv18
+License=MIT
+Type=sddm-theme
+Version=1.0
+Website=https://github.com/oscardv18
+Screenshot=preview.png
+MainScript=Main.qml
+ConfigFile=theme.conf
+TranslationsDirectory=translations
+Theme-Id=dragon-core
+Theme-API=2.0
+QtVersion=6

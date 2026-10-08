@@ -164,6 +164,11 @@ fi
 # --dry-run without gum: nothing can be prompted, use defaults
 if $DRY_RUN && ! has_gum; then ASSUME_YES=true; fi
 
+# the neural core has one source (shared/neural-core); dry-run only checks it, a real run re-syncs both copies
+if $DRY_RUN; then "$REPO_DIR/installer/sync-neural-core.sh" --check || log_warn "NeuralCore/CoreIcon: copias desincronizadas (se corrigen al instalar)."
+else "$REPO_DIR/installer/sync-neural-core.sh"; fi
+if $DRY_RUN; then log_info "[dry-run] Opcional (pide sudo, solo tras confirmar): tema de login dragon-core → sddm/install-theme.sh (migración 012)."; fi
+
 if ! has_gum; then
     log_info "Instalando gum para la interfaz de terminal..."
     run sudo pacman -S --needed --noconfirm gum

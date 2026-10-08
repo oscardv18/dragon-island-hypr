@@ -1,1 +1,2 @@
 # "Mis apps": packages installed from the Tienda panel (kept by bin/dragon-pkg), AUR
+genoffice-bin

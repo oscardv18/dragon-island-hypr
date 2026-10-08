@@ -57,5 +57,6 @@ hl.config({
         disable_splash_rendering = true,
         force_default_wallpaper  = 0,
         background_color         = 0xff0b0c14, -- bg #0b0c14 (0xAARRGGBB)
+        allow_session_lock_restore = true,     -- if the lock client dies, a new one (hyprlock) can take the lock back
     },
 })
