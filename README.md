@@ -2,55 +2,78 @@
 
 Escritorio **Hyprland + Quickshell** para EndeavourOS, instalado como **segunda sesión junto a KDE Plasma** (Plasma no se toca). Tiene una barra flotante de tres islas, un **notch** pegado al borde superior que se expande (estilo NotchNook), popovers para cada indicador, centro de notificaciones, lanzador, portapapeles y menú de energía. Usa la paleta Sweet / Garuda Dragonized.
 
-> **Capturas pendientes.** Se añadirán desde EndeavourOS (ver [docs/TESTING.md](docs/TESTING.md)):
->
-> | Vista | Archivo |
-> |---|---|
-> | Escritorio con la barra y la isla cerrada | `docs/screenshots/desktop.png` *(pendiente)* |
-> | Dashboard abierto | `docs/screenshots/dashboard.png` *(pendiente)* |
-> | Popovers (Wi‑Fi, Sonido, Calendario…) | `docs/screenshots/popovers.png` *(pendiente)* |
-> | Lanzador y menú de energía | `docs/screenshots/launcher.png` *(pendiente)* |
+| Lanzador orbital (núcleo neural) | Pantalla de bloqueo | Tema de login (SDDM) |
+|---|---|---|
+| ![Lanzador](docs/screenshots/launcher.png) | ![Bloqueo](docs/screenshots/lock-preview.png) | ![Login](docs/screenshots/login-preview.png) |
+
+Más capturas: [islas](docs/screenshots/islas) y [dock](docs/screenshots/dock). El checklist para hacer las que faltan está en [docs/TESTING.md](docs/TESTING.md).
 
 ## Qué incluye
 
 | Pieza | Detalle |
 |---|---|
 | **Hyprland 0.56** | Configuración en **Lua** (`config/hypr/*.lua`), borde con degradado, blur, animaciones, reglas de capa para el shell |
-| **Plugins** | `hyprbars` (barra de título de 30 px, botones a la izquierda) y `hyprfocus`, instalados con `hyprpm` en el primer inicio |
+| **Plugins** | `hyprbars` (barra de título de 30 px, botones a la izquierda), `hyprfocus` y `hyprglass` (cristal líquido), instalados con `hyprpm` |
 | **Barra** | Isla izquierda (lanzador, escritorios 1–5, ventana activa) e isla derecha (CPU, RAM, Wi‑Fi, Bluetooth, volumen, batería, bandeja del sistema, notificaciones, reloj). Los huecos dejan pasar el clic |
 | **Notch** | Negro opaco pegado al borde superior, con orejas cóncavas; emerge del borde al arrancar y nunca se superpone a las islas de la barra. Al pasar el ratón se asoma (peek). Muestra OSD, notificación, cambio de escritorio, música o el reloj. Al pulsarlo (o SUPER+D) crece hasta ≈720×230 con las pestañas Nook y Tray |
 | **Notificaciones** | Popups (hasta 3, bajo la isla derecha), un peek del notch y el centro de notificaciones |
 | **Notch expandido** | Pestaña Nook: música, tira de calendario, toggles rápidos (Wi‑Fi, Bluetooth, No molestar, luz nocturna) y estadísticas. Pestaña Tray: la bandeja del sistema |
 | **Popovers** | Rendimiento, Wi‑Fi, Bluetooth, Sonido (con mezclador por app), Batería, Notificaciones y Calendario (eventos de **khal**) |
-| **Lanzador orbital** | `SUPER + Espacio`: un planeta de cristal con la búsqueda y un anillo de iconos que gira alrededor (los de atrás pasan detrás del planeta). Búsqueda difusa con memoria de uso, favoritos (clic derecho), `=cálculo` y `>comando` |
+| **Lanzador orbital** | `SUPER + Espacio`: el **núcleo neural** es el planeta, la búsqueda está en su centro y las apps giran en un anillo inclinado (la mitad de atrás pasa detrás de la esfera). Búsqueda difusa con memoria de uso, favoritos (`Ctrl+F`), `=cálculo`, `>comando`, `+nombre` (Tienda) y `Ctrl+I` sin resultados. El núcleo late al escribir, se pone rojo sin resultados y se expande en verde al lanzar |
 | **Dock en arco** | Una semidona de cristal (una franja como las islas, hueca por dentro, con las apps en cápsulas) que emerge del borde inferior (o izquierdo / derecho) con las apps fijadas, las abiertas y las minimizadas, puntos de ventanas, insignias de notificaciones, ampliación al pasar el ratón y abanico de descargas. Aparece cuando el escritorio no tiene ventanas en mosaico |
 | **Islas dinámicas** | Las cápsulas aparecen solo cuando importan: privacidad (micrófono / cámara / pantalla compartida), grabación, VPN, batería de auriculares, cafeína, No molestar, actualizaciones y velocidad de red; si no caben se agrupan en `+N`. Escritorios con los iconos de sus apps y vista previa con miniaturas; el título de la ventana activa se convierte en acciones |
 | **Extras** | Lanzador con búsqueda difusa, historial del portapapeles con miniaturas, menú de energía, brillo de monitores externos por DDC/CI, movimiento reducido, fondo de pantalla propio, hyprlock, hypridle, Ghostty con el tema (cristal líquido) |
 
-Versiones de referencia: Hyprland 0.56.2, Quickshell 0.3.1 y gum 2.x (Arch `extra`, octubre de 2026).
+Versiones probadas: Hyprland 0.56.2, Quickshell 0.3.1, hyprglass 0.9.1, SDDM 0.21 (detalle en [docs/TESTED-VERSIONS.md](docs/TESTED-VERSIONS.md)).
 
 ## Instalación
 
-Requisitos: EndeavourOS o Arch, usuario normal con `sudo`, conexión a internet. Se recomienda tener KDE Plasma instalado, aunque no es obligatorio.
+**Antes de ejecutar nada, lee [`pre-instalation.md`](pre-instalation.md)**: es la guía paso a paso de lo que debes tener
+hecho antes (EndeavourOS, sistema actualizado, herramientas base, red, **driver de video**, display manager, acceso al repo).
+`./doctor.sh --pre` comprueba esos requisitos y, por cada fallo, te dice qué paso repetir.
+
+Soportado: **Arch y derivadas (EndeavourOS, Arch, CachyOS)**. En otras distros el instalador no instala nada
+(ver [docs/INSTALL.md](docs/INSTALL.md)).
 
 ```sh
-git clone <este-repo> ~/dragon-island-hypr
+git clone https://github.com/oscardv18/dragon-island-hypr.git ~/dragon-island-hypr
 cd ~/dragon-island-hypr
-./install.sh --dry-run   # ver qué haría, sin cambiar nada
+./doctor.sh --pre        # ¿cumples los requisitos previos?
+./install.sh --dry-run   # el plan completo, sin cambiar nada ni pedir sudo
 ./install.sh             # instalación interactiva (gum)
 ```
 
-El instalador:
+Alternativa de una línea (**lee el script antes de ejecutarlo**; hace lo mismo que los comandos de arriba):
 
-1. Comprueba el sistema y ofrece `pacman -Syu` antes de instalar nada.
-2. Te deja elegir los componentes: `core` (Hyprland y herramientas), `shell` (Quickshell y servicios), `plugins` (compilación de hyprpm), `tools` (opcionales: Seahorse), `fonts` y `services` (NetworkManager, bluetooth, power-profiles-daemon).
-3. Instala los paquetes de [`packages/pacman.txt`](packages/pacman.txt) y [`packages/aur.txt`](packages/aur.txt) (con `yay` o `paru`).
-4. Enlaza (o copia) `config/hypr`, `config/ghostty`, `config/kitty` y `config/quickshell` en `~/.config`, además de `~/.config/brave-flags.conf` y `~/.config/xdg-desktop-portal/hyprland-portals.conf` (ver [Llavero](#llavero--contraseñas)). Lo que ya existía va a `~/.local/state/dragon-island/backups/<fecha>/`.
-5. Es **idempotente**: si lo ejecutas otra vez, no cambia nada.
+```sh
+curl -fsSL https://raw.githubusercontent.com/oscardv18/dragon-island-hypr/main/bootstrap.sh -o bootstrap.sh
+less bootstrap.sh && bash bootstrap.sh
+```
 
-Después, cierra sesión, elige **Hyprland** en SDDM y entra. En el primer inicio se abre una terminal que compila hyprbars y hyprfocus (`hyprpm` pedirá tu contraseña).
+El instalador es **modular**; en el menú eliges qué instalar (`core` es obligatorio):
 
-Fondo de pantalla: el instalador pone el de dragon-island en `~/.local/share/dragon-island/wallpaper.jpg` (solo si no existe). Para usar el tuyo, sustituye ese archivo por otro JPEG.
+| Módulo | Qué hace | Por defecto |
+|---|---|---|
+| `core` | Hyprland, Quickshell, servicios (NetworkManager, bluetooth, power-profiles-daemon, pipewire), configuraciones enlazadas con respaldo | sí |
+| `shell` | zsh + starship + eza/fzf/zoxide/fd/bat; añade UNA línea a tu `~/.zshrc`, no la reemplaza | sí |
+| `theme` | Fuentes (Outfit, JetBrains Mono Nerd), iconos Candy + Sweet Folders, tema Qt/GTK, fondos | sí |
+| `plugins` | hyprbars, hyprfocus y hyprglass con `hyprpm` (en primer plano, pide sudo) | sí |
+| `keyboard` | Distribuciones `us,latam` (us siempre primera) | sí |
+| `login` | Tema de login dragon-core para SDDM (opt-in; no toca Plasma Login Manager) | no |
+| `keyring` | gnome-keyring como único llavero, con el cambio de PAM mostrado como diff | no |
+| `extras` | Brave, Proton VPN, herdr, «Mis apps» | no |
+
+Garantías: **idempotente** (dos ejecuciones no duplican nada), no corre como root, cada paso con `sudo` se explica y se
+confirma (`--no-sudo` los omite todos), nunca sobrescribe configuraciones sin copia en
+`~/.local/state/dragon-island/backups/<fecha>/`, y no toca Plasma ni `/etc` salvo en los módulos opt-in
+(con copia `.bak-dragon`). Los ajustes propios de cada máquina (monitores, escala, GPU, teclado) van en
+`~/.config/hypr/local.lua` y `~/.config/dragon-island/local.conf`, que no se versionan.
+
+Después: cierra sesión, elige **Hyprland** en el login y entra. Si los plugins no se pudieron compilar durante la
+instalación (porque no estabas dentro de Hyprland), se abre una terminal en el primer inicio que lo hace (`hyprpm` pedirá tu contraseña).
+Diagnóstico en cualquier momento: `./doctor.sh`.
+
+Fondo de pantalla: el módulo `theme` copia los del repo a `~/Pictures/Wallpapers` (sin reemplazar nada).
 
 ### Calendario (khal)
 
@@ -106,11 +129,15 @@ Detalles:
 
 ### Actualizar
 
-**`git pull` no basta: usa `./update.sh`** (o `./install.sh --update`). Hace `git pull --ff-only` (se detiene si hay cambios locales sin commit), ejecuta las **migraciones** pendientes de `migrations/` (una sola vez cada una, registradas en `~/.local/state/dragon-island/migrations.done`), instala solo los paquetes que falten (nunca `-Syu` sin preguntar), redespliega los archivos que cambiaron si usas copias (y ofrece pasarlas a symlink), ofrece plugins nuevos como hyprglass (hyprpm en primer plano) y recarga en vivo (`hyprpm reload -n`, `hyprctl reload`, reinicio de Quickshell) sin cerrar sesión. Al final resume migraciones, paquetes, archivos, backups y `hyprctl configerrors`.
+**`git pull` no basta: usa `./update.sh`** (o `./install.sh --update`). Hace `git pull --ff-only` (se detiene si hay cambios locales
+sin commit), sincroniza `shared/` (NeuralCore/CoreIcon), ejecuta las **migraciones** pendientes de `migrations/` (una sola vez cada una,
+registradas en `~/.local/state/dragon-island/migrations.done`), instala solo los paquetes que falten de tus módulos (nunca `-Syu` sin
+preguntar), redespliega lo que cambió si usas copias, ejecuta `hyprpm update` **solo si cambió la versión de Hyprland** y recarga en vivo
+(`hyprpm reload -n`, `hyprctl reload`, reinicio de Quickshell) sin cerrar sesión.
 
 ```sh
 ./update.sh --dry-run     # muestra lo que haría
-./update.sh --yes         # sin preguntas (no instala plugins nuevos)
+./update.sh --yes         # sin preguntas
 ```
 
 Regla del proyecto: todo cambio que afecte a sistemas ya instalados viene con su migración (`migrations/README.md`).
@@ -118,15 +145,18 @@ Regla del proyecto: todo cambio que afecte a sistemas ya instalados viene con su
 ### Opciones
 
 ```sh
-./install.sh --yes        # sin preguntas (valores por defecto)
-./install.sh --glass      # incluye el componente opcional «Efecto cristal (hyprglass)»
-./install.sh --myapps     # incluye «Mis apps»: los paquetes que instalaste desde la Tienda
-./install.sh --zsh        # incluye el componente opcional «Shell: zsh + starship»
-./install.sh --update     # alias de ./update.sh
-./install.sh --uninstall  # quita los enlaces y restaura los respaldos (no desinstala paquetes)
+./install.sh --dry-run                      # plan completo sin cambiar nada
+./install.sh --yes                          # sin preguntas (módulos por defecto)
+./install.sh --modules core,shell,login     # solo esos módulos (core siempre se incluye)
+./install.sh --extras brave,herdr           # extras sin preguntar
+./install.sh --no-sudo                      # omite los pasos con sudo e imprime el comando
+./install.sh --copy                         # copia en vez de enlazar (symlink por defecto)
+./update.sh                                 # actualizar (también --update)
+./doctor.sh [--pre]                         # diagnóstico, solo lectura
+./uninstall.sh [--modules a,b]              # revertir; los paquetes solo con --remove-packages
 ```
 
-Registro de la instalación: `~/.local/state/dragon-island/install.log`.
+Registro de la instalación: `~/.local/state/dragon-island/install.log`. Problemas: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Uso
 
@@ -155,7 +185,7 @@ El shell se controla también por IPC: `qs ipc call shell toggle <panel>`. Los p
 - **Actualizaciones** (`checkupdates` + `yay|paru -Qua`, versión actual → nueva) con «Actualizar todo» (`-Syu`, nunca parcial). Alimenta el contador de la isla derecha.
 - **Limpieza:** huérfanos (`pacman -Qdtq`) y caché (`paccache -r`), con confirmación.
 - **Ejecución:** Quickshell nunca maneja contraseñas. Las acciones con privilegios abren una **ventana flotante de Ghostty** (clase `org.dragonisland.Pkg`) que ejecuta `bin/dragon-pkg` (enlazado en `~/.local/bin`): `sudo -v` con keepalive, `pacman -S --needed`, y en el AUR `paru|yay -S --needed` **sin `--noconfirm`** para que revises los cambios. Escribe el resultado en `~/.local/state/dragon-island/pkg-status.json` (el panel lo vigila, notifica «Instalado: X» o «Error al instalar X» con un botón para ver el registro y refresca las listas, el contador de actualizaciones y el lanzador) y el registro en `pkg.log`.
-- **Mis apps:** cada instalación o desinstalación correcta actualiza `packages/user-pacman.txt` y `packages/user-aur.txt` (te deja cambios sin commit en `packages/`; `update.sh` los ignora al comprobar si hay cambios locales). El instalador tiene el componente opcional «Mis apps» (`./install.sh --myapps`) y `update.sh` ofrece instalar las que falten.
+- **Mis apps:** cada instalación o desinstalación correcta actualiza `packages/user-pacman.txt` y `packages/user-aur.txt` (te deja cambios sin commit en `packages/`; `update.sh` los ignora al comprobar si hay cambios locales). El módulo `extras` del instalador instala «Mis apps» (`./install.sh --modules extras --extras myapps`) y `update.sh` ofrece instalar las que falten.
 - Dependencias: `pacman-contrib` (`checkupdates`, `paccache`) y `paru` o `yay`.
 
 ## Fondos de pantalla
@@ -185,7 +215,7 @@ Iconos **Candy + Sweet Folders**: el tema se llama `Sweet-Purple` (carpetas mora
 Dos capas, y la segunda es opcional. Ambas trabajan por **alfa**: el blur / cristal aparece donde la ventana de Quickshell tiene píxeles con alfa por encima de un umbral, es decir, exactamente la forma visible (islas y tarjetas redondeadas). No se usa `BackgroundEffect.blurRegion`: una región de Wayland solo puede ser un rectángulo y dejaba puntas cuadradas en las esquinas.
 
 1. **Blur nativo de Hyprland (base, sin plugins).** `decoration.blur` en `config/hypr/look.lua` (size 8, passes 3, vibrancy 0.17, noise 0.02, contrast 0.9, brightness 0.85, popups) y reglas de capa con `blur = true` e `ignore_alpha = 0.3` para `dragon-bar`, `dragon-popover`, `dragon-notifications`, `dragon-launcher` y `dragon-wallpapers` (`config/hypr/rules.lua`). Esas reglas **solo se crean si hyprglass no está cargado**: nunca hay dos blurs sobre la misma capa. El notch (`dragon-island`) queda negro opaco, sin blur, y el velo oscuro de los paneles (`dragon-scrim`) tampoco lleva blur.
-2. **hyprglass (acrílico / liquid glass real, opcional).** Marca la casilla **«Efecto cristal (hyprglass)»** del instalador (o `./install.sh --glass`): ejecuta `hyprpm add https://github.com/hyprnux/hyprglass` y `hyprpm enable hyprglass` en una terminal visible. hyprpm instala la v0.9.1, la fijada para Hyprland 0.56.2. `config/hypr/glass.lua` (todo dentro de `if hl.plugin.hyprglass then … end`) define dos presets y usa `mask_mode = "alpha"`, `mask_threshold = 0.3` en cada capa:
+2. **hyprglass (acrílico / liquid glass real, opcional).** El módulo `plugins` del instalador (por defecto) lo instala: `scripts/plugins-foreground.sh` ejecuta `hyprpm add https://github.com/hyprnux/hyprglass` y `hyprpm enable hyprglass` en una terminal visible. hyprpm instala la v0.9.1, la fijada para Hyprland 0.56.2. `config/hypr/glass.lua` (todo dentro de `if hl.plugin.hyprglass then … end`) define dos presets y usa `mask_mode = "alpha"`, `mask_threshold = 0.3` en cada capa:
    - **Las capas llevan el mismo cristal líquido que Ghostty**: `dragon-bar` (islas), `dragon-card` (notificaciones) y `dragon-panel` (popovers, lanzador, selector de fondos) heredan de `dragon-liquid` y solo cambian el ancho del borde (`edge_thickness` 0.2 / 0.12 / 0.06, porque es una fracción del lado menor de la forma) y el `bevel_size`; `mask_mode = "alpha"`, `mask_threshold` 0.1.
    - `dragon-liquid` (preset de todas las ventanas translúcidas): parte de los valores por defecto del plugin (no del preset `glass`) y busca el aspecto de la captura oficial: `blur_strength` 1.6 / 3 iteraciones (el fondo se intuye), `refraction_strength` 0.6 con `refraction_spread` 0 (solo en el borde, centro plano), `lens_distortion` 0.1, aberración 0.4, `specular_strength` 0.7, `fresnel_strength` 0.5, `bevel` 0.5 de 3 px, `self_sample` 0 y tinte azul marino `0x0b102060`; tema dark: brillo 1.0, `adaptive_dim` 0.5. El resto de ventanas no tiene cristal: `hg.config({ enabled = false })` y Ghostty se activa con las etiquetas `+hyprglass_enabled` y `+hyprglass_preset_dragon-liquid` (`+hyprglass_disabled` en pantalla completa). Para comparar presets en vivo: `hyprctl dispatch 'hl.dsp.window.clear_tags()'` y luego `hl.dsp.window.tag({ tag = "+hyprglass_enabled" })` y `… "+hyprglass_preset_<nombre>"` (la sintaxis `tagwindow` del README del plugin es de hyprlang y no funciona en Lua).
    - **Ventanas:** el cristal líquido (`default_preset`) va en **toda ventana translúcida**: Ghostty, kitty, Neovim (en su terminal, o `neovide`) y cualquier otra app con transparencia; hyprglass salta las opacas (`skip_opaque_windows`), así que no cuestan nada. **Sin cristal** (etiqueta `+hyprglass_disabled` por regla de ventana): navegadores (Brave, Chrome, Chromium, Firefox…), editores de código (VS Code y derivados, Cursor, Zed, JetBrains, Antigravity, Kate, gedit, Emacs…), ventanas en pantalla completa y reproductores de vídeo. Para añadir o quitar apps, edita la regla `glass-off-browsers-and-editors` en `glass.lua`. `decoration.inactive_opacity` es 1.0: con 0.95 todas las ventanas inactivas habrían sido translúcidas y habrían cogido cristal al perder el foco.
@@ -197,7 +227,7 @@ Dos capas, y la segunda es opcional. Ambas trabajan por **alfa**: el blur / cris
 
 ## Shell: zsh + starship
 
-Componente opcional del instalador (casilla «Shell: zsh + starship» o `--zsh`). Instala `zsh` y `starship`, clona **oh-my-zsh** y sus plugins `zsh-autosuggestions` y `zsh-syntax-highlighting` (son clones de git, no paquetes), despliega `config/zsh/.zshrc` en `~/.zshrc` y `config/starship/starship.toml` en `~/.config/starship.toml` (con backup de los tuyos) y pregunta antes de `chsh -s /usr/bin/zsh`.
+Módulo `shell` del instalador. Instala `zsh`, `starship` y las herramientas, clona `zsh-autosuggestions`, `zsh-syntax-highlighting` y `fzf-tab` (clones de git, no paquetes; en la carpeta de plugins de oh-my-zsh si lo tienes, o en `~/.local/share/dragon-island/zsh-plugins`), enlaza `config/zsh` en `~/.config/dragon-island/zsh` y `config/starship/starship.toml` en `~/.config/starship.toml` (con respaldo), y **añade UNA línea a tu `~/.zshrc` entre marcadores** (`source …/dragon.zsh`): tu archivo no se reemplaza. Pregunta antes de `chsh -s /usr/bin/zsh`.
 
 - Lo privado (tokens, alias personales, rutas) va en `~/.zshrc.local`, fuera del repo: el `.zshrc` lo carga si existe.
 - Los colores de starship usan la paleta Dragonized (accent, violetSoft, cyan, ok, warn, error).
@@ -208,7 +238,7 @@ Componente opcional del instalador (casilla «Shell: zsh + starship» o `--zsh`)
 
 Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo suma `eza`, `fzf`, `fzf-tab`, `zoxide`, `fd` y `bat`, todo en `config/zsh/` (desplegado en `~/.config/dragon-island/zsh`; `~/.zshrc` solo los carga, y **el prompt de starship no cambia**).
 
-**Orden de carga** (importa): oh-my-zsh con el plugin `git` (`oh-my-zsh.sh` ejecuta `compinit` después de la lista `plugins`) → historial → `fzf` (`fzf --zsh`, que también enlaza Tab) → `fzf-tab` (el último en enlazar `^I`) → `zsh-autosuggestions` → `zsh-syntax-highlighting` (el último envoltorio de widgets) → aliases → `zoxide` → starship. Por eso autosuggestions y el resaltado ya no están en `plugins=()`. `fzf-tab` es un clon de git como los otros plugins (`ensure_omz`); el resto, paquetes de `extra`.
+**Orden de carga** (importa): oh-my-zsh con el plugin `git` (`oh-my-zsh.sh` ejecuta `compinit` después de la lista `plugins`) → historial → `fzf` (`fzf --zsh`, que también enlaza Tab) → `fzf-tab` (el último en enlazar `^I`) → `zsh-autosuggestions` → `zsh-syntax-highlighting` (el último envoltorio de widgets) → aliases → `zoxide` → starship. Por eso autosuggestions y el resaltado ya no están en `plugins=()`. `fzf-tab` es un clon de git como los otros plugins; el resto, paquetes de `extra`. Toda esta carga vive en `config/zsh/dragon.zsh` (funciona con o sin oh-my-zsh).
 
 | Atajo | Qué hace |
 |---|---|
@@ -236,20 +266,22 @@ Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo s
 ## Estructura
 
 ```
-config/hypr/            hyprland.lua + módulos (monitors, env, input, look, animations, rules, binds, plugins, autostart)
-config/quickshell/
-  shell.qml             barra, notch, popovers, lanzador y notificaciones por monitor (cada uno en su capa)
-  Theme.qml             todos los colores, tamaños, fuentes y duraciones (spec)
-  Icons.qml             glifos Nerd Font
-  ShellState.qml        panel abierto (uno a la vez) + IPC "shell"
-  services/             datos: Hypr, Media, Audio, Network, Bluetooth, Power, Brightness,
-                        SysStats, Notifs, Osd, Toggles, Apps, Clock, Session, IslandState,
-                        Settings, Clipboard, Tray, Keybinds
-  components/           Capsule, Slider, ToggleTile, PopoverFrame, ListRow…
-  modules/              bar · island (notch) · popovers · notifications · launcher · power · clipboard · keybinds
-  debug/DebugPanel.qml  diagnóstico (qs ipc call debug toggle)
-assets/wallpapers/      fondo por defecto
-installer/ install.sh packages/ docs/
+pre-instalation.md      lo que hay que hacer ANTES del instalador (12 pasos)
+install.sh update.sh uninstall.sh doctor.sh bootstrap.sh
+lib/                    funciones comunes: log, gum, detect (distro / GPU / versiones), checks (comprobación → paso de pre-instalation.md), backup, marcadores
+modules/                core shell theme plugins login keyring keyboard extras  (desc / sudo / check / plan / apply / revert)
+packages/               base, pacman-*, aur-*, extras (+ user-*.txt: «Mis apps» de la Tienda)
+config/                 hypr/ quickshell/ ghostty/ kitty/ starship/ zsh/ herdr/ gtk-*/ … (lo que se enlaza a ~/.config)
+config/quickshell/      shell.qml, Theme.qml, services/, components/, modules/ (bar, island, popovers, launcher, lock, …)
+sddm/                   tema de login dragon-core (+ install-theme.sh)
+shared/neural-core/     fuente única de NeuralCore.qml y CoreIcon.qml (scripts/sync-shared.sh los copia a Quickshell y a SDDM)
+scripts/                sync-shared, plugins-foreground, gen-keybinds, gen-package-table, install-skills
+migrations/             cambios para sistemas ya instalados (update.sh los ejecuta una vez)
+docs/                   INSTALL, TROUBLESHOOTING, KEYBINDS, TESTED-VERSIONS, TESTING, HANDOFF, screenshots/
+tests/                  run-all.sh, check-docs.sh, idempotency.sh, container.sh
+dragon-core/            material de diseño: prompts, mocks de prueba y copia de referencia del lanzador
+assets/ bin/            fondo por defecto · dragon-pkg (Tienda), dragon-herdr
+.agents/skills/         skills del proyecto (única copia)
 ```
 
 Reglas del código (ver la skill `dragon-island`):
