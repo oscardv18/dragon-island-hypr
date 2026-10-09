@@ -13,3 +13,9 @@ vlc
 obs-studio
 obsidian
 vlc-plugin-ffmpeg
+docker
+docker-compose
+nodejs-lts-krypton
+npm
+pnpm
+python-pip

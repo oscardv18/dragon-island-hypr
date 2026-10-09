@@ -12,6 +12,8 @@
  *   - hasItems: bool [readonly]
  *
  * Functions:
+ *   - init(): void                    (shell.qml calls it at startup: singletons are lazy, and the watcher must exist
+ *                                     BEFORE Proton VPN starts or it sees no tray and asks to quit on close)
  *   - iconSource(item, failed: bool): string (Image source: theme name → Quickshell.iconPath,
  *                                     "?path=" → <dir>/<name>.png; failed = the first source
  *                                     didn't load → theme lookup by name with a generic fallback)
@@ -34,6 +36,8 @@ Singleton {
 
     readonly property var items: SystemTray.items.values.filter(i => i.status !== Status.Passive)
     readonly property bool hasItems: items.length > 0
+
+    function init(): void { void root.items; }
 
     function iconSource(item, failed: bool): string {
         const icon = item?.icon ?? "";

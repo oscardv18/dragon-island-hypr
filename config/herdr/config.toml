@@ -8,29 +8,18 @@
 onboarding = false
 
 # -----------------------------------------------------------------------------
-# Tema: paleta Dragonized (references/design.md). panel_bg y sidebar_bg transparentes ("reset"):
-# se ve el liquid glass de Ghostty (background-opacity + hyprglass) detrás de herdr.
+# Tema: uno de los que trae herdr (catppuccin, terminal, tokyo-night, dracula, nord, gruvbox,
+# one-dark, solarized, kanagawa, rose-pine, vesper). No usa la paleta del sistema: se cambia aquí `name`.
+# Solo panel_bg y sidebar_bg van transparentes ("reset"): se ve el liquid glass de Ghostty
+# (background-opacity + hyprglass) detrás de herdr. Si se prefiere el fondo del tema, borrar [theme.custom].
 # -----------------------------------------------------------------------------
+[theme]
+name = "terminal"
+auto_switch = false
+
 [theme.custom]
-panel_bg      = "reset"
-sidebar_bg    = "reset"
-accent        = "#c50ed2"   # accent (magenta de la marca)
-active_row_bg = "#22243a"   # surface3: fila activa (espacio / agente enfocado)
-selection_bg  = "#34385a"   # surfaceHi: cursor del modo navegación
-surface0      = "#161925"   # surface0
-surface1      = "#12131e"   # surface1
-surface_dim   = "#0b0c14"   # bg
-overlay0      = "#3a3d55"   # muted
-overlay1      = "#8a8fa3"   # textDim
-text          = "#e6e8ef"   # text
-subtext0      = "#c3c7d1"   # textSoft
-mauve         = "#a855f7"   # violetSoft
-blue          = "#00c1e4"   # cyan: agente trabajando
-teal          = "#38d3ef"
-green         = "#06c993"   # ok: terminó
-yellow        = "#f9ae58"   # warn: necesita respuesta
-red           = "#ed254e"   # error
-peach         = "#fbc27f"
+panel_bg   = "reset"
+sidebar_bg = "reset"
 
 # -----------------------------------------------------------------------------
 # Notificaciones: del sistema, es decir, llegan al servidor de notificaciones de Quickshell

@@ -15,7 +15,6 @@
  *   - slots: list<string> [readonly] (every possible key, in priority order: fixed delegates animate in and out)
  *   - items: list<var> [readonly] (the active ones, sorted by priority)
  *   - byKey: var [readonly] (key → entry)
- *   - netThreshold: real (bytes/s above which the network speed capsule appears, default 500 KB/s)
  */
 pragma Singleton
 import Quickshell
@@ -25,9 +24,7 @@ import ".."
 Singleton {
     id: root
 
-    property real netThreshold: 512000
-
-    readonly property var slots: ["privacy", "rec", "headset", "caffeine", "net"]
+    readonly property var slots: ["privacy", "rec", "headset", "caffeine"]
 
     function _mmss(s: int): string {
         return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, "0")}`;
@@ -51,11 +48,6 @@ Singleton {
         }
         if (Caffeine.enabled) {
             l.push({ key: "caffeine", prio: 5, icon: Icons.coffee, color: Theme.warn, text: "", est: 30, pulse: false });
-        }
-        const top = Math.max(SysStats.rxRate, SysStats.txRate);
-        if (top > root.netThreshold) {
-            l.push({ key: "net", prio: 8, icon: SysStats.rxRate >= SysStats.txRate ? Icons.arrowDown : Icons.arrowUp,
-                     color: Theme.textSoft, text: SysStats.formatRate(top), est: 104, pulse: false });
         }
         return l;
     }

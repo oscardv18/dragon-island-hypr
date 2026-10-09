@@ -27,7 +27,6 @@ Rectangle {
             case "vpn":     Vpn.openApp(); break;
             case "headset": root.openPopover("bt", item); break;
             case "caffeine": Caffeine.toggle(); break;
-            case "net":     root.openPopover("perf", item); break;
         }
     }
 

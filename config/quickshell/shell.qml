@@ -35,7 +35,7 @@ ShellRoot {
     }
 
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
-    Component.onCompleted: { Wallpaper.init(); Store.init(); Herdr.init(); Tiling.refresh(); }
+    Component.onCompleted: { Wallpaper.init(); Store.init(); Herdr.init(); Tiling.refresh(); Tray.init(); }
 
     Variants {
         model: Quickshell.screens
