@@ -480,6 +480,8 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `candy-icons-git` | theme | AUR |
 | `sweet-folders-icons-git` | theme | AUR |
 | `hyprqt6engine` | theme | AUR |
+| `mactahoe-icon-theme-git` | theme | AUR |
+| `whitesur-icon-theme` | theme | AUR |
 | `sddm` | login | oficial |
 | `qt6-declarative` | login | oficial |
 | `qt6-svg` | login | oficial |
@@ -496,7 +498,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `herdr` | extras | instalador oficial (sin root, ~/.local/bin) |
 | `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |
 | `hyprbars`, `hyprfocus`, `hyprglass` | plugins | hyprpm |
-| Mis apps: opencode eza zoxide bat btop nautilus telegram-desktop github-cli shellcheck thunar vlc obs-studio obsidian vlc-plugin-ffmpeg genoffice-bin  | extras (myapps) | lo que instalaste desde la Tienda |
+| Mis apps: opencode eza zoxide bat btop nautilus telegram-desktop github-cli shellcheck thunar vlc obs-studio obsidian vlc-plugin-ffmpeg docker docker-compose nodejs-lts-krypton npm pnpm python-pip uv cloudflared rustup php-gd php-cgi php-fpm php-pgsql php-redis php-sqlite go dart docker-buildx nss memtest86+ smartmontools lazygit genoffice-bin lmbionic-bin otf-apple-sf-mono android-studio hermes-agent whitesur-icon-theme mactahoe-icon-theme-git  | extras (myapps) | lo que instalaste desde la Tienda |
 <!-- packages:end -->
 
 Lo que ya tengas instalado no se reinstala (`pacman -S --needed`). Los paquetes **no** se desinstalan al revertir salvo que lo pidas

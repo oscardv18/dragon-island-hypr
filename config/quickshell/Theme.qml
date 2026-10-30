@@ -230,7 +230,7 @@ Singleton {
     readonly property real dockNodeFocus:   48     // the focused app = planet
     readonly property real dockNodeGrow:    6      // hovered node
     readonly property real dockIconRatio:   0.56   // icon size inside the glass node (rounded-square themes: see HANDOFF 8b)
-    readonly property string dockNodeStyle: "glass" // "glass": the icon inside a round glass node · "icon": the icon itself is the node
+    readonly property string dockNodeStyle: "icon"  // "icon": the icon itself is the node (rounded-square themes, HANDOFF 8b) · "glass": inside a glass disc
     readonly property real dockCore:        64
     readonly property real dockLift:        16     // hovered node rises; neighbours follow a gaussian
     readonly property real dockSigma:       1.1    // in nodes

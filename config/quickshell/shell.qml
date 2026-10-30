@@ -1,4 +1,4 @@
-//@ pragma IconTheme Sweet-Purple
+//@ pragma IconTheme Dragon-Core
 // =============================================================================
 // dragon-island — shell.qml
 // Per monitor: the floating bar, the notch (dragon-island), popovers (dragon-popover), the modal panels
