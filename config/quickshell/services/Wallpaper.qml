@@ -26,7 +26,12 @@
  *   - thumbUrl(item): string
  *
  * ~/.cache/dragon-island/current-wallpaper always links to the current image (a frame for GIF / video):
- * hyprlock uses it as its background.
+ * hyprlock uses it as its background, and dragon-palette reads it.
+ *
+ * Palette: when Settings.wallpaperPalette is on, apply() asks the script (DRAGON_PALETTE) to run `dragon-palette generate`
+ * on that link once the wallpaper is shown, plus `apply` when Settings.paletteApplyExternal is on; detached and with nice,
+ * so the wallpaper never waits for it. WallPalette picks the new palette.json up by itself. Restoring at login does not
+ * regenerate (palette.json is still there).
  *
  * Video pause: when the workspace shown on a monitor has a fullscreen window (Hyprland events, through
  * Hypr.fullscreenOn), that monitor's mpvpaper is paused over mpv's own IPC socket (set_property pause).
@@ -99,12 +104,19 @@ Singleton {
         saved.path = path;
         saved.kind = kind;
         stateFile.writeAdapter();
-        root._run(path, kind, "grow");
+        root._run(path, kind, "grow", root._paletteMode());
     }
 
-    function _run(path: string, kind: string, transition: string): void {
-        const req = { path: path, kind: kind, transition: transition };
+    // the setting is read here, never in the script
+    function _paletteMode(): string {
+        if (!Settings.wallpaperPalette) return "";
+        return Settings.paletteApplyExternal ? "apply" : "generate";
+    }
+
+    function _run(path: string, kind: string, transition: string, palette: string): void {
+        const req = { path: path, kind: kind, transition: transition, palette: palette };
         if (applier.running) { root._queue = req; return; }
+        applier.environment = { DRAGON_PALETTE: palette };
         if (kind === "video") applier.exec(["bash", root.script, "apply-video", path, ...Quickshell.screens.map(s => s.name)]);
         else applier.exec(["bash", root.script, "apply-image", path, transition]);
     }
@@ -155,7 +167,7 @@ Singleton {
                 saved.path = probe.target;
                 saved.kind = kind;
                 if (saved.path !== probe.previous) stateFile.writeAdapter();
-                if (!already) root._run(probe.target, kind, "none");   // login: no transition
+                if (!already) root._run(probe.target, kind, "none", "");   // login: no transition, palette.json is still there
             }
         }
     }
@@ -196,7 +208,7 @@ Singleton {
         onExited: {
             const q = root._queue;
             root._queue = null;
-            if (q) root._run(q.path, q.kind, q.transition);
+            if (q) root._run(q.path, q.kind, q.transition, q.palette);
             else pauseSync.restart();
         }
     }
