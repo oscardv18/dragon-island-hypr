@@ -34,6 +34,13 @@ ShellRoot {
         value: Settings.motionScale
     }
 
+    // New identity: how much purple the active states carry (Settings → Apariencia)
+    Binding {
+        target: Theme
+        property: "accentIntensity"
+        value: Settings.accentIntensity
+    }
+
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
     Component.onCompleted: { Wallpaper.init(); Store.init(); Herdr.init(); Tiling.refresh(); Tray.init(); }
 

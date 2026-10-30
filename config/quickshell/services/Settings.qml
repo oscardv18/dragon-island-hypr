@@ -1,6 +1,6 @@
 // =============================================================================
 // dragon-island — Settings.qml
-// Service: user preferences. Today: animation speed (reduced motion).
+// Service: user preferences: animation speed (reduced motion), bar style and look, accent intensity.
 // =============================================================================
 /**
  * Properties:
@@ -11,14 +11,31 @@
  *   - reducedMotion: bool [readonly] (motionScale === 0)
  *   - source: string [readonly] ("settings" | "kde" | "default")
  *   - wallpaperDir: string [readonly] (settings.json "wallpaperDir", "~" allowed; default ~/Pictures/Wallpapers)
+ *   Keys added by the new identity (a missing or invalid value falls back to the default):
+ *   - barStyle: string [readonly] ("A" thin notch · "B" dynamic island · "C" joined bar · "D" minimal; default "B")
+ *   - barStyles: list<string> [readonly] (["A", "B", "C", "D"], the cycle order)
+ *   - islandContent: string [readonly] (what the notch shows with no special activity: "media" · "window" · "date"; default "media")
+ *   - barMetrics: bool [readonly] (CPU / RAM rings and the network line in the right island; default true)
+ *   - barAutohide: bool [readonly] (dim the bar to 0.35 over a maximized window; style D hides until the top edge is touched; default false)
+ *   - accentIntensity: real [readonly] (0–1, how much purple the active states carry; default 0.3)
+ *   - wallpaperPalette: bool [readonly] (take the palette from the wallpaper; stored only, used in a later phase; default true)
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
  *   - setReducedMotion(on: bool): void
+ *   - setBarStyle(style: string): void ("A" | "B" | "C" | "D", case-insensitive; anything else is ignored)
+ *   - cycleBarStyle(): void (A → B → C → D → A)
+ *   - setIslandContent(content: string): void ("media" | "window" | "date")
+ *   - setBarMetrics(on: bool): void
+ *   - setBarAutohide(on: bool): void
+ *   - setAccentIntensity(x: real): void (clamped to 0–1)
+ *   - setWallpaperPalette(on: bool): void
  *
- * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), current(): string
+ * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
+ *   accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
+ *   current(): string (every setting, one per line)
  *
- * shell.qml binds Theme.motionScale to motionScale.
+ * shell.qml binds Theme.motionScale, Theme.barStyle and Theme.accentIntensity to these.
  */
 pragma Singleton
 import Quickshell
@@ -45,6 +62,17 @@ Singleton {
         const d = typeof root._data.wallpaperDir === "string" && root._data.wallpaperDir.length > 0 ? root._data.wallpaperDir : "~/Pictures/Wallpapers";
         return d.startsWith("~") ? home + d.slice(1) : d;
     }
+
+    readonly property var barStyles: ["A", "B", "C", "D"]
+    readonly property string barStyle: barStyles.indexOf(root._data.barStyle) >= 0 ? root._data.barStyle : "B"
+    readonly property string islandContent: ["media", "window", "date"].indexOf(root._data.islandContent) >= 0 ? root._data.islandContent : "media"
+    readonly property bool barMetrics: typeof root._data.barMetrics === "boolean" ? root._data.barMetrics : true
+    readonly property bool barAutohide: typeof root._data.barAutohide === "boolean" ? root._data.barAutohide : false
+    readonly property real accentIntensity: {
+        const v = Number(root._data.accentIntensity);
+        return root._data.accentIntensity !== undefined && root._data.accentIntensity !== null && !isNaN(v) ? Math.max(0, Math.min(1, v)) : 0.3;
+    }
+    readonly property bool wallpaperPalette: typeof root._data.wallpaperPalette === "boolean" ? root._data.wallpaperPalette : true
 
     FileView {
         id: settingsFile
@@ -101,10 +129,43 @@ Singleton {
 
     function setReducedMotion(on: bool): void { setMotionScale(on ? 0 : -1); }
 
+    function _set(key: string, value): void {
+        const d = Object.assign({}, root._data);
+        d[key] = value;
+        root._data = d;
+        _save();
+    }
+
+    function setBarStyle(style: string): void {
+        const st = String(style).toUpperCase();
+        if (root.barStyles.indexOf(st) < 0) { console.warn(`Settings: unknown bar style "${style}"`); return; }
+        _set("barStyle", st);
+    }
+    function cycleBarStyle(): void { setBarStyle(root.barStyles[(root.barStyles.indexOf(root.barStyle) + 1) % root.barStyles.length]); }
+    function setIslandContent(content: string): void {
+        if (["media", "window", "date"].indexOf(content) < 0) { console.warn(`Settings: unknown island content "${content}"`); return; }
+        _set("islandContent", content);
+    }
+    function setBarMetrics(on: bool): void { _set("barMetrics", on); }
+    function setBarAutohide(on: bool): void { _set("barAutohide", on); }
+    function setAccentIntensity(x: real): void { _set("accentIntensity", Math.round(Math.max(0, Math.min(1, x)) * 100) / 100); }
+    function setWallpaperPalette(on: bool): void { _set("wallpaperPalette", on); }
+
     IpcHandler {
         target: "settings"
         function motion(scale: real): void { root.setMotionScale(scale); }
         function reducedMotion(on: bool): void { root.setReducedMotion(on); }
-        function current(): string { return `motionScale=${root.motionScale} (${root.source})`; }
+        function barStyle(s: string): void { root.setBarStyle(s); }
+        function cycleBarStyle(): void { root.cycleBarStyle(); }
+        function accent(x: real): void { root.setAccentIntensity(x); }
+        function islandContent(s: string): void { root.setIslandContent(s); }
+        function metrics(on: bool): void { root.setBarMetrics(on); }
+        function autohide(on: bool): void { root.setBarAutohide(on); }
+        function wallpaperPalette(on: bool): void { root.setWallpaperPalette(on); }
+        function current(): string {
+            return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `islandContent=${root.islandContent}`,
+                    `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
+                    `wallpaperPalette=${root.wallpaperPalette}`].join("\n");
+        }
     }
 }
