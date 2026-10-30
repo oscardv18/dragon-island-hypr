@@ -60,6 +60,7 @@ if $PRE; then
 fi
 
 echo "dragon-island — doctor"
+ck "Python + Pillow para dragon-palette" "sudo pacman -S --needed python python-pillow" python3 -c 'from PIL import Image'
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
 has() { grep -qiE "$1" <<<"$2"; }
 
