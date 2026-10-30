@@ -7,6 +7,8 @@
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
 # shellcheck source=lib/palette.sh
 . "$REPO_DIR/lib/palette.sh"
+# shellcheck source=lib/engines.sh
+. "$REPO_DIR/lib/engines.sh"
 
 core_desc() { echo "Hyprland, Quickshell, servicios y configuración base (obligatorio)"; }
 core_sudo() { echo "pacman -S (paquetes), systemctl enable (NetworkManager, bluetooth, power-profiles-daemon)"; }
@@ -55,6 +57,7 @@ core_apply() {
     deploy_item "$REPO_DIR/bin/dragon-pkg"   "$HOME/.local/bin/dragon-pkg"
     deploy_item "$REPO_DIR/scripts/tiling.sh" "$HOME/.local/bin/dragon-tiling"    # SUPER + T, the bar chip, `qs ipc call tiling`
     palette_setup
+    engines_setup
     core_gpu_env
 
     # the neural core has one source (shared/neural-core): re-sync both copies
