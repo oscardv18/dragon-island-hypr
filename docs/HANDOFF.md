@@ -758,3 +758,25 @@ Rama `feat/nueva-identidad` (sobre el PR #1 ya fusionado), prompt `docs/design/P
 - Dos Ghostty vacíos en `/tmp` de una prueba de bordes de la fase 1.1 (PIDs 2132807 y 2133817, escritorio 2): el cierre por dirección de Hyprland no los cerró y no tuve permiso para matarlos. Ciérralos cuando quieras.
 
 **Revertir**: `git revert` de los commits de esta sección; `rm ~/.local/bin/dragon-{dropdown,idle,clip-store}`, autostart vuelve a `hypridle` y a `wl-paste --watch cliphist store`.
+
+## 8d. Login SDDM sin bandas sobre un fondo real (2026-10-30)
+
+**Problema:** con el fondo Kawah Ijen 4K el login salía posterizado (bandas y manchas) y el nombre se cruzaba con los nodos de la esfera. Causa: `dragon-sddm-sync` copiaba un JPEG de 1280 px **ya desenfocado** (0x16, calidad 82, ~33 KB) que el greeter volvía a desenfocar (blurMax 48, saturación +0,1) bajo un velo plano y una viñeta: degradados oscuros en 8 bits sobre un JPEG muy comprimido.
+
+**Hecho**
+- `bin/dragon-sddm-sync`: 1920×1080 «cover», sin desenfoque, JPEG 92 con 4:4:4; ImageMagick o, si no está, ffmpeg (avisa si faltan los dos). Los pasos con sudo siguen en `run` y respetan `DRY_RUN`.
+- `sddm/dragon-core/Main.qml`: un solo `MultiEffect` (blur 1.0, blurMax 32, sin saturación), un velo radial (`veil` en el centro, más oscuro hacia los bordes) y `noise.png` en mosaico encima (`theme.conf` `noise`, 0,03 por defecto, 0 = sin ruido).
+- Nombre y usuario en una placa suave a `max(28, 28·s)` px del borde de la esfera en reposo (el «ok» ×1,22 y la respiración caben en ese hueco); el núcleo sube a 0,43 de la altura y la lista de sesiones se abre hacia arriba si no cabe.
+- Avatar: `~/.face`, `~/.face.icon`, `/var/lib/AccountsService/icons/<usuario>`, el icono de SDDM (salvo el genérico) y, si no hay ninguno, una silueta.
+- `tests/qml/sddm_mock.qml` acepta `size=`, `bg=`, `noise=`, `face=`, `prefix=`. **El renderizado offscreen no tiene GPU y `MultiEffect` no pinta nada:** para ver el fondo, `QT_QPA_PLATFORM=wayland` (abre una ventana ~2 s).
+- Migración `029-sddm-sharp-background.sh`: redepliega `dragon-sddm-sync` si es una copia; si el tema está instalado y desactualizado, o su fondo es aún el de 1280×720, pregunta con gum y copia el tema + ejecuta `dragon-sddm-sync` (sin terminal o con `--yes`: lo explica y sale con 10).
+
+**Verificado**
+- Capturas con el mock (Wayland) a 1366×768 y 1920×1080 con el 4K real, el 1920×1080 que genera el script y un 640×360 a calidad 30, con y sin ruido, más la foto de prueba. Bandas medidas como longitud media de tramos de color idéntico en una fila de cielo: antes 22,7 px (máx. 88); ahora sin ruido ~9–12 px; con ruido 1,1 px (máx. 5–7).
+- `tests/sddm-sync.sh` (nuevo, en `run-all.sh`): magick y ffmpeg, 4K y pequeño → 1920×1080, calidad ≥ 90, nitidez ≥ 0,6× la de un redimensionado simple (el desenfoque viejo da ~0,2×); sin ninguno de los dos, avisa y no toca el tema. `tests/migrations-dry-run.sh` en verde; 029 probada en seco.
+
+**No verificado**
+- El greeter real (`sddm-greeter-qt6 --test-mode`) y la instalación con sudo. En esta máquina el gestor es Plasma Login Manager.
+- La foto desde `~/.face`: `/home/oddv` es 700 y el usuario `sddm` no puede leerla. Para que se vea, la foto tiene que estar en `/var/lib/AccountsService/icons/<usuario>` (Ajustes de Plasma → Usuarios la pone ahí).
+
+**Revertir:** `git revert` de los commits de esta sección; `sudo cp -a /usr/share/sddm/themes/dragon-core.bak-dragon-<fecha>/. /usr/share/sddm/themes/dragon-core/`.
