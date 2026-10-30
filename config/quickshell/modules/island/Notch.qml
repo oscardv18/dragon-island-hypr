@@ -42,7 +42,8 @@ Item {
     readonly property bool micro: Theme.barLook === "D" && !expanded && !IslandState.isTransient
                                   && ["focus", "recording", "capture", "dropdown", "agentBlocked", "idleWarn"].indexOf(IslandState.mode) < 0
     readonly property bool microActive: Media.isPlaying || Toggles.isRecording || (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
-    readonly property bool peek: !expanded && !micro && appeared && (hovered || IslandState.isTransient)
+    readonly property bool lid: IslandState.mode === "dropdown" && Dropdown.screenName === screenName && !expanded   // drop-down terminal under it
+    readonly property bool peek: !expanded && !micro && !lid && appeared && (hovered || IslandState.isTransient)
 
     // free room towards the bar islands (ears included)
     readonly property real maxCollapsed: BarMetrics.maxNotchWidth(screenName, root.width)
@@ -51,7 +52,7 @@ Item {
     // short notices sized to their text (Bloq Mayús, keyboard layout)
     readonly property bool snug: IslandState.mode === "osd" && (Osd.kind === "capslock" || Osd.kind === "layout")
 
-    readonly property real targetWidth: expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
+    readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
                                                  : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0))
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
@@ -59,7 +60,7 @@ Item {
                                                      : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8) + (peek ? Theme.notchPeekDy : 0))
 
     // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped
-    readonly property real targetX: expanded ? (root.width - targetWidth) / 2
+    readonly property real targetX: expanded || lid ? (root.width - targetWidth) / 2
                                              : BarMetrics.notchX(screenName, root.width, targetWidth)
 
     property real animWidth: targetWidth
@@ -123,7 +124,7 @@ Item {
         attached: root.attached
         edgeColor: IslandState.mode === "agentBlocked" && !root.expanded ? Theme.alpha(Theme.warn, 0.5) : Theme.transparent
         // floating and collapsed (B, D): always a pill, also while it peeks taller (radius = height / 2)
-        bottomRadius: root.expanded ? Theme.notchExpandedRadius : (root.attached ? Theme.notchRadius : Math.max(Theme.notchRadius, root.targetHeight / 2))
+        bottomRadius: root.lid ? Theme.dropdownJoinRadius : root.expanded ? Theme.notchExpandedRadius : (root.attached ? Theme.notchRadius : Math.max(Theme.notchRadius, root.targetHeight / 2))
         topRadius: root.expanded ? Theme.notchFloatTopRadius : Math.max(Theme.notchRadius, root.targetHeight / 2)
         opacity: root.hidden || (root.micro && !root.microActive) ? 0 : 1
 

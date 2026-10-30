@@ -458,9 +458,34 @@ Item {
         id: captureView
         UiText { text: "Captura"; weight: Theme.weightMedium }
     }
+    // ---- the drop-down terminal's lid: mini core listening · Terminal ……… SUPER + ` ocultar ----
     Component {
         id: dropdownView
-        UiText { text: "Terminal"; weight: Theme.weightMedium }
+        Item {
+            implicitWidth: Dropdown.width - Theme.notchPadH * 2
+            implicitHeight: Theme.notchHeight - 6
+            Row {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: Theme.spacingSm
+                NeuralCore {
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: Theme.notchHeight - 8
+                    height: width
+                    mood: "listening"
+                    reducedMotion: !Theme.animationsEnabled
+                    running: Theme.animationsEnabled
+                }
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: "Terminal"; weight: Theme.weightSemiBold }
+            }
+            UiText {
+                anchors.right: parent.right
+                anchors.verticalCenter: parent.verticalCenter
+                text: "SUPER + ` ocultar"
+                mono: true
+                size: Theme.sizeCaption
+                color: Theme.textDim
+            }
+        }
     }
     // ---- recording mode (docs/design/25-grabacion.png): red dot pulsing · REC · time · eq if audio · N retenidas ----
     Component {

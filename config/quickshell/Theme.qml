@@ -188,6 +188,7 @@ Singleton {
     readonly property real notchHeight:        barHeight        // exactly as high as the side islands / the C strip
     readonly property real notchEarRadius:     notchAttached ? 8 : 0   // concave "ears" where it meets the screen edge
     readonly property real notchRadius:        barLook === "C" ? 9 + barStep : barHeight / 2   // bottom corners (floating: a pill)
+    readonly property real dropdownJoinRadius: 6               // the island's bottom corners over the drop-down terminal
     readonly property real notchMicroWidth:    80               // D: the micro-island (only with activity)
     readonly property real notchFloatTopRadius: 22              // B: top corners of the expanded Nook (it grows from the floating pill)
     readonly property real notchExpandedRadius: 34    // expanded bottom corners

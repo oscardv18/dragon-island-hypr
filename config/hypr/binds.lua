@@ -19,6 +19,7 @@ end
 -- Core applications
 bind(mainMod .. " + Return", hl.dsp.exec_cmd("ghostty"),                            "Aplicaciones · Terminal (Ghostty)")
 bind(mainMod .. " + E",      hl.dsp.exec_cmd("dolphin"),                            "Aplicaciones · Archivos (Dolphin)")
+bind(mainMod .. " + grave",  hl.dsp.exec_cmd("$HOME/.local/bin/dragon-dropdown"),   "Aplicaciones · Terminal desplegable")
 bind(mainMod .. " + Space",  hl.dsp.exec_cmd("qs ipc call shell toggle launcher"),  "Aplicaciones · Lanzador")
 
 -- Keyboard layout: next one in kb_layout (also Alt+Shift through kb_options, and the bar capsule)
