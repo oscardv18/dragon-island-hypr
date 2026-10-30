@@ -7,6 +7,8 @@
 # shellcheck disable=SC2016  # the line is written literally into ~/.zshrc
 ZSH_LINE='source "${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh/dragon.zsh"'
 SHELL_CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+# shellcheck source=lib/palette.sh
+. "$REPO_DIR/lib/palette.sh"
 
 shell_desc() { echo "Terminal: zsh + starship + eza, fzf, fzf-tab, zoxide, fd, bat"; }
 shell_sudo() { echo "pacman -S (paquetes); chsh solo si lo confirmas"; }
@@ -39,7 +41,10 @@ shell_apply() {
     done
 
     deploy_item "$REPO_DIR/config/zsh" "$SHELL_CFG/dragon-island/zsh"
-    deploy_item "$REPO_DIR/config/starship/starship.toml" "$SHELL_CFG/starship.toml"
+    if [[ ! -e "$SHELL_CFG/starship.toml" ]]; then
+        deploy_item "$REPO_DIR/config/starship/starship.toml" "$SHELL_CFG/starship.toml"
+    fi
+    palette_setup
 
     if [[ "$(readlink -f "$HOME/.zshrc")" == "$(readlink -f "$REPO_DIR/config/zsh/.zshrc")" ]]; then
         log_info "Tu ~/.zshrc ya es el del repo (instalación anterior): ya carga dragon.zsh."
