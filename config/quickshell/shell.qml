@@ -20,6 +20,7 @@ import "modules/notifications"
 import "modules/wallpapers"
 import "modules/store"
 import "modules/herdrhelp"
+import "modules/settings"
 import "modules/dock"
 import "modules/lock"
 import "debug"
@@ -100,6 +101,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { HerdrHelpWindow {} }
+    }
+
+    // Ajustes (SUPER + F2): no scrim, the bar stays visible while its style changes
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { SettingsWindow {} }
     }
 
     Variants {

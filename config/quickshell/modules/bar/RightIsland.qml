@@ -231,7 +231,7 @@ Rectangle {
                     width: 30
                     height: 4
                     anchors.verticalCenter: parent.verticalCenter
-                    Rectangle { anchors.fill: parent; radius: 2; color: Qt.rgba(1, 1, 1, 0.13) }
+                    Rectangle { anchors.fill: parent; radius: 2; color: Theme.trackFaint }
                     Rectangle {
                         width: parent.width * (Audio.muted ? 0 : Math.min(1, Audio.volume))
                         height: parent.height

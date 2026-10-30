@@ -68,6 +68,12 @@ Singleton {
     readonly property color hoverOverlay:  Qt.rgba(1, 1, 1, 0.08)          // hover on a neutral control, white 8 %
     readonly property color neutralFill:   Qt.rgba(1, 1, 1, 0.06)          // clock / neutral capsules, white 6 %
     readonly property color glassHighlight: Qt.rgba(1, 1, 1, 0.06)         // inner top highlight of the islands
+    readonly property color coreButtonFill: Qt.rgba(1, 1, 1, 0.05)         // the core button of the left island
+    readonly property color trackFaint:     Qt.rgba(1, 1, 1, 0.13)         // ring meters / volume bar track
+    readonly property var   thumbDusk:      ["#3a3247", "#5b4a52", "#2a2433"]   // Ajustes: the "desktop" of the bar style thumbnails
+    readonly property color thumbWindow:    Qt.rgba(0.07, 0.06, 0.1, 0.55)
+    readonly property color thumbIsland:    Qt.rgba(0.85, 0.83, 0.92, 0.35)
+    readonly property color thumbStrip:     Qt.rgba(0.08, 0.07, 0.12, 0.8)
 
     // Accent intensity (Settings.accentIntensity, 0–1, bound in shell.qml): how much purple the active states carry
     property real accentIntensity: 0.3
@@ -217,6 +223,11 @@ Singleton {
 
     // Workspace hover preview
     readonly property real previewThumbWidth: 180
+
+    // Ajustes panel (SUPER + F2)
+    readonly property real settingsWidth:    900
+    readonly property real settingsHeight:   560
+    readonly property real settingsNavWidth: 230
 
     // Store panel (Tienda)
     readonly property real storeWidth:      760

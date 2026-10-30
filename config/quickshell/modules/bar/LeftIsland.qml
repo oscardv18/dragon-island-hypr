@@ -66,7 +66,7 @@ Rectangle {
             height: width
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
-            color: coreMouse.containsMouse || root.bar.isOpen("launcher") ? Theme.hoverOverlay : Qt.rgba(1, 1, 1, 0.05)
+            color: coreMouse.containsMouse || root.bar.isOpen("launcher") ? Theme.hoverOverlay : Theme.coreButtonFill
             Behavior on color { ColorAnimation { duration: Theme.durHover } }
 
             NeuralCore {

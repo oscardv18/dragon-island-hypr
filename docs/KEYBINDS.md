@@ -25,6 +25,8 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + S` | Captura de una región |
 | `SUPER + SHIFT + V` | Historial del portapapeles (panel de Quickshell, cliphist) |
 | `SUPER + F1` | Ayuda: panel con todos los atajos de Hyprland |
+| `SUPER + F2` | Ajustes (estilo de la barra, contenido de la isla, métricas, intensidad del acento) |
+| `SUPER + ALT + B` | Cambiar el estilo de la barra (A notch · B isla · C unida · D mínima) |
 
 ## Ventanas
 
@@ -121,17 +123,18 @@ Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
 
 | Dónde | Clic | Otros |
 |---|---|---|
-| Botón degradado (izquierda) | Lanzador | Clic derecho: dashboard |
-| Píldora de escritorio (con los iconos de sus apps) | Ir a ese escritorio | Rueda: anterior / siguiente · ratón encima: vista previa con miniaturas de sus ventanas (clic en una = enfocarla) |
-| Título de la ventana activa | | Ratón encima: acciones — cerrar · flotar · fijar (si flota) · mover a un escritorio |
+| Botón del núcleo (izquierda) | Lanzador | Clic derecho: dashboard · ratón encima: el núcleo «escucha» |
+| Constelación de escritorios (el activo es el planeta) | Ir a ese escritorio | Rueda: anterior / siguiente · ratón encima de un nodo: vista previa con miniaturas de sus ventanas (clic en una = enfocarla) |
+| Contexto vivo (app · repo o carpeta · rama / «N sin leer») | | Ratón encima: acciones — cerrar · flotar · fijar (si flota) · mover a un escritorio |
+| Borde superior (solo estilo D) | | Acercar el cursor despliega la barra completa (estilo B) |
 | Indicador de submap (izquierda) | | Aparece solo con un submap activo |
-| Rendimiento (CPU % + RAM en una sola píldora) | Popover Rendimiento (CPU de los últimos 30 s, núcleos, RAM, GPU, temperatura, procesos, perfil de energía) | Nada se expande con el ratón |
+| Anillos CPU · RAM y línea de red | Popover Rendimiento (CPU de los últimos 30 s, núcleos, RAM, GPU, temperatura, procesos, perfil de energía) | Ratón encima: el detalle como tooltip bajo la isla (la isla no se ensancha) · se ocultan con «Mostrar CPU y RAM» |
 | Cápsula `US` / `LA` | Siguiente distribución de teclado | |
 | Wi‑Fi · Bluetooth · Batería | Su popover | rueda sobre la batería: brillo ±5 % (la velocidad de bajada / subida está en el popover de Wi‑Fi) |
 | Cápsulas contextuales (solo cuando aplican) | Micrófono / cámara / pantalla: lista de apps · grabación: parar · VPN: abre Proton VPN · auriculares: Bluetooth · cafeína y No molestar: alternar · actualizaciones: abre Ghostty con la actualización · red: Rendimiento | Las que no caben se agrupan en `+N` (ratón encima: despliega los iconos) |
-| Volumen | Popover Sonido | Rueda: ±5 % · clic derecho o central: silenciar |
+| Volumen (icono + barra) | Silenciar | Rueda: ±5 % · clic derecho: popover Sonido |
 | Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |
-| Reloj (marcadores: No molestar · sin leer · actualizaciones) | Calendario, notificaciones y actualizaciones en un solo popover | Clic derecho: No molestar |
+| Reloj orbital (marcadores: No molestar · sin leer · actualizaciones) | Calendario, notificaciones y actualizaciones en un solo popover | Clic derecho: No molestar · ratón encima: la fecha |
 | Reloj (cont.) | Calendario | Clic en un día: su agenda (khal) · rueda: cambiar de mes |
 | Popup de notificación | Acción por defecto (o cerrar el popup) | Central: descartar · pasar el ratón: no caduca |
 | Isla cerrada | Dashboard | Música: clic central = play/pausa |
@@ -207,6 +210,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
 | Referencia de herdr (`SUPER + SHIFT + A`) | Escribir filtra · `Tab` cambia de pestaña (Atajos · Comandos · Conceptos y estados) · `↑ ↓` desplazar · `Esc` cierra |
 | Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
+| Ajustes (`SUPER + F2`) | `1–4` estilo de barra A–D (en «Barra superior») · `Tab` cambia de página · `Esc` o clic fuera cierra |
 | Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
 | Cualquier panel | `Esc` cierra |
@@ -215,12 +219,15 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 
 ```sh
 qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery, notifications, calendar,
-qs ipc call shell open launcher      # launcher, power, clipboard, keybinds, wallpapers, store
+qs ipc call shell open launcher      # launcher, power, clipboard, keybinds, wallpapers, store, settings
 qs ipc call shell close
 qs ipc call shell current            # imprime el panel abierto o "none"
 qs ipc call debug toggle             # panel de diagnóstico de servicios (desarrollo)
 qs ipc call settings motion 0        # sin animaciones (0), normal (1), lentas (2); -1 = seguir a KDE
-qs ipc call settings current         # velocidad de animación actual y de dónde sale
+qs ipc call settings current         # todos los ajustes (velocidad de animación y de dónde sale, estilo de barra…)
+qs ipc call settings barStyle C      # estilo de barra A · B · C · D (cycleBarStyle = el siguiente)
+qs ipc call settings islandContent window   # media · window · date
+qs ipc call settings accent 0.6      # intensidad del acento 0–1 · metrics true|false · autohide true|false
 ```
 
 ## Referencia completa de atajos de Hyprland
@@ -233,6 +240,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | Atajo | Acción |
 |---|---|
 | `SUPER + A` | Abrir o enfocar herdr (escritorio 5) |
+| `SUPER + SHIFT + A` | Atajos y funciones de herdr (referencia) |
 
 ### Aplicaciones
 
@@ -291,10 +299,24 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + mouse:272` | Arrastrar ventana |
 | `SUPER + mouse:273` | Redimensionar ventana |
 
+### Scrolling
+
+| Atajo | Acción |
+|---|---|
+| `SUPER + R` | Ancho de columna (1/3, 1/2, 2/3, completo) |
+| `SUPER + C` | Centrar la columna |
+| `SUPER + CTRL + right` | Mover la columna a la derecha |
+| `SUPER + CTRL + left` | Mover la columna a la izquierda |
+| `SUPER + comma` | Unir la ventana a la columna anterior / sacarla de la columna |
+| `SUPER + period` | Unir la ventana a la columna siguiente / sacarla de la columna |
+| `SUPER + P` | Ventana a su propia columna |
+
 ### Shell
 
 | Atajo | Acción |
 |---|---|
+| `SUPER + F2` | Ajustes |
+| `SUPER + ALT + B` | Cambiar el estilo de la barra |
 | `SUPER + F1` | Esta ayuda de atajos |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + W` | Fondos de pantalla |
@@ -322,6 +344,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | Atajo | Acción |
 |---|---|
 | `SUPER + V` | Alternar flotante |
+| `SUPER + T` | Alternar modo Dwindle / Scrolling |
 | `SUPER + Q` | Cerrar |
 | `SUPER + F` | Maximizar / restaurar |
 | `SUPER + SHIFT + down` · `SUPER + SHIFT + left` · `SUPER + SHIFT + right` · `SUPER + SHIFT + up` | Mover la ventana |

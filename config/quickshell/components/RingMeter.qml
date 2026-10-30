@@ -21,7 +21,7 @@ Shape {
 
     ShapePath {
         fillColor: Theme.transparent
-        strokeColor: Qt.rgba(1, 1, 1, 0.13)
+        strokeColor: Theme.trackFaint
         strokeWidth: root.thickness
         PathAngleArc { centerX: root.width / 2; centerY: root.height / 2; radiusX: root._r; radiusY: root._r; startAngle: 0; sweepAngle: 360 }
     }

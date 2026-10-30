@@ -101,6 +101,8 @@ Singleton {
     readonly property string arrowUp:       g(0xF005D)
     readonly property string update:        g(0xF06B0)
     readonly property string pin:           g(0xF0403)
+    readonly property string palette:       g(0xF03D8)   // Ajustes: Apariencia
+    readonly property string barTop:        g(0xF035C)   // Ajustes: Barra superior (menu)
     readonly property string branch:        g(0xF062C)   // source-branch (live context of the left island)
     readonly property string pinOff:        g(0xF0404)
     readonly property string windowFloat:   g(0xF0E58)
