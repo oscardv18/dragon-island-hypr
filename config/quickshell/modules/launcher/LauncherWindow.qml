@@ -1,7 +1,8 @@
 // =============================================================================
 // dragon-island — LauncherWindow.qml
 // Overlay for the modal panels (namespace "dragon-launcher"), one per monitor: launcher, power menu,
-// clipboard history, keybinds cheat-sheet. Click outside / Esc closes; the black 45 % scrim is its own window
+// clipboard history, keybinds cheat-sheet. The launcher is the Gravity one (GravityView) unless
+// Settings.launcherGravity is off: then the previous orbital launcher (Launcher + LauncherView), unchanged. Click outside / Esc closes; the black 45 % scrim is its own window
 // (ScrimWindow, namespace "dragon-scrim"): it must not share a layer with the glass (alpha mask > threshold).
 // =============================================================================
 import Quickshell
@@ -56,7 +57,7 @@ PanelWindow {
     }
 
     onPanelChanged: Qt.callLater(() => {
-        if (panel === "launcher") launcher.focusSearch();
+        if (panel === "launcher") { if (Settings.launcherGravity) gravity.focusInput(); else launcher.focusSearch(); }
         else if (panel === "clipboard") clipboard.focusSearch();
         else if (panel === "keybinds") keybinds.focusSearch();
         else if (panel === "power") power.focusMenu();
@@ -66,7 +67,15 @@ PanelWindow {
     Launcher {
         id: launcher
         anchors.fill: parent
-        shown: win.panel === "launcher"
+        shown: win.panel === "launcher" && !Settings.launcherGravity
+    }
+
+    GravityView {
+        id: gravity
+        anchors.fill: parent
+        shown: win.panel === "launcher" && Settings.launcherGravity
+        onLaunched: id => { ShellState.close(); Apps.launchById(id); Usage.record(id); }
+        onCloseRequested: ShellState.close()
     }
 
     ClipboardPanel {

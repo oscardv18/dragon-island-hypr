@@ -111,6 +111,14 @@ Singleton {
     readonly property string eyeOff:        g(0xF0209)   // hidden titles while recording
     readonly property string branch:        g(0xF062C)   // source-branch (live context of the left island)
     readonly property string pinOff:        g(0xF0404)
+    // Gravity launcher: result / clipboard kinds
+    readonly property string link:          g(0xF0337)
+    readonly property string image:         g(0xF02E9)
+    readonly property string terminal:      g(0xF018D)
+    readonly property string calculator:    g(0xF00EC)
+    readonly property string web:           g(0xF059F)
+    readonly property string emoji:         g(0xF01F5)
+    readonly property string textLines:     g(0xF0262)
     readonly property string windowFloat:   g(0xF0E58)
     readonly property string dots:          g(0xF01D8)
     readonly property string calendar:      g(0xF00ED)

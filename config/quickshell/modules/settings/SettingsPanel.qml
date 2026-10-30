@@ -1,11 +1,12 @@
 // =============================================================================
 // dragon-island — SettingsPanel.qml (SUPER + F2) · docs/design/08-ajustes.png
-// Side navigation (Apariencia, Barra superior; Launcher, Bloqueo e inicio, Fondo y colores and Atajos come in later
-// phases and stay hidden) and the pages:
+// Side navigation (Apariencia, Barra superior, Launcher, Privacidad, Energía; Bloqueo e inicio, Fondo y colores and
+// Atajos come in later phases and stay hidden) and the pages:
 //   Barra superior  four style cards (schematic thumbnail, cyan 1.5 px ring on the chosen one; the real bar changes
 //                   at once), "Contenido de la isla" (Música / Ventana / Fecha), "Mostrar CPU y RAM",
 //                   "Ocultar automáticamente"
 //   Apariencia      "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
+//   Launcher        "Launcher Gravedad" (off = the previous orbital launcher), "Reducir movimiento"
 // Every control writes through Settings (settings.json), so it persists and other monitors follow.
 // Keys: 1–4 pick the bar style A–D · Tab switches page · Esc closes.
 // =============================================================================
@@ -19,18 +20,20 @@ Item {
     id: root
 
     property bool shown: false
-    property string page: "bar"            // "appearance" | "bar" | "privacy" | "power"
+    property string page: "bar"            // "appearance" | "bar" | "launcher" | "privacy" | "power"
     property real t: 0
 
     readonly property var pages: [
         { key: "appearance", label: "Apariencia",     icon: Icons.palette },
         { key: "bar",        label: "Barra superior", icon: Icons.barTop },
+        { key: "launcher",   label: "Launcher",       icon: Icons.apps },
         { key: "privacy",    label: "Privacidad",     icon: Icons.eyeOff },
         { key: "power",      label: "Energía",        icon: Icons.sleep }
     ]
     readonly property var titles: ({
         appearance: ["Apariencia", "Cuánto acento llevan los estados activos y de dónde sale la paleta."],
         bar:        ["Barra superior", "El cambio se aplica al instante y Hyprland ajusta el espacio reservado."],
+        launcher:   ["Launcher", "Cómo se abren las apps, las ventanas y el portapapeles."],
         privacy:    ["Privacidad", "El modo grabación se activa solo mientras grabas o compartes la pantalla."],
         power:      ["Energía", "Qué pasa cuando dejas el equipo sin usar."]
     })
@@ -434,6 +437,29 @@ Item {
                     text: "Sin obs-websocket no se distingue que OBS capture la pantalla de que la grabe: en automático el modo se activa en cuanto OBS la captura. Mostrar las teclas pulsadas no está disponible: Wayland no deja leerlas sin permisos de administrador."
                     size: Theme.sizeCaption + 1
                     color: Theme.textDim
+                }
+            }
+
+            // ======== Launcher: the Gravity launcher and the motion it may use ========
+            Column {
+                id: launcherPage
+                visible: root.page === "launcher"
+                width: parent.width
+                spacing: Theme.spacingLg
+
+                SettingsGroup {
+                    width: parent.width
+                    SettingsRow {
+                        title: "Launcher Gravedad"
+                        subtitle: "Anillos de apps alrededor del núcleo; apagado vuelve el launcher orbital de antes"
+                        ToggleSwitch { checked: Settings.launcherGravity; onToggled: Settings.setFlag("launcherGravity", !Settings.launcherGravity) }
+                    }
+                    SettingsRow {
+                        last: true
+                        title: "Reducir movimiento"
+                        subtitle: "Los anillos dejan de girar; solo se mueve lo que tú mueves"
+                        ToggleSwitch { checked: Settings.reduceMotion; onToggled: Settings.setFlag("reduceMotion", !Settings.reduceMotion) }
+                    }
                 }
             }
 

@@ -21,6 +21,8 @@
  *
  * Functions:
  *   - windowsOn(id: int): list<var> (the windows of workspace id: { toplevel, address, title, appClass, icon, floating })
+ *   - windowsByApp: var [readonly] (desktop entry id — or the class when there is no entry — → list of
+ *       { toplevel, address, title, appClass, workspace }; special workspaces (minimized, drop-down) left out)
  *   - iconFor(appClass: string): string (image source of an app's icon)
  *   - focusWindow(address: string): void
  *   - togglePin(): void (pinning needs a floating window)
@@ -109,6 +111,19 @@ Singleton {
 
     function togglePin(): void {
         Hyprland.dispatch(root.usingLua ? 'hl.dsp.window.pin({ action = "toggle" })' : "pin");
+    }
+
+    readonly property var windowsByApp: {
+        const map = {};
+        for (const t of Hyprland.toplevels.values) {
+            const ws = t.workspace;
+            if (!ws || ws.id < 1) continue;
+            const cls = t.wayland?.appId || t.lastIpcObject?.class || "";
+            if (cls.length === 0) continue;
+            const key = DesktopEntries.heuristicLookup(cls)?.id ?? cls;
+            (map[key] = map[key] || []).push({ toplevel: t, address: t.address, title: t.title, appClass: cls, workspace: ws.id });
+        }
+        return map;
     }
 
     readonly property var workspaces: {
