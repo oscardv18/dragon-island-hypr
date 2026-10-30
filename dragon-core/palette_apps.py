@@ -55,7 +55,7 @@ def update_starship(text, block):
 
 
 def convert_starship(text, block):
-    """One-time TOML-aware conversion: replace hex tokens only inside strings.
+    """One-time conversion: replace color tokens only in TOML style/format strings.
 
     Preserve comments, all formatting and unknown colors. tomllib validates both
     input and output; malformed/foreign palette tables are never overwritten.
@@ -74,7 +74,10 @@ def convert_starship(text, block):
     for match in token.finditer(text):
         value = match.group()
         parts.append(text[pos:match.start()])
-        if not value.startswith("#"):
+        prefix = text[text.rfind('\n', 0, match.start()) + 1:match.start()]
+        field = re.search(r'(?:^|\s)(?:([\w-]+)|"([\w-]+)"|\x27([\w-]+)\x27)\s*=\s*$', prefix)
+        name = next((part for part in field.groups() if part), '') if field else ''
+        if not value.startswith("#") and (name in ('format', 'style') or name.endswith(('_style', '_symbol'))):
             value = re.sub(r"#[0-9A-Fa-f]{6}\b", lambda m: COLOR_NAMES.get(m[0].upper(), m[0]), value)
         parts.append(value)
         pos = match.end()

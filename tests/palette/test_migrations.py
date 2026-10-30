@@ -1,5 +1,6 @@
 """Actual migration execution in disposable homes, including symlinked configs."""
 import os
+import json
 from pathlib import Path
 import subprocess
 import shutil
@@ -138,6 +139,34 @@ class Migrations(unittest.TestCase):
         self.run_migration()
         self.assertEqual((self.cfg / 'dragon-island/palette/dragon-dynamic').read_text(), previous)
         self.assertIn('#C50ED2', previous)
+
+    def test_generation_alone_is_not_applied_by_migration(self):
+        state = self.home / '.local/state/dragon-island'
+        state.mkdir(parents=True)
+        data = dict(version=1, source='/wallpaper.png', sourceHash='a'*40, fallback=False,
+                    accent='#FFAAAA', accentSoft='#FFCCCC', accentDeep='#AA5555',
+                    glow='#FF6666', onAccent='#000000', tint='#100000', swatches=['#FFAAAA']*5)
+        (state / 'palette.json').write_text(json.dumps(data))
+        self.run_migration()
+        theme = self.cfg / 'dragon-island/palette/dragon-dynamic'
+        self.assertIn('#C8B6E6', theme.read_text())
+        # If that palette is applied, then another generate without apply must
+        # leave the external files as they were even when migration is repeated.
+        command = self.home / '.local/bin/dragon-palette'
+        subprocess.run([str(command), 'apply', '--quiet'], env=self.environment, check=True)
+        previous = theme.read_text()
+        (state / 'palette.json').write_text(json.dumps(dict(data, sourceHash='b'*40, accent='#AABBFF')))
+        self.run_migration()
+        self.assertEqual(theme.read_text(), previous)
+
+    def test_templates_defer_until_python_is_available(self):
+        shims = self.home / 'empty-path'
+        shims.mkdir()
+        result = subprocess.run([shutil.which('bash'), str(ROOT / 'migrations/030-palette-templates.sh')],
+                                env=dict(self.environment, PATH=str(shims), DRY_RUN='true'),
+                                capture_output=True, text=True)
+        self.assertEqual(result.returncode, 10, result.stdout + result.stderr)
+        self.assertFalse((self.home / '.local').exists())
 
     def test_dependency_decline_exits_ten_without_sudo(self):
         shims = self.home / 'shims'

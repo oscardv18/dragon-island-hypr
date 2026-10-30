@@ -21,14 +21,22 @@ def plan():
     cfg = config_home()
     directory = cfg / 'dragon-island/palette'
     writes, links, detaches = {}, {}, set()
-    # A migration/update must not reset an already enabled dynamic palette.
+    # Generation alone never opts the user into external app colors. Preserve
+    # the applied palette, including when a newer JSON is waiting for apply.
     colors = DRAGON
+    marker = state_home() / 'palette.applied'
+    digest = marker.read_text().strip() if marker.exists() else ''
+    data = None
     if (state_home() / 'palette.json').exists():
         from palette_runtime import read_palette
-        colors = read_palette()
-    marker = state_home() / 'palette.applied'
-    legacy = marker.exists() and marker.read_text().strip() == 'legacy-v1' and not (state_home() / 'palette.json').exists()
+        data = read_palette()
+        if digest == data['sourceHash']:
+            colors = data
+    legacy = digest == 'legacy-v1'
     outputs = render(colors, legacy=legacy)
+    if digest and not legacy and (data is None or digest != data['sourceHash']):
+        outputs = {name: (directory / name).read_text() if (directory / name).exists() else text
+                   for name, text in outputs.items()}
     for name, text in outputs.items():
         writes[directory / name] = text
     ghostty = cfg / 'ghostty'

@@ -26,10 +26,11 @@ class Templates(unittest.TestCase):
                           if line.startswith('color')], ['color4', 'color12'])
 
     def test_conversion_preserves_user_settings_comments_and_semantics(self):
-        text = '# keep #F04DFF\nformat = "$directory"\n[directory]\nstyle = "bold #F04DFF"\n[character]\nerror_symbol = "[x](#FF3D48)"\nsuccess_symbol = "[>](#70FF58)"\n'
+        text = 'command = \"printf #F04DFF\"\n# keep #F04DFF\nformat = "$directory"\n[directory]\nstyle = "bold #F04DFF"\n[character]\nerror_symbol = "[x](#FF3D48)"\nsuccess_symbol = "[>](#70FF58)"\n'
         block = render(DRAGON)['starship.toml']
         converted = convert_starship(text, block)
         self.assertIn('# keep #F04DFF', converted)
+        self.assertIn('command = \"printf #F04DFF\"', converted)
         self.assertIn('style = "bold accent"', converted)
         self.assertEqual(converted.count(BEGIN), 1)
         self.assertEqual(convert_starship(converted, block), converted)

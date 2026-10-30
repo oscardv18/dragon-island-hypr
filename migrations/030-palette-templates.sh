@@ -15,6 +15,10 @@ else
     . "$REPO_DIR/lib/migration-env.sh"
 fi
 trap 'log_warn "Error en la línea $LINENO. Revisa $LOG"' ERR
+if ! command -v python3 >/dev/null 2>&1; then
+    log_warn "Falta Python: aplica 031 y repite la actualización para instalar las plantillas."
+    exit 10
+fi
 # shellcheck source=lib/palette.sh
 . "$REPO_DIR/lib/palette.sh"
 palette_setup
