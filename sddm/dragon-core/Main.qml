@@ -9,7 +9,8 @@
 //                the wallpaper palette); missing or invalid = the fixed Dragon lavender
 //   centre       greeting by the hour, the shared neural core (components/NeuralCore.qml, from shared/neural-core) with
 //                its HUD: calm at rest, listening while typing, verifying after Enter, alert on a wrong password;
-//                the avatar (photo or initials) in its middle, name and login under it
+//                the avatar in its middle (photo: ~/.face, ~/.face.icon, AccountsService, SDDM's icon; else a silhouette),
+//                name and login on a soft plate at least 28 px below the sphere's edge, so no node passes behind them
 //   orbit        the other users as satellites on the ellipse around the core, plus «Otro usuario» (type a login)
 //   below        password field, session pill (opens the list), hint line
 //   corners      date · time (top right), keyboard layout (bottom left), suspend / reboot / power off (bottom right),
@@ -138,9 +139,11 @@ Rectangle {
             required property string name
             required property string realName
             required property string icon
+            required property string homeDir
             readonly property string uname: name
             readonly property string displayName: realName !== "" ? realName : name
             readonly property string avatar: icon
+            readonly property string home: homeDir
         }
     }
 
@@ -287,23 +290,54 @@ Rectangle {
             border.color: core.mood === "alert" ? root.cAlert : (core.mood === "verifying" ? root.cAccent : root.cCyan)
             Behavior on border.color { ColorAnimation { duration: 300 } }
         }
-        Text {
-            anchors.centerIn: parent
+        Shape {   // silhouette: only when there is no photo
+            anchors.fill: parent
             visible: !face.visible
-            text: root.initials(root.displayName)
-            color: root.cText
-            font.family: root.uiFont
-            font.pixelSize: 32 * root.s
-            font.weight: Font.Medium
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+                strokeColor: "transparent"
+                fillColor: Qt.rgba(root.cSoft.r, root.cSoft.g, root.cSoft.b, 0.55)
+                PathAngleArc { centerX: avatar.width / 2; centerY: avatar.height * 0.39; radiusX: avatar.width * 0.17; radiusY: radiusX; sweepAngle: 360 }
+            }
+            ShapePath {   // shoulders, cut flat inside the ring
+                strokeColor: "transparent"
+                fillColor: Qt.rgba(root.cSoft.r, root.cSoft.g, root.cSoft.b, 0.55)
+                startX: avatar.width * 0.19; startY: avatar.height * 0.82
+                PathArc { x: avatar.width * 0.81; y: avatar.height * 0.82; radiusX: avatar.width * 0.31; radiusY: avatar.height * 0.25 }
+                PathLine { x: avatar.width * 0.19; y: avatar.height * 0.82 }
+            }
+        }
+        // the user's photo: the first of these that loads (the greeter runs as `sddm`: a home it cannot read just fails
+        // and the next one is tried). SDDM's own generic face is skipped: the silhouette above stands for it
+        readonly property var candidates: {
+            const u = users.currentItem
+            if (root.manual || !u) return []
+            const icon = u.avatar.replace(/^file:\/\//, "")
+            const home = u.home.replace(/\/+$/, "")
+            return [home !== "" ? home + "/.face" : "", home !== "" ? home + "/.face.icon" : "",
+                    "/var/lib/AccountsService/icons/" + u.uname,
+                    /\/faces\/(default)?\.face\.icon$/.test(icon) ? "" : icon]
+                .filter((p, i, all) => p !== "" && all.indexOf(p) === i)
+        }
+        onCandidatesChanged: probe.idx = 0
+        Image {   // finds the first readable candidate; never shown (the Canvas draws it round)
+            id: probe
+            property int idx: 0
+            visible: false
+            asynchronous: true
+            source: idx < avatar.candidates.length ? "file://" + avatar.candidates[idx] : ""
+            onStatusChanged: if (status === Image.Error) idx++
         }
         Canvas {   // round photo drawn with a clip path (works on every scene-graph backend)
             id: face
             anchors.fill: parent
-            property string src: !root.manual && users.currentItem && users.currentItem.avatar ? "file://" + users.currentItem.avatar.replace(/^file:\/\//, "") : ""
+            property string src: probe.status === Image.Ready ? String(probe.source) : ""
             property bool ready: false
             visible: ready
-            onSrcChanged: { ready = false; if (src !== "") loadImage(src) }
-            Component.onCompleted: if (src !== "") loadImage(src)
+            // the probe already put the file in the pixmap cache: loadImage() may finish at once, without imageLoaded
+            function load() { if (src === "") return; loadImage(src); if (isImageLoaded(src)) { ready = true; requestPaint() } }
+            onSrcChanged: { ready = false; requestPaint(); load() }
+            Component.onCompleted: load()
             onImageLoaded: { ready = isImageLoaded(src); requestPaint() }
             onPaint: {
                 const ctx = getContext("2d")
@@ -313,7 +347,10 @@ Rectangle {
                 ctx.arc(width / 2, height / 2, width / 2 - 3 * root.s, 0, Math.PI * 2)
                 ctx.closePath()
                 ctx.clip()
-                ctx.drawImage(src, 0, 0, width, height)
+                // cover: the centred square of the photo
+                const iw = probe.implicitWidth, ih = probe.implicitHeight, side = Math.min(iw, ih)
+                if (side > 0) ctx.drawImage(src, (iw - side) / 2, (ih - side) / 2, side, side, 0, 0, width, height)
+                else ctx.drawImage(src, 0, 0, width, height)
             }
         }
     }
