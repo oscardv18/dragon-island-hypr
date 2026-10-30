@@ -21,6 +21,7 @@
  *
  * Functions:
  *   - windowsOn(id: int): list<var> (the windows of workspace id: { toplevel, address, title, appClass, icon, floating })
+ *   - isTerminal(appClass: string): bool (Ghostty, kitty, foot, WezTerm, Konsole, Alacritty and our own terminal classes)
  *   - windowsByApp: var [readonly] (desktop entry id — or the class when there is no entry — → list of
  *       { toplevel, address, title, appClass, workspace }; special workspaces (minimized, drop-down) left out)
  *   - iconFor(appClass: string): string (image source of an app's icon)
@@ -111,6 +112,10 @@ Singleton {
 
     function togglePin(): void {
         Hyprland.dispatch(root.usingLua ? 'hl.dsp.window.pin({ action = "toggle" })' : "pin");
+    }
+
+    function isTerminal(appClass: string): bool {
+        return /^(com\.mitchellh\.ghostty.*|org\.dragonisland\.(herdr|dropdown|pkg|setup)|kitty|alacritty|foot|footclient|org\.wezfurlong\.wezterm|wezterm|org\.kde\.konsole|konsole)$/i.test(appClass || "");
     }
 
     readonly property var windowsByApp: {

@@ -27,24 +27,32 @@ Item {
     readonly property real front: (depth + 1) / 2
 
     readonly property bool hovered: host.hoverKey === app.id
-    readonly property bool selected: host.selKey === app.id
+    readonly property bool selected: host.searching ? host.currentApp?.id === app.id : host.selKey === app.id
     // search: 1 = pulled next to the core (a match), −1 = pushed out as a ghost, 0 = on its orbit
     readonly property real pull: host.pullOf(app.id)
-    readonly property real attract: Math.max(0, pull)
-    readonly property real ghost: Math.max(0, -pull)
+    property real pullA: pull                                       // animated: matches glide in, the rest fade out
+    Behavior on pullA { NumberAnimation { duration: Theme.durOrbit; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveOrbita } }
+    readonly property real attract: Math.max(0, Math.min(1, pullA))
+    readonly property real ghost: Math.max(0, Math.min(1, -pullA))
 
     readonly property real orbitX: host.cx + Math.cos(theta) * rx
     readonly property real orbitY: host.cy + Math.sin(theta) * ry
     readonly property point dock: host.dockPoint(app.id)          // where a match sits while searching
+    property real dockX: dock.x
+    property real dockY: dock.y
+    Behavior on dockX { enabled: planet.host.searching; NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+    Behavior on dockY { enabled: planet.host.searching; NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
 
     readonly property real useScale: Theme.gravityUseMin + (Theme.gravityUseMax - Theme.gravityUseMin) * (app.frec || 0)
     readonly property real depthScale: Theme.gravityBackScale + (1 - Theme.gravityBackScale) * front
-    readonly property real size: Theme.gravityPlanet[ring] * gs * useScale
-        * (attract > 0 ? 1 + attract * (host.dockSize(app.id) - 1) : depthScale)
-        * (hovered ? Theme.gravityHoverScale : 1)
+    readonly property real orbitSize: Theme.gravityPlanet[ring] * gs * useScale * depthScale
+    readonly property real dockSize: host.dockSize(app.id) * gs
+    property real dockSizeA: dockSize
+    Behavior on dockSizeA { enabled: planet.host.searching; NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+    readonly property real size: (orbitSize * (1 - attract) + dockSizeA * attract) * (hovered ? Theme.gravityHoverScale : 1)
 
-    readonly property real cxp: orbitX + (dock.x - orbitX) * attract
-    readonly property real cyp: orbitY + (dock.y - orbitY) * attract
+    readonly property real cxp: orbitX + (dockX - orbitX) * attract
+    readonly property real cyp: orbitY + (dockY - orbitY) * attract
 
     width: size
     height: size

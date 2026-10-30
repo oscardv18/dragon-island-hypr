@@ -446,6 +446,17 @@ Singleton {
     readonly property real gravityDot:         8              // cyan dot of the title / the moon legend
     readonly property real gravityFieldFont:   17
     readonly property real gravityChip:        26             // counter chip / mode chip / key cap height
+    readonly property real gravityDockY:       86             // searching: the chosen match sits this far under the centre
+    readonly property real gravityDockPitch:   120            // … the other matches beside it, every this much
+    readonly property real gravityDockRise:    8              // … each step a little higher (a shallow arc)
+    readonly property real gravityDockMain:    72             // the chosen match, px
+    readonly property real gravityDockSide:    50             // the others (−4 per step out)
+    readonly property int  gravityDockMax:     7              // matches pulled next to the core
+    readonly property real gravityPanelTop:    170            // results / modes panels
+    readonly property real gravityPanelPad:    18
+    readonly property real gravityPanelRadius: 22
+    readonly property real gravityRowRadius:   12
+    readonly property real gravityModeRow:     44
     readonly property real gravityHalo:        10             // hovered / selected ring around a planet (size + this)
     readonly property real gravityRingLine:    1
     readonly property color gravityRingStroke: Qt.rgba(1, 1, 1, 0.10)

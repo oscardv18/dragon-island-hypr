@@ -7,10 +7,15 @@
 // frecency, one moon per open window. The rings turn slowly in alternate directions; they stop while a planet is
 // hovered, while the keyboard holds a selection, with «Reducir movimiento» and whenever the view is not shown.
 // Keys: ← → rotate the selection along its ring · ↑ ↓ change ring · Enter open · Tab go to its window · Esc close.
-// Left click opens, middle click closes. All actions go through services (Apps, Usage, Hypr).
+// Left click opens, middle click closes. All actions go through services (Apps, Usage, Hypr, Search).
+// Searching (docs/design/03-busqueda.png): services/Search.qml picks the mode from the first character. Apps: the
+// matches are pulled next to the core (the chosen one in the middle, the next six beside it), the rest turn into
+// ghosts; «MODOS» on the left, «RESULTADOS» on the right (↑ ↓ choose, Enter open); a terminal with several windows
+// lists them as «LUNAS DE TERMINAL» (Tab walks them, Enter goes to that window).
 // =============================================================================
 import QtQuick
 import QtQuick.Shapes
+import QtQuick.Effects
 import "../.."
 import "../../services"
 import "../../components"
@@ -38,6 +43,33 @@ Item {
 
     readonly property string query: input.text
     readonly property bool searching: query.trim().length > 0
+
+    // ---------------------------------------------------------------- search
+    Binding { target: Search; property: "text"; value: view.query; when: view.shown }
+    readonly property bool appSearch: searching && Search.mode === "apps"
+    property int resultSel: 0
+    property int moonSel: -1
+    onQueryChanged: { resultSel = 0; moonSel = -1; }
+    readonly property var results: searching ? Search.results : []
+    readonly property var current: results[Math.min(resultSel, results.length - 1)] ?? null
+    readonly property var matchIds: appSearch ? Search.appResults.map(r => r.appId) : []
+    readonly property var matchSet: {
+        const m = {};
+        for (const id of matchIds) m[id] = true;
+        return m;
+    }
+    // the matches pulled next to the core: { id: { k: steps from the middle, side: −1 | 0 | 1 } }
+    readonly property var docked: {
+        const top = matchIds.slice(0, Theme.gravityDockMax);
+        const chosen = current && current.kind === "app" && top.indexOf(current.appId) >= 0 ? current.appId : (top[0] ?? "");
+        const out = {};
+        if (chosen) out[chosen] = { k: 0, side: 0 };
+        top.filter(id => id !== chosen).forEach((id, i) => { out[id] = { k: Math.floor(i / 2) + 1, side: i % 2 === 0 ? -1 : 1 }; });
+        return out;
+    }
+    readonly property var currentApp: current && current.kind === "app" ? (byId[current.appId] ?? null) : null
+    // «LUNAS DE TERMINAL»: the chosen app is a terminal with more than one window
+    readonly property var moons: currentApp && currentApp.windows.length > 1 && Hypr.isTerminal(currentApp.windows[0].appClass) ? currentApp.windows : []
 
     // ---------------------------------------------------------------- model
     readonly property var favIds: {
@@ -67,16 +99,17 @@ Item {
         for (const e of ring0) used[e.id] = true;
         return entries.filter(e => !used[e.id] && e.frec > 0).sort((a, b) => b.frec - a.frec).slice(0, Theme.gravityRingCap[1]);
     }
-    readonly property var pool: {           // «Todas»: everything else, alphabetical
+    readonly property var pool: {           // «Todas»: everything else, alphabetical (searching: the matches first)
         const used = {};
         for (const e of ring0.concat(ring1)) used[e.id] = true;
-        return entries.filter(e => !used[e.id]);
+        const rest = entries.filter(e => !used[e.id]);
+        return appSearch ? rest.filter(e => matchSet[e.id]).concat(rest.filter(e => !matchSet[e.id])) : rest;
     }
     readonly property var rings: {
         const room = Math.max(0, Math.min(Theme.gravityRingCap[2], Theme.gravityMaxPlanets - ring0.length - ring1.length));
         let r2 = pool;
         if (pool.length > room) {
-            const off = ((view.allOffset % pool.length) + pool.length) % pool.length;
+            const off = appSearch ? 0 : ((view.allOffset % pool.length) + pool.length) % pool.length;
             r2 = pool.slice(off).concat(pool.slice(0, off)).slice(0, room);
         }
         return [ring0, ring1, r2];
@@ -119,10 +152,22 @@ Item {
         onTriggered: { const now = Date.now(); view.spinT += Math.min(now - last, 100); last = now; }
     }
 
-    // search hooks (02 at rest: nothing is pulled)
-    function pullOf(id: string): real { return 0; }
-    function dockPoint(id: string): point { return Qt.point(cx, cy); }
-    function dockSize(id: string): real { return 1; }
+    // search, per planet: 1 = pulled next to the core, 0 = stays on its ring (a match that did not fit), −1 = ghost
+    function pullOf(id: string): real {
+        if (!searching) return 0;
+        if (docked[id]) return 1;
+        return appSearch && matchSet[id] ? 0 : -1;
+    }
+    function dockPoint(id: string): point {
+        const d = docked[id];
+        if (!d) return Qt.point(cx, cy);
+        return Qt.point(cx + d.side * d.k * Theme.gravityDockPitch * gs, cy + (Theme.gravityDockY - d.k * Theme.gravityDockRise) * gs);
+    }
+    function dockSize(id: string): real {          // design px
+        const d = docked[id];
+        if (!d) return 0;
+        return d.k === 0 ? Theme.gravityDockMain : Theme.gravityDockSide - 4 * (d.k - 1);
+    }
 
     // ---------------------------------------------------------------- selection
     property int selRing: 0
@@ -185,6 +230,16 @@ Item {
         Hypr.focusWindow(w.address);
     }
 
+    function activate(): void {
+        if (moonSel >= 0 && moons[moonSel]) {
+            const w = moons[moonSel];
+            view.closeRequested();
+            Hypr.focusWindow(w.address);
+            return;
+        }
+        if (current && Search.run(current)) view.closeRequested();
+    }
+
     function focusInput(): void { input.forceActiveFocus(); }
     function reset(): void {
         input.text = "";
@@ -196,7 +251,7 @@ Item {
         turnToFront(selRing, 0);
     }
     // later: `entries` follows `active` through a binding that has not been re-evaluated yet inside this handler
-    onShownChanged: if (shown) { Usage.refresh(); Qt.callLater(reset); focusInput(); }
+    onShownChanged: if (shown) { Usage.refresh(); Qt.callLater(reset); focusInput(); } else Search.reset()
 
     // ---------------------------------------------------------------- backdrop
     Rectangle {
@@ -282,6 +337,60 @@ Item {
         }
     }
 
+    // ---------------------------------------------------------------- searching: ghosts and the two panels
+    // the ~20 ghosts: blank translucent planets scattered in the periphery, blurred as one layer
+    Item {
+        anchors.fill: parent
+        z: -12
+        opacity: view.searching ? view.reveal : 0
+        visible: opacity > 0.01
+        Behavior on opacity { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+        layer.enabled: visible
+        layer.effect: MultiEffect { blurEnabled: true; blur: Theme.gravityBackBlur; blurMax: 12 }
+        Repeater {
+            model: Theme.gravityGhosts
+            delegate: Rectangle {
+                required property int index
+                readonly property real f: (index * 0.6180339887) % 1
+                readonly property real a: index * 2.39996323
+                readonly property real r: 0.62 + 0.36 * f
+                width: Theme.gravityGhost * view.gs * (0.7 + 0.6 * ((index * 0.381966) % 1))
+                height: width
+                radius: width * 0.28
+                x: view.cx + Math.cos(a) * r * view.width * 0.5 - width / 2
+                y: view.cy + Math.sin(a) * r * view.height * 0.5 - height / 2
+                color: Theme.gravityGhostFill
+                border.width: 1
+                border.color: Theme.gravityTileEdge
+            }
+        }
+    }
+
+    GravityModes {
+        z: 55
+        gs: view.gs
+        visible: view.searching
+        opacity: view.reveal
+        x: Theme.gravityEdge * view.gs
+        y: Theme.gravityPanelTop * view.gs
+    }
+    GravityResults {
+        z: 55
+        gs: view.gs
+        visible: view.searching
+        opacity: view.reveal
+        x: view.width - width - Theme.gravityEdge * view.gs
+        y: Theme.gravityPanelTop * view.gs
+        results: view.results
+        sel: view.resultSel
+        query: Search.query
+        moons: view.moons
+        moonSel: view.moonSel
+        onHoveredRow: i => { view.resultSel = i; view.moonSel = -1; }
+        onPicked: i => { view.resultSel = i; view.moonSel = -1; view.activate(); }
+        onMoonPicked: i => { view.moonSel = i; view.activate(); }
+    }
+
     // ---------------------------------------------------------------- name + detail under the core
     Column {
         z: 40
@@ -317,14 +426,24 @@ Item {
         color: Theme.gravityPanel
         border.width: 1
         border.color: view.searching ? Theme.gravitySelectionEdge : Theme.gravityTileEdge
+        // searching: a soft cyan glow around the field
+        Rectangle {
+            visible: view.searching
+            anchors.fill: parent
+            anchors.margins: -Theme.spacingXs * view.gs
+            radius: height / 2
+            color: Theme.transparent
+            border.width: Theme.spacingXs * view.gs
+            border.color: Theme.alpha(Theme.cyan, 0.10)
+        }
         opacity: view.reveal
         scale: 0.92 + 0.08 * view.reveal
 
-        CoreIcon {
+        Glyph {
             id: lens
             anchors { left: parent.left; leftMargin: Theme.spacingLg * view.gs; verticalCenter: parent.verticalCenter }
-            name: "search"
-            size: Theme.iconLg * view.gs
+            icon: Icons.search
+            size: Theme.iconLg * 1.2 * view.gs
             color: view.searching ? Theme.cyan : Theme.textSoft
         }
         TextInput {
@@ -356,7 +475,9 @@ Item {
             UiText {
                 id: count
                 anchors.centerIn: parent
-                text: `${view.entries.length} apps`
+                text: !view.searching ? `${view.entries.length} apps`
+                    : view.appSearch ? `${Search.appMatches} de ${view.entries.length}`
+                    : (Search.busy ? "…" : `${view.results.length}`)
                 mono: true
                 size: Theme.sizeCaption * Math.max(1, view.gs) + 1
                 color: Theme.textSoft
@@ -367,6 +488,14 @@ Item {
     function key(event): void {
         const k = event.key;
         if (k === Qt.Key_Escape) { if (input.text !== "") input.text = ""; else view.closeRequested(); }
+        else if (searching) {
+            if (k === Qt.Key_Up) { resultSel = Math.max(0, resultSel - 1); moonSel = -1; }
+            else if (k === Qt.Key_Down) { resultSel = Math.max(0, Math.min(results.length - 1, resultSel + 1)); moonSel = -1; }
+            else if (k === Qt.Key_Return || k === Qt.Key_Enter) activate();
+            else if (k === Qt.Key_Tab) { if (moons.length > 1) moonSel = (moonSel + 1) % moons.length; }
+            else if (k === Qt.Key_Backtab) { if (moons.length > 1) moonSel = moonSel <= 0 ? moons.length - 1 : moonSel - 1; }
+            else return;                  // ← → move the text cursor
+        }
         else if (k === Qt.Key_Left) select(selRing, selSlot - 1);
         else if (k === Qt.Key_Right) select(selRing, selSlot + 1);
         else if (k === Qt.Key_Up) changeRing(-1);
@@ -375,6 +504,17 @@ Item {
         else if (k === Qt.Key_Tab) goToWindow(selKey);
         else return;
         event.accepted = true;
+    }
+
+    readonly property string enterLabel: {
+        if (moonSel >= 0) return "ir a la ventana";
+        const a = current?.action?.type ?? "";
+        if (a === "app") return `abrir ${current.title}`;
+        if (a === "copy") return "copiar";
+        if (a === "exec") return "ejecutar";
+        if (a === "open-url") return "abrir en el navegador";
+        if (a === "workspace") return "ir al escritorio";
+        return "";
     }
 
     // ---------------------------------------------------------------- corners and footer
@@ -438,6 +578,7 @@ Item {
         opacity: view.reveal
         factor: Math.max(1, view.gs)
         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: Theme.gravityHintsBottom * view.gs }
-        hints: [["← →", "rotar"], ["↑ ↓", "anillo"], ["ENTER", "abrir"], ["TAB", "ir a ventana"], ["ESC", "cerrar"]]
+        hints: !view.searching ? [["← →", "rotar"], ["↑ ↓", "anillo"], ["ENTER", "abrir"], ["TAB", "ir a ventana"], ["ESC", "cerrar"]]
+            : [["↑ ↓", "elegir"]].concat(view.enterLabel ? [["ENTER", view.enterLabel]] : []).concat(view.moons.length > 1 ? [["TAB", "ir a una luna"]] : []).concat([["ESC", "cerrar"]])
     }
 }
