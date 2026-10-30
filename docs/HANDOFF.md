@@ -660,3 +660,52 @@ Rama `feat/nueva-identidad`, un commit por punto de `docs/design/PROMPT-identida
 - Los avisos de `Clock.qml` («Unable to assign [undefined]») solo salen en recargas en caliente, no en un arranque limpio.
 
 **Revertir**: no fusionar la rama, o `git revert main..feat/nueva-identidad` si ya se fusionó. `settings.json` admite las claves nuevas sin problema en `main` (las ignora).
+
+## 8b. Fase 1.1 + Dock Constelación + iconos (2026-10-30)
+
+Rama `feat/nueva-identidad`, prompt `docs/design/PROMPT-identidad-fase-1-1.md`. `docs/design/` ya está versionada (el usuario subió las maquetas en `c2dcb23`; aquí se añadieron `27-dock-constelacion.png` y el prompt). Capturas en `docs/screenshots/identidad/` (las de «antes»: `barra-antes-fase-1-1.png`).
+
+**Hecho**
+- **1.1 Tamaño de la barra**: `Settings.barSize` (`compacta` · `normal` por defecto · `amplia`), IPC `settings barSize <valor>`, segmentado «Tamaño de la barra» en Ajustes (las tarjetas muestran los px del tamaño elegido). `Theme.barHeightFor(style, size)` / `barZoneFor` y tokens derivados (`barCoreButton`, `barPlanet`, `barPlanetIcon`, `barNode`, `barNodePitch`, `barRing`, `barRingWidth`, `barSpark*`, `barVolumeWidth`, `barOrbit`, `sizeBar`); el notch mide lo que las islas o la franja; ventanas de la barra a 44 px constantes. 020 rellena `barSize`.
+- **1.2 B flotante**: no se reprodujo «pegada con orejas» en reposo (capturas de B colapsada, peek y expandida: flotante, sin orejas, 6 px de aire). Sí había un fallo en el peek: la píldora crecía y conservaba el radio colapsado; ahora el radio sigue a alto / 2 mientras flota.
+- **1.3 Anillos**: pista completa al 15 %, arco de 2,5 / 3 / 3,5 px con extremos redondos desde arriba en sentido horario, `warn` por encima del 85 %, sin giro.
+- **1.4 Bordes**: activo lavanda → cian a 45°, inactivo blanco 8 %; hyprbars con texto `#edebf5` y los tres botones en `textSoft`. hyprbars (commit fijado) no tiene color por botón al pasar el cursor: cerrar no puede ponerse rojo solo en hover, se queda neutro. hyprfocus no usa colores.
+- **2 Dock Constelación** (`modules/dock/DockWindow.qml` + `DockNode.qml`, `services/Dock.qml` con `agent`, `focused`, `moons`, `tints`): ver el encabezado de `DockWindow.qml`. `NeuralCore` gana `bare` y `fps` (API compatible; lanzador, bloqueo y SDDM sin cambios).
+- **3 Iconos**: tema `Dragon-Core` (`config/icons/Dragon-Core`, `Inherits=MacTahoe-purple-dark,WhiteSur-dark,hicolor`), pragma del shell, módulo `theme`, `doctor.sh`, `packages/aur-theme.txt` (`mactahoe-icon-theme-git`, `whitesur-icon-theme`, ambos en el AUR) y migración `021-dragon-core-icons.sh`.
+
+**Verificado (sesión real)**
+- Las 12 combinaciones estilo × tamaño con su zona reservada en `hyprctl monitors`: A 31/35/39, B 32/36/40, C 24/28/32, D 18/22/26.
+- Anillos al 5 / 50 / 90 % (render con `qml6` y un `Theme` mínimo, porque Quickshell no deja importar fuera de su carpeta): el 90 % en ámbar.
+- Bordes con una ventana activa y otra inactiva (dos Ghostty de prueba en el escritorio 4, cerrados por dirección). `configerrors` vacío.
+- Dock: 8 apps visibles, hover (nodo arriba, hilo tensado, etiqueta «Brave · 1 ventana»), oculto con una ventana en mosaico (solo el hilo y sus puntos), lunas de una app con 2 ventanas (una minimizada en `muted`, la enfocada en lavanda), aviso «1» (notificación de prueba a nombre de Telegram), sinapsis cian hacia Ghostty con el agente de herdr trabajando, posiciones izquierda y derecha (cada lado se limita a lo que cabe: 4 por lado en un borde de 768 px).
+- Iconos: lanzador y dock con WhiteSur delante y con MacTahoe delante (casi idénticos), variantes a / b del nodo, carpetas de MacTahoe frente a Sweet.
+- Rendimiento (vídeo en Brave de fondo, así que la GPU oscila mucho): dock anterior visible GPU 20 % / CPU de Quickshell 15 %; dock nuevo visible GPU 7 % / CPU 17 %; oculto 14 % / 17 %. Parar el núcleo de 64 px no cambia la CPU de forma medible (15 fps, sin anillos).
+- Arranque limpio de Quickshell sin avisos propios; `tests/run-all.sh` en verde; `shellcheck`, `luac -p`, `sync-shared --check`.
+
+**No verificado**
+- Clics físicos, rueda, mantener pulsado (miniaturas) y arrastrar para reordenar en el dock: no hay uinput / ydotool desde aquí. `Dock.activate` (ciclar ventanas) es el mismo de antes.
+- El halo ámbar de un agente esperando respuesta: no hubo ningún agente `blocked` durante la prueba.
+- La pestaña Apps del Nook con los iconos nuevos (no se puede cambiar de pestaña sin clic) y la Tienda con resultados.
+- Dolphin con MacTahoe: el tema de Qt / GTK del sistema no se cambió (sigue Sweet‑Purple); la decisión de carpetas se tomó con un render de los iconos de carpeta de ambos temas.
+- El variante b en el lanzador: `LauncherView.qml` (copiado de dragon-core, «sin tocar» desde §7zb) ya dibuja el icono cuadrado en su celda; no se modificó.
+
+**Decisiones**
+- **Iconos**: MacTahoe‑purple‑dark de principal y WhiteSur‑dark de respaldo. Cobertura sobre 78 apps visibles: 68 frente a 67 (WhiteSur no tiene Antigravity IDE). Visualmente casi idénticos (mismo autor). La variante violeta inclina la balanza.
+- **Sweet Folders fuera de Dragon-Core** (carpetas moradas de MacTahoe, coherentes con sus apps). Candy y Sweet siguen instalados para las apps Qt / GTK.
+- **Nodo variante b** (`Theme.dockNodeStyle: "icon"`): el icono cuadrado es el nodo. La variante a (icono al 56 % en un disco de cristal) se ve apretada con estos temas; se conserva con `"glass"`.
+- **Hilo**: en lugar de Catmull‑Rom → `PathCubic` es una función continua (arco + elevación gaussiana bajo el cursor) muestreada en un `Canvas`. Pasa por el centro de cada nodo por construcción, tensa hacia el cursor y deja colocar las sinapsis exactamente sobre él. `ShapePath` no tiene degradado de trazo, que el hilo necesita.
+- **Capacidad**: las 8 plazas se reparten entre los dos lados según haga falta (con 1 app abierta caben 7 fijadas), y cada lado se limita a lo que cabe en el borde.
+- **Movimiento del dock**: un único `Timer` a 20 fps para lunas, sinapsis y respiración; ninguna animación infinita ni `FrameAnimation`. El núcleo de 64 px va a 15 fps (30 al reaccionar), `bare`.
+- 2.1–2.6 van en un solo commit (`2800fa9`): comparten el mismo modelo de geometría y por separado habrían dejado estados intermedios rotos.
+
+**Apps sin icono en Dragon-Core**
+- Sin ningún icono: **HP Scan** (su `.desktop` apunta a `/usr/share/icons/Humanity/devices/48/printer.svg`, que no existe).
+- Con su icono propio (no está en MacTahoe ni WhiteSur): Bionic, GenOffice, Haruna, Warp, GTK Settings (nwg-look), HP Device Manager y las utilidades de EndeavourOS (apps info, log tool, eos-update, Reflector Simple, Welcome).
+
+**Trampas**
+- Las componentes en línea con `required property` (`component Node: Item`) también dan «Node is not a type»: a un archivo (`DockNode.qml`).
+- `ColorQuantizer` no lee `image://icon/…`: solo se cuantizan iconos que son archivos (los demás, lavanda).
+- `gtk-update-icon-cache` sobre un tema enlazado al repo escribiría la caché dentro del repo: la migración 021 no la genera.
+- `qt.svg` avisa de una propiedad que no entiende en `MacTahoe-purple-dark/apps/scalable/obsidian.svg`: es del tema, inofensivo.
+
+**Revertir**: `git revert` de los commits de esta sección; `rm ~/.local/share/icons/Dragon-Core` y volver el pragma a `Sweet-Purple`.
