@@ -7,7 +7,7 @@ en `~/.local/state/dragon-island/migrations.done`.
 
 Cada migración:
 - es idempotente (ejecutarla dos veces no cambia nada) y hace copia de seguridad (`backup_copy`, `deploy_item`) antes de tocar nada;
-- respeta `DRY_RUN` (usa `run` para todo lo que escriba) y `ASSUME_YES` (`confirm`);
+- respeta `DRY_RUN` (`true` o `1`: `lib/common.sh` lo normaliza; usa `run` para todo lo que escriba, también los pasos con `sudo`) y `ASSUME_YES` (`confirm`);
 - sale con `0` si quedó aplicada, `10` si se omite a propósito (se reintentará la próxima vez) y otro código si falla;
 - usa las ayudas de `lib/common.sh` (`run`, `log_info`, `confirm`, `deploy_item`, `backup_copy`, `need_relogin`, `add_component`).
 

@@ -9,7 +9,7 @@
 #     --dry-run  show what would change, change nothing
 #     --yes      do not ask before the sudo step
 #     --reset    put back the theme's default background and the Dragon accent
-# Each replaced file keeps a .bak-dragon copy next to it. Env: DRY_RUN=true, ASSUME_YES=true work too.
+# Each replaced file keeps a .bak-dragon copy next to it. Env: DRY_RUN=1 / true, ASSUME_YES=1 / true work too.
 set -Eeuo pipefail
 
 THEME="${DRAGON_SDDM_THEME:-/usr/share/sddm/themes/dragon-core}"
@@ -17,8 +17,10 @@ CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dragon-island"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island"
 SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/settings.json"
 REPO_DEFAULT="$(cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)/sddm/dragon-core/background.jpg"
-DRY_RUN="${DRY_RUN:-false}"
-ASSUME_YES="${ASSUME_YES:-false}"
+# 1 / yes / on → true (as lib/common.sh: this script is installed on its own and cannot source it)
+bool_flag() { case "${1,,}" in 1|true|yes|y|on|s|si|sí) echo true ;; *) echo false ;; esac; }
+DRY_RUN="$(bool_flag "${DRY_RUN:-false}")"
+ASSUME_YES="$(bool_flag "${ASSUME_YES:-false}")"
 RESET=false
 
 for a in "$@"; do
@@ -33,6 +35,7 @@ done
 
 say()  { printf '\033[35m▸\033[0m %s\n' "$*"; }
 warn() { printf '\033[33m!\033[0m %s\n' "$*" >&2; }
+run()  { if $DRY_RUN; then printf '[dry-run]'; printf ' %q' "$@"; echo; else "$@"; fi; }
 
 [[ -d "$THEME" ]] || { warn "El tema dragon-core no está instalado en $THEME (sddm/install-theme.sh)."; exit 1; }
 command -v magick >/dev/null 2>&1 || { warn "Falta ImageMagick (magick)."; exit 1; }
@@ -80,20 +83,21 @@ say "Fondo: $src"
 if $accent_on; then say "Acento: $(grep '^accent=' "$WORK/accent.conf" | cut -d= -f2) (paleta del fondo)"
 else say "Acento: Dragon fijo (se quita accent.conf)"; fi
 
-if $DRY_RUN; then say "[dry-run] no se cambia nada."; exit 0; fi
-if ! $ASSUME_YES; then
+$DRY_RUN && say "[dry-run] no se cambia nada; estos serían los pasos:"
+if ! $DRY_RUN && ! $ASSUME_YES; then
     read -r -p "¿Copiar al tema con sudo? [s/N] " ans
     [[ "$ans" =~ ^[sSyY]$ ]] || { say "Cancelado."; exit 0; }
 fi
 
-backup() { [[ -f "$THEME/$1" ]] && sudo cp -a -- "$THEME/$1" "$THEME/$1.bak-dragon" || true; }
+backup() { if [[ -f "$THEME/$1" ]]; then run sudo cp -a -- "$THEME/$1" "$THEME/$1.bak-dragon"; fi; }
 backup background.jpg
-sudo install -m 644 "$WORK/background.jpg" "$THEME/background.jpg"
+run sudo install -m 644 "$WORK/background.jpg" "$THEME/background.jpg"
 if $accent_on; then
     backup accent.conf
-    sudo install -m 644 "$WORK/accent.conf" "$THEME/accent.conf"
+    run sudo install -m 644 "$WORK/accent.conf" "$THEME/accent.conf"
 elif [[ -f "$THEME/accent.conf" ]]; then
     backup accent.conf
-    sudo rm -f -- "$THEME/accent.conf"
+    run sudo rm -f -- "$THEME/accent.conf"
 fi
+$DRY_RUN && exit 0
 say "Listo: se verá en el próximo inicio de sesión (prueba: sddm-greeter-qt6 --test-mode --theme $THEME)."

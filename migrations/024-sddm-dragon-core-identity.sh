@@ -42,27 +42,23 @@ fi
 
 stamp="$(date +%Y%m%d-%H%M%S)"
 if $DRY_RUN; then
-    echo "[dry-run] sudo cp -a $DEST $DEST.bak-dragon-$stamp"
-    echo "[dry-run] sudo install (Main.qml, theme.conf, metadata.desktop, components/, fonts/) → $DEST"
-    echo "[dry-run] dragon-sddm-sync --yes"
-    exit 0
-fi
-if $ASSUME_YES || ! has_gum || [[ ! -t 0 ]]; then
+    log_info "[dry-run] Login nuevo (07-login): una actualización real preguntaría antes de usar sudo. Pasos:"
+elif $ASSUME_YES || ! has_gum || [[ ! -t 0 ]]; then
     log_info "Login nuevo (07-login): no se instala sin confirmación interactiva. Cuando quieras: $REPO_DIR/sddm/install-theme.sh y después dragon-sddm-sync"
     exit 10
-fi
-if ! gum confirm --affirmative "Sí" --negative "No" "¿Actualizar el tema de login dragon-core al diseño nuevo, con tu fondo y su acento? (pide sudo; guarda una copia del actual)"; then
+elif ! gum confirm --affirmative "Sí" --negative "No" "¿Actualizar el tema de login dragon-core al diseño nuevo, con tu fondo y su acento? (pide sudo; guarda una copia del actual)"; then
     log_info "Omitido. Cuando quieras: $REPO_DIR/sddm/install-theme.sh y después dragon-sddm-sync"
     exit 10
 fi
 
-sudo cp -a -- "$DEST" "$DEST.bak-dragon-$stamp"
+run sudo cp -a -- "$DEST" "$DEST.bak-dragon-$stamp"
 log_info "Respaldo: $DEST.bak-dragon-$stamp"
-sudo install -d -m 755 "$DEST/components" "$DEST/fonts"
-sudo install -m 644 "$SRC"/*.qml "$SRC"/metadata.desktop "$SRC"/theme.conf "$SRC"/preview.png "$SRC"/LICENSE "$DEST/"
-sudo install -m 644 "$SRC"/components/*.qml "$DEST/components/"
-sudo install -m 644 "$SRC"/fonts/*.ttf "$DEST/fonts/"
-[[ -f "$DEST/background.jpg" ]] || sudo install -m 644 "$SRC/background.jpg" "$DEST/"
-"$REPO_DIR/bin/dragon-sddm-sync" --yes || log_warn "dragon-sddm-sync no terminó: el login usa el fondo y el acento por defecto. Reintenta: dragon-sddm-sync"
+run sudo install -d -m 755 "$DEST/components" "$DEST/fonts"
+run sudo install -m 644 "$SRC"/*.qml "$SRC"/metadata.desktop "$SRC"/theme.conf "$SRC"/preview.png "$SRC"/LICENSE "$DEST/"
+run sudo install -m 644 "$SRC"/components/*.qml "$DEST/components/"
+run sudo install -m 644 "$SRC"/fonts/*.ttf "$DEST/fonts/"
+[[ -f "$DEST/background.jpg" ]] || run sudo install -m 644 "$SRC/background.jpg" "$DEST/"
+run "$REPO_DIR/bin/dragon-sddm-sync" --yes || log_warn "dragon-sddm-sync no terminó: el login usa el fondo y el acento por defecto. Reintenta: dragon-sddm-sync"
+$DRY_RUN && exit 0
 log_info "Login actualizado. Pruébalo sin cerrar sesión: sddm-greeter-qt6 --test-mode --theme $DEST"
 exit 0

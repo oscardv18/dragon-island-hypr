@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # =============================================================================
 # dragon-island — environment for migrations/*.sh: defaults for the variables update.sh exports, so a
-# migration also runs on its own (`bash migrations/001-….sh`, optionally with DRY_RUN=true).
+# migration also runs on its own (`bash migrations/001-….sh`, optionally with DRY_RUN=1 or DRY_RUN=true).
 # Sourced after REPO_DIR is set.
 # =============================================================================
 PROJECT="dragon-island"
@@ -15,6 +15,7 @@ LINK_MODE="${LINK_MODE:-symlink}"
 COMPONENTS_FILE="${COMPONENTS_FILE:-$STATE_DIR/components}"
 RELOGIN_FILE="${RELOGIN_FILE:-$STATE_DIR/needs-relogin}"
 [[ -t 0 && -t 1 ]] || ASSUME_YES=true
-mkdir -p "$STATE_DIR"
 # shellcheck source=lib/common.sh
-. "$REPO_DIR/lib/common.sh"
+. "$REPO_DIR/lib/common.sh"     # also turns DRY_RUN=1 / yes / … into true
+# a dry-run writes nothing, not even the state dir
+$DRY_RUN || mkdir -p "$STATE_DIR"
