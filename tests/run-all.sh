@@ -37,6 +37,9 @@ fi
 step "paleta: extracción, plantillas, apps y migraciones (HOME temporal)"
 if python3 -m unittest discover -s tests/palette -v; then pass "pruebas de paleta"; else fail "pruebas de paleta fallaron"; fi
 
+step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 

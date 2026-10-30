@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Offline launcher engines, resolved in the repo or the installed data directory.
+set -Eeuo pipefail
+ENGINE_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+ENGINE_LIB="$(dirname -- "$(dirname -- "$ENGINE_BIN")")/dragon-core/dragon_search.py"
+if [[ ! -f "$ENGINE_LIB" ]]; then
+    ENGINE_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_search.py"
+fi
+exec python3 "$ENGINE_LIB" "$@"
