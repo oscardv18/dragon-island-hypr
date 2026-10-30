@@ -65,8 +65,8 @@ Item {
         color: Theme.alpha(Theme.warn, 0.10)
         border.width: 2
         border.color: Theme.alpha(Theme.warn, 0.75)
-        opacity: Theme.animationsEnabled ? 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(dock.now / 1400 * Math.PI * 2)) : 1
-        scale: Theme.animationsEnabled ? 0.94 + 0.08 * (0.5 + 0.5 * Math.sin(dock.now / 1400 * Math.PI * 2)) : 1
+        opacity: Theme.animationsEnabled ? 0.45 + 0.55 * (0.5 + 0.5 * Math.sin(dock.liveNow / 1400 * Math.PI * 2)) : 1
+        scale: Theme.animationsEnabled ? 0.94 + 0.08 * (0.5 + 0.5 * Math.sin(dock.liveNow / 1400 * Math.PI * 2)) : 1
     }
 
     // synapses: two cyan particles travelling the thread from the core to this app, 0.9 s apart
@@ -74,7 +74,7 @@ Item {
         model: node.busy && Theme.animationsEnabled ? 2 : 0
         delegate: Item {
             required property int index
-            readonly property real p: ((dock.now + index * Theme.dockSynapseLife / 2) % Theme.dockSynapseLife) / Theme.dockSynapseLife
+            readonly property real p: ((dock.liveNow + index * Theme.dockSynapseLife / 2) % Theme.dockSynapseLife) / Theme.dockSynapseLife
             readonly property real sx: dock.c + (node.nx - dock.c) * p
             width: Theme.dockSynapse * 3
             height: width
@@ -107,7 +107,7 @@ Item {
             required property int index
             readonly property real r: (node.size + Theme.dockMoonOrbit) / 2
             readonly property real period: node.busy ? Theme.dockMoonPeriodBusy : Theme.dockMoonPeriod
-            readonly property real ang: -Math.PI / 2 + index * Math.PI * 2 / node.item.moons.length + (Theme.animationsEnabled ? dock.now / period * Math.PI * 2 : 0)
+            readonly property real ang: -Math.PI / 2 + index * Math.PI * 2 / node.item.moons.length + (Theme.animationsEnabled ? dock.liveNow / period * Math.PI * 2 : 0)
             readonly property color col: modelData.minimized ? Theme.muted : (modelData.active ? Theme.lavender : (node.busy ? Theme.cyan : Theme.text))
             width: Theme.dockMoon * 2.4
             height: width

@@ -171,6 +171,7 @@ Item {
                     anchors.verticalCenter: parent.verticalCenter
                     width: 14; height: 14
                     mood: "thinking"
+                    fps: 6
                     reducedMotion: !Theme.animationsEnabled
                     running: visible && Theme.animationsEnabled
                 }

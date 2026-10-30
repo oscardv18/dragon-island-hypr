@@ -355,6 +355,7 @@ Item {
                 width: Theme.notchHeight - 8
                 height: width
                 mood: "thinking"
+                fps: 6          // 12 while thinking: it can stay on for hours while agents work (CPU, HANDOFF 8c)
                 reducedMotion: !Theme.animationsEnabled
                 running: Theme.animationsEnabled
             }
@@ -472,6 +473,7 @@ Item {
                     width: Theme.notchHeight - 8
                     height: width
                     mood: "listening"
+                    fps: 6
                     reducedMotion: !Theme.animationsEnabled
                     running: Theme.animationsEnabled
                 }

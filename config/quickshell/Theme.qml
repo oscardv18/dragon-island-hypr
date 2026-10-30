@@ -250,6 +250,7 @@ Singleton {
     readonly property real dockHiddenDot:   2.5
     readonly property int  dockBreath:      2600   // hidden thread: opacity 0.45 ↔ 1
     readonly property int  dockFps:         20     // one shared tick moves moons, synapses and the breathing
+    readonly property int  dockFpsHidden:   8      // hidden: only the breathing of the thread's dots
     readonly property color threadPink:     "#e8c8f5"
     readonly property color badge:          "#8b6bb8"   // unread count on a dock node
     readonly property color dockNodeBase:   Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.75)
