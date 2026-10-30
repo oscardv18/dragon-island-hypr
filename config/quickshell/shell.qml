@@ -150,6 +150,19 @@ ShellRoot {
     Lock {
         id: lock
         notifCount: Notifs.unreadCount
+        captures: Notifs.notifications.filter(n => n.appName === "Capturas").length
+        wifiOn: Network.connected
+        muted: Audio.muted
+        // the apps with unread notifications, most unread first (satellites on the lock's orbit)
+        notifApps: {
+            const by = {};
+            for (const n of Notifs.unreadList()) {
+                const app = n.appName || "";
+                if (app.length === 0 || app === "Capturas") continue;
+                (by[app] = by[app] || { name: app, icon: Notifs.iconFor(n), count: 0 }).count++;
+            }
+            return Object.values(by).sort((a, b) => b.count - a.count).slice(0, 3);
+        }
     }
 
     LazyLoader {

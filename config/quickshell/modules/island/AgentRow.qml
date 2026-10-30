@@ -1,14 +1,14 @@
 // One herdr agent in the IA tab (docs/design/17-agentes.png):
 //   waiting   warn card (alpha warn .08, edge .35): name · kind · branch, "Espera tu respuesta", what it shows (the
 //             detection lines of `herdr agent read`), Ver terminal · Rechazar · Aprobar (only for agent kinds with a
-//             known approval prompt, Herdr.canAnswer; otherwise one Responder button that focuses the pane)
+//             known approval prompt, `canAnswer`; otherwise one Responder button that focuses the pane)
 //   working   cyan spinner, the task (terminal title) in cyan, observed time
 //   finished  ✓ ok · Terminado · task
 //   other     a dim dot
-// Pure visual; `detail` = Herdr.details[pane] ({ branch, prompt }), `elapsed` already formatted.
+// Pure visual (no services, so tests/qml can render it); `detail` = Herdr.details[pane] ({ branch, prompt }),
+// `elapsed` already formatted. AiTab wires the signals to Herdr.
 import QtQuick
 import "../.."
-import "../../services"
 import "../../components"
 
 Rectangle {
@@ -17,7 +17,11 @@ Rectangle {
     property var agent: null
     property var detail: null
     property string elapsed: ""
+    property bool canAnswer: false
     signal clicked()
+    signal viewTerminal()
+    signal approve()
+    signal reject()
 
     readonly property string st: agent?.state ?? "unknown"
     readonly property bool waiting: st === "blocked"
@@ -99,9 +103,9 @@ Rectangle {
             spacing: Theme.spacingSm
             topPadding: 2
 
-            PillButton { label: Herdr.canAnswer(root.agent) ? "Ver terminal" : "Responder"; primary: !Herdr.canAnswer(root.agent); onPressed: Herdr.focusAgent(root.agent) }
-            PillButton { visible: Herdr.canAnswer(root.agent); label: "Rechazar"; onPressed: Herdr.reject(root.agent) }
-            PillButton { visible: Herdr.canAnswer(root.agent); label: "Aprobar"; primary: true; onPressed: Herdr.approve(root.agent) }
+            PillButton { label: root.canAnswer ? "Ver terminal" : "Responder"; primary: !root.canAnswer; onPressed: root.viewTerminal() }
+            PillButton { visible: root.canAnswer; label: "Rechazar"; onPressed: root.reject() }
+            PillButton { visible: root.canAnswer; label: "Aprobar"; primary: true; onPressed: root.approve() }
         }
     }
 }
