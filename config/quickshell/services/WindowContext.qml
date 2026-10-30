@@ -20,6 +20,7 @@
  *   - chipKind: string [readonly] ("branch" | "unread" | "")
  *   - cwd: string [readonly] (terminals / editors only, "" otherwise)
  *   - isDev: bool [readonly] (the focused window is a terminal or a code editor)
+ *   - masked: bool [readonly] (recording mode with "hide titles": title becomes "título oculto", no chip, no icon)
  *
  * Functions:
  *   - refresh(): void (forget the cache and read again)
@@ -45,7 +46,8 @@ Singleton {
         const n = parts.length > 0 ? parts[parts.length - 1] : _class;
         return n.charAt(0).toUpperCase() + n.slice(1);
     }
-    readonly property string icon: Hypr.activeIcon
+    readonly property bool masked: RecordingMode.hideTitles
+    readonly property string icon: masked ? "" : Hypr.activeIcon
 
     readonly property bool isDev: /^(com\.mitchellh\.ghostty.*|org\.dragonisland\.(herdr|pkg|setup)|kitty|alacritty|foot|footclient|org\.wezfurlong\.wezterm|wezterm|org\.kde\.konsole|konsole|code|code-oss|codium|vscodium|cursor|zed|dev\.zed\.zed.*|neovide|org\.kde\.kate|kate|jetbrains-.*)$/i.test(_class)
 
@@ -64,13 +66,14 @@ Singleton {
     }
 
     readonly property string title: {
+        if (masked) return "título oculto";
         if (!isDev || cwd.length === 0) return appName;
         if (_repo.length > 0) return _repo;
         const home = Quickshell.env("HOME");
         if (cwd === home) return "~";
         return cwd.split("/").filter(p => p.length > 0).pop() ?? cwd;
     }
-    readonly property string chipKind: isDev && _branch.length > 0 ? "branch" : (_unread.length > 0 ? "unread" : "")
+    readonly property string chipKind: masked ? "" : isDev && _branch.length > 0 ? "branch" : (_unread.length > 0 ? "unread" : "")
     readonly property string chip: chipKind === "branch" ? _branch : (chipKind === "unread" ? `${_unread.length} sin leer` : "")
 
     property var _cache: ({})     // key → { at, cwd, branch, repo }

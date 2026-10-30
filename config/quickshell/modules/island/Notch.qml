@@ -211,6 +211,10 @@ Item {
             }
             onClicked: m => {
                 if (IslandState.mode === "agentBlocked" && m.button === Qt.LeftButton) Herdr.focusAgent(IslandState.blockedAgent);
+                // recording: stop the shell's own recording; another app capturing → which one (privacy popover)
+                else if (IslandState.mode === "recording" && m.button === Qt.LeftButton) {
+                    if (RecordingMode.shellRecording) RecordingMode.stop(); else ShellState.open("privacy", root.screenName);
+                }
                 else if (m.button === Qt.MiddleButton && IslandState.mode === "media") Media.playPause();
                 else if (m.button === Qt.LeftButton) ShellState.toggle("dashboard", root.screenName);
             }

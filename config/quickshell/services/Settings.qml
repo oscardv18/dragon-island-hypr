@@ -21,6 +21,8 @@
  *   - accentIntensity: real [readonly] (0–1, how much purple the active states carry; default 0.3)
  *   - wallpaperPalette: bool [readonly] (take the palette from the wallpaper; stored only, used in a later phase; default true)
  *   - longCommandSeconds: int [readonly] (a shell command at least this long reports to the island; ≥ 5, default 30)
+ *   - recordingMode: string [readonly] ("auto": the recording mode follows a recording / a screen share · "off"; default "auto")
+ *   - recordHold / recordHideTitles / recordPauseClipboard / recordFrame: bool [readonly] (its rules; default true)
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -34,6 +36,8 @@
  *   - setAccentIntensity(x: real): void (clamped to 0–1)
  *   - setWallpaperPalette(on: bool): void
  *   - setLongCommandSeconds(s: int): void
+ *   - setRecordingMode(mode: string): void ("auto" | "off")
+ *   - setFlag(key: string, on: bool): void (any boolean key above, e.g. "recordFrame")
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
@@ -82,6 +86,12 @@ Singleton {
         const v = Number(root._data.longCommandSeconds);
         return root._data.longCommandSeconds !== undefined && !isNaN(v) ? Math.max(5, Math.round(v)) : 30;
     }
+    function _flag(key: string, def: bool): bool { return typeof root._data[key] === "boolean" ? root._data[key] : def; }
+    readonly property string recordingMode: root._data.recordingMode === "off" ? "off" : "auto"
+    readonly property bool recordHold: _flag("recordHold", true)
+    readonly property bool recordHideTitles: _flag("recordHideTitles", true)
+    readonly property bool recordPauseClipboard: _flag("recordPauseClipboard", true)
+    readonly property bool recordFrame: _flag("recordFrame", true)
     readonly property bool wallpaperPalette: typeof root._data.wallpaperPalette === "boolean" ? root._data.wallpaperPalette : true
 
     FileView {
@@ -166,6 +176,8 @@ Singleton {
     function setAccentIntensity(x: real): void { _set("accentIntensity", Math.round(Math.max(0, Math.min(1, x)) * 100) / 100); }
     function setWallpaperPalette(on: bool): void { _set("wallpaperPalette", on); }
     function setLongCommandSeconds(s: int): void { _set("longCommandSeconds", Math.max(5, Math.round(s))); }
+    function setRecordingMode(mode: string): void { if (["auto", "off"].indexOf(mode) >= 0) _set("recordingMode", mode); }
+    function setFlag(key: string, on: bool): void { _set(key, on); }
 
     IpcHandler {
         target: "settings"
@@ -182,7 +194,7 @@ Singleton {
         function current(): string {
             return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
-                    `wallpaperPalette=${root.wallpaperPalette}`, `longCommandSeconds=${root.longCommandSeconds}`].join("\n");
+                    `wallpaperPalette=${root.wallpaperPalette}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`].join("\n");
         }
     }
 }

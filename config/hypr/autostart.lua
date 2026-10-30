@@ -17,8 +17,9 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
 
     -- Clipboard history (text & images)
-    hl.exec_cmd("wl-paste --type text --watch cliphist store")
-    hl.exec_cmd("wl-paste --type image --watch cliphist store")
+    -- dragon-clip-store = cliphist store, except while the recording mode pauses the history
+    hl.exec_cmd("wl-paste --type text --watch $HOME/.local/bin/dragon-clip-store")
+    hl.exec_cmd("wl-paste --type image --watch $HOME/.local/bin/dragon-clip-store")
 
     -- Load enabled hyprpm plugins, then reload the config so plugin options and
     -- hyprbars buttons (guarded in plugins.lua) are applied now that the plugins exist.

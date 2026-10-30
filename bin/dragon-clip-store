@@ -1,0 +1,12 @@
+#!/usr/bin/env bash
+# dragon-island — the clipboard history writer used by the wl-paste watchers (config/hypr/autostart.lua):
+#   wl-paste --type text  --watch dragon-clip-store
+#   wl-paste --type image --watch dragon-clip-store
+# While the pause flag exists (recording mode, services/Clipboard.qml setPaused) the copied data is read and thrown
+# away instead of being stored by cliphist.
+flag="${XDG_RUNTIME_DIR:-/tmp}/dragon-island/clipboard-paused"
+if [[ -e $flag ]]; then
+    cat >/dev/null
+    exit 0
+fi
+exec cliphist store

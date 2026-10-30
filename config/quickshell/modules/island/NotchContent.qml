@@ -462,9 +462,58 @@ Item {
         id: dropdownView
         UiText { text: "Terminal"; weight: Theme.weightMedium }
     }
+    // ---- recording mode (docs/design/25-grabacion.png): red dot pulsing · REC · time · eq if audio · N retenidas ----
     Component {
         id: recordingView
-        UiText { text: "REC"; mono: true; weight: Theme.weightSemiBold; color: Theme.error }
+        Row {
+            spacing: Theme.spacingSm
+            Rectangle {
+                id: recDot
+                anchors.verticalCenter: parent.verticalCenter
+                width: Theme.statusDot
+                height: width
+                radius: width / 2
+                color: Theme.error
+                SequentialAnimation on opacity {
+                    running: Theme.animationsEnabled
+                    loops: Animation.Infinite
+                    onStopped: recDot.opacity = 1
+                    NumberAnimation { to: 0.3; duration: Theme.ms(700) }
+                    NumberAnimation { to: 1; duration: Theme.ms(700) }
+                }
+            }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: "REC"; weight: Theme.weightBold }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                readonly property int t: RecordingMode.shellRecording ? Toggles.recordingSeconds : RecordingMode.seconds
+                text: `${String(Math.floor(t / 60)).padStart(2, "0")}:${String(t % 60).padStart(2, "0")}`
+                mono: true
+                color: Theme.textSoft
+            }
+            Equalizer {
+                visible: Media.isPlaying
+                anchors.verticalCenter: parent.verticalCenter
+                playing: Media.isPlaying
+                barHeight: Theme.iconSm - 2
+                color: Theme.ok
+            }
+            UiText {
+                visible: !RecordingMode.shellRecording && RecordingMode.apps.length > 0
+                anchors.verticalCenter: parent.verticalCenter
+                text: RecordingMode.apps[0] ?? ""
+                color: Theme.textDim
+                width: Math.min(implicitWidth, 120)
+            }
+            Rectangle {
+                visible: Notifs.held > 0
+                anchors.verticalCenter: parent.verticalCenter
+                height: 20
+                width: heldText.implicitWidth + 14
+                radius: 6
+                color: Theme.alpha(Theme.warn, 0.14)
+                UiText { id: heldText; anchors.centerIn: parent; text: `${Notifs.held} retenidas`; mono: true; size: Theme.sizeCaption; color: Theme.warn }
+            }
+        }
     }
     Component {
         id: idleWarnView

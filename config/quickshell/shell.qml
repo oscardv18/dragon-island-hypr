@@ -22,6 +22,7 @@ import "modules/store"
 import "modules/herdrhelp"
 import "modules/settings"
 import "modules/capture"
+import "modules/recording"
 import "modules/dock"
 import "modules/lock"
 import "debug"
@@ -113,6 +114,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { CaptureWindow {} }
+    }
+
+    // recording mode: a thin red frame around every screen (RecordingMode.showFrame)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { RecordingFrame {} }
     }
 
     // Ajustes (SUPER + F2): no scrim, the bar stays visible while its style changes
