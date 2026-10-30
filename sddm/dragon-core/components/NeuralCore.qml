@@ -17,6 +17,9 @@
 //   pointCount: int            sphere nodes (lower = cheaper), default 240
 //   running: bool              pause rendering when false
 //   compact: bool [readonly]   side < 64 px (bar button): 48 nodes, no halos / rings / dial, 12 fps at rest / 24 fps when active
+//   bare: bool                 no orbital rings, dial or HUD around the sphere (the dock's 64 px core), default false
+//   fps: int                   0 = every vsync (FrameAnimation, default); > 0 = a Timer at that rate (doubled while the
+//                              mood is not calm), so a small core does not keep its whole window repainting at 60 Hz
 //   pulse(): void              call on every key press
 //   radius: real [readonly]    current sphere radius in px (for placing text inside)
 
@@ -28,6 +31,8 @@ Item {
     property real energy: 0.15
     property string mood: "calm"
     property bool hud: false
+    property bool bare: false
+    property int fps: 0
     property bool reducedMotion: false
     property int pointCount: 240
     property bool running: visible
@@ -154,16 +159,17 @@ Item {
         canvas.requestPaint()
     }
 
+    readonly property bool _timed: compact || fps > 0
     FrameAnimation {
-        running: core.running && !core.reducedMotion && !core.compact
+        running: core.running && !core.reducedMotion && !core._timed
         onTriggered: core._step(frameTime)
     }
     // compact (bar button): a timer, NOT a FrameAnimation, which keeps the whole window repainting every vsync.
     // 12 fps at rest (a slow spin), 24 fps while it reacts (listening / thinking / speaking): the Canvas is painted
     // in JS and costs CPU on every frame (measured: ~6 % of a core at 20 fps on an AMD Lucienne laptop)
     Timer {
-        readonly property int fps: core.mood === "calm" ? 12 : 24
-        running: core.running && !core.reducedMotion && core.compact
+        readonly property int fps: (core.fps > 0 ? core.fps : 12) * (core.mood === "calm" ? 1 : 2)
+        running: core.running && !core.reducedMotion && core._timed
         interval: Math.round(1000 / fps); repeat: true
         onTriggered: core._step(interval / 1000)
     }
@@ -333,7 +339,7 @@ Item {
                 ctx.beginPath(); ctx.arc(x, y, small ? 0.9 : 1.8, 0, Math.PI * 2); ctx.fill()
             }
 
-            if (small) return
+            if (small || core.bare) return
 
             if (core.hud) {
                 // ── HUD: everything turns slowly ──

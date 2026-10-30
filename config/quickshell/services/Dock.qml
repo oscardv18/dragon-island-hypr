@@ -1,13 +1,16 @@
 // =============================================================================
 // dragon-island — Dock.qml
-// Service: the arc dock — pinned apps, open apps, minimised windows, smart hiding, downloads stack
+// Service: the dock constellation — pinned apps, open apps, minimised windows, smart hiding, agents, downloads
 // =============================================================================
 /**
  * Properties:
  *   - position: string ("bottom" | "left" | "right"), pinnedIds: list<string> [readonly]
  *   - alwaysVisible: bool (SUPER+X)
  *   - pinnedItems / openItems: list<var> [readonly] (left and right halves of the arc)
- *       item: { key, id, name, icon, windows: list<HyprlandToplevel>, count, minimizedOnly, pinned, badge, entry }
+ *       item: { key, id, name, icon, windows: list<HyprlandToplevel>, count, minimizedOnly, pinned, badge, entry,
+ *               focused (one of its windows is the active one), moons: list<{ active, minimized }> (one per window),
+ *               agent: "working" | "blocked" | "" (a herdr agent in one of its windows: the terminal running herdr) }
+ *   - tints: var [readonly] (icon → its dominant colour, filled by the dock's ColorQuantizer through setTint)
  *   - workspaceFree: bool [readonly] (the current workspace has no tiled / fullscreen window: the dock may show)
  *   - wanted: bool [readonly] (visible: workspaceFree || alwaysVisible || hovered)
  *   - hovered: bool (hot zone or dock under the pointer; leaving waits Theme.dockHideDelay)
@@ -21,6 +24,7 @@
  *   - minimizeActive(): void     (window → special workspace "minimized"; shown dimmed in the dock, click restores)
  *   - togglePinned(): void       hover(on: bool): void     refreshDownloads(): void   open(path): void
  *   - setPosition(p: string): void
+ *   - setTint(icon: string, c: color): void (cache the quantized colour of an icon)
  *
  * IPC (`qs ipc call dock <fn>`): toggle() (always visible on/off, SUPER+X), minimize() (SUPER+M), position(p: string)
  * State: ~/.local/state/dragon-island/dock.json { pinned: [desktop entry ids], position, alwaysVisible }
@@ -69,6 +73,26 @@ Singleton {
         }).length;
     }
 
+    // herdr runs inside a terminal window: the one with the herdr class or a title that says herdr
+    function _isHerdr(t): bool {
+        const cls = t.wayland?.appId || t.lastIpcObject?.class || "";
+        return cls === Herdr.windowClass || /herdr/i.test(t.title ?? "");
+    }
+    function _agentFor(wins): string {
+        if (!Herdr.running || !wins.some(w => root._isHerdr(w.toplevel))) return "";
+        if ((Herdr.counts?.working ?? 0) > 0) return "working";
+        if ((Herdr.counts?.blocked ?? 0) > 0) return "blocked";
+        return "";
+    }
+
+    property var tints: ({})
+    function setTint(icon: string, c: color): void {
+        if (!icon || root.tints[icon] !== undefined) return;
+        const t = Object.assign({}, root.tints);
+        t[icon] = c;
+        root.tints = t;
+    }
+
     function _item(key: string, entry, pinned: bool): var {
         const wins = root._windows.filter(w => w.key === key);
         const name = entry?.name || (wins[0]?.cls ?? key);
@@ -82,7 +106,10 @@ Singleton {
             minimizedOnly: wins.length > 0 && wins.every(w => w.minimized),
             pinned: pinned,
             badge: root._unreadFor(name, entry?.id ?? key),
-            entry: entry
+            entry: entry,
+            focused: wins.some(w => w.toplevel.activated),
+            moons: wins.slice(0, 3).map(w => ({ active: w.toplevel.activated, minimized: w.minimized })),
+            agent: root._agentFor(wins)
         };
     }
 

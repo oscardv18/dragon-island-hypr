@@ -214,18 +214,44 @@ Singleton {
     readonly property real calendarPopoverWidth:  720
     readonly property real notificationsListHeight: 250
 
-    // Dock: an opaque black tab with the notch's silhouette (NotchShape) that sticks out of the screen edge; as thick as the bar islands
-    readonly property real dockPill:       34     // capsule that holds an icon
-    readonly property real dockIconInner:  24
-    readonly property real dockPitch:      42     // distance between capsules
-    readonly property real dockPad:        14     // along the edge, before the first / after the last capsule
-    readonly property real dockThickness:  40     // how far it sticks out
-    readonly property int  dockCapacity:   8      // capsules shown at once; more scroll with the mouse wheel
-    readonly property int  dockHideDelay:  600    // ms after the pointer leaves
-    readonly property real dockEdge:       3      // hot zone thickness, px
-    readonly property real dockMagnify:    0.45   // extra scale of the capsule under the pointer (macOS-style magnification)
-    readonly property real dockMagSigma:   52     // px along the dock over which the magnification fades out
-    readonly property real dockMagRoom:    26     // room the window keeps beyond the tab for the enlarged capsules
+    // Dock constellation (docs/design/27-dock-constelacion.png): apps are glass nodes on a thread of light, the core in
+    // the middle, windows are moons, herdr agents are synapses travelling along the thread
+    readonly property real dockPitch:       74     // between node centres
+    readonly property int  dockCapacity:    8      // nodes shown at once (half per side of the core); more scroll with the wheel
+    readonly property int  dockHideDelay:   600    // ms after the pointer leaves
+    readonly property real dockEdge:        3      // hot zone thickness, px
+    readonly property real dockWindow:      150    // constant thickness of the dock window (room for lift and label)
+    readonly property real dockCenter:      46     // node centres from the screen edge
+    readonly property real dockArc:         10     // the thread's ends sit this much closer to the edge than its centre
+    readonly property real dockOverhang:    60     // thread beyond the first / last node, fading out
+    readonly property real dockThread:      1.6
+    readonly property real dockThreadGlow:  7
+    readonly property real dockNode:        42
+    readonly property real dockNodeFocus:   48     // the focused app = planet
+    readonly property real dockNodeGrow:    6      // hovered node
+    readonly property real dockIconRatio:   0.56   // icon size inside the glass node (rounded-square themes: see HANDOFF 8b)
+    readonly property string dockNodeStyle: "glass" // "glass": the icon inside a round glass node · "icon": the icon itself is the node
+    readonly property real dockCore:        64
+    readonly property real dockLift:        16     // hovered node rises; neighbours follow a gaussian
+    readonly property real dockSigma:       1.1    // in nodes
+    readonly property real dockMoon:        6
+    readonly property real dockMoonOrbit:   18     // orbit diameter = node + this
+    readonly property int  dockMoonPeriod:  18000  // ms per turn (6 s with an agent working)
+    readonly property int  dockMoonPeriodBusy: 6000
+    readonly property real dockSynapse:     7
+    readonly property int  dockSynapseLife: 1800   // each particle; two of them, 0.9 s apart
+    readonly property real dockHalo:        52     // amber halo of an agent waiting for an answer
+    readonly property real dockHiddenLine:  6      // hidden: only the thread, this far from the edge
+    readonly property real dockHiddenDot:   2.5
+    readonly property int  dockBreath:      2600   // hidden thread: opacity 0.45 ↔ 1
+    readonly property int  dockFps:         20     // one shared tick moves moons, synapses and the breathing
+    readonly property color threadPink:     "#e8c8f5"
+    readonly property color badge:          "#8b6bb8"   // unread count on a dock node
+    readonly property color dockNodeBase:   Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.75)
+    readonly property color dockNodeEdge:   Qt.rgba(1, 1, 1, 0.14)
+    readonly property color dockNodeShine:  Qt.rgba(1, 1, 1, 0.18)
+    readonly property color dockOrbit:      Qt.rgba(1, 1, 1, 0.08)
+    readonly property color dockOrbitHi:    Qt.rgba(1, 1, 1, 0.22)
     // herdr agent states (herdr has no "error" state): working · blocked (needs an answer) · done / idle (ready) · unknown
     function agentColor(state: string): color {
         switch (state) {
