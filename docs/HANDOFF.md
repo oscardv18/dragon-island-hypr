@@ -709,3 +709,52 @@ Rama `feat/nueva-identidad`, prompt `docs/design/PROMPT-identidad-fase-1-1.md`. 
 - `qt.svg` avisa de una propiedad que no entiende en `MacTahoe-purple-dark/apps/scalable/obsidian.svg`: es del tema, inofensivo.
 
 **Revertir**: `git revert` de los commits de esta sección; `rm ~/.local/share/icons/Dragon-Core` y volver el pragma a `Sweet-Purple`.
+
+## 8c. Fase 2 · isla y sistema (2026-10-30)
+
+Rama `feat/nueva-identidad` (sobre el PR #1 ya fusionado), prompt `docs/design/PROMPT-identidad-fase-2.md`, un commit por punto más tres arreglos. Capturas en `docs/screenshots/identidad/` (`isla-estados-B/C.png`, `modo-*.png`, `terminal-desplegable-*.png`, `bloqueo-*.png`, …).
+
+**Hecho**
+- **1 Prioridad de la isla** (`services/IslandState.qml`, tabla en su cabecera): capture · osd · dropdown · recording · agentBlocked · notification / notice · idleWarn · workspace / tiling · agentWorking · focus · commandDone · contenido elegido. Los persistentes son condiciones; los transitorios, banderas con temporizador, así que un persistente vuelve solo. Cada modo tiene su ancho; en D la micro‑isla solo sustituye al contenido tranquilo y la isla crece en alto con contenido de dos líneas. IPC `island preview <modo>` (4 s, con datos de ejemplo) para revisar estados tapados por otros.
+- **2 OSD**: volumen / micrófono con el dispositivo, brillo con sol `sunWarm` (`warn` con luz nocturna), **Bloq Mayús** (LED de `/sys/class/leds/*::capslock`, `FileView` cada 250 ms solo si hay LED; funcionó, no hizo falta `hyprctl devices`), **cambio de teclado** US → LA. Rueda sobre la isla en volumen. IPC `osd preview <tipo>`.
+- **3 Agentes y comandos**: estados agentWorking / agentBlocked (borde `alpha(warn,.5)`) / commandDone; `services/Commands.qml` + `config/zsh/commands.zsh`; pestaña IA rehecha (Agentes · Comandos · Editores); `SUPER + ALT + A` (`shell nook ia`).
+- **4 Capturas** (`services/Capture.qml`, `modules/capture/`): barra en la isla, pantalla congelada (`ScreencopyView`, `live: false`), selección con tiradores / tercios / medida, modo ventana, acciones (Copiar = copiar + guardar, Guardar, Anotar si hay satty/swappy, Texto si tesseract tiene spa/eng), ● graba esa zona. Notificaciones silenciosas de «Capturas» y centro agrupado («Capturas ×N», cualquier app con 3 o más). `Print` = pantalla completa directa; `SUPER + SHIFT + S` / `SHIFT + Print` = barra.
+- **5 Modo grabación** (`services/RecordingMode.qml`): retener, ocultar títulos, pausar el portapapeles (`bin/dragon-clip-store` en los vigilantes de `wl-paste`), marco rojo (`dragon-recframe`). Estado REC con tiempo, ecualizador y «N retenidas».
+- **6 Modo enfoque** (`services/Focus.qml`): No molestar, barra D temporal (Theme.barStyle sigue a Focus, el ajuste no cambia), apps silenciadas (`Settings.focusMuteApps`), anillo de cuenta atrás; mosaico «Enfoque» (clic 45 min, derecho 25 / 45 / 90) y `SUPER + ALT + F`.
+- **7 Terminal desplegable** (`bin/dragon-dropdown`, `services/Dropdown.qml`, reglas en `rules.lua`, `config/ghostty/dropdown`): `special:dropdown`, 69 % × 55 %, la isla hace de tapa y el servicio coloca la ventana justo debajo según el estilo. `SUPER + grave`.
+- **8 Inactividad** (`bin/dragon-idle`, `services/Idle.qml`, `modules/idle/DimWindow.qml`): aviso + atenuado 4 min, bloqueo 5, pantallas 5,5, suspender 20 (antes 30), tiempos en Ajustes › Energía; `IdleInhibitor` con agentes trabajando, modo grabación o vídeo visible.
+- **9 Bloqueo** (`LockView.qml` puro): núcleo con HUD, reloj 132 px, satélites de notificaciones, avatar, campo 340 × 46, mini reproductor; `CoreIcon` gana wifi / volume / mute / lock / music.
+- **10** Ajustes › Privacidad y Energía, umbral de comandos largos; atajos y `panelGroups`; `migrations/022-isla-sistema.sh`.
+
+**Verificado (sesión real, 1366 × 768)**
+- Arranque limpio de Quickshell sin avisos propios (los de `obsidian.svg` son del tema MacTahoe, `printer.svg` y SNI ya existían); `hyprctl configerrors` vacío; `luac -p`, `shellcheck -x` (bin, migraciones, scripts), `zsh -n`, `sync-shared --check`, `tests/run-all.sh` en verde; `sddm/install-theme.sh --test` carga.
+- Estados de la isla capturados en B y C: volumen, brillo, Bloq Mayús, teclado, agente trabajando, agente esperando, comando terminado y fallido, aviso, REC, enfoque, aviso de inactividad, barra de capturas y terminal desplegable. Prioridad: REC → OSD → REC.
+- Comandos largos: con umbral 5 s, un `sleep 6` en una zsh fuera de la terminal enfocada aparece «en curso» y luego terminado (código 0, 6 s) en `commands list`. Latencia del prompt (20 prompts en zsh interactiva, 7 tandas): ~570 ms antes, ~660 ms después ≈ 4 ms por prompt; ningún proceso `sleep` huérfano (el temporizador usa el builtin `zselect`).
+- Capturas: copiar (`image/png` en el portapapeles + archivo), guardar, aviso en la isla, ninguna capa de popup, grupo «Capturas ×2» con «Abrir carpeta». Región / ventana / pantalla y retraso: la capa y los modos sí; dibujar / arrastrar con el ratón no (ver abajo). Las capturas y el vídeo de prueba se borraron.
+- Grabación: zona desde la barra, `notify-send` retenida, el historial de cliphist no cambió (750 → 750), marco y «título oculto» visibles, todo se libera al parar.
+- Enfoque de 1 min: barra en D, una notificación de Telegram retenida, «Enfoque terminado · 1 notificación retenida» y barra de vuelta en B.
+- Terminal desplegable: aparece, la isla queda pegada (B y = 36, C y = 28), se oculta y el proceso sigue vivo.
+- Inactividad con tiempos de prueba (aviso a 10 s, **bloqueo llevado a 600 s para no bloquear la sesión**): con un agente trabajando no avanza; sin esa regla, aviso y atenuado a los 10 s. Tiempos reales restaurados (240 / 300 / 330 / 1200).
+- Bloqueo: render offscreen de `LockView` (`tests/qml/lock_mock.qml`): reposo y contraseña incorrecta. **No se bloqueó la sesión real.**
+- Rendimiento (CPU de Quickshell en 10–30 s; GPU con ruido por un vídeo de fondo): antes ~9 % (vídeo en pausa), después ~14,6 % tras bajar los núcleos de la isla a 6 / 12 fps y aquietar el dock oculto (antes de ese ajuste, ~20 %). Con `motion 0`, 0,5–5 %: lo que queda son animaciones, sobre todo el núcleo «Pensando…», encendido mientras haya un agente trabajando. GPU 12–21 %, sin subida medible.
+
+**No verificado**
+- Clics y arrastres físicos (no hay ratón virtual): dibujar y redimensionar la región, Espacio + arrastrar, elegir ventana con clic, botones de la barra de capturas, Aprobar / Rechazar (no hubo agentes `blocked` y no se envían teclas a un agente real), los menús del mosaico Enfoque. Las mismas funciones se probaron por IPC.
+- El bloqueo real, su GPU con horas encendido y `qs ipc call lock lock` (habría bloqueado tu sesión); el encogido del núcleo al suspender se omitió (`before_sleep_cmd` solo bloquea, no deja tiempo).
+- OCR (tesseract solo tiene `afr` + `osd` aquí; «Texto» se oculta hasta instalar `tesseract-data-spa`), Anotar (no hay satty / swappy), OBS / llamadas que comparten pantalla, las pestañas nativas de Ghostty en la desplegable, un segundo monitor.
+- **Hallazgo pendiente:** al empezar la sesión de trabajo, con las pantallas apagadas por inactividad, la sesión NO estaba bloqueada (`LockedHint=no`, `isLocked: false`) aunque el paso de bloqueo (5 min) va antes del de apagar (5,5). No se reprodujo; revisar con la secuencia nueva (`hypridle -c ~/.local/state/dragon-island/hypridle.conf`).
+
+**Decisiones**
+- **OSD por encima de la grabación** (y del desplegable): la tabla del prompt los ponía al revés, pero su propia verificación pide «un OSD durante una grabación vuelve a REC».
+- **Aprobar / Rechazar** solo para agentes `claude` (`herdr agent send-keys <panel> enter | esc`); para los demás, «Responder» enfoca el panel. herdr no expone el texto de la petición más allá de `agent read --source detection`.
+- **Aviso de comando largo** solo si la ventana activa no es una terminal cuyo título contiene la carpeta del comando: Ghostty usa un proceso para todas sus ventanas y el PID no las distingue.
+- **Atajos en pantalla** del modo grabación: omitidos (sin permisos de `input` / root no hay forma limpia en Wayland).
+- **hypridle** lee su configuración generada por `bin/dragon-idle` (`-c`), porque no admite variables; el `hypridle.conf` del repo queda de respaldo.
+- **Capa de atenuado** en `Top`: por debajo de la isla, para que el aviso se lea.
+- **`LockView`** sigue sin imports de Quickshell (paleta local) y `AgentRow` vuelve a ser puro: así `tests/qml` los renderiza.
+- **Componentes en línea nuevas** (`component X:`) fallan con «X is not a type» tras una recarga en caliente en esta versión: van en archivos propios (`PillButton`, `CaptureAction`, `Stepper`, `LockTopIcon`, `DockNode`).
+
+**Pendiente del usuario**
+- Dos Ghostty vacíos en `/tmp` de una prueba de bordes de la fase 1.1 (PIDs 2132807 y 2133817, escritorio 2): el cierre por dirección de Hyprland no los cerró y no tuve permiso para matarlos. Ciérralos cuando quieras.
+
+**Revertir**: `git revert` de los commits de esta sección; `rm ~/.local/bin/dragon-{dropdown,idle,clip-store}`, autostart vuelve a `hypridle` y a `wl-paste --watch cliphist store`.
