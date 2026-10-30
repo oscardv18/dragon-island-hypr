@@ -18,6 +18,8 @@
  *   - source: string [readonly] (the image it was made from)
  *   - active: bool [readonly] (Settings.wallpaperPalette && ready && !fallback: Theme follows this palette)
  *   - busy: bool [readonly] (a dragon-palette generate / reset is running)
+ *   - previews: var [readonly] (thumbnail URL → 5 colours: the pickers' hover strip, from ColorQuantizer. Display
+ *       only, never the real palette; kept for the session)
  *
  * Functions:
  *   - setEnabled(on: bool): void (Ajustes › «Paleta desde el fondo»: saves Settings.wallpaperPalette; on → regenerate(),
@@ -25,6 +27,7 @@
  *   - setApplyExternal(on: bool): void (Ajustes › «Aplicar a las apps»: saves Settings.paletteApplyExternal; on → apply
  *       now. Off only stops applying: the contract has no "reset the apps but keep palette.json", so the apps keep the
  *       last applied palette until the setting or the wallpaper changes)
+ *   - cachePreview(url: string, colors: list<color>): void (components/PaletteStrip stores what it quantized)
  *   - regenerate(): void (generate from ~/.cache/dragon-island/current-wallpaper, then apply when paletteApplyExternal;
  *       nothing while wallpaperPalette is off)
  *
@@ -60,6 +63,13 @@ Singleton {
     readonly property string source: _p?.source ?? ""
     readonly property bool active: Settings.wallpaperPalette && ready && !fallback
     readonly property bool busy: runner.running
+
+    property var previews: ({})
+    function cachePreview(url: string, colors): void {
+        const next = Object.assign({}, root.previews);
+        next[url] = colors;
+        root.previews = next;
+    }
 
     readonly property var _keys: ["accent", "accentSoft", "accentDeep", "glow", "onAccent", "tint"]
     function _hex(v): bool { return typeof v === "string" && /^#[0-9A-Fa-f]{6}$/.test(v); }

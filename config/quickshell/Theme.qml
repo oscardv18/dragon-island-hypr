@@ -338,7 +338,7 @@ Singleton {
     readonly property real orbitalEdge:      18     // the ring keeps this far from the screen edges
     readonly property int  orbitalMax:        12     // thumbnails on the ring at once; more turn with the wheel
     readonly property real orbitalDash:       3      // dash / gap of the disc border, in stroke widths
-    readonly property real orbitalStrip:      8      // the palette preview strip under a hovered thumbnail
+    readonly property real orbitalStrip:      10     // the palette preview strip under a hovered thumbnail
     readonly property color orbitalDisc:      alpha(islandInk, 0.72)
     readonly property color orbitalDiscEdge:  Qt.rgba(1, 1, 1, 0.38)
     readonly property color orbitalPill:      alpha(islandInk, 0.82)

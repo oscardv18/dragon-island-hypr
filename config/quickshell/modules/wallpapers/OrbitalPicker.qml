@@ -8,6 +8,7 @@
 //     comes in cross-fade at the same place)
 //   - choosing one: the thumbnail flies to the screen centre, then grows until it covers the screen; while it grows
 //     Wallpaper.apply() starts awww's grow reveal from the screen centre; then it fades out and the picker closes
+//   - the hovered thumbnail shows a strip of its colours (components/PaletteStrip, a ColorQuantizer preview)
 //   - help pill at the bottom only at rest; the grid button opens the classic picker (WallpaperPanel)
 //   - keyboard: ← → pick a thumbnail (the ring turns to keep it in view), Enter applies it
 //   - Esc, a click outside the ring or applying a wallpaper close it
@@ -202,6 +203,17 @@ Item {
                     }
                 }
 
+                // colours of this wallpaper under the hovered thumbnail (a preview from the thumbnail, §5)
+                PaletteStrip {
+                    anchors.top: parent.bottom
+                    anchors.topMargin: Theme.spacingXs
+                    anchors.horizontalCenter: parent.horizontalCenter
+                    width: parent.width * 0.7
+                    height: Theme.orbitalStrip / (1 + (Theme.orbitalHoverScale - 1) * slot.lift)
+                    source: Wallpaper.thumbUrl(slot.item)
+                    active: slot.hovered
+                }
+
                 MouseArea {
                     id: hover
                     anchors.fill: parent
@@ -270,6 +282,8 @@ Item {
                     width: parent.width
                     horizontalAlignment: Text.AlignHCenter
                     mono: true
+                    wrapMode: Text.Wrap
+                    maximumLineCount: 2
                     size: Theme.sizeCaption - 2
                     font.letterSpacing: Theme.sizeCaption * Theme.captionTracking
                     text: !root.hoveredItem ? "ELIGE UNO" : (root.hoveredItem.path === Wallpaper.current ? "ACTUAL" : "CLIC PARA APLICAR")
