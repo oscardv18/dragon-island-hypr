@@ -59,8 +59,10 @@ PanelWindow {
     readonly property var opened: Dock.openItems
     // Theme.dockCapacity nodes in all: half per side, but a side that needs fewer lends the rest to the other
     readonly property int half: Math.floor(Theme.dockCapacity / 2)
-    readonly property int leftCap: Math.min(pinned.length, Theme.dockCapacity - Math.min(opened.length, half))
-    readonly property int rightCap: Math.min(opened.length, Theme.dockCapacity - leftCap)
+    // and never more than fit between the core and the end of the edge (left / right: under the top bar)
+    readonly property int fitSide: Math.max(1, Math.floor((len / 2 - Theme.dockCore / 2 - Theme.dockNode / 2 - (horiz ? 16 : Theme.barZone + 16)) / Theme.dockPitch) + 1)
+    readonly property int leftCap: Math.min(pinned.length, fitSide, Theme.dockCapacity - Math.min(opened.length, half, fitSide))
+    readonly property int rightCap: Math.min(opened.length, fitSide, Theme.dockCapacity - leftCap)
     function capOf(side: int): int { return side < 0 ? leftCap : rightCap; }
     property int leftOff: 0
     property int rightOff: 0
@@ -72,8 +74,11 @@ PanelWindow {
     readonly property int leftShown: leftCap
     readonly property int rightShown: rightCap
     // the thread: from Theme.dockOverhang beyond the outermost node (or the core) on each side
-    readonly property real x0: c - (leftShown > 0 ? leftShown * pitch : Theme.dockCore / 2) - Theme.dockOverhang
-    readonly property real x1: c + (rightShown > 0 ? rightShown * pitch : Theme.dockCore / 2) + Theme.dockOverhang
+    // (left / right: never under the top bar; along "left" = up for left, down for right)
+    readonly property real edgeA: horiz ? 0 : (pos === "left" ? Theme.barZone : 0)
+    readonly property real edgeB: horiz ? len : (pos === "right" ? len - Theme.barZone : len)
+    readonly property real x0: Math.max(edgeA, c - (leftShown > 0 ? leftShown * pitch : Theme.dockCore / 2) - Theme.dockOverhang)
+    readonly property real x1: Math.min(edgeB, c + (rightShown > 0 ? rightShown * pitch : Theme.dockCore / 2) + Theme.dockOverhang)
     readonly property real spanHalf: Math.max(c - x0, x1 - c)
 
     // shown 0 → 1 (Emergente in, Salida out)
