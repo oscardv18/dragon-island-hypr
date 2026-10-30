@@ -26,7 +26,8 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | ``SUPER + ` `` (grave) | Terminal desplegable bajo la isla (se oculta sin cerrarse) |
 | `SUPER + ALT + A` | La isla con los agentes y los comandos largos (pestaña IA) |
 | `SUPER + ALT + F` | Modo enfoque 45 min (No molestar, barra mínima, Telegram silenciado) |
-| `SUPER + SHIFT + V` | Historial del portapapeles (panel de Quickshell, cliphist) |
+| `SUPER + V` (o `SUPER + SHIFT + V`) | Portapapeles: el anillo del launcher Gravedad (Enter pega en la ventana que tenía el foco). Con «Launcher Gravedad» apagado, el panel de antes |
+| `SUPER + Tab` | Vista general de escritorios: cinco tarjetas, arrastra una ventana a otra para moverla |
 | `SUPER + F1` | Ayuda: panel con todos los atajos de Hyprland |
 | `SUPER + F2` | Ajustes (estilo de la barra, contenido de la isla, métricas, intensidad del acento) |
 | `SUPER + ALT + B` | Cambiar el estilo de la barra (A notch · B isla · C unida · D mínima) |
@@ -38,7 +39,8 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + Q` | Cerrar ventana |
 | `SUPER + F` | Maximizar / restaurar (conserva los huecos) |
 | `SUPER + SHIFT + F` | Pantalla completa real |
-| `SUPER + V` | Alternar flotante |
+| `SUPER + SHIFT + Space` | Alternar flotante (antes `SUPER + V`) |
+| `ALT + Tab` / `ALT + SHIFT + Tab` | Alt+Tab orbital: siguiente / anterior; al soltar Alt se enfoca la elegida. Un toque rápido cambia a la anterior sin mostrar nada. Se apaga en Ajustes › Launcher (entonces Alt+Tab queda para las apps) |
 | `SUPER + T` | Alternar el modo de mosaico del escritorio: **Dwindle** (árbol, por defecto) ↔ **Scrolling** (columnas en una cinta horizontal, layout nativo de Hyprland 0.56). Cada escritorio recuerda el suyo (`~/.local/state/dragon-island/tiling.json`); también la cápsula `DWINDLE` / `SCROLL` de la barra y `qs ipc call tiling toggle\|set dwindle\|set scrolling\|get` |
 | `SUPER + ←↑→↓` | Mover el foco |
 | `SUPER + ALT + H/J/K/L` | Mover el foco (estilo Vim) |
@@ -218,13 +220,17 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 
 | Panel | Teclas |
 |---|---|
-| Lanzador orbital | Escribir filtra (búsqueda difusa; el mejor resultado pasa al frente y el anillo se detiene) · `← →`, `↑ ↓`, `Tab` o la rueda giran el anillo · `Enter` lanza · `Ctrl+F` fija / quita de favoritos la app del frente · `Ctrl+I` sin resultados (o `+nombre`) abre la Tienda con la búsqueda · `=2*(3+4)` calcula (Enter copia) · `>comando` se ejecuta en Ghostty · `Esc` o clic fuera cierra |
+| Launcher Gravedad (`SUPER + Space`) | En reposo: `← →` gira la selección por su anillo · `↑ ↓` cambia de anillo · `Enter` abre · `Tab` va a su ventana · rueda: desplaza «Todas» · clic abre, clic central o `Esc` cierra. Buscando: `↑ ↓` elige · `Enter` abre · `Tab` recorre las lunas de terminal. Prefijos: `=` calculadora · `>` comando · `?` web · `:` emoji · `@` escritorio · `/` portapapeles |
+| Portapapeles orbital (`/` o `SUPER + V`) | Escribir filtra · `← →` recorre · `Enter` pega · `Ctrl+P` fija · `Supr` borra · `Espacio` muestra un secreto · `Retroceso` con el campo vacío vuelve a las apps |
+| Alt+Tab orbital | `Tab` / `Shift+Tab` (con Alt) · `← →` · `Q` cierra la ventana elegida · `1–5` solo ese escritorio · soltar Alt o `Enter` enfoca · `Esc` cancela |
+| Escritorios (`SUPER + Tab`) | `← →` o `1–5` eligen · `Enter` va · arrastrar una ventana a otra tarjeta la mueve · `Esc` cierra |
+| Lanzador orbital anterior (Gravedad apagado) | Escribir filtra (búsqueda difusa; el mejor resultado pasa al frente y el anillo se detiene) · `← →`, `↑ ↓`, `Tab` o la rueda giran el anillo · `Enter` lanza · `Ctrl+F` fija / quita de favoritos la app del frente · `Ctrl+I` sin resultados (o `+nombre`) abre la Tienda con la búsqueda · `=2*(3+4)` calcula (Enter copia) · `>comando` se ejecuta en Ghostty · `Esc` o clic fuera cierra |
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
 | Referencia de herdr (`SUPER + SHIFT + A`) | Escribir filtra · `Tab` cambia de pestaña (Atajos · Comandos · Conceptos y estados) · `↑ ↓` desplazar · `Esc` cierra |
 | Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
 | Ajustes (`SUPER + F2`) | `1–4` estilo de barra A–D (en «Barra superior») · `Tab` / `Shift+Tab` cambian de página · `Esc` o clic fuera cierra |
 | Capturas (`SUPER + SHIFT + S`) | `1–3` Región / Ventana / Pantalla · arrastrar dibuja (los tiradores ajustan) · `Espacio` + arrastrar mueve · `Enter` copia · `Esc` cierra |
-| Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
+| Portapapeles anterior (Gravedad apagado) | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
 | Cualquier panel | `Esc` cierra |
 
@@ -234,6 +240,9 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery, notifications, calendar,
 qs ipc call shell open launcher      # launcher, power, clipboard, keybinds, wallpapers, store, settings
 qs ipc call shell close
+qs ipc call launcher clipboard       # el anillo del portapapeles (SUPER + V)
+qs ipc call switcher next            # Alt+Tab orbital: next, prev, confirm, cancel
+qs ipc call overview toggle          # vista general de escritorios (SUPER + Tab)
 qs ipc call shell current            # imprime el panel abierto o "none"
 qs ipc call debug toggle             # panel de diagnóstico de servicios (desarrollo)
 qs ipc call settings motion 0        # sin animaciones (0), normal (1), lentas (2); -1 = seguir a KDE
@@ -291,6 +300,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 |---|---|
 | `SUPER + SHIFT + 1` · `SUPER + SHIFT + 2` · `SUPER + SHIFT + 3` · `SUPER + SHIFT + 4` · `SUPER + SHIFT + 5` | Enviar la ventana al escritorio |
 | `SUPER + 1` · `SUPER + 2` · `SUPER + 3` · `SUPER + 4` · `SUPER + 5` | Ir al escritorio |
+| `SUPER + Tab` | Vista general (arrastrar ventanas entre escritorios) |
 
 ### Foco
 
@@ -342,11 +352,11 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + W` | Fondos de pantalla (orbital) |
 | `SUPER + SHIFT + R` | Grabar pantalla (iniciar / parar) |
-| `SUPER + SHIFT + V` | Historial del portapapeles |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + ALT + F` | Modo enfoque (45 min) |
 | `SUPER + D` | Notch (Nook / Tray) |
 | `SUPER + N` | Notificaciones |
+| `SUPER + SHIFT + V` · `SUPER + V` | Portapapeles (anillo; Enter pega) |
 | `SUPER + I` | Tienda de apps (pacman + AUR) |
 
 ### Sistema
@@ -365,7 +375,10 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 
 | Atajo | Acción |
 |---|---|
-| `SUPER + V` | Alternar flotante |
+| `ALT + SHIFT + Tab` | Alt+Tab orbital: anterior |
+| `ALT + Tab` | Alt+Tab orbital: siguiente |
+| `ALT + Alt_L` | Alt+Tab orbital: soltar Alt confirma |
+| `SUPER + SHIFT + Space` | Alternar flotante |
 | `SUPER + T` | Alternar modo Dwindle / Scrolling |
 | `SUPER + Q` | Cerrar |
 | `SUPER + F` | Maximizar / restaurar |

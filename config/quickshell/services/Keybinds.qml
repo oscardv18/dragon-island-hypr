@@ -116,7 +116,23 @@ Singleton {
             { text: "Desplazar", combos: [["↑", "↓"]] },
             { text: "Cerrar", combos: [["Esc"]] }
         ] },
-        { name: "Lanzador orbital (dentro)", rows: [
+        { name: "Launcher Gravedad (dentro)", rows: [
+            { text: "Girar la selección por su anillo · cambiar de anillo", combos: [["←", "→"], ["↑", "↓"]] },
+            { text: "Abrir · ir a su ventana", combos: [["Enter"], ["Tab"]] },
+            { text: "Buscando: elegir resultado · recorrer las lunas de terminal", combos: [["↑", "↓"], ["Tab"]] },
+            { text: "Calculadora · comando · web · emoji · escritorio · portapapeles", combos: [["="], [">"], ["?"], [":"], ["@"], ["/"]] },
+            { text: "Cerrar", combos: [["Esc"], ["clic central"]] } ] },
+        { name: "Portapapeles orbital (dentro)", rows: [
+            { text: "Recorrer · pegar en la ventana anterior", combos: [["←", "→"], ["Enter"]] },
+            { text: "Fijar · borrar · mostrar un secreto", combos: [["Ctrl+P"], ["Supr"], ["Espacio"]] } ] },
+        { name: "Alt+Tab orbital (dentro)", rows: [
+            { text: "Siguiente · anterior", combos: [["Tab"], ["Shift+Tab"]] },
+            { text: "Cerrar la ventana elegida · solo un escritorio", combos: [["Q"], ["1", "2", "3", "4", "5"]] },
+            { text: "Enfocar · cancelar", combos: [["soltar Alt"], ["Esc"]] } ] },
+        { name: "Escritorios (SUPER + Tab, dentro)", rows: [
+            { text: "Elegir escritorio · ir", combos: [["←", "→"], ["1", "2", "3", "4", "5"], ["Enter"]] },
+            { text: "Mover una ventana a otro escritorio", combos: [["arrastrar"]] } ] },
+        { name: "Lanzador orbital anterior (dentro)", rows: [
             { text: "Filtrar apps; el mejor resultado pasa al frente", combos: [["escribir"]] },
             { text: "Girar el anillo", combos: [["←", "→"], ["↑", "↓"], ["Tab"], ["rueda"]] },
             { text: "Lanzar la app al frente", combos: [["Enter"]] },
