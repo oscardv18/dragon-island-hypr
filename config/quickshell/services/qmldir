@@ -42,3 +42,4 @@ singleton Focus 1.0 Focus.qml
 singleton Idle 1.0 Idle.qml
 singleton Commands 1.0 Commands.qml
 singleton Dropdown 1.0 Dropdown.qml
+singleton WallPalette 1.0 WallPalette.qml

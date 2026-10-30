@@ -197,6 +197,8 @@ Scope {
             LockView {
                 id: lv
                 anchors.fill: parent
+                cLavender: Theme.lavender
+                coreIdentity: Theme.coreIdentity
                 mood: lockRoot.mood
                 stateText: lockRoot.stateText
                 hint: lockRoot.hint

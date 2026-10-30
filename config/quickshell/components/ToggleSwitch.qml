@@ -1,4 +1,5 @@
-// On/off switch: cyan tint + 1 px cyan edge when on (mockup 08-ajustes), neutral track when off
+// On/off switch: Theme.switchOn tint + 1 px edge when on (cyan in the Dragon look, 08-ajustes; the accent with a
+// wallpaper palette, 14-fondos), neutral track when off
 import QtQuick
 import ".."
 
@@ -22,8 +23,8 @@ Item {
         anchors.fill: parent
         radius: height / 2
         visible: root.checked
-        color: Theme.alpha(Theme.cyan, 0.30)
-        border.color: Theme.alpha(Theme.cyan, 0.55)
+        color: Theme.alpha(Theme.switchOn, 0.30)
+        border.color: Theme.alpha(Theme.switchOn, 0.55)
     }
 
     Rectangle {

@@ -74,7 +74,8 @@ Rectangle {
     readonly property color cText: "#edebf5"
     readonly property color cSoft: "#c8c4d8"
     readonly property color cDim: "#a29eb6"
-    readonly property color cLavender: "#c8b6e6"
+    property color cLavender: "#c8b6e6"         // Lock.qml passes Theme.lavender (it follows the wallpaper palette)
+    property var coreIdentity: undefined        // Lock.qml passes Theme.coreIdentity; undefined = NeuralCore's Dragon default
     readonly property color cCyan: "#67e8f9"
     readonly property color cWarn: "#f5b04a"
     readonly property color cAlert: "#ed254e"
@@ -114,6 +115,7 @@ Rectangle {
         y: view.height * 0.36 - height / 2
         opacity: 0.72
         hud: true
+        identity: view.coreIdentity
         pointCount: view.pointCount
         reducedMotion: view.reducedMotion
         mood: view.mood === "calm" && pw.text.length > 0 ? "listening" : view.mood

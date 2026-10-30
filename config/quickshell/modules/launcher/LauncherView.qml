@@ -25,6 +25,7 @@ Item {
     property int pointCount: 220
     property int capacity: 12                 // slots on the ring
     property string placeholder: "Buscar apps…"
+    property var coreIdentity: undefined        // Launcher.qml passes Theme.coreIdentity; undefined = NeuralCore's Dragon default
 
     signal activated(string id)
     signal closeRequested()
@@ -126,6 +127,7 @@ Item {
         z: 0
         scale: 0.6 + 0.4 * view.reveal
         opacity: view.reveal
+        identity: view.coreIdentity
         pointCount: view.pointCount
         reducedMotion: view.reducedMotion
         running: view.reveal > 0.01

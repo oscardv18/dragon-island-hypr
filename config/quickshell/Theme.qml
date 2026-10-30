@@ -24,7 +24,7 @@ Singleton {
     readonly property color text:       "#edebf5" // primary text
     readonly property color textSoft:   "#c8c4d8" // body text, neutral icons
     readonly property color textDim:    "#a29eb6" // captions, subtitles
-    readonly property color accent:     "#c50ed2" // magenta brand accent
+    property color accent:              paletteOn ? wallPalette.glow : dragon.accent   // brand accent (Dragon: magenta)
     readonly property color violet:     "#7c3aed" // gradient end
     readonly property color violetSoft: "#a855f7" // RAM, secondary accents
     readonly property color cyan:       "#67e8f9" // what is alive: CPU, activity, working agents, selection
@@ -36,10 +36,40 @@ Singleton {
     readonly property color transparent: "transparent"
 
     // New identity: purple is a tint, never a fill. Active states = accentTint + 1 px accentEdge + lavenderInk text
-    readonly property color lavender:     "#c8b6e6" // soft accent: RAM, focus, active states
-    readonly property color lavenderInk:  "#ede3fb" // text on an active state
-    readonly property color lavenderDeep: "#a78bcf" // lavender data bars
-    readonly property color violetBase:   "#b26bff" // base of the tints (never a solid fill)
+    // The accent tokens below follow the wallpaper palette (services/WallPalette.qml, bound in shell.qml) while
+    // Settings.wallpaperPalette is on and palette.json is valid; otherwise they are the fixed Dragon values (`dragon`).
+    // Every change blends with ColorAnimation (curve estandar, motion.paleta). ok / warn / error / cyan never change.
+    readonly property QtObject dragon: QtObject {
+        readonly property color accent:       "#c50ed2"
+        readonly property color lavender:     "#c8b6e6"
+        readonly property color lavenderInk:  "#ede3fb"
+        readonly property color lavenderDeep: "#a78bcf"
+        readonly property color violetBase:   "#b26bff"
+        readonly property color coreNode:     "#e896ec"   // the neural core's pink lavender nodes
+        readonly property color threadPink:   "#e8c8f5"
+        readonly property color textOnAccent:     "#16121f"
+        readonly property color accentShade:  "#0d0b16"
+    }
+    property bool paletteOn: false                 // WallPalette.active
+    property var wallPalette: ({})                     // { accent, accentSoft, accentDeep, glow, onAccent, tint } from WallPalette
+    property color lavender:     paletteOn ? wallPalette.accent : dragon.lavender           // soft accent: RAM, focus, active states
+    property color lavenderInk:  paletteOn ? Qt.tint(wallPalette.accentSoft, Qt.rgba(1, 1, 1, 0.45)) : dragon.lavenderInk   // text on an active state
+    property color lavenderDeep: paletteOn ? Qt.tint(wallPalette.accent, alpha(wallPalette.accentDeep, 0.5)) : dragon.lavenderDeep   // lavender data bars
+    property color violetBase:   paletteOn ? wallPalette.glow : dragon.violetBase           // base of the tints (never a solid fill)
+    property color coreNode:     paletteOn ? wallPalette.accentSoft : dragon.coreNode
+    property color textOnAccent:     paletteOn ? wallPalette.onAccent : dragon.textOnAccent         // text on a solid accent fill
+    property color accentShade:  paletteOn ? wallPalette.tint : dragon.accentShade          // very dark tone of the accent (glass backgrounds)
+    readonly property var coreIdentity: [coreNode, lavender, cyan]                     // NeuralCore.identity
+    property color switchOn: paletteOn ? lavender : cyan                       // switches: cyan in the Dragon look (08-ajustes), the accent with a wallpaper palette (14-fondos)
+    Behavior on accent       { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on lavender     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on lavenderInk  { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on lavenderDeep { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on violetBase   { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on coreNode     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on textOnAccent     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on switchOn     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on accentShade  { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
     readonly property color islandInk:    "#05040a" // central island / notch (almost black)
     readonly property real  idleDimOpacity: 0.6     // the idle dim layer
     readonly property color focusTeal:    "#5eead4"   // focus mode countdown ring
@@ -251,7 +281,7 @@ Singleton {
     readonly property int  dockBreath:      2600   // hidden thread: opacity 0.45 ↔ 1
     readonly property int  dockFps:         20     // one shared tick moves moons, synapses and the breathing
     readonly property int  dockFpsHidden:   8      // hidden: only the breathing of the thread's dots
-    readonly property color threadPink:     "#e8c8f5"
+    readonly property color threadPink:     paletteOn ? Qt.tint(coreNode, Qt.rgba(1, 1, 1, 0.3)) : dragon.threadPink
     readonly property color badge:          "#8b6bb8"   // unread count on a dock node
     readonly property color dockNodeBase:   Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.75)
     readonly property color dockNodeEdge:   Qt.rgba(1, 1, 1, 0.14)
@@ -393,6 +423,9 @@ Singleton {
     readonly property int durStd:    ms(240)
     readonly property int durOut:    ms(160)
     readonly property int durOrbit:  ms(620)
+    readonly property QtObject motion: QtObject {
+        readonly property int paleta: root.ms(600)   // the shell blending into a new wallpaper palette
+    }
 
     // display times (how long something stays on screen): NOT scaled by motionScale
     readonly property int durTransient:    2000     // OSD / workspace island states

@@ -63,6 +63,19 @@ ShellRoot {
         value: Settings.accentIntensity
     }
 
+    // Wallpaper palette (services/WallPalette.qml): Theme's accent tokens follow it while it is active
+    Binding {
+        target: Theme
+        property: "paletteOn"
+        value: WallPalette.active
+    }
+    Binding {
+        target: Theme
+        property: "wallPalette"
+        value: ({ accent: WallPalette.accent, accentSoft: WallPalette.accentSoft, accentDeep: WallPalette.accentDeep,
+                  glow: WallPalette.glow, onAccent: WallPalette.onAccent, tint: WallPalette.tint })
+    }
+
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
     Component.onCompleted: { Wallpaper.init(); Store.init(); Herdr.init(); Tiling.refresh(); Tray.init(); }
 

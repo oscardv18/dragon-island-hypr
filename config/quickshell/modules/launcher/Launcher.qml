@@ -61,6 +61,7 @@ Item {
         open: root.shown
         uiFont: Theme.fontUi
         monoFont: Theme.fontMono
+        coreIdentity: Theme.coreIdentity
         reducedMotion: !Theme.animationsEnabled
         onActivated: id => { ShellState.close(); Apps.launchById(id); }
         onCloseRequested: ShellState.close()

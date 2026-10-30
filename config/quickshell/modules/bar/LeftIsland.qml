@@ -70,6 +70,7 @@ Rectangle {
             Behavior on color { ColorAnimation { duration: Theme.durHover } }
 
             NeuralCore {
+                identity: Theme.coreIdentity
                 anchors.fill: parent
                 anchors.margins: 1
                 mood: coreMouse.containsMouse ? "listening" : "calm"
