@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # dragon-island — every check that needs no root and no real installation. Usage: tests/run-all.sh [--no-qml]
 #   lint of every script (the shellcheck tool + bash -n) · Lua syntax · qmllint · pre-instalation.md coherence · shared/ in sync ·
-#   idempotency in a temp $HOME · `install.sh --dry-run` leaves no trace.
+#   idempotency in a temp $HOME · every migration with DRY_RUN=1 leaves no trace · `install.sh --dry-run` leaves no trace.
 # The container test (needs docker + sudo) is tests/container.sh.
 set -Eeuo pipefail
 REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -48,13 +48,14 @@ fi
 step "paleta: extracción, plantillas, apps y migraciones (HOME temporal)"
 if python3 -m unittest discover -s tests/palette -v; then pass "pruebas de paleta"; else fail "pruebas de paleta fallaron"; fi
 
-# <<<<<< HEAD
 step "migraciones de la fase 4 (HOME temporal)"
 if bash tests/migrations-fase4.sh; then pass "migraciones 025, 026 y 027"; else fail "migraciones 025 / 026 / 027"; fi
-# =======
+
+step "migraciones en simulación: DRY_RUN=1 y DRY_RUN=true no cambian nada (HOME temporal)"
+if bash tests/migrations-dry-run.sh; then pass "todas las migraciones, dragon-sddm-sync y dragon-palette"; else fail "alguna migración escribe en dry-run"; fi
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
-# >>>>>>> feat/fase-4-motores
 
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
