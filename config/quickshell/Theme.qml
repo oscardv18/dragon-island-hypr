@@ -287,6 +287,17 @@ Singleton {
     readonly property int durScrim:        ms(240)  // 220-250
     readonly property int durPopover:      ms(280)  // OutBack
     readonly property int durPopoverOut:   ms(160)
+    // Motion language (docs/design/15-movimiento.png, same curves as config/hypr/animations.lua).
+    // Use with easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveX
+    readonly property var curveEmergente: [0.2, 0.9, 0.1, 1.08, 1, 1]   // islands, panels, Nook opening (slight overshoot)
+    readonly property var curveEstandar:  [0.3, 0, 0, 1, 1, 1]          // state changes, hover, toggles
+    readonly property var curveSalida:    [0.4, 0, 1, 1, 1, 1]          // everything that closes or disappears
+    readonly property var curveOrbita:    [0.16, 1.2, 0.3, 1, 1, 1]     // planets: the workspace constellation, launcher, Alt+Tab
+    readonly property int durEmerge: ms(340)
+    readonly property int durStd:    ms(240)
+    readonly property int durOut:    ms(160)
+    readonly property int durOrbit:  ms(620)
+
     // display times (how long something stays on screen): NOT scaled by motionScale
     readonly property int durTransient:    2000     // OSD / workspace island states
     readonly property int durNotif:        4000     // notification popups
