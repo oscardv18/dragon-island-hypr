@@ -40,7 +40,7 @@ Singleton {
 
     Timer {
         id: hideTimer
-        interval: Theme.durationToast
+        interval: Theme.durOsd
         onTriggered: root.visible = false
     }
 

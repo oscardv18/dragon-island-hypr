@@ -16,6 +16,7 @@ Shape {
     property real bottomRadius: Theme.notchRadius
     property real topRadius: bottomRadius        // floating only
     property color color: Theme.island
+    property color edgeColor: Theme.transparent   // optional 1.5 px edge (agent waiting: alpha(warn, .5))
 
     readonly property real _s: Math.max(0, Math.min(1, height / Math.max(1, (attached ? earRadius : topRadius) + bottomRadius)))
     readonly property real _ear: attached ? earRadius * _s : 0
@@ -26,8 +27,8 @@ Shape {
 
     ShapePath {
         fillColor: root.color
-        strokeColor: Theme.transparent
-        strokeWidth: -1
+        strokeColor: root.edgeColor
+        strokeWidth: root.edgeColor.a > 0 ? 1.5 : -1
 
         startX: root._top
         startY: 0

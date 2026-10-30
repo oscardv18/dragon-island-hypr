@@ -39,7 +39,7 @@ Item {
     onHoveredChanged: BarState.hover("notch", hovered)
     // style D: the micro-island, only while something is going on
     readonly property bool micro: Theme.barLook === "D" && !expanded
-    readonly property bool microActive: Media.isPlaying || Toggles.isRecording || (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agent"
+    readonly property bool microActive: Media.isPlaying || Toggles.isRecording || (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
     readonly property bool peek: !expanded && !micro && appeared && (hovered || IslandState.isTransient)
 
     // free room towards the bar islands (ears included)
@@ -116,6 +116,7 @@ Item {
         width: Math.max(0, root.animWidth)
         height: Math.max(0, root.animHeight)
         attached: root.attached
+        edgeColor: IslandState.mode === "agentBlocked" && !root.expanded ? Theme.alpha(Theme.warn, 0.5) : Theme.transparent
         // floating and collapsed (B, D): always a pill, also while it peeks taller (radius = height / 2)
         bottomRadius: root.expanded ? Theme.notchExpandedRadius : (root.attached ? Theme.notchRadius : Math.max(Theme.notchRadius, root.targetHeight / 2))
         topRadius: root.expanded ? Theme.notchFloatTopRadius : Math.max(Theme.notchRadius, root.targetHeight / 2)
@@ -160,7 +161,7 @@ Item {
                     color: Theme.error
                 }
                 NeuralCore {
-                    visible: (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agent"
+                    visible: (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
                     anchors.verticalCenter: parent.verticalCenter
                     width: 14; height: 14
                     mood: "thinking"
@@ -200,7 +201,7 @@ Item {
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton | Qt.MiddleButton
             onClicked: m => {
-                if (IslandState.mode === "agent" && m.button === Qt.LeftButton) { Herdr.focusAgent(IslandState.agentEvent?.agent); IslandState.agentFlash = false; }
+                if (IslandState.mode === "agentBlocked" && m.button === Qt.LeftButton) Herdr.focusAgent(IslandState.blockedAgent);
                 else if (m.button === Qt.MiddleButton && IslandState.mode === "media") Media.playPause();
                 else if (m.button === Qt.LeftButton) ShellState.toggle("dashboard", root.screenName);
             }

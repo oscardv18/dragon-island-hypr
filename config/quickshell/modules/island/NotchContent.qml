@@ -1,5 +1,6 @@
-// Collapsed-notch content, chosen by IslandState.mode (priority handled there):
-//   osd · notification · workspace · media · window · date · clock
+// Collapsed-notch content, chosen by IslandState.mode (priority table in services/IslandState.qml):
+//   capture · dropdown · recording · osd · agentBlocked · notification · notice · idleWarn · workspace · tiling ·
+//   agentWorking · focus · commandDone · media · window · date · clock
 // Every mode is a primary line plus a secondary line that only shows while the notch peeks
 // (hover or transient state). `maxWidth` is the room the notch has between the bar islands.
 import QtQuick
@@ -39,10 +40,18 @@ Item {
         anchors.centerIn: parent
         sourceComponent: {
             switch (root.mode) {
+                case "capture":      return captureView;
+                case "dropdown":     return dropdownView;
+                case "recording":    return recordingView;
                 case "osd":          return osdView;
+                case "agentBlocked": return agentBlockedView;
+                case "notice":       return noticeView;
+                case "idleWarn":     return idleWarnView;
+                case "agentWorking": return agentWorkingView;
+                case "focus":        return focusView;
+                case "commandDone":  return commandDoneView;
                 case "tiling":       return tilingView;
                 case "notification": return notifView;
-                case "agent":        return agentView;
                 case "workspace":    return workspaceView;
                 case "media":        return mediaView;
                 case "window":       return windowView;
@@ -217,7 +226,7 @@ Item {
                             width: current ? Theme.pillDot * 3 : Theme.pillDot + 1
                             height: Theme.pillDot + 1
                             radius: height / 2
-                            color: current ? Theme.accent : (Hypr.workspaces[index]?.occupied ? Theme.textSoft : Theme.muted)
+                            color: current ? Theme.lavender : (Hypr.workspaces[index]?.occupied ? Theme.textSoft : Theme.muted)
                             Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
                         }
                     }
@@ -286,34 +295,135 @@ Item {
         }
     }
 
-    // ---- herdr agent that needs an answer or finished: icon · text, workspace in the peek line ----
+    // ---- agents working: mini core thinking · "Pensando…" · workspace of the longest one (or "N agentes trabajando")
     Component {
-        id: agentView
-        Column {
-            spacing: 1
-            readonly property var ev: IslandState.agentEvent
-            readonly property bool blocked: ev?.kind === "blocked"
-            Row {
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: Theme.spacingSm
-                Glyph {
-                    anchors.verticalCenter: parent.verticalCenter
-                    icon: parent.parent.blocked ? Icons.bellRing : Icons.check
-                    size: Theme.iconMd
-                    color: parent.parent.blocked ? Theme.warn : Theme.ok
-                }
-                UiText {
-                    anchors.verticalCenter: parent.verticalCenter
-                    text: `${parent.parent.ev?.agent.name ?? ""} ${parent.parent.blocked ? "necesita tu respuesta" : "terminó"}`
-                    weight: Theme.weightMedium
-                    width: Math.min(implicitWidth, Math.max(60, root.maxWidth - Theme.iconMd - Theme.spacingSm))
-                }
+        id: agentWorkingView
+        Row {
+            spacing: Theme.spacingSm
+            readonly property var list: IslandState.workingAgents
+            NeuralCore {
+                anchors.verticalCenter: parent.verticalCenter
+                width: Theme.notchHeight - 8
+                height: width
+                mood: "thinking"
+                reducedMotion: !Theme.animationsEnabled
+                running: Theme.animationsEnabled
             }
-            PeekLine {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: parent.ev?.agent.workspace ?? ""
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: parent.list.length > 1 ? `${parent.list.length} agentes trabajando` : "Pensando…"
+                weight: Theme.weightSemiBold
+            }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: parent.list.length === 1
+                text: (Herdr.longestWorking ?? parent.list[0])?.workspace ?? ""
+                color: Theme.textDim
+                width: Math.min(implicitWidth, Math.max(60, root.maxWidth - 140))
             }
         }
+    }
+
+    // ---- an agent waits for an answer: warn dot pulsing (1.6 s) · "<workspace> espera tu respuesta" ----
+    Component {
+        id: agentBlockedView
+        Row {
+            spacing: Theme.spacingSm
+            readonly property var a: IslandState.blockedAgent
+            Rectangle {
+                id: waitDot
+                anchors.verticalCenter: parent.verticalCenter
+                width: Theme.statusDot
+                height: width
+                radius: width / 2
+                color: Theme.warn
+                SequentialAnimation on opacity {
+                    running: Theme.animationsEnabled
+                    loops: Animation.Infinite
+                    onStopped: waitDot.opacity = 1
+                    NumberAnimation { to: 0.35; duration: Theme.ms(800); easing.type: Easing.InOutSine }
+                    NumberAnimation { to: 1; duration: Theme.ms(800); easing.type: Easing.InOutSine }
+                }
+            }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: `${parent.a?.workspace || parent.a?.name || "Un agente"} espera tu respuesta`
+                weight: Theme.weightMedium
+                width: Math.min(implicitWidth, Math.max(80, root.maxWidth - Theme.statusDot - Theme.spacingSm))
+            }
+        }
+    }
+
+    // ---- a long command / an agent finished: ✓ ok or ✗ error · command (mono, elided) · duration ----
+    Component {
+        id: commandDoneView
+        Row {
+            spacing: Theme.spacingSm
+            readonly property var d: IslandState.done
+            Glyph {
+                anchors.verticalCenter: parent.verticalCenter
+                icon: parent.d?.ok ? Icons.check : Icons.close
+                size: Theme.iconMd
+                color: parent.d?.ok ? Theme.ok : Theme.error
+            }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: parent.d?.text ?? ""
+                mono: parent.d?.kind === "command"
+                weight: Theme.weightMedium
+                width: Math.min(implicitWidth, Math.max(80, root.maxWidth * 0.6))
+            }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: parent.d?.kind === "command"
+                text: parent.d?.detail ?? ""
+                mono: true
+                color: Theme.textDim
+            }
+        }
+    }
+
+    // ---- a short shell notice: icon · text ----
+    Component {
+        id: noticeView
+        Row {
+            spacing: Theme.spacingSm
+            Glyph {
+                anchors.verticalCenter: parent.verticalCenter
+                visible: IslandState.noticeIcon.length > 0
+                icon: Icons[IslandState.noticeIcon] ?? ""
+                size: Theme.iconMd
+                color: Theme.cyan
+            }
+            UiText {
+                anchors.verticalCenter: parent.verticalCenter
+                text: IslandState.noticeText
+                weight: Theme.weightMedium
+                width: Math.min(implicitWidth, root.maxWidth)
+            }
+        }
+    }
+
+    // ---- states filled in by their own phase-2 points (capture, drop-down, recording, idle warning, focus) ----
+    Component {
+        id: captureView
+        UiText { text: "Captura"; weight: Theme.weightMedium }
+    }
+    Component {
+        id: dropdownView
+        UiText { text: "Terminal"; weight: Theme.weightMedium }
+    }
+    Component {
+        id: recordingView
+        UiText { text: "REC"; mono: true; weight: Theme.weightSemiBold; color: Theme.error }
+    }
+    Component {
+        id: idleWarnView
+        UiText { text: "Inactividad"; weight: Theme.weightMedium; color: Theme.warn }
+    }
+    Component {
+        id: focusView
+        UiText { text: "Enfoque"; weight: Theme.weightMedium }
     }
 
     // ---- incoming notification: icon · title, app + body in the peek line ----

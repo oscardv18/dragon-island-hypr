@@ -36,3 +36,9 @@ singleton HerdrHelp 1.0 HerdrHelp.qml
 singleton Tiling 1.0 Tiling.qml
 singleton BarState 1.0 BarState.qml
 singleton WindowContext 1.0 WindowContext.qml
+singleton Capture 1.0 Capture.qml
+singleton RecordingMode 1.0 RecordingMode.qml
+singleton Focus 1.0 Focus.qml
+singleton Idle 1.0 Idle.qml
+singleton Commands 1.0 Commands.qml
+singleton Dropdown 1.0 Dropdown.qml
