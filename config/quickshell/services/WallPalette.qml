@@ -20,8 +20,13 @@
  *   - busy: bool [readonly] (a dragon-palette generate / reset is running)
  *
  * Functions:
- *   - setEnabled(on: bool): void (saves Settings.wallpaperPalette; on → regenerate(), off → dragon-palette reset)
- *   - regenerate(): void (generate from ~/.cache/dragon-island/current-wallpaper; nothing while the setting is off)
+ *   - setEnabled(on: bool): void (Ajustes › «Paleta desde el fondo»: saves Settings.wallpaperPalette; on → regenerate(),
+ *       off → dragon-palette reset: the shell blends back to the Dragon accent, the apps get the Dragon palette)
+ *   - setApplyExternal(on: bool): void (Ajustes › «Aplicar a las apps»: saves Settings.paletteApplyExternal; on → apply
+ *       now. Off only stops applying: the contract has no "reset the apps but keep palette.json", so the apps keep the
+ *       last applied palette until the setting or the wallpaper changes)
+ *   - regenerate(): void (generate from ~/.cache/dragon-island/current-wallpaper, then apply when paletteApplyExternal;
+ *       nothing while wallpaperPalette is off)
  *
  * Theme reads this service only through the Bindings in shell.qml (Theme stays the single source of tokens).
  * The wallpaper change itself runs dragon-palette from scripts/wallpapers.sh (Wallpaper.apply passes the flags).
@@ -100,13 +105,18 @@ Singleton {
 
     function regenerate(): void {
         if (!Settings.wallpaperPalette) return;
-        root._exec('"$1" generate "$2" --quiet');
+        root._exec(Settings.paletteApplyExternal ? '"$1" generate "$2" --quiet && "$1" apply --quiet' : '"$1" generate "$2" --quiet');
     }
 
     function setEnabled(on: bool): void {
         Settings.setWallpaperPalette(on);
         if (on) Qt.callLater(root.regenerate);   // after the setting is saved: regenerate reads it
         else root._exec('"$1" reset --quiet');
+    }
+
+    function setApplyExternal(on: bool): void {
+        Settings.setPaletteApplyExternal(on);
+        if (on && Settings.wallpaperPalette && root.ready) root._exec('"$1" apply --quiet');
     }
 
     IpcHandler {

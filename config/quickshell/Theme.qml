@@ -355,6 +355,7 @@ Singleton {
     readonly property real switchHeight:  22
     readonly property real knobInset:     3
     readonly property real knobSize:      14
+    readonly property real swatchDot:     14     // Ajustes › the wallpaper palette swatches
     readonly property real tileMinWidth:  120
     readonly property real eqBar:         3
     readonly property real eqGap:         2

@@ -5,7 +5,7 @@
 //   Barra superior  four style cards (schematic thumbnail, cyan 1.5 px ring on the chosen one; the real bar changes
 //                   at once), "Contenido de la isla" (Música / Ventana / Fecha), "Mostrar CPU y RAM",
 //                   "Ocultar automáticamente"
-//   Apariencia      "Intensidad del acento" (sutil ↔ intenso, live sample), "Colores desde el fondo de pantalla"
+//   Apariencia      "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
 // Every control writes through Settings (settings.json), so it persists and other monitors follow.
 // Keys: 1–4 pick the bar style A–D · Tab switches page · Esc closes.
 // =============================================================================
@@ -29,7 +29,7 @@ Item {
         { key: "power",      label: "Energía",        icon: Icons.sleep }
     ]
     readonly property var titles: ({
-        appearance: ["Apariencia", "Cuánto púrpura llevan los estados activos y de dónde sale la paleta."],
+        appearance: ["Apariencia", "Cuánto acento llevan los estados activos y de dónde sale la paleta."],
         bar:        ["Barra superior", "El cambio se aplica al instante y Hyprland ajusta el espacio reservado."],
         privacy:    ["Privacidad", "El modo grabación se activa solo mientras grabas o compartes la pantalla."],
         power:      ["Energía", "Qué pasa cuando dejas el equipo sin usar."]
@@ -304,7 +304,7 @@ Item {
                     width: parent.width
                     SettingsRow {
                         title: "Intensidad del acento"
-                        subtitle: "Cuánto púrpura llevan los estados activos"
+                        subtitle: "Cuánto acento llevan los estados activos"
                         Row {
                             spacing: Theme.spacingMd
                             UiText { anchors.verticalCenter: parent.verticalCenter; text: "sutil"; mono: true; size: Theme.sizeCaption + 1; color: Theme.textDim }
@@ -326,10 +326,47 @@ Item {
                         }
                     }
                     SettingsRow {
+                        title: "Paleta desde el fondo"
+                        subtitle: !Settings.wallpaperPalette ? "El acento es el Dragon fijo"
+                                : (WallPalette.busy ? "Leyendo los colores del fondo…"
+                                : (WallPalette.ready && WallPalette.fallback ? "El fondo es muy apagado: se usa el acento Dragon"
+                                : (WallPalette.ready ? "El shell toma sus colores del fondo" : "Se generará al aplicar un fondo")))
+                        Row {
+                            spacing: Theme.spacingMd
+                            // the colours of the current wallpaper (14-fondos)
+                            Row {
+                                anchors.verticalCenter: parent.verticalCenter
+                                spacing: Theme.spacingXs
+                                visible: Settings.wallpaperPalette && WallPalette.ready
+                                Repeater {
+                                    model: WallPalette.swatches
+                                    delegate: Rectangle {
+                                        required property color modelData
+                                        width: Theme.swatchDot
+                                        height: width
+                                        radius: width / 2
+                                        color: modelData
+                                        border.width: 1
+                                        border.color: Theme.glassBorder
+                                    }
+                                }
+                            }
+                            ToggleSwitch {
+                                anchors.verticalCenter: parent.verticalCenter
+                                checked: Settings.wallpaperPalette
+                                onToggled: WallPalette.setEnabled(!Settings.wallpaperPalette)
+                            }
+                        }
+                    }
+                    SettingsRow {
                         last: true
-                        title: "Colores desde el fondo de pantalla"
-                        subtitle: "Toma la paleta del fondo actual (llega en una próxima versión; la preferencia ya se guarda)"
-                        ToggleSwitch { checked: Settings.wallpaperPalette; onToggled: Settings.setWallpaperPalette(!Settings.wallpaperPalette) }
+                        title: "Aplicar a las apps"
+                        subtitle: "herdr, Ghostty, kitty, Starship y fastfetch usan la misma paleta"
+                        ToggleSwitch {
+                            enabled: Settings.wallpaperPalette
+                            checked: Settings.paletteApplyExternal
+                            onToggled: WallPalette.setApplyExternal(!Settings.paletteApplyExternal)
+                        }
                     }
                 }
 

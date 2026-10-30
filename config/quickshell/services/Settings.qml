@@ -19,7 +19,8 @@
  *   - barMetrics: bool [readonly] (CPU / RAM rings and the network line in the right island; default true)
  *   - barAutohide: bool [readonly] (dim the bar to 0.35 over a maximized window; style D hides until the top edge is touched; default false)
  *   - accentIntensity: real [readonly] (0–1, how much purple the active states carry; default 0.3)
- *   - wallpaperPalette: bool [readonly] (take the palette from the wallpaper; stored only, used in a later phase; default true)
+ *   - wallpaperPalette: bool [readonly] (the shell's accent follows the wallpaper palette, services/WallPalette.qml; default true)
+ *   - paletteApplyExternal: bool [readonly] (dragon-palette also tints herdr, Ghostty, kitty, Starship and fastfetch; default true)
  *   - longCommandSeconds: int [readonly] (a shell command at least this long reports to the island; ≥ 5, default 30)
  *   - recordingMode: string [readonly] ("auto": the recording mode follows a recording / a screen share · "off"; default "auto")
  *   - recordHold / recordHideTitles / recordPauseClipboard / recordFrame: bool [readonly] (its rules; default true)
@@ -38,7 +39,8 @@
  *   - setBarMetrics(on: bool): void
  *   - setBarAutohide(on: bool): void
  *   - setAccentIntensity(x: real): void (clamped to 0–1)
- *   - setWallpaperPalette(on: bool): void
+ *   - setWallpaperPalette(on: bool): void (only the setting: WallPalette.setEnabled also generates / resets the palette)
+ *   - setPaletteApplyExternal(on: bool): void (only the setting: WallPalette.setApplyExternal also applies it)
  *   - setLongCommandSeconds(s: int): void
  *   - setRecordingMode(mode: string): void ("auto" | "off")
  *   - setFlag(key: string, on: bool): void (any boolean key above, e.g. "recordFrame")
@@ -46,6 +48,7 @@
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
+ *   paletteApplyExternal(on: bool),
  *   current(): string (every setting, one per line)
  *
  * shell.qml binds Theme.motionScale, Theme.barStyle, Theme.barSize and Theme.accentIntensity to these.
@@ -105,6 +108,7 @@ Singleton {
     readonly property bool recordPauseClipboard: _flag("recordPauseClipboard", true)
     readonly property bool recordFrame: _flag("recordFrame", true)
     readonly property bool wallpaperPalette: typeof root._data.wallpaperPalette === "boolean" ? root._data.wallpaperPalette : true
+    readonly property bool paletteApplyExternal: _flag("paletteApplyExternal", true)
 
     FileView {
         id: settingsFile
@@ -187,6 +191,7 @@ Singleton {
     function setBarAutohide(on: bool): void { _set("barAutohide", on); }
     function setAccentIntensity(x: real): void { _set("accentIntensity", Math.round(Math.max(0, Math.min(1, x)) * 100) / 100); }
     function setWallpaperPalette(on: bool): void { _set("wallpaperPalette", on); }
+    function setPaletteApplyExternal(on: bool): void { _set("paletteApplyExternal", on); }
     function setLongCommandSeconds(s: int): void { _set("longCommandSeconds", Math.max(5, Math.round(s))); }
     function setRecordingMode(mode: string): void { if (["auto", "off"].indexOf(mode) >= 0) _set("recordingMode", mode); }
     function setFlag(key: string, on: bool): void { _set(key, on); }
@@ -204,10 +209,11 @@ Singleton {
         function metrics(on: bool): void { root.setBarMetrics(on); }
         function autohide(on: bool): void { root.setBarAutohide(on); }
         function wallpaperPalette(on: bool): void { root.setWallpaperPalette(on); }
+        function paletteApplyExternal(on: bool): void { root.setPaletteApplyExternal(on); }
         function current(): string {
             return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
-                    `wallpaperPalette=${root.wallpaperPalette}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`].join("\n");
+                    `wallpaperPalette=${root.wallpaperPalette}`, `paletteApplyExternal=${root.paletteApplyExternal}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`].join("\n");
         }
     }
 }
