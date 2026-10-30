@@ -395,6 +395,7 @@ Singleton {
     readonly property int durOsdShort:     1000     // keyboard layout change; Bloq Mayús off lingers 800 ms
     readonly property int durNotice:       2000     // short shell notices in the island ("Copiada · guardada")
     readonly property int durCommandDone:  4000     // a long command / an agent finished
+    readonly property int durSpin:         1100     // one turn of the spinner (working agent, running command)
     readonly property int durNotif:        4000     // notification popups
     readonly property int durPill:         ms(200)  // workspace pill width + color, OutCubic
     readonly property int durHover:        ms(120)  // capsule hover

@@ -25,6 +25,12 @@
  *   - init(): void
  *   - focusAgent(agent): void (focuses the herdr window and runs `herdr agent focus <pane>`)
  *   - open(): void (SUPER + A)
+ *   - canAnswer(agent): bool (the agent kind has a known approval prompt: claude — Enter approves, Esc rejects)
+ *   - approve(agent) / reject(agent): void (`herdr agent send-keys <pane> enter|esc`; only when canAnswer)
+ *
+ * Details (fetched only for blocked / working agents, when the list changes):
+ *   - details: var [readonly] (pane → { branch: git branch of its cwd, prompt: what a blocked agent shows, from
+ *       `herdr agent read <pane> --source detection --lines 8`, the last meaningful lines })
  */
 pragma Singleton
 import Quickshell
@@ -63,6 +69,41 @@ Singleton {
     function init(): void { probe.running = true; }
 
     function open(): void { launcher.command = [`${root.home}/.local/bin/dragon-herdr`]; launcher.running = true; }
+
+    function canAnswer(agent): bool { return (agent?.agent ?? "") === "claude"; }
+    function approve(agent): void { if (root.canAnswer(agent)) Quickshell.execDetached([root.bin, "agent", "send-keys", agent.pane, "enter"]); }
+    function reject(agent): void { if (root.canAnswer(agent)) Quickshell.execDetached([root.bin, "agent", "send-keys", agent.pane, "esc"]); }
+
+    // ---- details of the agents that matter (branch, the waiting prompt) ----
+    property var details: ({})
+    function _fetchDetails(): void {
+        const want = root.agents.filter(a => a.state === "blocked" || a.state === "working" || a.state === "done");
+        if (want.length === 0 || detailProc.running) return;
+        // one line per agent: pane<TAB>branch<TAB>prompt (newlines in the prompt as ␤)
+        const script = want.map(a => {
+            const q = x => "'" + String(x).replace(/'/g, "'\\''") + "'";
+            const read = a.state === "blocked" ? `"$H" agent read ${q(a.pane)} --source detection --lines 8 2>/dev/null | grep -v '^[[:space:]]*$' | tail -n 4 | tr '\\n' '\\036'` : "true";
+            return `printf '%s\t%s\t%s\n' ${q(a.pane)} "$(git -C ${q(a.cwd || "/")} rev-parse --abbrev-ref HEAD 2>/dev/null)" "$(${read})"`;
+        }).join("; ");
+        detailProc.command = ["sh", "-c", `H=${root.bin}; ${script}`];
+        detailProc.running = true;
+    }
+    Process {
+        id: detailProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const d = Object.assign({}, root.details);
+                for (const line of this.text.split("\n")) {
+                    const f = line.split("\t");
+                    if (f.length < 3) continue;
+                    d[f[0]] = { branch: f[1], prompt: f[2].split("\u001e").filter(l => l.trim().length > 0).join("\n") };
+                }
+                root.details = d;
+            }
+        }
+    }
+    onAgentsChanged: detailDebounce.restart()
+    Timer { id: detailDebounce; interval: 400; onTriggered: root._fetchDetails() }
 
     function focusAgent(agent): void {
         if (!agent) return;

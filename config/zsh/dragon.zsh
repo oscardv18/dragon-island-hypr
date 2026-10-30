@@ -6,7 +6,7 @@
 #   2. fzf key bindings (Ctrl+R / Ctrl+T / Alt+C); `fzf --zsh` also binds Tab to fzf-completion ...
 #   3. fzf-tab ... which comes next and is the LAST to bind ^I (Tab = the advanced search)
 #   4. zsh-autosuggestions, then zsh-syntax-highlighting (it must be the last widget wrapper)
-#   5. aliases, history, zoxide, starship (the prompt), ~/.zshrc.local
+#   5. aliases, long-command hooks (commands.zsh), history, zoxide, starship (the prompt), ~/.zshrc.local
 # =============================================================================
 _dragon_zsh="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/zsh"
 
@@ -29,6 +29,7 @@ fi
 [[ -f $_dragon_plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh ]] && source $_dragon_plugins/zsh-autosuggestions/zsh-autosuggestions.plugin.zsh
 [[ -f $_dragon_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh ]] && source $_dragon_plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.plugin.zsh
 [[ -f $_dragon_zsh/aliases.zsh ]] && source $_dragon_zsh/aliases.zsh
+[[ -f $_dragon_zsh/commands.zsh ]] && source $_dragon_zsh/commands.zsh   # long commands → the island
 
 # zoxide: `z dir` / `zi` (interactive); `cd` stays the normal cd
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"

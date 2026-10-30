@@ -20,6 +20,7 @@
  *   - barAutohide: bool [readonly] (dim the bar to 0.35 over a maximized window; style D hides until the top edge is touched; default false)
  *   - accentIntensity: real [readonly] (0–1, how much purple the active states carry; default 0.3)
  *   - wallpaperPalette: bool [readonly] (take the palette from the wallpaper; stored only, used in a later phase; default true)
+ *   - longCommandSeconds: int [readonly] (a shell command at least this long reports to the island; ≥ 5, default 30)
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -32,6 +33,7 @@
  *   - setBarAutohide(on: bool): void
  *   - setAccentIntensity(x: real): void (clamped to 0–1)
  *   - setWallpaperPalette(on: bool): void
+ *   - setLongCommandSeconds(s: int): void
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
@@ -75,6 +77,10 @@ Singleton {
     readonly property real accentIntensity: {
         const v = Number(root._data.accentIntensity);
         return root._data.accentIntensity !== undefined && root._data.accentIntensity !== null && !isNaN(v) ? Math.max(0, Math.min(1, v)) : 0.3;
+    }
+    readonly property int longCommandSeconds: {
+        const v = Number(root._data.longCommandSeconds);
+        return root._data.longCommandSeconds !== undefined && !isNaN(v) ? Math.max(5, Math.round(v)) : 30;
     }
     readonly property bool wallpaperPalette: typeof root._data.wallpaperPalette === "boolean" ? root._data.wallpaperPalette : true
 
@@ -159,6 +165,7 @@ Singleton {
     function setBarAutohide(on: bool): void { _set("barAutohide", on); }
     function setAccentIntensity(x: real): void { _set("accentIntensity", Math.round(Math.max(0, Math.min(1, x)) * 100) / 100); }
     function setWallpaperPalette(on: bool): void { _set("wallpaperPalette", on); }
+    function setLongCommandSeconds(s: int): void { _set("longCommandSeconds", Math.max(5, Math.round(s))); }
 
     IpcHandler {
         target: "settings"
@@ -175,7 +182,7 @@ Singleton {
         function current(): string {
             return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
-                    `wallpaperPalette=${root.wallpaperPalette}`].join("\n");
+                    `wallpaperPalette=${root.wallpaperPalette}`, `longCommandSeconds=${root.longCommandSeconds}`].join("\n");
         }
     }
 }
