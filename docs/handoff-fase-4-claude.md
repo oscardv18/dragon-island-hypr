@@ -68,6 +68,16 @@ Rama `feat/nueva-identidad`. Prompt: `docs/design/PROMPT-identidad-fase-4-claude
   - Todo restaurado después.
   - El teclado virtual también confirma que, al soltar Alt, el switcher enfoca la ventana elegida (el foco pasó a Brave). Eso cierra el «soltar Alt» de «No verificado».
 
+## Simulación (`DRY_RUN=1`) y migración 028
+
+- **Fallo:** con `DRY_RUN=1`, `if $DRY_RUN` ejecutaba la orden `1`. La orden fallaba («1: orden no encontrada») y el script seguía por la rama real. Pasaba en **todas** las migraciones (a través de `run()`), en la 024 (línea 44) y en `dragon-sddm-sync` (línea 83): desplegaban archivos, escribían el manifest y llegaban a los pasos con sudo.
+- **Arreglo:** `bool_flag` en `lib/common.sh` convierte `DRY_RUN` / `ASSUME_YES` / `NO_SUDO` = `1`, `yes`, `on`… en `true` o `false`. `lib/migration-env.sh` ya no crea el directorio de estado en una simulación. La 024 y `dragon-sddm-sync` pasan sus pasos con sudo por `run`. `dragon-sddm-sync` y `dragon-palette` se instalan solos en `~/.local/bin`, así que normalizan la variable por su cuenta; `dragon-palette` antes ignoraba `DRY_RUN`.
+- **Revisadas:** la 023, 025, 026 y 027 solo tenían el fallo común; con el arreglo de `lib/common.sh` quedan bien. La prueba encontró además un fallo en la 007: fallaba sin `~/.local/state/quickshell` por `pipefail`. Arreglado.
+- **Prueba:** `tests/migrations-dry-run.sh` (dentro de `run-all.sh`). Ejecuta cada migración con `DRY_RUN=1` y con `DRY_RUN=true` en un HOME temporal con trabajo pendiente y un tema SDDM falso. Falla si cambia un archivo, un permiso o una fecha, si cambia el `git status`, si se ejecuta de verdad sudo o una orden de sesión, o si aparece «command not found». Se comprobó que falla con el `lib/` anterior.
+- **028:** un `~/.config/hypr/autostart.lua` copiado pasa de `wl-paste … --watch cliphist store` a `--watch $HOME/.local/bin/dragon-clip-store`, con copia de seguridad. Instala `dragon-clip-store` si falta y reinicia los vigilantes de la sesión en marcha, igual que hacía la 022. Avisa, sin editarlo, si `local.lua` arranca su propio `cliphist store`. Pruebas en `tests/migrations-fase4.sh`.
+- **Sin verificar:** el reinicio de los vigilantes en una sesión Hyprland real. Las pruebas corren sin `HYPRLAND_INSTANCE_SIGNATURE`.
+- **Fuera de alcance:** `update.sh --dry-run` aún hace `touch` de `migrations.done`.
+
 ## Trampas
 
 - Una propiedad del delegado con el mismo nombre que el `id` del padre (`view: view`, `orbit: orbit`, `win: …`) se resuelve a sí misma y da `undefined`. Las propiedades se llaman `host`, `ring` e `item`.
