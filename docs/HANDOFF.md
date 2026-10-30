@@ -609,3 +609,54 @@ No probado: reiniciar la sesión (el evento `hyprland.start` usa la misma orden 
 **Verificado:** shellcheck y sintaxis Bash de los scripts modificados, TOML válido, `git diff --check`, `tests/idempotency.sh`. En HOME temporal con el binario real: dry-run sin escrituras, instalación de las tres integraciones, respaldo de ajustes, conservación de preferencias propias y segunda ejecución sin cambiar archivos.
 
 **Pendiente de comprobar:** un reinicio real y la reanudación de conversaciones, y la escritura/relectura del historial. Los agentes abiertos antes de instalar necesitan reabrirse o reanudarse una vez dentro de herdr para emitir su identificador; OpenCode también requiere reiniciar sus servidores compartidos. Codex con daemon compartido debe iniciarse con `--no-daemon` para reportar al panel correcto. El historial puede contener lo mostrado en pantalla. No se restauran procesos arbitrarios ni tareas en ejecución tras apagar.
+
+## 8a. Nueva identidad — Fase 0 + 1 (2026-10-29)
+
+Rama `feat/nueva-identidad`, un commit por punto de `docs/design/PROMPT-identidad-fase-0-1.md` (más tres arreglos encontrados al verificar). Referencia visual: las maquetas de `docs/design/`. Capturas en `docs/screenshots/identidad/`.
+
+**Hecho**
+- **0.1 Paleta** (`Theme.qml`): valores nuevos sin renombrar tokens (`bg`, `text`, `textSoft`, `textDim`, `muted`, `cyan`, `warn`, `ok`) y tokens nuevos `lavender`, `lavenderInk`, `lavenderDeep`, `violetBase`, `islandInk`; `accentTint` / `accentEdge` dependen de `Theme.accentIntensity` (enlazado a `Settings`). `components/AccentFill.qml` sustituye a `BrandFill` en los 13 archivos de estados activos (texto `lavenderInk`); `BrandFill.qml` sigue en el repo sin usarse. Sin el brillo magenta de la píldora activa; el reloj es neutro (blanco 6 %). Cristal de las islas: borde blanco 9 % y brillo interior superior blanco 6 %; `glassBg` **no** se cambió a 0,66 (taparía el cristal de hyprglass, §7k): las capturas sobre fondo oscuro y casi blanco se leen bien con el 18 % actual.
+- **0.2 Núcleo** (`shared/neural-core/NeuralCore.qml`, sincronizado): estados `listening`, `thinking`, `speaking` (cada uno es un factor 0–1 animado en 300 ms; las líneas extra de `thinking` se precalculan y aparecen con opacidad), paleta nueva salvo `alert` / `ok`, `hud`, modo compacto (< 64 px: 48 nodos, sin halos, anillos ni dial, un `Timer` a 12 fps en reposo y 24 fps cuando reacciona). Con `hud: false` el lanzador, el bloqueo y SDDM conservan sus anillos y dial de siempre; solo cambia la paleta.
+- **0.3 Movimiento**: curvas `emergente`, `estandar`, `salida`, `orbita` en `animations.lua` (velocidades = 3,4 / 2,4 / 1,6 décimas) y en `Theme` (`curve*`, `dur*`, todo con `ms()`).
+- **0.4 Ajustes**: `barStyle`, `islandContent`, `barMetrics`, `barAutohide`, `accentIntensity`, `wallpaperPalette` con setters e IPC `settings` (`barStyle`, `cycleBarStyle`, `accent`, `islandContent`, `metrics`, `autohide`, `wallpaperPalette`, `current`).
+- **1.1 Cuatro estilos** (`Bar.qml`, `Theme` "Bar", `services/BarState.qml`, `NotchShape.attached`): ver la tabla del prompt. Todas las ventanas de la barra tienen altura constante (`barWindowHeight` 36) y la isla va dentro con `y`; la zona reservada (`barZone`) sale de `barStyle`, nunca del revelado de D. C = una ventana de borde a borde con las dos islas dentro (`bare`), mientras las ventanas laterales se desmapean. D: micro‑isla 80×18 solo con actividad y una franja sensible de 3 px **en la máscara de cada ventana** (islas y notch, §7x) que revela B a través de `BarState` (con 450 ms de gracia entre superficies; un popover abierto desde la barra desplegada la mantiene). `barAutohide` en A/B/C: 0,35 sobre una ventana maximizada; en D, la barra mínima se oculta hasta tocar el borde.
+- **1.2 Isla izquierda**: botón del núcleo, `Constellation.qml` (sustituye a `WorkspacePill.qml`, borrado) y contexto vivo con `services/WindowContext.qml`. Acciones de ventana al pasar el cursor conservadas.
+- **1.3 Isla derecha**: `RingMeter`, `Sparkline` (+ `SysStats.rxHistory`), `MeterCapsule`, `BarTooltip` (popup bajo la isla, §7t), volumen con barra, reloj orbital.
+- **1.4 Ajustes**: `modules/settings/` (namespace `dragon-settings`, preset `dragon-panel`, regla nativa de respaldo), `SUPER + F2`, `SUPER + ALT + B`, modos `window` / `date` del notch, `panelGroups` y `docs/KEYBINDS.md` (la referencia generada también se puso al día).
+- **1.5** Migración `020-nueva-identidad.sh` y esta sección.
+
+**Verificado (en esta máquina, sesión real, 1366×768 escala 1)**
+- Arranque limpio de Quickshell (matar + `hl.dsp.exec_cmd("quickshell")`): log sin avisos propios (solo `printer.svg` y un SNI inválido, ya existentes). `hyprctl configerrors` vacío, `luac -p` de `animations.lua`, `binds.lua`, `glass.lua`, `rules.lua`, `shellcheck -x` de la migración, `scripts/sync-shared.sh --check` en verde, `tests/run-all.sh` en verde salvo la tabla de paquetes de `pre-instalation.md` (la desajusta `packages/user-aur.txt`, que la Tienda modificó durante la sesión; no es de esta rama).
+- Estilos A/B/C/D sobre un fondo oscuro y otro casi blanco: zona reservada 31 / 32 / 24 / 18 en `hyprctl monitors` (`reserved`) y las ventanas en mosaico se recolocan; esquinas limpias (ampliadas ×5); el Nook abre y cierra en los cuatro (B desde la píldora sin orejas, A y C desde el borde, D desde la micro‑isla); cambio en vivo por IPC y con la tecla `3` dentro de Ajustes (`hl.dsp.send_shortcut`); el estilo persiste tras reiniciar Quickshell.
+- D: cursor al borde superior (`hl.dsp.cursor.move`) → B desplegado sin cambiar la zona (18).
+- Constelación: el planeta viaja 1 → 3 (fotogramas), vista previa bajo el nodo del escritorio 2.
+- Contexto: Ghostty con herdr en el repo → `dragon-island-hypr` + `feat/nueva-identidad`; Ghostty nuevo en `/tmp` → `tmp` sin ficha; en `docs/` del repo → repo + rama; Telegram → «5 sin leer».
+- Ajustes: cada control escribe `settings.json` (IPC) y la barra cambia al instante; las dos páginas renderizadas.
+- Movimiento reducido (`motion 0`): CPU de Quickshell 0,8 % → no queda ninguna animación infinita, núcleos mini incluidos.
+- Rendimiento (`gpu_busy_percent` y CPU de Quickshell en 10 s, con un vídeo en Brave; `main` medido desde un worktree temporal): GPU 13 % en `main`, 12–14 % en la rama. CPU 10 % en `main`, 22 % en la primera versión, 14 % en la final (ver decisiones).
+- Lanzador (IPC) y `sddm/install-theme.sh --test` con la paleta nueva; el bloqueo carga sin errores al arrancar.
+
+**No verificado**
+- Clics físicos y la rueda (no hay uinput / ydotool desde aquí): clic en tarjetas y controles de Ajustes, rueda sobre la constelación y el volumen, clic en el núcleo. Comparten las funciones probadas por IPC.
+- El bloqueo real (habría bloqueado la sesión) y `hyprlock`.
+- Urgente en la constelación (no hubo ventana urgente), la luna cian (se ve en capturas, no se forzó), la grabación en la micro‑isla de D, `barAutohide` con una ventana maximizada (la lógica usa `Hypr.fullscreenOn`, sin captura), un segundo monitor.
+- `windowsIn` con `emergente` frente al spring `easy`: no hubo comparación visual lado a lado; se dejó `emergente` (como pide el prompt) y `easy` en `windows` (mover / redimensionar).
+
+**Decisiones**
+- Interruptores encendidos en cian (como `08-ajustes.png`), no con `accentTint`: el resto de estados activos (escritorio, mosaicos, día de hoy, segmentado, botón primario de la Tienda) sí usan `AccentFill`. Barras de datos (slider, OSD) en lavanda.
+- Volumen: clic = silenciar (maqueta); el popover Sonido pasa al **clic derecho** para no perderlo.
+- `Theme` recibe `barStyle` y `barRevealed` con `Binding` desde `shell.qml`, y `barMarginTop` / `barHeight` dependen del estilo: popovers, vista previa, notificaciones y paneles se recolocan sin tocarlos.
+- El revelado de D es global (todos los monitores a la vez): la geometría vive en `Theme`. En un solo monitor no se nota.
+- Ajustes sin velo (`dragon-scrim`) para ver la barra mientras se cambia.
+- Icono del planeta: `MultiEffect` (brillo + colorización a blanco). Los iconos circulares (Telegram de Candy) quedan como un disco blanco: limitación aceptada.
+- Rendimiento: un `FrameAnimation` corriendo (aunque se salte fotogramas) y una `RotationAnimation` de 1 s cada segundo mantienen la ventana repintando a 60 Hz; el núcleo compacto usa un `Timer` y el punto del reloj salta una vez por segundo. Si aún pesa: bajar el `fps` del `Timer` compacto de `NeuralCore.qml`.
+- `WindowContext`: para terminales el directorio sale primero de herdr o del título (`usuario@host:~/ruta`); el proceso más profundo es el último recurso (un auxiliar de zsh daba `~`).
+
+**Trampas (para no repetirlas)**
+- `qs log` sin `-f` imprime un búfer atrasado: tras editar, usar `timeout 5 qs log -f`. Una recarga que falla deja la configuración anterior en pantalla sin avisar en ese búfer.
+- Componentes en línea (`component X: …`) en la raíz de un `Scope`, o basadas en un tipo de otro directorio (`Capsule`), dan «X is not a type»: usar un archivo propio (`EdgeStrip.qml`, `MeterCapsule.qml`).
+- Un `Shape` que lee su `width` / `height` en el trazado entra en bucle de enlaces: calcular con medidas fijas (`RingMeter.size`, `Sparkline.lineWidth`).
+- Un `id` con el mismo nombre que una propiedad (`planet`) gana en las expresiones sin calificar → `NaN`.
+- Los avisos de `Clock.qml` («Unable to assign [undefined]») solo salen en recargas en caliente, no en un arranque limpio.
+
+**Revertir**: no fusionar la rama, o `git revert main..feat/nueva-identidad` si ya se fusionó. `settings.json` admite las claves nuevas sin problema en `main` (las ignora).
