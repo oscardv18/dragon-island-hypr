@@ -88,7 +88,7 @@ TXT
     ask "¿Continuar (pide sudo)?" || exit 0
 
     sudo install -d -m 755 "$DEST" "$DEST/components" "$DEST/fonts"
-    sudo install -m 644 "$SRC"/*.qml "$SRC"/metadata.desktop "$SRC"/theme.conf "$SRC"/preview.png "$SRC"/LICENSE "$DEST/"
+    sudo install -m 644 "$SRC"/*.qml "$SRC"/metadata.desktop "$SRC"/theme.conf "$SRC"/preview.png "$SRC"/noise.png "$SRC"/LICENSE "$DEST/"
     # background.jpg / accent.conf belong to dragon-sddm-sync once it has run: only the default background goes in
     [[ -f "$DEST/background.jpg" ]] || sudo install -m 644 "$SRC"/background.jpg "$DEST/"
     sudo install -m 644 "$SRC"/components/*.qml "$DEST/components/"

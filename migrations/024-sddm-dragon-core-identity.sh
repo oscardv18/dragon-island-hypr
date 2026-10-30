@@ -54,7 +54,7 @@ fi
 run sudo cp -a -- "$DEST" "$DEST.bak-dragon-$stamp"
 log_info "Respaldo: $DEST.bak-dragon-$stamp"
 run sudo install -d -m 755 "$DEST/components" "$DEST/fonts"
-run sudo install -m 644 "$SRC"/*.qml "$SRC"/metadata.desktop "$SRC"/theme.conf "$SRC"/preview.png "$SRC"/LICENSE "$DEST/"
+run sudo install -m 644 "$SRC"/*.qml "$SRC"/metadata.desktop "$SRC"/theme.conf "$SRC"/preview.png "$SRC"/noise.png "$SRC"/LICENSE "$DEST/"
 run sudo install -m 644 "$SRC"/components/*.qml "$DEST/components/"
 run sudo install -m 644 "$SRC"/fonts/*.ttf "$DEST/fonts/"
 [[ -f "$DEST/background.jpg" ]] || run sudo install -m 644 "$SRC/background.jpg" "$DEST/"

@@ -1,8 +1,10 @@
 // dragon-core — SDDM greeter theme for dragon-island (Qt 6) · docs/design/07-login.png
 // Uses only the SDDM greeter API: sddm, userModel, sessionModel, keyboard, config.
 //
-//   background   theme.conf `background` (default background.jpg: a blurred copy of the wallpaper), blurred again
-//                and under a dark veil. bin/dragon-sddm-sync copies the user's current wallpaper here (by hand, sudo)
+//   background   theme.conf `background` (default background.jpg; bin/dragon-sddm-sync copies the user's wallpaper here,
+//                1920×1080 and sharp, by hand with sudo), blurred ONCE here (MultiEffect, moderate radius, colours
+//                untouched), a veil darker towards the edges and a fine noise tile (noise.png, theme.conf `noise`) on top
+//                that dithers the 8-bit banding a blurred dark gradient makes
 //   accent       accent.conf in this folder ([General] accent / accentSoft / glow, written by dragon-sddm-sync from
 //                the wallpaper palette); missing or invalid = the fixed Dragon lavender
 //   centre       greeting by the hour, the shared neural core (components/NeuralCore.qml, from shared/neural-core) with
@@ -149,37 +151,43 @@ Rectangle {
         source: root.cfg("background", "background.jpg")
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        sourceSize.width: 1280
+        sourceSize: Qt.size(root.width, root.height)
         visible: false
     }
-    MultiEffect {
+    MultiEffect {   // the only blur
         anchors.fill: parent
         source: bg
         visible: bg.status === Image.Ready
         blurEnabled: true
         blur: 1.0
-        blurMax: 48
+        blurMax: 32
         autoPaddingEnabled: false
-        saturation: 0.1
     }
-    Rectangle {
-        anchors.fill: parent
-        color: root.cVeil
-        opacity: parseFloat(root.cfg("veil", "0.62"))
-    }
-    Shape {   // vignette
+    // veil: theme.conf `veil` in the middle, darker towards the edges
+    readonly property real veilMid: Math.max(0, Math.min(1, parseFloat(cfg("veil", "0.62")) || 0))
+    readonly property real veilEdge: veilMid + (1 - veilMid) * 0.65
+    Shape {
         anchors.fill: parent
         ShapePath {
             strokeColor: "transparent"
             fillGradient: RadialGradient {
-                centerX: root.width / 2; centerY: root.height * 0.55
+                centerX: root.width / 2; centerY: root.height / 2
                 focalX: centerX; focalY: centerY
-                centerRadius: Math.max(root.width, root.height) * 0.7
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.7) }
+                centerRadius: Math.hypot(root.width, root.height) / 2
+                GradientStop { position: 0.0; color: Qt.rgba(root.cVeil.r, root.cVeil.g, root.cVeil.b, root.veilMid) }
+                GradientStop { position: 0.45; color: Qt.rgba(root.cVeil.r, root.cVeil.g, root.cVeil.b, root.veilMid) }
+                GradientStop { position: 1.0; color: Qt.rgba(root.cVeil.r, root.cVeil.g, root.cVeil.b, root.veilEdge) }
             }
             PathRectangle { width: root.width; height: root.height }
         }
+    }
+    Image {   // grain over the blur and the veil: ±3 levels of 8 bits break the bands; 0 = off
+        anchors.fill: parent
+        source: "noise.png"
+        fillMode: Image.Tile
+        smooth: false
+        opacity: Math.max(0, Math.min(0.2, parseFloat(root.cfg("noise", "0.03")) || 0))
+        visible: opacity > 0
     }
 
     // ── top right: date · time ──
