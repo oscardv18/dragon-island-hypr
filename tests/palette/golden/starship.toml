@@ -1,0 +1,16 @@
+# >>> dragon-palette
+[palettes.dragon]
+accent = "#C8B6E6"
+accent_soft = "#DCCFF0"
+accent_deep = "#7E6BA8"
+glow = "#B26BFF"
+on_accent = "#16121F"
+tint = "#0D0B16"
+directory_accent = "#C8B6E6"
+git_state = "#F5B04A"
+ok = "#86EFAC"
+warn = "#F5B04A"
+cyan = "#67E8F9"
+error = "#FF3D48"
+success = "#70FF58"
+# <<< dragon-palette

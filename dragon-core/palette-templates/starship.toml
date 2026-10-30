@@ -1,0 +1,16 @@
+# >>> dragon-palette
+[palettes.dragon]
+accent = "${accent}"
+accent_soft = "${accentSoft}"
+accent_deep = "${accentDeep}"
+glow = "${glow}"
+on_accent = "${onAccent}"
+tint = "${tint}"
+directory_accent = "${directoryAccent}"
+git_state = "${gitState}"
+ok = "${ok}"
+warn = "${warn}"
+cyan = "${cyan}"
+error = "#FF3D48"
+success = "#70FF58"
+# <<< dragon-palette

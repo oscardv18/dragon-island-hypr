@@ -5,14 +5,16 @@
 # Al abrir cada terminal (opcional):  export DRAGON_FF_ON_START=1   (antes de cargar este archivo)
 
 fastfetch() {
+  local runner=fastfetch
+  (( $+commands[dragon-fastfetch] )) && runner=dragon-fastfetch
   local cfg="${XDG_CONFIG_HOME:-$HOME/.config}/fastfetch"
   if [[ -z $DRAGON_FF_ASCII && -z $TMUX && -z $STY && -f $cfg/dragon-core.png \
         && ( $TERM_PROGRAM == ghostty || -n $GHOSTTY_RESOURCES_DIR ) ]]; then
-    command fastfetch --logo-type kitty-direct --logo "$cfg/dragon-core.png" \
+    command "$runner" --logo-type kitty-direct --logo "$cfg/dragon-core.png" \
       --logo-width 28 --logo-height 14 \
       --logo-padding-top 1 --logo-padding-left 2 --logo-padding-right 3 "$@"
   else
-    command fastfetch "$@"
+    command "$runner" "$@"
   fi
 }
 
