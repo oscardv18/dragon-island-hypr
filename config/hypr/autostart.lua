@@ -11,7 +11,9 @@ hl.on("hyprland.start", function()
     -- Desktop components
     -- Wallpapers: awww-daemon (images / GIF); Quickshell restores the saved wallpaper and starts mpvpaper for videos
     hl.exec_cmd("awww-daemon")
-    hl.exec_cmd("hypridle")
+    -- idle sequence with the times of Ajustes › Energía (bin/dragon-idle generates hypridle's config); plain
+    -- hypridle with config/hypr/hypridle.conf if the script is missing
+    hl.exec_cmd("sh -c '[ -x \"$HOME/.local/bin/dragon-idle\" ] && exec \"$HOME/.local/bin/dragon-idle\" run || exec hypridle'")
 
     -- Polkit agent (Arch ships a systemd user unit; Plasma's agent only autostarts in Plasma)
     hl.exec_cmd("systemctl --user start hyprpolkitagent")

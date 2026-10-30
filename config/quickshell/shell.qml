@@ -23,6 +23,7 @@ import "modules/herdrhelp"
 import "modules/settings"
 import "modules/capture"
 import "modules/recording"
+import "modules/idle"
 import "modules/dock"
 import "modules/lock"
 import "debug"
@@ -121,6 +122,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { RecordingFrame {} }
+    }
+
+    // idle sequence: the dim layer (Idle.warning)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { DimWindow {} }
     }
 
     // Ajustes (SUPER + F2): no scrim, the bar stays visible while its style changes

@@ -540,9 +540,17 @@ Item {
             }
         }
     }
+    // ---- the idle warning: warn dot · "Bloqueo en 60 s · mueve el ratón" (counts down) ----
     Component {
         id: idleWarnView
-        UiText { text: "Inactividad"; weight: Theme.weightMedium; color: Theme.warn }
+        Row {
+            spacing: Theme.spacingSm
+            property int secsLeft: Idle.lockIn
+            Timer { interval: 1000; repeat: true; running: true; onTriggered: parent.secsLeft = Math.max(0, parent.secsLeft - 1) }
+            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: Theme.statusDot; height: width; radius: width / 2; color: Theme.warn }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: `Bloqueo en ${parent.secsLeft} s`; weight: Theme.weightSemiBold }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: "· mueve el ratón"; color: Theme.textDim }
+        }
     }
     // ---- focus mode: 28 px countdown ring (track white 14 %, teal progress from the top, clockwise) ·
     //      "Enfoque · 24:12" · below, dim 10 px: what is silenced ----

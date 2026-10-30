@@ -41,6 +41,7 @@ Singleton {
     readonly property color lavenderDeep: "#a78bcf" // lavender data bars
     readonly property color violetBase:   "#b26bff" // base of the tints (never a solid fill)
     readonly property color islandInk:    "#05040a" // central island / notch (almost black)
+    readonly property real  idleDimOpacity: 0.6     // the idle dim layer
     readonly property color focusTeal:    "#5eead4"   // focus mode countdown ring
     readonly property color captureDim:   Qt.rgba(0, 0, 0, 0.62)   // outside the capture selection
     readonly property color sunWarm:      "#fcd34d" // brightness OSD (with the night light on it warms to warn)
@@ -400,6 +401,7 @@ Singleton {
     readonly property int durCommandDone:  4000     // a long command / an agent finished
     readonly property int durSpin:         1100     // one turn of the spinner (working agent, running command)
     readonly property int durCaptureHide:  180      // the capture overlay unmaps before grim looks at the screen
+    readonly property int durDim:          900      // the idle dim layer rises (Estándar curve)
     readonly property int durNotif:        4000     // notification popups
     readonly property int durPill:         ms(200)  // workspace pill width + color, OutCubic
     readonly property int durHover:        ms(120)  // capsule hover

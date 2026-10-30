@@ -24,6 +24,9 @@
  *   - recordingMode: string [readonly] ("auto": the recording mode follows a recording / a screen share · "off"; default "auto")
  *   - recordHold / recordHideTitles / recordPauseClipboard / recordFrame: bool [readonly] (its rules; default true)
  *   - focusMuteApps: list<string> [readonly] (apps kept silent during focus mode; default ["Telegram"])
+ *   - idleDimSeconds / idleLockSeconds / idleScreenOffSeconds / idleSuspendSeconds: int [readonly] (the idle sequence:
+ *       warn + dim, lock, screens off, suspend; defaults 240 / 300 / 330 / 1200; bin/dragon-idle reads them too)
+ *   - idleInhibitAgents: bool [readonly] (a working herdr agent holds the idle sequence back; default true)
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -39,6 +42,7 @@
  *   - setLongCommandSeconds(s: int): void
  *   - setRecordingMode(mode: string): void ("auto" | "off")
  *   - setFlag(key: string, on: bool): void (any boolean key above, e.g. "recordFrame")
+ *   - setSeconds(key: string, s: int): void (any idle*Seconds key)
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
@@ -89,6 +93,12 @@ Singleton {
     }
     function _flag(key: string, def: bool): bool { return typeof root._data[key] === "boolean" ? root._data[key] : def; }
     readonly property var focusMuteApps: Array.isArray(root._data.focusMuteApps) ? root._data.focusMuteApps.filter(a => typeof a === "string") : ["Telegram"]
+    function _secs(key: string, def: int): int { const v = Number(root._data[key]); return root._data[key] !== undefined && !isNaN(v) && v > 0 ? Math.round(v) : def; }
+    readonly property int idleDimSeconds: _secs("idleDimSeconds", 240)
+    readonly property int idleLockSeconds: _secs("idleLockSeconds", 300)
+    readonly property int idleScreenOffSeconds: _secs("idleScreenOffSeconds", 330)
+    readonly property int idleSuspendSeconds: _secs("idleSuspendSeconds", 1200)
+    readonly property bool idleInhibitAgents: _flag("idleInhibitAgents", true)
     readonly property string recordingMode: root._data.recordingMode === "off" ? "off" : "auto"
     readonly property bool recordHold: _flag("recordHold", true)
     readonly property bool recordHideTitles: _flag("recordHideTitles", true)
@@ -180,6 +190,7 @@ Singleton {
     function setLongCommandSeconds(s: int): void { _set("longCommandSeconds", Math.max(5, Math.round(s))); }
     function setRecordingMode(mode: string): void { if (["auto", "off"].indexOf(mode) >= 0) _set("recordingMode", mode); }
     function setFlag(key: string, on: bool): void { _set(key, on); }
+    function setSeconds(key: string, s: int): void { _set(key, Math.max(10, Math.round(s))); }
 
     IpcHandler {
         target: "settings"
