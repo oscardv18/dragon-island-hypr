@@ -105,11 +105,32 @@ Singleton {
     // -------------------------------------------------------------------------
     // Geometry
     // -------------------------------------------------------------------------
-    // Bar
-    readonly property real barHeight:     40
-    readonly property real barMarginTop:  10
+    // Bar: four styles (Settings.barStyle, bound in shell.qml). Sizes for 1366×768 at scale 1.
+    //   A thin notch: side islands 26 high at top 5 (radius 9), notch attached to the edge, 26 high; reserves 31
+    //   B dynamic island: side islands 26 at top 6 (radius 13), floating notch pill 26 at top 6; reserves 32
+    //   C joined bar: one edge-to-edge glass strip 24 high, notch exactly 24 high with ears; reserves 24
+    //   D minimal: an 18 high constellation pill and the orbital clock; an 80×18 micro-island only with activity;
+    //     reserves 18. Touching the top edge shows style B (barRevealed) without changing the reserved space.
+    property string barStyle: "B"
+    property bool barRevealed: false
+    readonly property string barLook: barStyle === "D" && barRevealed ? "B" : barStyle   // what is drawn right now
+    readonly property var _barGeo: ({
+        A: { top: 5, h: 26, r: 9,  zone: 31, notchTop: 0, notchH: 26, notchR: 13, ear: 8, attached: true },
+        B: { top: 6, h: 26, r: 13, zone: 32, notchTop: 6, notchH: 26, notchR: 13, ear: 0, attached: false },
+        C: { top: 0, h: 24, r: 0,  zone: 24, notchTop: 0, notchH: 24, notchR: 9,  ear: 8, attached: true },
+        D: { top: 4, h: 18, r: 9,  zone: 18, notchTop: 4, notchH: 18, notchR: 9,  ear: 0, attached: false }
+    })
+    readonly property var barGeo: _barGeo[barLook] ?? _barGeo.B
+    readonly property real barHeight:     barGeo.h                  // side islands (C: the strip)
+    readonly property real barMarginTop:  barGeo.top
+    readonly property real barZone:       (_barGeo[barStyle] ?? _barGeo.B).zone   // exclusiveZone of dragon-bar-zone (never follows the D reveal)
+    readonly property real barWindowHeight: 36                     // constant height of every bar window (the tallest style + room)
     readonly property real barMarginSide: 14
-    readonly property real barIslandRadius: 14
+    readonly property real barIslandRadius: barGeo.r
+    readonly property real barCapsuleHeight: barLook === "D" ? 14 : 20   // capsules inside the 26 / 24 / 18 islands
+    readonly property real barStripLine: 1                         // C: bottom line of the strip, white 7 %
+    readonly property real barDimOpacity: 0.35                     // barAutohide over a maximized window
+    readonly property real barEdge: 3                              // D: hot zone at the top edge
     readonly property real barIslandPadH:   6
     readonly property real barIslandGap:    5
     readonly property real launcherButton:  30
@@ -128,9 +149,13 @@ Singleton {
     readonly property real pillDot:     4
 
     // Notch island (v2): attached to the top edge, see references/design.md "Notch Island v2"
-    readonly property real notchHeight:        barMarginTop + barHeight // 50: bottom edge = bar islands' bottom edge
-    readonly property real notchEarRadius:     12     // concave "ears" where it meets the screen edge
-    readonly property real notchRadius:        18     // collapsed bottom corners
+    readonly property bool notchAttached:      barGeo.attached  // A, C: glued to the edge with ears · B, D: a floating pill
+    readonly property real notchTop:           barGeo.notchTop
+    readonly property real notchHeight:        barGeo.notchH
+    readonly property real notchEarRadius:     barGeo.ear       // concave "ears" where it meets the screen edge
+    readonly property real notchRadius:        barGeo.notchR    // collapsed bottom corners (floating: every corner)
+    readonly property real notchMicroWidth:    80               // D: the micro-island (only with activity)
+    readonly property real notchFloatTopRadius: 22              // B: top corners of the expanded Nook (it grows from the floating pill)
     readonly property real notchExpandedRadius: 34    // expanded bottom corners
     readonly property real notchBaseWidth:     120    // width at first appearance
     readonly property real notchMinWidth:      120
@@ -139,7 +164,7 @@ Singleton {
     readonly property real notchSideReserve:   232    // free centre kept between the islands for the collapsed notch
     readonly property real notchReserve:       300    // centre gap the left island leaves for the notch
     readonly property real notchPadH:          16     // content padding inside the collapsed body
-    readonly property real notchPeekDy:        8      // hover / transient peek: grows down ...
+    readonly property real notchPeekDy:        16     // hover / transient peek: grows down ...
     readonly property real notchPeekDx:        16      // ... and wider
     readonly property real notchExpandedWidth: 720
     readonly property real notchExpandedHeight: 230
@@ -151,8 +176,8 @@ Singleton {
     readonly property real notchArtRadius:     16
     readonly property real notchTabHeight:     28
     readonly property real notchTile:          40
-    readonly property real artSmall:     22
-    readonly property real artSmallRadius: 7
+    readonly property real artSmall:     18
+    readonly property real artSmallRadius: 6
 
     // Calendar popover (calendar | notifications + updates)
     readonly property real calendarPopoverWidth:  720

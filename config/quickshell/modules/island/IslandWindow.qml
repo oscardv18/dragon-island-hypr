@@ -34,7 +34,20 @@ PanelWindow {
     // hide the collapsed notch over fullscreen windows, except while it shows the OSD
     readonly property bool hidden: Hypr.fullscreenOn(screen) && !expanded && IslandState.mode !== "osd"
 
-    mask: Region { item: win.hidden ? null : notch.shapeItem }
+    // the notch shape, plus (style D, collapsed) the 3 px hot edge between the bar islands
+    mask: Region {
+        item: win.hidden ? null : notch.shapeItem
+        Region { item: edgeStrip }
+    }
+
+    Item {
+        id: edgeStrip
+        readonly property bool armed: Theme.barStyle === "D" && !win.expanded   // stays while revealed: no flicker at y < 3
+        x: BarMetrics.minX(win.screenName) - Theme.notchGap
+        width: armed ? Math.max(0, BarMetrics.maxX(win.screenName) + Theme.notchGap - x) : 0
+        height: Theme.barEdge
+        HoverHandler { onHoveredChanged: BarState.hover("edge", hovered) }
+    }
 
     HyprlandFocusGrab {
         windows: [win]

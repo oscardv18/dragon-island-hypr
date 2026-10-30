@@ -19,7 +19,7 @@ Item {
 
     onEntryChanged: if (entry) last = entry
 
-    implicitHeight: Theme.capsuleHeight
+    implicitHeight: Theme.barCapsuleHeight
     width: shown ? fullWidth : 0
     opacity: shown ? 1 : 0
     visible: width > 0.5

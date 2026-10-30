@@ -29,7 +29,7 @@ Item {
     }
     readonly property color dotColor: urgent ? Theme.error : Theme.wsDotColors[index % Theme.wsDotColors.length]
 
-    implicitHeight: Theme.pillHeight
+    implicitHeight: Math.min(Theme.pillHeight, Theme.barCapsuleHeight)
     implicitWidth: active ? Math.max(Theme.pillActiveMinWidth, activeRow.implicitWidth + Theme.pillPadH * 2)
                           : Math.max(Theme.pillMinWidth, content.implicitWidth + Theme.pillPadH * 2)
     width: implicitWidth

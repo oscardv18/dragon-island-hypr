@@ -30,13 +30,30 @@ Rectangle {
         }
     }
 
+    property bool bare: false            // C: drawn inside the joined strip, no box of its own
+    readonly property bool minimal: Theme.barLook === "D"   // D: only the clock
+
     implicitHeight: Theme.barHeight
     height: Theme.barHeight
     width: row.implicitWidth + Theme.barIslandPadH * 2
     radius: Theme.barIslandRadius
-    color: Theme.glassBg
-    border.width: 1
+    color: bare ? Theme.transparent : Theme.glassBg
+    border.width: bare ? 0 : 1
     border.color: Theme.glassBorder
+    Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+    Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
+
+    // inner top highlight, white 6 %
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+        radius: Math.max(0, parent.radius - 1)
+        visible: !root.bare
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: Theme.glassHighlight }
+            GradientStop { position: 0.5; color: Theme.transparent }
+        }
+    }
 
     Row {
         id: row
@@ -46,6 +63,7 @@ Rectangle {
 
         ContextChips {
             id: chips
+            visible: !root.minimal
             anchors.verticalCenter: parent.verticalCenter
             // room left once the always-present capsules are placed (measured separately: no feedback loop)
             available: root.maxWidth > 0 ? root.maxWidth - Theme.barIslandPadH * 2 - staticRow.implicitWidth - row.spacing : 10000
@@ -61,6 +79,7 @@ Rectangle {
         // 30 s of CPU, power profile) is in its popover, nothing expands on hover.
         Capsule {
             id: perfCap
+            visible: !root.minimal
             anchors.verticalCenter: parent.verticalCenter
             active: root.bar.isOpen("perf")
             onClicked: root.openPopover("perf", perfCap)
@@ -85,7 +104,7 @@ Rectangle {
         // Keyboard layout ("US" / "LA"): click = next layout
         Capsule {
             id: kbCap
-            visible: Keyboard.code.length > 0
+            visible: Keyboard.code.length > 0 && !root.minimal
             anchors.verticalCenter: parent.verticalCenter
             padH: Theme.capsulePadH - 2
             onClicked: Keyboard.next()
@@ -102,6 +121,7 @@ Rectangle {
         // Tiling mode of the focused workspace: dwindle ↔ scrolling (click or SUPER + T)
         Capsule {
             id: tilingCap
+            visible: !root.minimal
             anchors.verticalCenter: parent.verticalCenter
             padH: Theme.capsulePadH - 2
             onClicked: Tiling.toggle()
@@ -136,8 +156,9 @@ Rectangle {
         // Grouped capsule: each part is its own button
         Rectangle {
             id: group
+            visible: !root.minimal
             anchors.verticalCenter: parent.verticalCenter
-            height: Theme.capsuleHeight
+            height: Theme.barCapsuleHeight
             width: groupRow.implicitWidth
             radius: Theme.capsuleRadius
             color: Theme.surface2
@@ -190,7 +211,7 @@ Rectangle {
                     onWheel: d => Audio.setVolume(Audio.volume + (d > 0 ? 0.05 : -0.05))
                     Item {
                         width: Theme.iconMd
-                        height: Theme.capsuleHeight
+                        height: Theme.barCapsuleHeight
                         anchors.verticalCenter: parent.verticalCenter
                         Glyph {
                             shadow: true
@@ -294,7 +315,7 @@ Rectangle {
                 default property alias data: box.data
                 anchors.verticalCenter: parent.verticalCenter
                 width: shown ? box.implicitWidth : 0
-                height: Theme.capsuleHeight
+                height: Theme.barCapsuleHeight
                 opacity: shown ? 1 : 0
                 visible: width > 0.5
                 clip: true

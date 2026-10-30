@@ -34,6 +34,18 @@ ShellRoot {
         value: Settings.motionScale
     }
 
+    // Bar style (A / B / C / D) and the D reveal: Theme derives every bar / notch size from them
+    Binding {
+        target: Theme
+        property: "barStyle"
+        value: Settings.barStyle
+    }
+    Binding {
+        target: Theme
+        property: "barRevealed"
+        value: BarState.revealed
+    }
+
     // New identity: how much purple the active states carry (Settings → Apariencia)
     Binding {
         target: Theme

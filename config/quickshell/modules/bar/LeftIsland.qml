@@ -16,14 +16,31 @@ Rectangle {
     function openPopover(name: string, item): void { bar.openFrom(name, item, "left", windowX); }
     property real maxWidth: 0
 
+    property bool bare: false            // C: drawn inside the joined strip, no box of its own
+    readonly property bool minimal: Theme.barLook === "D"   // D: only the constellation
+
     implicitHeight: Theme.barHeight
     height: Theme.barHeight
     width: Math.min(row.implicitWidth + Theme.barIslandPadH * 2, maxWidth)
     radius: Theme.barIslandRadius
-    color: Theme.glassBg
-    border.width: 1
+    color: bare ? Theme.transparent : Theme.glassBg
+    border.width: bare ? 0 : 1
     border.color: Theme.glassBorder
     clip: true
+    Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+    Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
+
+    // inner top highlight, white 6 %
+    Rectangle {
+        anchors.fill: parent
+        anchors.margins: 1
+        radius: Math.max(0, parent.radius - 1)
+        visible: !root.bare
+        gradient: Gradient {
+            GradientStop { position: 0.0; color: Theme.glassHighlight }
+            GradientStop { position: 0.5; color: Theme.transparent }
+        }
+    }
 
     readonly property real fixedWidth: launcher.width + workspaces.width + submapChip.width + divider.width + row.spacing * 4
 
@@ -36,8 +53,9 @@ Rectangle {
         // Launcher button: 30×30, radius 9, brand gradient
         Item {
             id: launcher
-            width: Theme.launcherButton
-            height: Theme.launcherButton
+            visible: !root.minimal
+            width: Theme.barCapsuleHeight + 2
+            height: width
             anchors.verticalCenter: parent.verticalCenter
 
             AccentFill {
@@ -92,7 +110,7 @@ Rectangle {
             property string last: ""
             onShownChanged: if (shown) last = Hypr.submap
             anchors.verticalCenter: parent.verticalCenter
-            height: Theme.capsuleHeight - 4
+            height: Theme.barCapsuleHeight - 2
             radius: Theme.capsuleRadius - 2
             color: Theme.alpha(Theme.accent, 0.25)
             border.width: 1
@@ -116,16 +134,16 @@ Rectangle {
         Rectangle {
             id: divider
             width: 1
-            height: Theme.dividerHeight
+            height: Theme.barCapsuleHeight - 6
             anchors.verticalCenter: parent.verticalCenter
             color: Theme.divider
-            visible: Hypr.hasActiveWindow
+            visible: Hypr.hasActiveWindow && !root.minimal
         }
 
         // Active window: app icon + class + title (dim)
         Row {
             id: activeWindow
-            visible: Hypr.hasActiveWindow
+            visible: Hypr.hasActiveWindow && !root.minimal
             anchors.verticalCenter: parent.verticalCenter
             spacing: Theme.capsuleGap
             readonly property real available: Math.max(0, root.maxWidth - Theme.barIslandPadH * 2 - root.fixedWidth - Theme.capsulePadH)
@@ -155,7 +173,7 @@ Rectangle {
                 readonly property bool actions: windowHover.hovered
                 readonly property real titleWidth: Math.max(0, Math.min(titleText.implicitWidth, activeWindow.available - appClass.width - Theme.iconMd - Theme.capsuleGap * 2))
                 anchors.verticalCenter: parent.verticalCenter
-                height: Theme.capsuleHeight
+                height: Theme.barCapsuleHeight
                 width: actions ? actionsRow.implicitWidth : titleWidth
                 clip: true
                 Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
@@ -186,8 +204,8 @@ Rectangle {
                         property color tint: Theme.textSoft
                         property bool on: false
                         signal clicked()
-                        width: 22
-                        height: 22
+                        width: Theme.barCapsuleHeight
+                        height: Theme.barCapsuleHeight
                         radius: Theme.capsuleRadius - 3
                         color: abMouse.containsMouse ? Theme.surfaceHi : (on ? Theme.alpha(Theme.accent, 0.3) : Theme.surface2)
                         Behavior on color { ColorAnimation { duration: Theme.durHover } }
@@ -208,8 +226,8 @@ Rectangle {
                             required property int index
                             readonly property int wsId: index + 1
                             visible: wsId !== Hypr.focusedWorkspaceId
-                            width: visible ? 22 : 0
-                            height: 22
+                            width: visible ? Theme.barCapsuleHeight : 0
+                            height: Theme.barCapsuleHeight
                             radius: Theme.capsuleRadius - 3
                             color: moveMouse.containsMouse ? Theme.accentTint : Theme.surface2
                             Behavior on color { ColorAnimation { duration: Theme.durHover } }

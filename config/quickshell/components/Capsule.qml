@@ -16,7 +16,7 @@ Item {
     signal clicked(var mouse)
     signal wheel(real delta)
 
-    implicitHeight: Theme.capsuleHeight
+    implicitHeight: Theme.barCapsuleHeight
     implicitWidth: row.implicitWidth + padH * 2
 
     Rectangle {
