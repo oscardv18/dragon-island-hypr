@@ -116,8 +116,9 @@ Item {
         width: Math.max(0, root.animWidth)
         height: Math.max(0, root.animHeight)
         attached: root.attached
-        bottomRadius: root.expanded ? Theme.notchExpandedRadius : Theme.notchRadius
-        topRadius: root.expanded ? Theme.notchFloatTopRadius : Theme.notchRadius
+        // floating and collapsed (B, D): always a pill, also while it peeks taller (radius = height / 2)
+        bottomRadius: root.expanded ? Theme.notchExpandedRadius : (root.attached ? Theme.notchRadius : Math.max(Theme.notchRadius, root.targetHeight / 2))
+        topRadius: root.expanded ? Theme.notchFloatTopRadius : Math.max(Theme.notchRadius, root.targetHeight / 2)
         opacity: root.hidden || (root.micro && !root.microActive) ? 0 : 1
 
         Behavior on opacity { NumberAnimation { duration: Theme.durFade } }
