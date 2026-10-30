@@ -15,7 +15,8 @@ Shape {
     implicitHeight: size
     preferredRendererType: Shape.CurveRenderer
 
-    readonly property real _r: (Math.min(width, height) - thickness) / 2
+    // from `size`, never width / height: a Shape sizes itself from its path (binding loop)
+    readonly property real _r: (size - thickness) / 2
     property real _shown: Math.max(0, Math.min(1, value))
     Behavior on _shown { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
 
@@ -23,13 +24,13 @@ Shape {
         fillColor: Theme.transparent
         strokeColor: Theme.trackFaint
         strokeWidth: root.thickness
-        PathAngleArc { centerX: root.width / 2; centerY: root.height / 2; radiusX: root._r; radiusY: root._r; startAngle: 0; sweepAngle: 360 }
+        PathAngleArc { centerX: root.size / 2; centerY: root.size / 2; radiusX: root._r; radiusY: root._r; startAngle: 0; sweepAngle: 360 }
     }
     ShapePath {
         fillColor: Theme.transparent
         strokeColor: root.color
         strokeWidth: root.thickness
         capStyle: ShapePath.RoundCap
-        PathAngleArc { centerX: root.width / 2; centerY: root.height / 2; radiusX: root._r; radiusY: root._r; startAngle: -90; sweepAngle: 360 * root._shown }
+        PathAngleArc { centerX: root.size / 2; centerY: root.size / 2; radiusX: root._r; radiusY: root._r; startAngle: -90; sweepAngle: 360 * root._shown }
     }
 }
