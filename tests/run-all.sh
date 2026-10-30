@@ -54,6 +54,9 @@ if bash tests/migrations-fase4.sh; then pass "migraciones 025, 026, 027 y 028"; 
 step "migraciones en simulación: DRY_RUN=1 y DRY_RUN=true no cambian nada (HOME temporal)"
 if bash tests/migrations-dry-run.sh; then pass "todas las migraciones, dragon-sddm-sync y dragon-palette"; else fail "alguna migración escribe en dry-run"; fi
 
+step "dragon-sddm-sync: fondo 1920×1080 nítido con magick o ffmpeg (tema temporal)"
+if bash tests/sddm-sync.sh; then pass "fondo del login sin desenfoque previo"; else fail "dragon-sddm-sync prepara mal el fondo"; fi
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 

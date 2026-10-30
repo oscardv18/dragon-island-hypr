@@ -1,7 +1,9 @@
 #!/usr/bin/env bash
 # dragon-sddm-sync — give the login screen (SDDM theme dragon-core) your current wallpaper and its accent.
 # SDDM runs before your session as the 'sddm' user and cannot read your home, so this COPIES, with sudo:
-#   ~/.cache/dragon-island/current-wallpaper → /usr/share/sddm/themes/dragon-core/background.jpg (resized, pre-blurred)
+#   ~/.cache/dragon-island/current-wallpaper → /usr/share/sddm/themes/dragon-core/background.jpg (1920×1080 cover, JPEG
+#     quality 92 with full chroma, NOT blurred: the greeter blurs it once; a pre-blurred, compressed copy blurred again
+#     is what posterised the login). Needs ImageMagick (magick) or ffmpeg, whichever is installed
 #   ~/.local/state/dragon-island/palette.json → …/dragon-core/accent.conf ([General] accent / accentSoft / glow);
 #     without a palette (or with the wallpaper palette off) accent.conf is removed and the login uses the Dragon accent
 # It is never run from the shell: run it by hand after changing the wallpaper (migration 024 runs it once).
@@ -38,7 +40,9 @@ warn() { printf '\033[33m!\033[0m %s\n' "$*" >&2; }
 run()  { if $DRY_RUN; then printf '[dry-run]'; printf ' %q' "$@"; echo; else "$@"; fi; }
 
 [[ -d "$THEME" ]] || { warn "El tema dragon-core no está instalado en $THEME (sddm/install-theme.sh)."; exit 1; }
-command -v magick >/dev/null 2>&1 || { warn "Falta ImageMagick (magick)."; exit 1; }
+if command -v magick >/dev/null 2>&1; then RESIZER=magick
+elif command -v ffmpeg >/dev/null 2>&1; then RESIZER=ffmpeg
+else warn "Falta ImageMagick (magick) o ffmpeg para preparar el fondo: sudo pacman -S --needed imagemagick"; exit 1; fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -53,8 +57,16 @@ fi
 if [[ "$src" == "$REPO_DEFAULT" ]]; then
     cp -- "$src" "$WORK/background.jpg"
 else
-    # a 1280 px pre-blurred copy: small for the greeter, which blurs it again under its veil
-    magick "${src}[0]" -resize 1280x720^ -gravity center -extent 1280x720 -blur 0x16 -quality 82 "$WORK/background.jpg"
+    # 1920×1080 cover, sharp: the greeter blurs it once (Main.qml); first frame of a GIF / video
+    if [[ "$RESIZER" == magick ]]; then
+        magick "${src}[0]" -auto-orient -resize 1920x1080^ -gravity center -extent 1920x1080 \
+            -sampling-factor 4:4:4 -quality 92 "$WORK/background.jpg"
+    else
+        ffmpeg -v error -y -i "$src" -frames:v 1 \
+            -vf 'scale=1920:1080:force_original_aspect_ratio=increase:flags=lanczos,crop=1920:1080' \
+            -pix_fmt yuvj444p -q:v 2 "$WORK/background.jpg"
+    fi
+    [[ -s "$WORK/background.jpg" ]] || { warn "$RESIZER no pudo convertir $src"; exit 1; }
 fi
 
 # ---- accent ----
@@ -79,7 +91,7 @@ PY
 fi
 
 say "Tema: $THEME"
-say "Fondo: $src"
+if [[ "$src" == "$REPO_DEFAULT" ]]; then say "Fondo: $src (el del tema)"; else say "Fondo: $src (1920×1080 con $RESIZER)"; fi
 if $accent_on; then say "Acento: $(grep '^accent=' "$WORK/accent.conf" | cut -d= -f2) (paleta del fondo)"
 else say "Acento: Dragon fijo (se quita accent.conf)"; fi
 
