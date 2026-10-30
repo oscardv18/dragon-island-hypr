@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# ID-only app launch statistics, no daemon and no launch actions.
+set -Eeuo pipefail
+ENGINE_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+ENGINE_LIB="$(dirname -- "$(dirname -- "$ENGINE_BIN")")/dragon-core/dragon_usage.py"
+if [[ ! -f "$ENGINE_LIB" ]]; then
+    ENGINE_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_usage.py"
+fi
+exec python3 "$ENGINE_LIB" "$@"

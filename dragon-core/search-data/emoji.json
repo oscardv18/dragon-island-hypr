@@ -1,0 +1,2682 @@
+[
+  {
+    "id": "emoji:1f600",
+    "char": "😀",
+    "name": {
+      "es": "cara feliz sonrisa alegría",
+      "en": "happy face smile joy"
+    },
+    "keywords": {
+      "es": [
+        "cara",
+        "feliz",
+        "sonrisa",
+        "alegría"
+      ],
+      "en": [
+        "happy",
+        "face",
+        "smile",
+        "joy",
+        "GRINNING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f603",
+    "char": "😃",
+    "name": {
+      "es": "sonrisa ojos grandes alegría",
+      "en": "smile big eyes happy"
+    },
+    "keywords": {
+      "es": [
+        "sonrisa",
+        "ojos",
+        "grandes",
+        "alegría"
+      ],
+      "en": [
+        "smile",
+        "big",
+        "eyes",
+        "happy",
+        "SMILING FACE WITH OPEN MOUTH"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f604",
+    "char": "😄",
+    "name": {
+      "es": "risa alegría divertido",
+      "en": "laugh smile happy"
+    },
+    "keywords": {
+      "es": [
+        "risa",
+        "alegría",
+        "divertido"
+      ],
+      "en": [
+        "laugh",
+        "smile",
+        "happy",
+        "SMILING FACE WITH OPEN MOUTH AND SMILING EYES"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f601",
+    "char": "😁",
+    "name": {
+      "es": "sonrisa dientes",
+      "en": "grin teeth smile"
+    },
+    "keywords": {
+      "es": [
+        "sonrisa",
+        "dientes"
+      ],
+      "en": [
+        "grin",
+        "teeth",
+        "smile",
+        "GRINNING FACE WITH SMILING EYES"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f602",
+    "char": "😂",
+    "name": {
+      "es": "lágrimas de risa gracioso",
+      "en": "tears of joy laugh funny"
+    },
+    "keywords": {
+      "es": [
+        "lágrimas",
+        "de",
+        "risa",
+        "gracioso"
+      ],
+      "en": [
+        "tears",
+        "of",
+        "joy",
+        "laugh",
+        "funny",
+        "FACE WITH TEARS OF JOY"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f923",
+    "char": "🤣",
+    "name": {
+      "es": "risa carcajada",
+      "en": "rolling laughing"
+    },
+    "keywords": {
+      "es": [
+        "risa",
+        "carcajada"
+      ],
+      "en": [
+        "rolling",
+        "laughing",
+        "ROLLING ON THE FLOOR LAUGHING"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f60a",
+    "char": "😊",
+    "name": {
+      "es": "sonrisa tímida sonrojo",
+      "en": "smile blush shy"
+    },
+    "keywords": {
+      "es": [
+        "sonrisa",
+        "tímida",
+        "sonrojo"
+      ],
+      "en": [
+        "smile",
+        "blush",
+        "shy",
+        "SMILING FACE WITH SMILING EYES"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f642",
+    "char": "🙂",
+    "name": {
+      "es": "sonrisa leve",
+      "en": "slight smile"
+    },
+    "keywords": {
+      "es": [
+        "sonrisa",
+        "leve"
+      ],
+      "en": [
+        "slight",
+        "smile",
+        "SLIGHTLY SMILING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f609",
+    "char": "😉",
+    "name": {
+      "es": "guiño complicidad",
+      "en": "wink"
+    },
+    "keywords": {
+      "es": [
+        "guiño",
+        "complicidad"
+      ],
+      "en": [
+        "wink",
+        "WINKING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f60d",
+    "char": "😍",
+    "name": {
+      "es": "enamorado ojos corazón",
+      "en": "love heart eyes"
+    },
+    "keywords": {
+      "es": [
+        "enamorado",
+        "ojos",
+        "corazón"
+      ],
+      "en": [
+        "love",
+        "heart",
+        "eyes",
+        "SMILING FACE WITH HEART-SHAPED EYES"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f970",
+    "char": "🥰",
+    "name": {
+      "es": "cariño amor corazones",
+      "en": "love hearts affection"
+    },
+    "keywords": {
+      "es": [
+        "cariño",
+        "amor",
+        "corazones"
+      ],
+      "en": [
+        "love",
+        "hearts",
+        "affection",
+        "SMILING FACE WITH SMILING EYES AND THREE HEARTS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f618",
+    "char": "😘",
+    "name": {
+      "es": "beso amor",
+      "en": "kiss love"
+    },
+    "keywords": {
+      "es": [
+        "beso",
+        "amor"
+      ],
+      "en": [
+        "kiss",
+        "love",
+        "FACE THROWING A KISS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f60e",
+    "char": "😎",
+    "name": {
+      "es": "gafas de sol genial",
+      "en": "sunglasses cool"
+    },
+    "keywords": {
+      "es": [
+        "gafas",
+        "de",
+        "sol",
+        "genial"
+      ],
+      "en": [
+        "sunglasses",
+        "cool",
+        "SMILING FACE WITH SUNGLASSES"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f913",
+    "char": "🤓",
+    "name": {
+      "es": "estudioso gafas",
+      "en": "nerd glasses"
+    },
+    "keywords": {
+      "es": [
+        "estudioso",
+        "gafas"
+      ],
+      "en": [
+        "nerd",
+        "glasses",
+        "NERD FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f914",
+    "char": "🤔",
+    "name": {
+      "es": "pensando duda",
+      "en": "thinking question"
+    },
+    "keywords": {
+      "es": [
+        "pensando",
+        "duda"
+      ],
+      "en": [
+        "thinking",
+        "question",
+        "THINKING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f634",
+    "char": "😴",
+    "name": {
+      "es": "dormir sueño",
+      "en": "sleep tired"
+    },
+    "keywords": {
+      "es": [
+        "dormir",
+        "sueño"
+      ],
+      "en": [
+        "sleep",
+        "tired",
+        "SLEEPING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f622",
+    "char": "😢",
+    "name": {
+      "es": "triste lágrima",
+      "en": "sad tear cry"
+    },
+    "keywords": {
+      "es": [
+        "triste",
+        "lágrima"
+      ],
+      "en": [
+        "sad",
+        "tear",
+        "cry",
+        "CRYING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f62d",
+    "char": "😭",
+    "name": {
+      "es": "llorar tristeza",
+      "en": "cry sob sad"
+    },
+    "keywords": {
+      "es": [
+        "llorar",
+        "tristeza"
+      ],
+      "en": [
+        "cry",
+        "sob",
+        "sad",
+        "LOUDLY CRYING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f621",
+    "char": "😡",
+    "name": {
+      "es": "enfadado ira",
+      "en": "angry rage"
+    },
+    "keywords": {
+      "es": [
+        "enfadado",
+        "ira"
+      ],
+      "en": [
+        "angry",
+        "rage",
+        "POUTING FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f92f",
+    "char": "🤯",
+    "name": {
+      "es": "sorpresa explosión cabeza",
+      "en": "mind blown surprise"
+    },
+    "keywords": {
+      "es": [
+        "sorpresa",
+        "explosión",
+        "cabeza"
+      ],
+      "en": [
+        "mind",
+        "blown",
+        "surprise",
+        "SHOCKED FACE WITH EXPLODING HEAD"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f973",
+    "char": "🥳",
+    "name": {
+      "es": "fiesta celebración",
+      "en": "party celebration"
+    },
+    "keywords": {
+      "es": [
+        "fiesta",
+        "celebración"
+      ],
+      "en": [
+        "party",
+        "celebration",
+        "FACE WITH PARTY HORN AND PARTY HAT"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f631",
+    "char": "😱",
+    "name": {
+      "es": "miedo sorpresa",
+      "en": "fear scream"
+    },
+    "keywords": {
+      "es": [
+        "miedo",
+        "sorpresa"
+      ],
+      "en": [
+        "fear",
+        "scream",
+        "FACE SCREAMING IN FEAR"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f916",
+    "char": "🤖",
+    "name": {
+      "es": "robot máquina",
+      "en": "robot machine"
+    },
+    "keywords": {
+      "es": [
+        "robot",
+        "máquina"
+      ],
+      "en": [
+        "robot",
+        "machine",
+        "ROBOT FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f47b",
+    "char": "👻",
+    "name": {
+      "es": "fantasma halloween",
+      "en": "ghost halloween"
+    },
+    "keywords": {
+      "es": [
+        "fantasma",
+        "halloween"
+      ],
+      "en": [
+        "ghost",
+        "halloween",
+        "GHOST"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f480",
+    "char": "💀",
+    "name": {
+      "es": "calavera muerte",
+      "en": "skull death"
+    },
+    "keywords": {
+      "es": [
+        "calavera",
+        "muerte"
+      ],
+      "en": [
+        "skull",
+        "death",
+        "SKULL"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f47d",
+    "char": "👽",
+    "name": {
+      "es": "alienígena espacio",
+      "en": "alien space"
+    },
+    "keywords": {
+      "es": [
+        "alienígena",
+        "espacio"
+      ],
+      "en": [
+        "alien",
+        "space",
+        "EXTRATERRESTRIAL ALIEN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4a9",
+    "char": "💩",
+    "name": {
+      "es": "caca",
+      "en": "poop"
+    },
+    "keywords": {
+      "es": [
+        "caca"
+      ],
+      "en": [
+        "poop",
+        "PILE OF POO"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f44d",
+    "char": "👍",
+    "name": {
+      "es": "pulgar arriba sí bien",
+      "en": "thumbs up yes good"
+    },
+    "keywords": {
+      "es": [
+        "pulgar",
+        "arriba",
+        "sí",
+        "bien"
+      ],
+      "en": [
+        "thumbs",
+        "up",
+        "yes",
+        "good",
+        "THUMBS UP SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f44e",
+    "char": "👎",
+    "name": {
+      "es": "pulgar abajo no mal",
+      "en": "thumbs down no bad"
+    },
+    "keywords": {
+      "es": [
+        "pulgar",
+        "abajo",
+        "no",
+        "mal"
+      ],
+      "en": [
+        "thumbs",
+        "down",
+        "no",
+        "bad",
+        "THUMBS DOWN SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f44f",
+    "char": "👏",
+    "name": {
+      "es": "aplausos bravo",
+      "en": "clap applause"
+    },
+    "keywords": {
+      "es": [
+        "aplausos",
+        "bravo"
+      ],
+      "en": [
+        "clap",
+        "applause",
+        "CLAPPING HANDS SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f64c",
+    "char": "🙌",
+    "name": {
+      "es": "manos celebración",
+      "en": "raised hands celebration"
+    },
+    "keywords": {
+      "es": [
+        "manos",
+        "celebración"
+      ],
+      "en": [
+        "raised",
+        "hands",
+        "celebration",
+        "PERSON RAISING BOTH HANDS IN CELEBRATION"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f64f",
+    "char": "🙏",
+    "name": {
+      "es": "gracias por favor rezar",
+      "en": "thanks please pray"
+    },
+    "keywords": {
+      "es": [
+        "gracias",
+        "por",
+        "favor",
+        "rezar"
+      ],
+      "en": [
+        "thanks",
+        "please",
+        "pray",
+        "PERSON WITH FOLDED HANDS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f44b",
+    "char": "👋",
+    "name": {
+      "es": "hola adiós saludo",
+      "en": "hello goodbye wave"
+    },
+    "keywords": {
+      "es": [
+        "hola",
+        "adiós",
+        "saludo"
+      ],
+      "en": [
+        "hello",
+        "goodbye",
+        "wave",
+        "WAVING HAND SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f44c",
+    "char": "👌",
+    "name": {
+      "es": "bien perfecto",
+      "en": "okay perfect"
+    },
+    "keywords": {
+      "es": [
+        "bien",
+        "perfecto"
+      ],
+      "en": [
+        "okay",
+        "perfect",
+        "OK HAND SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:270c",
+    "char": "✌",
+    "name": {
+      "es": "paz victoria",
+      "en": "peace victory"
+    },
+    "keywords": {
+      "es": [
+        "paz",
+        "victoria"
+      ],
+      "en": [
+        "peace",
+        "victory",
+        "VICTORY HAND"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4aa",
+    "char": "💪",
+    "name": {
+      "es": "fuerza músculo",
+      "en": "strength muscle"
+    },
+    "keywords": {
+      "es": [
+        "fuerza",
+        "músculo"
+      ],
+      "en": [
+        "strength",
+        "muscle",
+        "FLEXED BICEPS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2764",
+    "char": "❤",
+    "name": {
+      "es": "corazón amor rojo",
+      "en": "heart love red"
+    },
+    "keywords": {
+      "es": [
+        "corazón",
+        "amor",
+        "rojo"
+      ],
+      "en": [
+        "heart",
+        "love",
+        "red",
+        "HEAVY BLACK HEART"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f49c",
+    "char": "💜",
+    "name": {
+      "es": "corazón morado amor",
+      "en": "purple heart love"
+    },
+    "keywords": {
+      "es": [
+        "corazón",
+        "morado",
+        "amor"
+      ],
+      "en": [
+        "purple",
+        "heart",
+        "love",
+        "PURPLE HEART"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f499",
+    "char": "💙",
+    "name": {
+      "es": "corazón azul amor",
+      "en": "blue heart love"
+    },
+    "keywords": {
+      "es": [
+        "corazón",
+        "azul",
+        "amor"
+      ],
+      "en": [
+        "blue",
+        "heart",
+        "love",
+        "BLUE HEART"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f49a",
+    "char": "💚",
+    "name": {
+      "es": "corazón verde amor",
+      "en": "green heart love"
+    },
+    "keywords": {
+      "es": [
+        "corazón",
+        "verde",
+        "amor"
+      ],
+      "en": [
+        "green",
+        "heart",
+        "love",
+        "GREEN HEART"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f494",
+    "char": "💔",
+    "name": {
+      "es": "corazón roto",
+      "en": "broken heart"
+    },
+    "keywords": {
+      "es": [
+        "corazón",
+        "roto"
+      ],
+      "en": [
+        "broken",
+        "heart",
+        "BROKEN HEART"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2728",
+    "char": "✨",
+    "name": {
+      "es": "brillos estrellas",
+      "en": "sparkles stars"
+    },
+    "keywords": {
+      "es": [
+        "brillos",
+        "estrellas"
+      ],
+      "en": [
+        "sparkles",
+        "stars",
+        "SPARKLES"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2b50",
+    "char": "⭐",
+    "name": {
+      "es": "estrella favorito",
+      "en": "star favorite"
+    },
+    "keywords": {
+      "es": [
+        "estrella",
+        "favorito"
+      ],
+      "en": [
+        "star",
+        "favorite",
+        "WHITE MEDIUM STAR"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f525",
+    "char": "🔥",
+    "name": {
+      "es": "fuego calor",
+      "en": "fire hot"
+    },
+    "keywords": {
+      "es": [
+        "fuego",
+        "calor"
+      ],
+      "en": [
+        "fire",
+        "hot",
+        "FIRE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4a7",
+    "char": "💧",
+    "name": {
+      "es": "gota agua",
+      "en": "drop water"
+    },
+    "keywords": {
+      "es": [
+        "gota",
+        "agua"
+      ],
+      "en": [
+        "drop",
+        "water",
+        "DROPLET"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f308",
+    "char": "🌈",
+    "name": {
+      "es": "arcoíris colores",
+      "en": "rainbow colors"
+    },
+    "keywords": {
+      "es": [
+        "arcoíris",
+        "colores"
+      ],
+      "en": [
+        "rainbow",
+        "colors",
+        "RAINBOW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2600",
+    "char": "☀",
+    "name": {
+      "es": "sol día",
+      "en": "sun day"
+    },
+    "keywords": {
+      "es": [
+        "sol",
+        "día"
+      ],
+      "en": [
+        "sun",
+        "day",
+        "BLACK SUN WITH RAYS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f319",
+    "char": "🌙",
+    "name": {
+      "es": "luna noche",
+      "en": "moon night"
+    },
+    "keywords": {
+      "es": [
+        "luna",
+        "noche"
+      ],
+      "en": [
+        "moon",
+        "night",
+        "CRESCENT MOON"
+      ]
+    }
+  },
+  {
+    "id": "emoji:26a1",
+    "char": "⚡",
+    "name": {
+      "es": "rayo electricidad",
+      "en": "lightning electricity"
+    },
+    "keywords": {
+      "es": [
+        "rayo",
+        "electricidad"
+      ],
+      "en": [
+        "lightning",
+        "electricity",
+        "HIGH VOLTAGE SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2744",
+    "char": "❄",
+    "name": {
+      "es": "nieve frío",
+      "en": "snow cold"
+    },
+    "keywords": {
+      "es": [
+        "nieve",
+        "frío"
+      ],
+      "en": [
+        "snow",
+        "cold",
+        "SNOWFLAKE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2601",
+    "char": "☁",
+    "name": {
+      "es": "nube clima",
+      "en": "cloud weather"
+    },
+    "keywords": {
+      "es": [
+        "nube",
+        "clima"
+      ],
+      "en": [
+        "cloud",
+        "weather",
+        "CLOUD"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f30d",
+    "char": "🌍",
+    "name": {
+      "es": "tierra planeta mundo",
+      "en": "earth planet world"
+    },
+    "keywords": {
+      "es": [
+        "tierra",
+        "planeta",
+        "mundo"
+      ],
+      "en": [
+        "earth",
+        "planet",
+        "world",
+        "EARTH GLOBE EUROPE-AFRICA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f680",
+    "char": "🚀",
+    "name": {
+      "es": "cohete espacio lanzamiento",
+      "en": "rocket space launch"
+    },
+    "keywords": {
+      "es": [
+        "cohete",
+        "espacio",
+        "lanzamiento"
+      ],
+      "en": [
+        "rocket",
+        "space",
+        "launch",
+        "ROCKET"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f409",
+    "char": "🐉",
+    "name": {
+      "es": "dragón fantasía",
+      "en": "dragon fantasy"
+    },
+    "keywords": {
+      "es": [
+        "dragón",
+        "fantasía"
+      ],
+      "en": [
+        "dragon",
+        "fantasy",
+        "DRAGON"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f408",
+    "char": "🐈",
+    "name": {
+      "es": "gato animal",
+      "en": "cat animal"
+    },
+    "keywords": {
+      "es": [
+        "gato",
+        "animal"
+      ],
+      "en": [
+        "cat",
+        "animal",
+        "CAT"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f415",
+    "char": "🐕",
+    "name": {
+      "es": "perro animal",
+      "en": "dog animal"
+    },
+    "keywords": {
+      "es": [
+        "perro",
+        "animal"
+      ],
+      "en": [
+        "dog",
+        "animal",
+        "DOG"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f98a",
+    "char": "🦊",
+    "name": {
+      "es": "zorro animal",
+      "en": "fox animal"
+    },
+    "keywords": {
+      "es": [
+        "zorro",
+        "animal"
+      ],
+      "en": [
+        "fox",
+        "animal",
+        "FOX FACE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f98b",
+    "char": "🦋",
+    "name": {
+      "es": "mariposa naturaleza",
+      "en": "butterfly nature"
+    },
+    "keywords": {
+      "es": [
+        "mariposa",
+        "naturaleza"
+      ],
+      "en": [
+        "butterfly",
+        "nature",
+        "BUTTERFLY"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f338",
+    "char": "🌸",
+    "name": {
+      "es": "flor cerezo",
+      "en": "flower cherry blossom"
+    },
+    "keywords": {
+      "es": [
+        "flor",
+        "cerezo"
+      ],
+      "en": [
+        "flower",
+        "cherry",
+        "blossom",
+        "CHERRY BLOSSOM"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f331",
+    "char": "🌱",
+    "name": {
+      "es": "planta brote",
+      "en": "plant seedling"
+    },
+    "keywords": {
+      "es": [
+        "planta",
+        "brote"
+      ],
+      "en": [
+        "plant",
+        "seedling",
+        "SEEDLING"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2615",
+    "char": "☕",
+    "name": {
+      "es": "café bebida",
+      "en": "coffee drink"
+    },
+    "keywords": {
+      "es": [
+        "café",
+        "bebida"
+      ],
+      "en": [
+        "coffee",
+        "drink",
+        "HOT BEVERAGE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f355",
+    "char": "🍕",
+    "name": {
+      "es": "pizza comida",
+      "en": "pizza food"
+    },
+    "keywords": {
+      "es": [
+        "pizza",
+        "comida"
+      ],
+      "en": [
+        "pizza",
+        "food",
+        "SLICE OF PIZZA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f37a",
+    "char": "🍺",
+    "name": {
+      "es": "cerveza bebida",
+      "en": "beer drink"
+    },
+    "keywords": {
+      "es": [
+        "cerveza",
+        "bebida"
+      ],
+      "en": [
+        "beer",
+        "drink",
+        "BEER MUG"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f389",
+    "char": "🎉",
+    "name": {
+      "es": "celebración fiesta confeti",
+      "en": "celebration party confetti"
+    },
+    "keywords": {
+      "es": [
+        "celebración",
+        "fiesta",
+        "confeti"
+      ],
+      "en": [
+        "celebration",
+        "party",
+        "confetti",
+        "PARTY POPPER"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f382",
+    "char": "🎂",
+    "name": {
+      "es": "pastel cumpleaños",
+      "en": "cake birthday"
+    },
+    "keywords": {
+      "es": [
+        "pastel",
+        "cumpleaños"
+      ],
+      "en": [
+        "cake",
+        "birthday",
+        "BIRTHDAY CAKE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f381",
+    "char": "🎁",
+    "name": {
+      "es": "regalo",
+      "en": "gift present"
+    },
+    "keywords": {
+      "es": [
+        "regalo"
+      ],
+      "en": [
+        "gift",
+        "present",
+        "WRAPPED PRESENT"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f3b5",
+    "char": "🎵",
+    "name": {
+      "es": "música nota",
+      "en": "music note"
+    },
+    "keywords": {
+      "es": [
+        "música",
+        "nota"
+      ],
+      "en": [
+        "music",
+        "note",
+        "MUSICAL NOTE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f3ae",
+    "char": "🎮",
+    "name": {
+      "es": "juego mando",
+      "en": "game controller"
+    },
+    "keywords": {
+      "es": [
+        "juego",
+        "mando"
+      ],
+      "en": [
+        "game",
+        "controller",
+        "VIDEO GAME"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4bb",
+    "char": "💻",
+    "name": {
+      "es": "ordenador portátil computadora",
+      "en": "laptop computer"
+    },
+    "keywords": {
+      "es": [
+        "ordenador",
+        "portátil",
+        "computadora"
+      ],
+      "en": [
+        "laptop",
+        "computer",
+        "PERSONAL COMPUTER"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2328",
+    "char": "⌨",
+    "name": {
+      "es": "teclado",
+      "en": "keyboard"
+    },
+    "keywords": {
+      "es": [
+        "teclado"
+      ],
+      "en": [
+        "keyboard",
+        "KEYBOARD"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f5a5",
+    "char": "🖥",
+    "name": {
+      "es": "pantalla monitor",
+      "en": "screen monitor"
+    },
+    "keywords": {
+      "es": [
+        "pantalla",
+        "monitor"
+      ],
+      "en": [
+        "screen",
+        "monitor",
+        "DESKTOP COMPUTER"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4c1",
+    "char": "📁",
+    "name": {
+      "es": "carpeta archivos",
+      "en": "folder files"
+    },
+    "keywords": {
+      "es": [
+        "carpeta",
+        "archivos"
+      ],
+      "en": [
+        "folder",
+        "files",
+        "FILE FOLDER"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4cb",
+    "char": "📋",
+    "name": {
+      "es": "portapapeles",
+      "en": "clipboard"
+    },
+    "keywords": {
+      "es": [
+        "portapapeles"
+      ],
+      "en": [
+        "clipboard",
+        "CLIPBOARD"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4cc",
+    "char": "📌",
+    "name": {
+      "es": "chincheta fijar",
+      "en": "pin"
+    },
+    "keywords": {
+      "es": [
+        "chincheta",
+        "fijar"
+      ],
+      "en": [
+        "pin",
+        "PUSHPIN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f512",
+    "char": "🔒",
+    "name": {
+      "es": "candado seguridad",
+      "en": "lock security"
+    },
+    "keywords": {
+      "es": [
+        "candado",
+        "seguridad"
+      ],
+      "en": [
+        "lock",
+        "security",
+        "LOCK"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f511",
+    "char": "🔑",
+    "name": {
+      "es": "llave clave",
+      "en": "key"
+    },
+    "keywords": {
+      "es": [
+        "llave",
+        "clave"
+      ],
+      "en": [
+        "key",
+        "KEY"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f50d",
+    "char": "🔍",
+    "name": {
+      "es": "buscar lupa",
+      "en": "search magnifier"
+    },
+    "keywords": {
+      "es": [
+        "buscar",
+        "lupa"
+      ],
+      "en": [
+        "search",
+        "magnifier",
+        "LEFT-POINTING MAGNIFYING GLASS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f527",
+    "char": "🔧",
+    "name": {
+      "es": "herramienta llave",
+      "en": "tool wrench"
+    },
+    "keywords": {
+      "es": [
+        "herramienta",
+        "llave"
+      ],
+      "en": [
+        "tool",
+        "wrench",
+        "WRENCH"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2699",
+    "char": "⚙",
+    "name": {
+      "es": "ajustes engranaje",
+      "en": "settings gear"
+    },
+    "keywords": {
+      "es": [
+        "ajustes",
+        "engranaje"
+      ],
+      "en": [
+        "settings",
+        "gear",
+        "GEAR"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4a1",
+    "char": "💡",
+    "name": {
+      "es": "idea bombilla",
+      "en": "idea light bulb"
+    },
+    "keywords": {
+      "es": [
+        "idea",
+        "bombilla"
+      ],
+      "en": [
+        "idea",
+        "light",
+        "bulb",
+        "ELECTRIC LIGHT BULB"
+      ]
+    }
+  },
+  {
+    "id": "emoji:1f4da",
+    "char": "📚",
+    "name": {
+      "es": "libros estudiar",
+      "en": "books study"
+    },
+    "keywords": {
+      "es": [
+        "libros",
+        "estudiar"
+      ],
+      "en": [
+        "books",
+        "study",
+        "BOOKS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2705",
+    "char": "✅",
+    "name": {
+      "es": "correcto verificado sí",
+      "en": "check verified yes"
+    },
+    "keywords": {
+      "es": [
+        "correcto",
+        "verificado",
+        "sí"
+      ],
+      "en": [
+        "check",
+        "verified",
+        "yes",
+        "WHITE HEAVY CHECK MARK"
+      ]
+    }
+  },
+  {
+    "id": "emoji:274c",
+    "char": "❌",
+    "name": {
+      "es": "error cerrar no",
+      "en": "cross error close no"
+    },
+    "keywords": {
+      "es": [
+        "error",
+        "cerrar",
+        "no"
+      ],
+      "en": [
+        "cross",
+        "error",
+        "close",
+        "no",
+        "CROSS MARK"
+      ]
+    }
+  },
+  {
+    "id": "emoji:26a0",
+    "char": "⚠",
+    "name": {
+      "es": "aviso advertencia",
+      "en": "warning caution"
+    },
+    "keywords": {
+      "es": [
+        "aviso",
+        "advertencia"
+      ],
+      "en": [
+        "warning",
+        "caution",
+        "WARNING SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2139",
+    "char": "ℹ",
+    "name": {
+      "es": "información ayuda",
+      "en": "information help"
+    },
+    "keywords": {
+      "es": [
+        "información",
+        "ayuda"
+      ],
+      "en": [
+        "information",
+        "help",
+        "INFORMATION SOURCE"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2753",
+    "char": "❓",
+    "name": {
+      "es": "pregunta duda",
+      "en": "question"
+    },
+    "keywords": {
+      "es": [
+        "pregunta",
+        "duda"
+      ],
+      "en": [
+        "question",
+        "BLACK QUESTION MARK ORNAMENT"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2192",
+    "char": "→",
+    "name": {
+      "es": "flecha derecha",
+      "en": "arrow right"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "derecha"
+      ],
+      "en": [
+        "arrow",
+        "right",
+        "RIGHTWARDS ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2190",
+    "char": "←",
+    "name": {
+      "es": "flecha izquierda",
+      "en": "arrow left"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "izquierda"
+      ],
+      "en": [
+        "arrow",
+        "left",
+        "LEFTWARDS ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2191",
+    "char": "↑",
+    "name": {
+      "es": "flecha arriba",
+      "en": "arrow up"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "arriba"
+      ],
+      "en": [
+        "arrow",
+        "up",
+        "UPWARDS ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2193",
+    "char": "↓",
+    "name": {
+      "es": "flecha abajo",
+      "en": "arrow down"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "abajo"
+      ],
+      "en": [
+        "arrow",
+        "down",
+        "DOWNWARDS ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2194",
+    "char": "↔",
+    "name": {
+      "es": "flecha horizontal ambos",
+      "en": "arrow horizontal both"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "horizontal",
+        "ambos"
+      ],
+      "en": [
+        "arrow",
+        "horizontal",
+        "both",
+        "LEFT RIGHT ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:21d2",
+    "char": "⇒",
+    "name": {
+      "es": "implica flecha doble derecha",
+      "en": "implies double arrow right"
+    },
+    "keywords": {
+      "es": [
+        "implica",
+        "flecha",
+        "doble",
+        "derecha"
+      ],
+      "en": [
+        "implies",
+        "double",
+        "arrow",
+        "right",
+        "RIGHTWARDS DOUBLE ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:21d0",
+    "char": "⇐",
+    "name": {
+      "es": "flecha doble izquierda",
+      "en": "double arrow left"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "doble",
+        "izquierda"
+      ],
+      "en": [
+        "double",
+        "arrow",
+        "left",
+        "LEFTWARDS DOUBLE ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:21d4",
+    "char": "⇔",
+    "name": {
+      "es": "equivalente flecha doble",
+      "en": "equivalent double arrow"
+    },
+    "keywords": {
+      "es": [
+        "equivalente",
+        "flecha",
+        "doble"
+      ],
+      "en": [
+        "equivalent",
+        "double",
+        "arrow",
+        "LEFT RIGHT DOUBLE ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2197",
+    "char": "↗",
+    "name": {
+      "es": "flecha noreste",
+      "en": "arrow northeast"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "noreste"
+      ],
+      "en": [
+        "arrow",
+        "northeast",
+        "NORTH EAST ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2198",
+    "char": "↘",
+    "name": {
+      "es": "flecha sureste",
+      "en": "arrow southeast"
+    },
+    "keywords": {
+      "es": [
+        "flecha",
+        "sureste"
+      ],
+      "en": [
+        "arrow",
+        "southeast",
+        "SOUTH EAST ARROW"
+      ]
+    }
+  },
+  {
+    "id": "emoji:b1",
+    "char": "±",
+    "name": {
+      "es": "más menos signo",
+      "en": "plus minus sign"
+    },
+    "keywords": {
+      "es": [
+        "más",
+        "menos",
+        "signo"
+      ],
+      "en": [
+        "plus",
+        "minus",
+        "sign",
+        "PLUS-MINUS SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:d7",
+    "char": "×",
+    "name": {
+      "es": "multiplicación por",
+      "en": "multiplication times"
+    },
+    "keywords": {
+      "es": [
+        "multiplicación",
+        "por"
+      ],
+      "en": [
+        "multiplication",
+        "times",
+        "MULTIPLICATION SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:f7",
+    "char": "÷",
+    "name": {
+      "es": "división entre",
+      "en": "division"
+    },
+    "keywords": {
+      "es": [
+        "división",
+        "entre"
+      ],
+      "en": [
+        "division",
+        "DIVISION SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:221a",
+    "char": "√",
+    "name": {
+      "es": "raíz cuadrada",
+      "en": "square root"
+    },
+    "keywords": {
+      "es": [
+        "raíz",
+        "cuadrada"
+      ],
+      "en": [
+        "square",
+        "root",
+        "SQUARE ROOT"
+      ]
+    }
+  },
+  {
+    "id": "emoji:221e",
+    "char": "∞",
+    "name": {
+      "es": "infinito",
+      "en": "infinity"
+    },
+    "keywords": {
+      "es": [
+        "infinito"
+      ],
+      "en": [
+        "infinity",
+        "INFINITY"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2248",
+    "char": "≈",
+    "name": {
+      "es": "aproximadamente igual",
+      "en": "approximately equal"
+    },
+    "keywords": {
+      "es": [
+        "aproximadamente",
+        "igual"
+      ],
+      "en": [
+        "approximately",
+        "equal",
+        "ALMOST EQUAL TO"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2260",
+    "char": "≠",
+    "name": {
+      "es": "distinto diferente no igual",
+      "en": "not equal different"
+    },
+    "keywords": {
+      "es": [
+        "distinto",
+        "diferente",
+        "no",
+        "igual"
+      ],
+      "en": [
+        "not",
+        "equal",
+        "different",
+        "NOT EQUAL TO"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2264",
+    "char": "≤",
+    "name": {
+      "es": "menor o igual",
+      "en": "less than or equal"
+    },
+    "keywords": {
+      "es": [
+        "menor",
+        "o",
+        "igual"
+      ],
+      "en": [
+        "less",
+        "than",
+        "or",
+        "equal",
+        "LESS-THAN OR EQUAL TO"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2265",
+    "char": "≥",
+    "name": {
+      "es": "mayor o igual",
+      "en": "greater than or equal"
+    },
+    "keywords": {
+      "es": [
+        "mayor",
+        "o",
+        "igual"
+      ],
+      "en": [
+        "greater",
+        "than",
+        "or",
+        "equal",
+        "GREATER-THAN OR EQUAL TO"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2211",
+    "char": "∑",
+    "name": {
+      "es": "sumatorio suma",
+      "en": "summation sum"
+    },
+    "keywords": {
+      "es": [
+        "sumatorio",
+        "suma"
+      ],
+      "en": [
+        "summation",
+        "sum",
+        "N-ARY SUMMATION"
+      ]
+    }
+  },
+  {
+    "id": "emoji:222b",
+    "char": "∫",
+    "name": {
+      "es": "integral",
+      "en": "integral"
+    },
+    "keywords": {
+      "es": [
+        "integral"
+      ],
+      "en": [
+        "integral",
+        "INTEGRAL"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2202",
+    "char": "∂",
+    "name": {
+      "es": "derivada parcial",
+      "en": "partial derivative"
+    },
+    "keywords": {
+      "es": [
+        "derivada",
+        "parcial"
+      ],
+      "en": [
+        "partial",
+        "derivative",
+        "PARTIAL DIFFERENTIAL"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2206",
+    "char": "∆",
+    "name": {
+      "es": "delta incremento",
+      "en": "delta increment"
+    },
+    "keywords": {
+      "es": [
+        "delta",
+        "incremento"
+      ],
+      "en": [
+        "delta",
+        "increment",
+        "INCREMENT"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2208",
+    "char": "∈",
+    "name": {
+      "es": "pertenece conjunto",
+      "en": "element set membership"
+    },
+    "keywords": {
+      "es": [
+        "pertenece",
+        "conjunto"
+      ],
+      "en": [
+        "element",
+        "set",
+        "membership",
+        "ELEMENT OF"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2205",
+    "char": "∅",
+    "name": {
+      "es": "conjunto vacío",
+      "en": "empty set"
+    },
+    "keywords": {
+      "es": [
+        "conjunto",
+        "vacío"
+      ],
+      "en": [
+        "empty",
+        "set",
+        "EMPTY SET"
+      ]
+    }
+  },
+  {
+    "id": "emoji:b0",
+    "char": "°",
+    "name": {
+      "es": "grado temperatura",
+      "en": "degree temperature"
+    },
+    "keywords": {
+      "es": [
+        "grado",
+        "temperatura"
+      ],
+      "en": [
+        "degree",
+        "temperature",
+        "DEGREE SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:20ac",
+    "char": "€",
+    "name": {
+      "es": "euro moneda",
+      "en": "euro currency"
+    },
+    "keywords": {
+      "es": [
+        "euro",
+        "moneda"
+      ],
+      "en": [
+        "euro",
+        "currency",
+        "EURO SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:a3",
+    "char": "£",
+    "name": {
+      "es": "libra moneda",
+      "en": "pound currency"
+    },
+    "keywords": {
+      "es": [
+        "libra",
+        "moneda"
+      ],
+      "en": [
+        "pound",
+        "currency",
+        "POUND SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:a5",
+    "char": "¥",
+    "name": {
+      "es": "yen yuan moneda",
+      "en": "yen yuan currency"
+    },
+    "keywords": {
+      "es": [
+        "yen",
+        "yuan",
+        "moneda"
+      ],
+      "en": [
+        "yen",
+        "yuan",
+        "currency",
+        "YEN SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:24",
+    "char": "$",
+    "name": {
+      "es": "dólar moneda",
+      "en": "dollar currency"
+    },
+    "keywords": {
+      "es": [
+        "dólar",
+        "moneda"
+      ],
+      "en": [
+        "dollar",
+        "currency",
+        "DOLLAR SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:20bf",
+    "char": "₿",
+    "name": {
+      "es": "bitcoin moneda",
+      "en": "bitcoin currency"
+    },
+    "keywords": {
+      "es": [
+        "bitcoin",
+        "moneda"
+      ],
+      "en": [
+        "bitcoin",
+        "currency",
+        "BITCOIN SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3b1",
+    "char": "α",
+    "name": {
+      "es": "alfa griega",
+      "en": "alpha greek"
+    },
+    "keywords": {
+      "es": [
+        "alfa",
+        "griega"
+      ],
+      "en": [
+        "alpha",
+        "greek",
+        "GREEK SMALL LETTER ALPHA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3b2",
+    "char": "β",
+    "name": {
+      "es": "beta griega",
+      "en": "beta greek"
+    },
+    "keywords": {
+      "es": [
+        "beta",
+        "griega"
+      ],
+      "en": [
+        "beta",
+        "greek",
+        "GREEK SMALL LETTER BETA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3b3",
+    "char": "γ",
+    "name": {
+      "es": "gamma griega",
+      "en": "gamma greek"
+    },
+    "keywords": {
+      "es": [
+        "gamma",
+        "griega"
+      ],
+      "en": [
+        "gamma",
+        "greek",
+        "GREEK SMALL LETTER GAMMA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3b4",
+    "char": "δ",
+    "name": {
+      "es": "delta griega",
+      "en": "delta greek"
+    },
+    "keywords": {
+      "es": [
+        "delta",
+        "griega"
+      ],
+      "en": [
+        "delta",
+        "greek",
+        "GREEK SMALL LETTER DELTA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3b5",
+    "char": "ε",
+    "name": {
+      "es": "épsilon griega",
+      "en": "epsilon greek"
+    },
+    "keywords": {
+      "es": [
+        "épsilon",
+        "griega"
+      ],
+      "en": [
+        "epsilon",
+        "greek",
+        "GREEK SMALL LETTER EPSILON"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3b8",
+    "char": "θ",
+    "name": {
+      "es": "theta teta griega",
+      "en": "theta greek"
+    },
+    "keywords": {
+      "es": [
+        "theta",
+        "teta",
+        "griega"
+      ],
+      "en": [
+        "theta",
+        "greek",
+        "GREEK SMALL LETTER THETA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3bb",
+    "char": "λ",
+    "name": {
+      "es": "lambda griega",
+      "en": "lambda greek"
+    },
+    "keywords": {
+      "es": [
+        "lambda",
+        "griega"
+      ],
+      "en": [
+        "lambda",
+        "greek",
+        "GREEK SMALL LETTER LAMDA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3bc",
+    "char": "μ",
+    "name": {
+      "es": "mu micro griega",
+      "en": "mu micro greek"
+    },
+    "keywords": {
+      "es": [
+        "mu",
+        "micro",
+        "griega"
+      ],
+      "en": [
+        "mu",
+        "micro",
+        "greek",
+        "GREEK SMALL LETTER MU"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3c0",
+    "char": "π",
+    "name": {
+      "es": "pi griega",
+      "en": "pi greek"
+    },
+    "keywords": {
+      "es": [
+        "pi",
+        "griega"
+      ],
+      "en": [
+        "pi",
+        "greek",
+        "GREEK SMALL LETTER PI"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3c3",
+    "char": "σ",
+    "name": {
+      "es": "sigma griega",
+      "en": "sigma greek"
+    },
+    "keywords": {
+      "es": [
+        "sigma",
+        "griega"
+      ],
+      "en": [
+        "sigma",
+        "greek",
+        "GREEK SMALL LETTER SIGMA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3c6",
+    "char": "φ",
+    "name": {
+      "es": "fi fi griega",
+      "en": "phi greek"
+    },
+    "keywords": {
+      "es": [
+        "fi",
+        "fi",
+        "griega"
+      ],
+      "en": [
+        "phi",
+        "greek",
+        "GREEK SMALL LETTER PHI"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3c9",
+    "char": "ω",
+    "name": {
+      "es": "omega griega",
+      "en": "omega greek"
+    },
+    "keywords": {
+      "es": [
+        "omega",
+        "griega"
+      ],
+      "en": [
+        "omega",
+        "greek",
+        "GREEK SMALL LETTER OMEGA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:3a9",
+    "char": "Ω",
+    "name": {
+      "es": "omega mayúscula ohmio",
+      "en": "omega capital ohm"
+    },
+    "keywords": {
+      "es": [
+        "omega",
+        "mayúscula",
+        "ohmio"
+      ],
+      "en": [
+        "omega",
+        "capital",
+        "ohm",
+        "GREEK CAPITAL LETTER OMEGA"
+      ]
+    }
+  },
+  {
+    "id": "emoji:a9",
+    "char": "©",
+    "name": {
+      "es": "derechos autor copyright",
+      "en": "copyright"
+    },
+    "keywords": {
+      "es": [
+        "derechos",
+        "autor",
+        "copyright"
+      ],
+      "en": [
+        "copyright",
+        "COPYRIGHT SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:ae",
+    "char": "®",
+    "name": {
+      "es": "marca registrada",
+      "en": "registered trademark"
+    },
+    "keywords": {
+      "es": [
+        "marca",
+        "registrada"
+      ],
+      "en": [
+        "registered",
+        "trademark",
+        "REGISTERED SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2122",
+    "char": "™",
+    "name": {
+      "es": "marca comercial",
+      "en": "trademark"
+    },
+    "keywords": {
+      "es": [
+        "marca",
+        "comercial"
+      ],
+      "en": [
+        "trademark",
+        "TRADE MARK SIGN"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2022",
+    "char": "•",
+    "name": {
+      "es": "viñeta punto",
+      "en": "bullet dot"
+    },
+    "keywords": {
+      "es": [
+        "viñeta",
+        "punto"
+      ],
+      "en": [
+        "bullet",
+        "dot",
+        "BULLET"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2026",
+    "char": "…",
+    "name": {
+      "es": "puntos suspensivos",
+      "en": "ellipsis"
+    },
+    "keywords": {
+      "es": [
+        "puntos",
+        "suspensivos"
+      ],
+      "en": [
+        "ellipsis",
+        "HORIZONTAL ELLIPSIS"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2014",
+    "char": "—",
+    "name": {
+      "es": "raya guion largo",
+      "en": "em dash"
+    },
+    "keywords": {
+      "es": [
+        "raya",
+        "guion",
+        "largo"
+      ],
+      "en": [
+        "em",
+        "dash",
+        "EM DASH"
+      ]
+    }
+  },
+  {
+    "id": "emoji:2713",
+    "char": "✓",
+    "name": {
+      "es": "marca correcto",
+      "en": "check mark"
+    },
+    "keywords": {
+      "es": [
+        "marca",
+        "correcto"
+      ],
+      "en": [
+        "check",
+        "mark",
+        "CHECK MARK"
+      ]
+    }
+  }
+]
