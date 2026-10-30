@@ -20,8 +20,10 @@
  *   - close(): void
  *   - current(): string
  *   - isOpenOn(name: string, screenName: string): bool (true if `name` is open on that monitor)
+ *   - openNook(tab: string): void (the dashboard = expanded notch, on a tab: "nook" | "apps" | "ia")
+ *   - nookTab: string [readonly] (the tab the expanded notch starts on)
  *
- * IPC (`qs ipc call shell <fn>`): toggle(name), open(name), close(), current()
+ * IPC (`qs ipc call shell <fn>`): toggle(name), open(name), close(), current(), nook(tab) (SUPER + ALT + A = nook ia)
  * IPC calls open the panel on the focused Hyprland monitor.
  */
 pragma Singleton
@@ -33,13 +35,19 @@ import QtQuick
 Singleton {
     id: root
 
-    readonly property var panels: ["dashboard", "perf", "wifi", "bt", "audio", "battery", "notifications", "calendar", "launcher", "power", "clipboard", "keybinds", "wallpapers", "privacy", "store", "agents", "herdrhelp", "settings"]
+    readonly property var panels: ["dashboard", "perf", "wifi", "bt", "audio", "battery", "notifications", "calendar", "launcher", "power", "clipboard", "keybinds", "wallpapers", "orbital", "privacy", "store", "agents", "herdrhelp", "settings"]
 
     property string openPanel: "none"
     property string panelScreen: ""
     readonly property bool anyOpen: openPanel !== "none"
     property real anchorX: -1
     property string anchorSide: "right"
+    property string nookTab: "nook"
+
+    function openNook(tab: string): void {
+        root.nookTab = ["nook", "apps", "ia"].indexOf(tab) >= 0 ? tab : "nook";
+        root.open("dashboard", "");
+    }
 
     function _valid(name: string): bool {
         if (panels.indexOf(name) >= 0) return true;
@@ -76,6 +84,7 @@ Singleton {
 
     function close(): void {
         root.openPanel = "none";
+        root.nookTab = "nook";
     }
 
     function current(): string {
@@ -93,5 +102,6 @@ Singleton {
         function open(name: string): void { root.open(name, ""); }
         function close(): void { root.close(); }
         function current(): string { return root.current(); }
+        function nook(tab: string): void { root.openNook(tab); }
     }
 }

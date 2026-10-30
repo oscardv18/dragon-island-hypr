@@ -24,7 +24,7 @@ Singleton {
     readonly property color text:       "#edebf5" // primary text
     readonly property color textSoft:   "#c8c4d8" // body text, neutral icons
     readonly property color textDim:    "#a29eb6" // captions, subtitles
-    readonly property color accent:     "#c50ed2" // magenta brand accent
+    property color accent:              paletteOn ? wallPalette.glow : dragon.accent   // brand accent (Dragon: magenta)
     readonly property color violet:     "#7c3aed" // gradient end
     readonly property color violetSoft: "#a855f7" // RAM, secondary accents
     readonly property color cyan:       "#67e8f9" // what is alive: CPU, activity, working agents, selection
@@ -36,11 +36,45 @@ Singleton {
     readonly property color transparent: "transparent"
 
     // New identity: purple is a tint, never a fill. Active states = accentTint + 1 px accentEdge + lavenderInk text
-    readonly property color lavender:     "#c8b6e6" // soft accent: RAM, focus, active states
-    readonly property color lavenderInk:  "#ede3fb" // text on an active state
-    readonly property color lavenderDeep: "#a78bcf" // lavender data bars
-    readonly property color violetBase:   "#b26bff" // base of the tints (never a solid fill)
+    // The accent tokens below follow the wallpaper palette (services/WallPalette.qml, bound in shell.qml) while
+    // Settings.wallpaperPalette is on and palette.json is valid; otherwise they are the fixed Dragon values (`dragon`).
+    // Every change blends with ColorAnimation (curve estandar, motion.paleta). ok / warn / error / cyan never change.
+    readonly property QtObject dragon: QtObject {
+        readonly property color accent:       "#c50ed2"
+        readonly property color lavender:     "#c8b6e6"
+        readonly property color lavenderInk:  "#ede3fb"
+        readonly property color lavenderDeep: "#a78bcf"
+        readonly property color violetBase:   "#b26bff"
+        readonly property color coreNode:     "#e896ec"   // the neural core's pink lavender nodes
+        readonly property color threadPink:   "#e8c8f5"
+        readonly property color textOnAccent:     "#16121f"
+        readonly property color accentShade:  "#0d0b16"
+    }
+    property bool paletteOn: false                 // WallPalette.active
+    property var wallPalette: ({})                     // { accent, accentSoft, accentDeep, glow, onAccent, tint } from WallPalette
+    property color lavender:     paletteOn ? wallPalette.accent : dragon.lavender           // soft accent: RAM, focus, active states
+    property color lavenderInk:  paletteOn ? Qt.tint(wallPalette.accentSoft, Qt.rgba(1, 1, 1, 0.45)) : dragon.lavenderInk   // text on an active state
+    property color lavenderDeep: paletteOn ? Qt.tint(wallPalette.accent, alpha(wallPalette.accentDeep, 0.5)) : dragon.lavenderDeep   // lavender data bars
+    property color violetBase:   paletteOn ? wallPalette.glow : dragon.violetBase           // base of the tints (never a solid fill)
+    property color coreNode:     paletteOn ? wallPalette.accentSoft : dragon.coreNode
+    property color textOnAccent:     paletteOn ? wallPalette.onAccent : dragon.textOnAccent         // text on a solid accent fill
+    property color accentShade:  paletteOn ? wallPalette.tint : dragon.accentShade          // very dark tone of the accent (glass backgrounds)
+    readonly property var coreIdentity: [coreNode, lavender, cyan]                     // NeuralCore.identity
+    property color switchOn: paletteOn ? lavender : cyan                       // switches: cyan in the Dragon look (08-ajustes), the accent with a wallpaper palette (14-fondos)
+    Behavior on accent       { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on lavender     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on lavenderInk  { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on lavenderDeep { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on violetBase   { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on coreNode     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on textOnAccent     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on switchOn     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
+    Behavior on accentShade  { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
     readonly property color islandInk:    "#05040a" // central island / notch (almost black)
+    readonly property real  idleDimOpacity: 0.6     // the idle dim layer
+    readonly property color focusTeal:    "#5eead4"   // focus mode countdown ring
+    readonly property color captureDim:   Qt.rgba(0, 0, 0, 0.62)   // outside the capture selection
+    readonly property color sunWarm:      "#fcd34d" // brightness OSD (with the night light on it warms to warn)
 
     function alpha(c: color, a: real): color {
         return Qt.rgba(c.r, c.g, c.b, a);
@@ -185,6 +219,7 @@ Singleton {
     readonly property real notchHeight:        barHeight        // exactly as high as the side islands / the C strip
     readonly property real notchEarRadius:     notchAttached ? 8 : 0   // concave "ears" where it meets the screen edge
     readonly property real notchRadius:        barLook === "C" ? 9 + barStep : barHeight / 2   // bottom corners (floating: a pill)
+    readonly property real dropdownJoinRadius: 6               // the island's bottom corners over the drop-down terminal
     readonly property real notchMicroWidth:    80               // D: the micro-island (only with activity)
     readonly property real notchFloatTopRadius: 22              // B: top corners of the expanded Nook (it grows from the floating pill)
     readonly property real notchExpandedRadius: 34    // expanded bottom corners
@@ -245,7 +280,8 @@ Singleton {
     readonly property real dockHiddenDot:   2.5
     readonly property int  dockBreath:      2600   // hidden thread: opacity 0.45 ↔ 1
     readonly property int  dockFps:         20     // one shared tick moves moons, synapses and the breathing
-    readonly property color threadPink:     "#e8c8f5"
+    readonly property int  dockFpsHidden:   8      // hidden: only the breathing of the thread's dots
+    readonly property color threadPink:     paletteOn ? Qt.tint(coreNode, Qt.rgba(1, 1, 1, 0.3)) : dragon.threadPink
     readonly property color badge:          "#8b6bb8"   // unread count on a dock node
     readonly property color dockNodeBase:   Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.75)
     readonly property color dockNodeEdge:   Qt.rgba(1, 1, 1, 0.14)
@@ -291,6 +327,21 @@ Singleton {
     readonly property real wallpaperGridHeight:   360
     readonly property real wallpaperPreviewWidth: 280
     readonly property real wallpaperThumbRadius:  14
+    // Orbital wallpaper picker (docs/design/16-orbital.png): thumbnails on a ring around the right-click point
+    readonly property real orbitalRadiusX:    300    // the ring is an ellipse (to the thumbnail centres): 12 thumbnails 16:9
+    readonly property real orbitalRadiusY:    206    // never overlap their neighbours at any angle
+    readonly property real orbitalThumbW:     128
+    readonly property real orbitalThumbH:     72     // 16:9
+    readonly property real orbitalThumbRadius: 12
+    readonly property real orbitalHoverScale: 1.14
+    readonly property real orbitalCore:       112    // the dashed disc in the middle
+    readonly property real orbitalEdge:      18     // the ring keeps this far from the screen edges
+    readonly property int  orbitalMax:        12     // thumbnails on the ring at once; more turn with the wheel
+    readonly property real orbitalDash:       3      // dash / gap of the disc border, in stroke widths
+    readonly property real orbitalStrip:      10     // the palette preview strip under a hovered thumbnail
+    readonly property color orbitalDisc:      alpha(islandInk, 0.72)
+    readonly property color orbitalDiscEdge:  Qt.rgba(1, 1, 1, 0.38)
+    readonly property color orbitalPill:      alpha(islandInk, 0.82)
 
     // Popovers & cards
     readonly property real popoverWidth:   360
@@ -319,6 +370,7 @@ Singleton {
     readonly property real switchHeight:  22
     readonly property real knobInset:     3
     readonly property real knobSize:      14
+    readonly property real swatchDot:     14     // Ajustes › the wallpaper palette swatches
     readonly property real tileMinWidth:  120
     readonly property real eqBar:         3
     readonly property real eqGap:         2
@@ -332,6 +384,9 @@ Singleton {
 
     // Notch content
     readonly property real notchOsdBar:        110
+    readonly property real osdWidthVolume:     268    // content width: ~300 with the notch padding
+    readonly property real osdWidthBrightness: 228    // ~260
+    readonly property real osdBar:             5
     readonly property real notchMediaTitleMax: 180
     readonly property real tempMaxC:       100
     readonly property real tempHotC:       85
@@ -384,9 +439,23 @@ Singleton {
     readonly property int durStd:    ms(240)
     readonly property int durOut:    ms(160)
     readonly property int durOrbit:  ms(620)
+    readonly property int durOrbitStagger: ms(28)   // orbital picker: delay between two thumbnails appearing
+    readonly property int durOrbitFly:     ms(560)  // the chosen thumbnail flies to the centre and covers the screen
+    readonly property int durOrbitSpin:    ms(260)  // one wheel step of the ring
+    readonly property int durOrbitReveal:  ms(420)  // the screen-sized thumbnail fades over the awww reveal
+    readonly property QtObject motion: QtObject {
+        readonly property int paleta: root.ms(600)   // the shell blending into a new wallpaper palette
+    }
 
     // display times (how long something stays on screen): NOT scaled by motionScale
     readonly property int durTransient:    2000     // OSD / workspace island states
+    readonly property int durOsd:          1600     // volume / brightness / Bloq Mayús OSD in the island
+    readonly property int durOsdShort:     1000     // keyboard layout change; Bloq Mayús off lingers 800 ms
+    readonly property int durNotice:       2000     // short shell notices in the island ("Copiada · guardada")
+    readonly property int durCommandDone:  4000     // a long command / an agent finished
+    readonly property int durSpin:         1100     // one turn of the spinner (working agent, running command)
+    readonly property int durCaptureHide:  180      // the capture overlay unmaps before grim looks at the screen
+    readonly property int durDim:          900      // the idle dim layer rises (Estándar curve)
     readonly property int durNotif:        4000     // notification popups
     readonly property int durPill:         ms(200)  // workspace pill width + color, OutCubic
     readonly property int durHover:        ms(120)  // capsule hover

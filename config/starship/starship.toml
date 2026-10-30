@@ -1,3 +1,4 @@
+palette = "dragon"
 # dragon-island — starship prompt (the user's own colors, restored after the Dragonized mapping of migration 002).
 add_newline = true
 command_timeout = 200
@@ -7,7 +8,7 @@ right_format = "$status$cmd_duration$jobs$time"
 
 [os]
 disabled = false
-format = "[$symbol](bold #30C0FF) "
+format = "[$symbol](bold accent_soft) "
 
 [os.symbols]
 Arch = ""
@@ -15,40 +16,40 @@ Linux = ""
 
 [username]
 show_always = true
-format = "[$user](bold #F04DFF) "
+format = "[$user](bold accent) "
 
 [hostname]
 ssh_only = true
-format = "[󰒋 $hostname](bold #FFB644) "
+format = "[󰒋 $hostname](bold warn) "
 
 [character]
-error_symbol = "[✗](bold #FF3D48)"
-success_symbol = "[❯❯](bold #70FF58)"
+error_symbol = "[✗](bold error)"
+success_symbol = "[❯❯](bold success)"
 
 [custom.location]
 command = 'if [ "$PWD" = "$HOME" ]; then printf ""; else printf "󰉋"; fi'
 when = "true"
-format = "[$output](bold #22EEF7) "
+format = "[$output](bold cyan) "
 
 [directory]
 truncation_length = 1
 truncation_symbol = ""
 home_symbol = "~"
 read_only = "󰌾"
-style = "bold #FF426D"
+style = "bold directory_accent"
 format = "[$path]($style)[$read_only]($read_only_style) "
 
 [git_branch]
 format = "[ $branch]($style) "
-style = "italic #22EEF7"
+style = "italic cyan"
 
 [git_state]
 format = "[󰘬 $state( $progress_current/$progress_total)]($style) "
-style = "bold #FFEB65"
+style = "bold git_state"
 
 [git_status]
 format     = '[$all_status]($style)'
-style      = "#22EEF7"
+style      = "cyan"
 ahead      = "⇡${count} "
 diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
 behind     = "⇣${count} "
@@ -65,17 +66,17 @@ deleted    = ""
 disabled = false
 format = "[$symbol$status]($style) "
 symbol = "✗ "
-style = "bold #FF3D48"
+style = "bold error"
 
 [cmd_duration]
 min_time = 500
 format = "[󰔛 $duration]($style) "
-style = "#FFB644"
+style = "warn"
 
 [jobs]
 format = "[$symbol$number]($style) "
 symbol = "󰜎 "
-style = "#30C0FF"
+style = "accent_soft"
 number_threshold = 1
 symbol_threshold = 1
 
@@ -83,4 +84,21 @@ symbol_threshold = 1
 disabled = false
 time_format = "%H:%M"
 format = "[ $time]($style)"
-style = "dimmed #22EEF7"
+style = "dimmed cyan"
+
+# >>> dragon-palette
+[palettes.dragon]
+accent = "#C8B6E6"
+accent_soft = "#DCCFF0"
+accent_deep = "#7E6BA8"
+glow = "#B26BFF"
+on_accent = "#16121F"
+tint = "#0D0B16"
+directory_accent = "#C8B6E6"
+git_state = "#F5B04A"
+ok = "#86EFAC"
+warn = "#F5B04A"
+cyan = "#67E8F9"
+error = "#FF3D48"
+success = "#70FF58"
+# <<< dragon-palette

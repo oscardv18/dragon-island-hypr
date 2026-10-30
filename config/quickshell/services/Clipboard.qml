@@ -17,6 +17,8 @@
  *   - wipe(): void               (cliphist wipe)
  *   - thumbnail(entry): string   (file:// URL of a decoded image preview, "" until ready)
  *   - requestThumbnail(entry): void
+ *   - paused: bool [readonly] · setPaused(on: bool): void (recording mode: the wl-paste watchers run bin/dragon-clip-store,
+ *       which throws the copied data away while the flag $XDG_RUNTIME_DIR/dragon-island/clipboard-paused exists)
  */
 pragma Singleton
 import Quickshell
@@ -27,6 +29,13 @@ Singleton {
     id: root
 
     property bool available: false
+    property bool paused: false
+    function setPaused(on: bool): void {
+        if (root.paused === on) return;
+        root.paused = on;
+        Quickshell.execDetached(["sh", "-c", on ? 'd="${XDG_RUNTIME_DIR:-/tmp}/dragon-island"; mkdir -p "$d" && : > "$d/clipboard-paused"'
+                                                : 'rm -f "${XDG_RUNTIME_DIR:-/tmp}/dragon-island/clipboard-paused"']);
+    }
     property bool loading: false
     property var entries: []
     property var _thumbs: ({})        // id → file:// url

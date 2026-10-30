@@ -1,7 +1,8 @@
 // =============================================================================
 // dragon-island — WallpaperPanel.qml (SUPER + W)
 // Wallpaper picker: tabs Todos / Imágenes / Animados, search, 16:9 thumbnails (radius 14) with GIF / VIDEO
-// badges, the current one outlined in accent, a large preview of the hovered / selected one.
+// badges, the current one outlined in accent, a strip of its colours on the hovered one, a large preview of the
+// hovered / selected one.
 // Keyboard: type to filter · arrows move · Enter applies · Esc closes.
 // =============================================================================
 import QtQuick
@@ -181,6 +182,18 @@ Item {
                                 anchors.fill: parent
                                 color: Theme.hoverOverlay
                                 visible: cellMouse.containsMouse
+                            }
+
+                            // colours of this wallpaper while hovered (a preview from the thumbnail; the real palette is
+                            // dragon-palette's, made when it is applied)
+                            PaletteStrip {
+                                anchors.left: parent.left
+                                anchors.right: parent.right
+                                anchors.bottom: parent.bottom
+                                anchors.margins: Theme.spacingSm
+                                height: Theme.orbitalStrip
+                                source: Wallpaper.thumbUrl(cell.modelData)
+                                active: cellMouse.containsMouse
                             }
 
                             // badge GIF / VIDEO

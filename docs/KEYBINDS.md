@@ -12,7 +12,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + Space` | Lanzador de aplicaciones |
 | `SUPER + E` | Dolphin |
 | `SUPER + D` | Notch: abre / cierra el panel expandido (Nook · Tray). También Esc o clic fuera |
-| `SUPER + W` | Selector de fondos de pantalla (imágenes, GIF y vídeo) |
+| `SUPER + W` | Selector de fondos orbital (también con clic derecho en el escritorio vacío); su botón «Cuadrícula» abre el selector clásico |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
@@ -21,8 +21,11 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
-| `Print` | Captura de pantalla completa |
-| `SUPER + SHIFT + S` | Captura de una región |
+| `Print` | Captura de la pantalla completa, directa: se copia y se guarda en Imágenes (aviso en la isla, sin popup) |
+| `SUPER + SHIFT + S` / `SHIFT + Print` | Barra de capturas en la isla: Región · Ventana · Pantalla · ● grabar · retraso 3 s |
+| ``SUPER + ` `` (grave) | Terminal desplegable bajo la isla (se oculta sin cerrarse) |
+| `SUPER + ALT + A` | La isla con los agentes y los comandos largos (pestaña IA) |
+| `SUPER + ALT + F` | Modo enfoque 45 min (No molestar, barra mínima, Telegram silenciado) |
 | `SUPER + SHIFT + V` | Historial del portapapeles (panel de Quickshell, cliphist) |
 | `SUPER + F1` | Ayuda: panel con todos los atajos de Hyprland |
 | `SUPER + F2` | Ajustes (estilo de la barra, contenido de la isla, métricas, intensidad del acento) |
@@ -99,7 +102,16 @@ También se conserva el contenido reciente de los terminales (`experimental.pane
 
 Desde el lanzador orbital: `+hypr` + Enter abre la Tienda buscando «hypr». Por IPC: `qs ipc call shell toggle store`.
 
-## Fondos de pantalla (SUPER + W)
+## Fondos de pantalla orbital (SUPER + W o clic derecho en el escritorio)
+
+| Tecla | Acción |
+|---|---|
+| `←` `→` | Elegir una miniatura (el anillo gira para mostrarla) |
+| `Enter` / clic | Aplicar el fondo (la miniatura cubre la pantalla y se revela con `grow` desde el centro) |
+| Rueda | Girar el anillo (con más de 12 fondos) |
+| `Esc` / clic fuera del anillo | Cerrar |
+
+## Fondos de pantalla, cuadrícula (botón «Cuadrícula» del orbital)
 
 | Tecla | Acción |
 |---|---|
@@ -108,7 +120,7 @@ Desde el lanzador orbital: `+hypr` + Enter abre la Tienda buscando «hypr». Por
 | `Enter` / clic | Aplicar el fondo |
 | `Esc` | Cerrar |
 
-Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
+Por IPC: `qs ipc call wallpaper orbital | orbitalAt <x> <y> | toggle` (cuadrícula) `| set <ruta> | random | next | current`.
 
 ## Teclas multimedia (funcionan con la pantalla bloqueada)
 
@@ -210,7 +222,8 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
 | Referencia de herdr (`SUPER + SHIFT + A`) | Escribir filtra · `Tab` cambia de pestaña (Atajos · Comandos · Conceptos y estados) · `↑ ↓` desplazar · `Esc` cierra |
 | Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
-| Ajustes (`SUPER + F2`) | `1–4` estilo de barra A–D (en «Barra superior») · `Tab` cambia de página · `Esc` o clic fuera cierra |
+| Ajustes (`SUPER + F2`) | `1–4` estilo de barra A–D (en «Barra superior») · `Tab` / `Shift+Tab` cambian de página · `Esc` o clic fuera cierra |
+| Capturas (`SUPER + SHIFT + S`) | `1–3` Región / Ventana / Pantalla · arrastrar dibuja (los tiradores ajustan) · `Espacio` + arrastrar mueve · `Enter` copia · `Esc` cierra |
 | Portapapeles | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
 | Cualquier panel | `Esc` cierra |
@@ -228,6 +241,12 @@ qs ipc call settings current         # todos los ajustes (velocidad de animació
 qs ipc call settings barStyle C      # estilo de barra A · B · C · D (cycleBarStyle = el siguiente)
 qs ipc call settings islandContent window   # media · window · date
 qs ipc call settings accent 0.6      # intensidad del acento 0–1 · metrics true|false · autohide true|false
+qs ipc call shell nook ia            # la isla abierta en una pestaña (nook · apps · ia)
+qs ipc call capture open region      # barra de capturas · screen = pantalla completa directa · shoot "x,y wxh" copy|save|ocr|annotate|record
+qs ipc call focus start 25           # modo enfoque de 25 min · stop · toggle · remaining
+qs ipc call idle state               # secuencia de inactividad: aviso activo y qué la inhibe · warn · resume · apply
+qs ipc call commands list            # comandos largos en curso y terminados (los avisan los hooks de zsh)
+qs ipc call osd preview capslock     # muestra un OSD sin cambiar nada (volume · mic · brightness · capslock · layout)
 ```
 
 ## Referencia completa de atajos de Hyprland
@@ -241,6 +260,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 |---|---|
 | `SUPER + A` | Abrir o enfocar herdr (escritorio 5) |
 | `SUPER + SHIFT + A` | Atajos y funciones de herdr (referencia) |
+| `SUPER + ALT + A` | Ver agentes y comandos en la isla |
 
 ### Aplicaciones
 
@@ -249,13 +269,14 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + E` | Archivos (Dolphin) |
 | `SUPER + Space` | Lanzador |
 | `SUPER + Return` | Terminal (Ghostty) |
+| `SUPER + grave` | Terminal desplegable |
 
 ### Capturas
 
 | Atajo | Acción |
 |---|---|
-| `Print` | Pantalla completa |
-| `SUPER + SHIFT + S` | Región |
+| `SHIFT + Print` · `SUPER + SHIFT + S` | Barra de capturas (región, ventana, pantalla) |
+| `Print` | Pantalla completa (copiar y guardar) |
 
 ### Dock
 
@@ -319,10 +340,11 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + ALT + B` | Cambiar el estilo de la barra |
 | `SUPER + F1` | Esta ayuda de atajos |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
-| `SUPER + W` | Fondos de pantalla |
+| `SUPER + W` | Fondos de pantalla (orbital) |
 | `SUPER + SHIFT + R` | Grabar pantalla (iniciar / parar) |
 | `SUPER + SHIFT + V` | Historial del portapapeles |
 | `SUPER + Escape` | Menú de energía |
+| `SUPER + ALT + F` | Modo enfoque (45 min) |
 | `SUPER + D` | Notch (Nook / Tray) |
 | `SUPER + N` | Notificaciones |
 | `SUPER + I` | Tienda de apps (pacman + AUR) |

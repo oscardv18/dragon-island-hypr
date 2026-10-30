@@ -21,6 +21,9 @@ import "modules/wallpapers"
 import "modules/store"
 import "modules/herdrhelp"
 import "modules/settings"
+import "modules/capture"
+import "modules/recording"
+import "modules/idle"
 import "modules/dock"
 import "modules/lock"
 import "debug"
@@ -36,10 +39,11 @@ ShellRoot {
     }
 
     // Bar style (A / B / C / D) and the D reveal: Theme derives every bar / notch size from them
+    // focus mode shows the minimal bar (D) for its duration without touching the setting
     Binding {
         target: Theme
         property: "barStyle"
-        value: Settings.barStyle
+        value: Focus.active ? "D" : Settings.barStyle
     }
     Binding {
         target: Theme
@@ -57,6 +61,19 @@ ShellRoot {
         target: Theme
         property: "accentIntensity"
         value: Settings.accentIntensity
+    }
+
+    // Wallpaper palette (services/WallPalette.qml): Theme's accent tokens follow it while it is active
+    Binding {
+        target: Theme
+        property: "paletteOn"
+        value: WallPalette.active
+    }
+    Binding {
+        target: Theme
+        property: "wallPalette"
+        value: ({ accent: WallPalette.accent, accentSoft: WallPalette.accentSoft, accentDeep: WallPalette.accentDeep,
+                  glow: WallPalette.glow, onAccent: WallPalette.onAccent, tint: WallPalette.tint })
     }
 
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
@@ -93,6 +110,12 @@ ShellRoot {
         delegate: Component { DockWindow {} }
     }
 
+    // the empty desktop's right click opens the orbital wallpaper picker (Bottom layer, under every window)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { DesktopCatcher {} }
+    }
+
     Variants {
         model: Quickshell.screens
         delegate: Component { WallpaperWindow {} }
@@ -106,6 +129,24 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { HerdrHelpWindow {} }
+    }
+
+    // capture overlay (SUPER + SHIFT + S): the frozen screen, the selection and the actions
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { CaptureWindow {} }
+    }
+
+    // recording mode: a thin red frame around every screen (RecordingMode.showFrame)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { RecordingFrame {} }
+    }
+
+    // idle sequence: the dim layer (Idle.warning)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { DimWindow {} }
     }
 
     // Ajustes (SUPER + F2): no scrim, the bar stays visible while its style changes
@@ -128,6 +169,19 @@ ShellRoot {
     Lock {
         id: lock
         notifCount: Notifs.unreadCount
+        captures: Notifs.notifications.filter(n => n.appName === "Capturas").length
+        wifiOn: Network.connected
+        muted: Audio.muted
+        // the apps with unread notifications, most unread first (satellites on the lock's orbit)
+        notifApps: {
+            const by = {};
+            for (const n of Notifs.unreadList()) {
+                const app = n.appName || "";
+                if (app.length === 0 || app === "Capturas") continue;
+                (by[app] = by[app] || { name: app, icon: Notifs.iconFor(n), count: 0 }).count++;
+            }
+            return Object.values(by).sort((a, b) => b.count - a.count).slice(0, 3);
+        }
     }
 
     LazyLoader {

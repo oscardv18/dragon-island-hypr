@@ -1,0 +1,7 @@
+# dragon-island — extra Ghostty settings for the drop-down terminal only (bin/dragon-dropdown passes
+# --config-file=~/.config/ghostty/dropdown on top of the normal config). Almost opaque islandInk, so the terminal and
+# the island above it read as one piece.
+background = 05040a
+background-opacity = 0.96
+window-decoration = none
+gtk-titlebar = false

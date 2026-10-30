@@ -16,17 +16,28 @@
  *   - current: string [readonly] (path of the active wallpaper, "" if none yet)
  *   - currentKind: string [readonly]
  *   - videoPaused: bool [readonly] (a monitor has a fullscreen window: its video is paused)
+ *   - orbitalX, orbitalY: real [readonly] (centre of the orbital picker on its monitor, logical px; -1 = the screen centre)
  *
  * Functions:
  *   - refresh(): void                 (rescan the folder; thumbnails are only made if missing or changed)
- *   - apply(path: string): void       (saves it to ~/.local/state/dragon-island/wallpaper.json)
+ *   - apply(path: string, pos: string = "center"): void (saves it to ~/.local/state/dragon-island/wallpaper.json; pos is
+ *                                     awww's --transition-pos of the grow reveal: "center" or "x,y" in pixels from bottom-left)
+ *   - growPos(screen): string         ("x,y" of that screen's centre in awww's terms: physical px, y from the bottom)
+ *   - openOrbital(screenName: string, x: real, y: real): void (the orbital picker around that point; the desktop
+ *                                     right-click layer calls it. x / y < 0 = the screen centre)
+ *   - toggleOrbital(): void           (on the focused monitor, centred; SUPER + W)
  *   - random(): void   next(): void   previous(): void
  *   - search(query: string, tab: string): list<var>  (tab: "all" | "static" | "animated"; animated = GIF + video)
  *   - openFolder(): void              (Dolphin)
  *   - thumbUrl(item): string
  *
  * ~/.cache/dragon-island/current-wallpaper always links to the current image (a frame for GIF / video):
- * hyprlock uses it as its background.
+ * hyprlock uses it as its background, and dragon-palette reads it.
+ *
+ * Palette: when Settings.wallpaperPalette is on, apply() asks the script (DRAGON_PALETTE) to run `dragon-palette generate`
+ * on that link once the wallpaper is shown, plus `apply` when Settings.paletteApplyExternal is on; detached and with nice,
+ * so the wallpaper never waits for it. WallPalette picks the new palette.json up by itself. Restoring at login does not
+ * regenerate (palette.json is still there).
  *
  * Video pause: when the workspace shown on a monitor has a fullscreen window (Hyprland events, through
  * Hypr.fullscreenOn), that monitor's mpvpaper is paused over mpv's own IPC socket (set_property pause).
@@ -34,7 +45,8 @@
  * the Wayland connection alive (a stopped client cannot answer configure / output events), is per monitor
  * and needs no extra tool.
  *
- * IPC (`qs ipc call wallpaper <fn>`): toggle(), set(path: string), random(), next(), current(): string
+ * IPC (`qs ipc call wallpaper <fn>`): toggle() (classic grid), orbital() (orbital picker), orbitalAt(x: real, y: real) (around
+ *   that point of the focused monitor, as a right click there would), set(path: string), random(), next(), current(): string
  */
 pragma Singleton
 import Quickshell
@@ -93,20 +105,46 @@ Singleton {
         scanner.exec(["bash", root.script, "scan", root.dir]);
     }
 
-    function apply(path: string): void {
+    function apply(path: string, pos): void {
         const kind = root.kindOf(path);
         if (kind.length === 0) return;
         saved.path = path;
         saved.kind = kind;
         stateFile.writeAdapter();
-        root._run(path, kind, "grow");
+        root._run(path, kind, "grow", root._paletteMode(), typeof pos === "string" && /^(center|\d+,\d+)$/.test(pos) ? pos : "center");
     }
 
-    function _run(path: string, kind: string, transition: string): void {
-        const req = { path: path, kind: kind, transition: transition };
+    function growPos(screen): string {
+        if (!screen) return "center";
+        const k = screen.devicePixelRatio || 1;
+        return `${Math.round(screen.width * k / 2)},${Math.round(screen.height * k / 2)}`;
+    }
+
+    // ---- orbital picker ----
+    property real orbitalX: -1
+    property real orbitalY: -1
+    function openOrbital(screenName: string, x: real, y: real): void {
+        root.orbitalX = x;
+        root.orbitalY = y;
+        ShellState.open("orbital", screenName);
+    }
+    function toggleOrbital(): void {
+        if (ShellState.openPanel === "orbital") { ShellState.close(); return; }
+        root.openOrbital("", -1, -1);
+    }
+
+    // the setting is read here, never in the script
+    function _paletteMode(): string {
+        if (!Settings.wallpaperPalette) return "";
+        return Settings.paletteApplyExternal ? "apply" : "generate";
+    }
+
+    function _run(path: string, kind: string, transition: string, palette: string, pos): void {
+        const req = { path: path, kind: kind, transition: transition, palette: palette, pos: pos || "center" };
         if (applier.running) { root._queue = req; return; }
+        applier.environment = { DRAGON_PALETTE: palette };
         if (kind === "video") applier.exec(["bash", root.script, "apply-video", path, ...Quickshell.screens.map(s => s.name)]);
-        else applier.exec(["bash", root.script, "apply-image", path, transition]);
+        else applier.exec(["bash", root.script, "apply-image", path, transition, req.pos]);
     }
 
     function _step(delta: int): void {
@@ -155,7 +193,7 @@ Singleton {
                 saved.path = probe.target;
                 saved.kind = kind;
                 if (saved.path !== probe.previous) stateFile.writeAdapter();
-                if (!already) root._run(probe.target, kind, "none");   // login: no transition
+                if (!already) root._run(probe.target, kind, "none", "");   // login: no transition, palette.json is still there
             }
         }
     }
@@ -196,7 +234,7 @@ Singleton {
         onExited: {
             const q = root._queue;
             root._queue = null;
-            if (q) root._run(q.path, q.kind, q.transition);
+            if (q) root._run(q.path, q.kind, q.transition, q.palette, q.pos);
             else pauseSync.restart();
         }
     }
@@ -247,6 +285,8 @@ Singleton {
     IpcHandler {
         target: "wallpaper"
         function toggle(): void { ShellState.toggle("wallpapers", ""); }
+        function orbital(): void { root.toggleOrbital(); }
+        function orbitalAt(x: real, y: real): void { root.openOrbital("", x, y); }
         function set(path: string): void { root.apply(path); }
         function random(): void { root.random(); }
         function next(): void { root.next(); }

@@ -70,6 +70,7 @@ Rectangle {
             Behavior on color { ColorAnimation { duration: Theme.durHover } }
 
             NeuralCore {
+                identity: Theme.coreIdentity
                 anchors.fill: parent
                 anchors.margins: 1
                 mood: coreMouse.containsMouse ? "listening" : "calm"
@@ -140,6 +141,14 @@ Rectangle {
             readonly property real available: Math.max(0, root.maxWidth - root.padH * 2 - root.fixedWidth - Theme.spacingSm)
             readonly property bool actions: windowHover.hovered
 
+            // recording mode with hidden titles: an eye crossed out instead of the app icon
+            Glyph {
+                visible: WindowContext.masked
+                anchors.verticalCenter: parent.verticalCenter
+                icon: Icons.eyeOff
+                size: Theme.iconSm
+                color: Theme.textDim
+            }
             IconImage {
                 anchors.verticalCenter: parent.verticalCenter
                 source: WindowContext.icon

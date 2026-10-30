@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+# dragon-island — the drop-down terminal (SUPER + grave): one Ghostty of class org.dragonisland.Dropdown living in the
+# special workspace "dropdown". Not running → start it (its window rules send it there, Quickshell's Dropdown service
+# places it right under the island); running → show / hide the special workspace. Hiding never closes it: the
+# processes keep running.
+set -u
+cls="org.dragonisland.Dropdown"
+conf="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/dropdown"
+
+running() { hyprctl clients -j 2>/dev/null | jq -e --arg c "$cls" 'any(.[]; .class == $c)' >/dev/null; }
+shown() { hyprctl monitors -j 2>/dev/null | jq -e 'any(.[]; .focused and .specialWorkspace.name == "special:dropdown")' >/dev/null; }
+
+if running; then
+    exec hyprctl dispatch 'hl.dsp.workspace.toggle_special("dropdown")' >/dev/null
+fi
+
+args=(--class="$cls")
+[[ -r $conf ]] && args+=(--config-file="$conf")
+setsid -f ghostty "${args[@]}" >/dev/null 2>&1 </dev/null
+# show it once it exists (the rule opens it in special:dropdown, which may be hidden)
+for _ in $(seq 30); do
+    running && break
+    sleep 0.1
+done
+shown || hyprctl dispatch 'hl.dsp.workspace.toggle_special("dropdown")' >/dev/null

@@ -1,0 +1,24 @@
+{
+  "ghostty": {
+    "cursor": "#C50ED2", "cursorText": "#0B0C14",
+    "selectionBg": "#7C3AED", "selectionFg": "#FFFFFF",
+    "color4": "#7C3AED", "color12": "#945DF0"
+  },
+  "kitty": {
+    "cursor": "#C50ED2", "cursorText": "#0B0C14",
+    "selectionBg": "#7C3AED", "selectionFg": "#FFFFFF",
+    "color4": "#7C3AED", "color12": "#945DF0",
+    "tabBg": "#7C3AED", "tabFg": "#E6E8EF"
+  },
+  "starship": {
+    "accent": "#F04DFF", "accentSoft": "#30C0FF", "accentDeep": "#7C3AED",
+    "glow": "#C50ED2", "onAccent": "#0B0C14", "tint": "#0B0C14",
+    "directoryAccent": "#FF426D", "gitState": "#FFEB65",
+    "ok": "#86EFAC", "warn": "#FFB644", "cyan": "#22EEF7"
+  },
+  "fastfetch": {
+    "accent": "38;2;197;14;210", "accent_deep": "38;2;124;58;237",
+    "glow": "38;2;168;85;247", "cyan": "38;2;0;193;228",
+    "ok": "38;2;6;201;147", "warn": "38;2;249;174;88"
+  }
+}

@@ -40,6 +40,13 @@ Item {
         pause:   "M7 4h3v16H7zM14 4h3v16h-3z",
         bell:    "M6 8a6 6 0 0 1 12 0c0 7 3 9 3 9H3s3-2 3-9M10.3 21a1.94 1.94 0 0 0 3.4 0",
         grid:    "M3 3h7v7H3zM14 3h7v7h-7zM14 14h7v7h-7zM3 14h7v7H3z",      // tiling: dwindle
-        columns: "M3 3h18v18H3zM9 3v18M15 3v18"                              // tiling: scrolling
+        columns: "M3 3h18v18H3zM9 3v18M15 3v18",                             // tiling: scrolling
+        wifi:    "M5 12.55a11 11 0 0 1 14.08 0M1.42 9a16 16 0 0 1 21.16 0M8.53 16.11a6 6 0 0 1 6.95 0M12 20h.01",
+        volume:  "M11 5L6 9H2v6h4l5 4zM15.54 8.46a5 5 0 0 1 0 7.07M19.07 4.93a10 10 0 0 1 0 14.14",
+        mute:    "M11 5L6 9H2v6h4l5 4zM23 9l-6 6M17 9l6 6",
+        lock:    "M5 11h14v10H5zM8 11V7a4 4 0 0 1 8 0v4",
+        chevron: "M6 9l6 6 6-6",
+        plus:    "M12 5v14M5 12h14",
+        music:   "M9 18V5l12-2v13M9 18a3 3 0 1 1-6 0a3 3 0 1 1 6 0M21 16a3 3 0 1 1-6 0a3 3 0 1 1 6 0"
     })
 }

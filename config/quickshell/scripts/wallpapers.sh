@@ -3,7 +3,8 @@
 # dragon-island — wallpapers.sh: helper of services/Wallpaper.qml (no native Quickshell API for these)
 #   scan <dir>                    list wallpapers: path <TAB> kind <TAB> thumbnail <TAB> mtime
 #   thumbs <dir>                  create the missing / outdated thumbnails; prints "ready <TAB> path" for each
-#   apply-image <path> [type]     stop mpvpaper, make sure awww-daemon runs, show the image / GIF
+#   apply-image <path> [type] [pos]  stop mpvpaper, make sure awww-daemon runs, show the image / GIF; pos = awww's
+#                                 --transition-pos ("center" or x,y in pixels from the bottom-left), default center
 #   apply-video <path> <out>...   stop awww and any old mpvpaper, start one mpvpaper per output (IPC socket each).
 #                                 A video bigger than the screen (a 4K clip on a 768p laptop) costs a lot of GPU: it plays
 #                                 at once, a screen-sized copy is made in the background (cache/video) and swapped in
@@ -11,6 +12,9 @@
 #   running                       prints "video", "image<TAB>path" (what awww shows) or "none"
 #   link <path>                   point ~/.cache/dragon-island/current-wallpaper at an image (hyprlock);
 #                                 GIFs and videos get an extracted frame
+# DRAGON_PALETTE=generate|apply (set by services/Wallpaper.qml, which reads the settings): after apply-image /
+#   apply-video, `dragon-palette generate` runs on current-wallpaper (+ `apply` for the external apps), detached and
+#   with nice, so the wallpaper never waits for the palette. Unset / anything else = no palette.
 # kinds: static (jpg png webp) · animated (gif) · video (mp4 webm mkv)
 # =============================================================================
 set -Eeuo pipefail
@@ -139,6 +143,18 @@ link_current() {
     esac
 }
 
+# the wallpaper palette (bin/dragon-palette, installed in ~/.local/bin): detached, low priority
+palette_bg() {
+    local mode="${DRAGON_PALETTE:-}" bin="$HOME/.local/bin/dragon-palette" script
+    [[ "$mode" == generate || "$mode" == apply ]] || return 0
+    [[ -x "$bin" && -e "$CURRENT" ]] || return 0
+    # shellcheck disable=SC2016  # expanded by the inner sh, not here
+    script='"$1" generate "$2" --quiet'
+    # shellcheck disable=SC2016
+    [[ "$mode" == apply ]] && script+=' && "$1" apply --quiet'
+    setsid -f nice -n 10 sh -c "$script" sh "$bin" "$CURRENT" >/dev/null 2>&1 </dev/null
+}
+
 cmd="${1:-}"
 shift || true
 
@@ -152,11 +168,14 @@ case "$cmd" in
     apply-image)
         path="${1:?path}"
         type="${2:-grow}"
+        pos="${3:-center}"
+        [[ "$pos" == center || "$pos" =~ ^[0-9]+,[0-9]+$ ]] || pos=center
         stop_video
         ensure_awww
-        awww img "$path" --transition-type "$type" --transition-pos center \
+        awww img "$path" --transition-type "$type" --transition-pos "$pos" \
             --transition-fps 60 --transition-duration 1.2 --transition-step 90
-        link_current "$path" ;;
+        link_current "$path"
+        palette_bg ;;
     apply-video)
         path="${1:?path}"; shift
         stop_video
@@ -175,7 +194,7 @@ case "$cmd" in
                 setsid -f bash -c '
                     self="$1"; src="$2"; cache="$3"; shift 3
                     "$self" optimize "$src" >/dev/null 2>>"$cache/video-optimize.log" || exit 0
-                    [[ "$(cat "$cache/current-video" 2>/dev/null)" == "$src" ]] && exec "$self" apply-video "$src" "$@"
+                    [[ "$(cat "$cache/current-video" 2>/dev/null)" == "$src" ]] && DRAGON_PALETTE= exec "$self" apply-video "$src" "$@"
                 ' _ "$SELF" "$path" "$CACHE" "${outs[@]}" >/dev/null 2>&1 </dev/null
             fi
         fi
@@ -187,7 +206,8 @@ case "$cmd" in
         # awww and mpvpaper must not run together: stop awww once the video is on screen
         sleep 1
         awww_running && awww kill >/dev/null 2>&1 || true
-        link_current "$path" ;;
+        link_current "$path"
+        palette_bg ;;
     optimize)
         optimize_video "${1:?path}" ;;
     running)

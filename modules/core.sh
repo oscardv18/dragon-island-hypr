@@ -5,6 +5,8 @@
 # Interface (all modules): <m>_desc  <m>_sudo  <m>_check  <m>_plan  <m>_apply  <m>_revert  <m>_packages
 # =============================================================================
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+# shellcheck source=lib/palette.sh
+. "$REPO_DIR/lib/palette.sh"
 
 core_desc() { echo "Hyprland, Quickshell, servicios y configuración base (obligatorio)"; }
 core_sudo() { echo "pacman -S (paquetes), systemctl enable (NetworkManager, bluetooth, power-profiles-daemon)"; }
@@ -42,8 +44,8 @@ core_apply() {
     ensure_via aur pkg_list "$REPO_DIR/packages/aur-core.txt" || log_warn "Paquetes AUR pendientes."
 
     deploy_item "$REPO_DIR/config/hypr"      "$CFG/hypr"
-    deploy_item "$REPO_DIR/config/kitty"     "$CFG/kitty"
-    deploy_item "$REPO_DIR/config/ghostty"   "$CFG/ghostty"
+    palette_terminal_deploy kitty
+    palette_terminal_deploy ghostty
     deploy_item "$REPO_DIR/config/quickshell" "$CFG/quickshell"
     # settings of the notch dashboard's apps tab: only created, never overwritten (it is the user's file)
     if [[ ! -e "$CFG/dragon-island/background-apps.json" ]]; then
@@ -52,6 +54,7 @@ core_apply() {
     fi
     deploy_item "$REPO_DIR/bin/dragon-pkg"   "$HOME/.local/bin/dragon-pkg"
     deploy_item "$REPO_DIR/scripts/tiling.sh" "$HOME/.local/bin/dragon-tiling"    # SUPER + T, the bar chip, `qs ipc call tiling`
+    palette_setup
     core_gpu_env
 
     # the neural core has one source (shared/neural-core): re-sync both copies

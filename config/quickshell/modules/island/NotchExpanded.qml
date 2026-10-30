@@ -11,7 +11,7 @@ Item {
     id: root
 
     property string screenName: ""
-    property string tab: "nook"   // "nook" | "apps" | "ia"
+    property string tab: ShellState.nookTab   // "nook" | "apps" | "ia" (SUPER + ALT + A opens it on "ia")
 
     implicitWidth: Theme.notchExpandedWidth
 

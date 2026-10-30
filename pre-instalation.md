@@ -465,6 +465,8 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `khal` | core | oficial |
 | `ddcutil` | core | oficial |
 | `jq` | core | oficial |
+| `python` | core | oficial |
+| `python-pillow` | core | oficial |
 | `grimblast-git` | core | AUR |
 | `mpvpaper` | core | AUR |
 | `zsh` | shell | oficial |

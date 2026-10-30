@@ -7,7 +7,8 @@
 //
 // State shared by every monitor's surface:
 //   locked, mood, stateText, hint, hintError, busy, buffer, layoutLabel, capsLock
-// Hooks to wire to existing services (optional): notifCount
+// Hooks to wire to existing services (optional, shell.qml): notifCount, notifApps, captures, wifiOn, muted
+// Data only for the view (phase 2 §9): lockedAt, realName (passwd GECOS), avatar (~/.face), the player's art / progress
 
 import QtQuick
 import Quickshell
@@ -32,7 +33,14 @@ Scope {
     property string layoutLabel: ""
     property bool capsLock: false
     property real contentOpacity: 1
-    property int notifCount: 0          // TODO wire: Notifs.unreadCount (or similar) from services/
+    property int notifCount: 0          // shell.qml: Notifs.unreadCount
+    property var notifApps: []          // shell.qml: [{ name, icon, count }] of the apps with unread notifications
+    property int captures: 0            // shell.qml: captures kept in the notification center
+    property bool wifiOn: true
+    property bool muted: false
+    property real lockedAt: Date.now()
+    property string realName: ""
+    readonly property string avatar: `file://${Quickshell.env("HOME")}/.face`
     property string pamConfig: "hyprlock"   // /etc/pam.d/hyprlock ships with hyprlock ("auth include login")
 
     readonly property string userName: Quickshell.env("USER") || ""
@@ -46,6 +54,13 @@ Scope {
     readonly property real batteryPct: UPower.displayDevice && UPower.displayDevice.isLaptopBattery
         ? UPower.displayDevice.percentage * 100 : -1
 
+    // the user's real name for the view (GECOS field of passwd), read once
+    Process {
+        running: true
+        command: ["sh", "-c", "getent passwd \"$USER\" | cut -d: -f5 | cut -d, -f1"]
+        stdout: StdioCollector { onStreamFinished: lockRoot.realName = this.text.trim() }
+    }
+
     signal failed()   // surfaces shake on this
 
     function lock() {
@@ -55,6 +70,7 @@ Scope {
         // always come back on the primary layout (us): the password was set with it
         Quickshell.execDetached(["hyprctl", "switchxkblayout", "all", "0"])
         layoutProc.running = true
+        lockedAt = Date.now()
         locked = true
     }
 
@@ -181,6 +197,8 @@ Scope {
             LockView {
                 id: lv
                 anchors.fill: parent
+                cLavender: Theme.lavender
+                coreIdentity: Theme.coreIdentity
                 mood: lockRoot.mood
                 stateText: lockRoot.stateText
                 hint: lockRoot.hint
@@ -197,6 +215,15 @@ Scope {
                 mediaTitle: lockRoot.player ? (lockRoot.player.trackTitle || "") : ""
                 mediaArtist: lockRoot.player ? (lockRoot.player.trackArtist || "") : ""
                 mediaPlaying: lockRoot.player ? lockRoot.player.isPlaying : false
+                mediaArt: lockRoot.player ? (lockRoot.player.trackArtUrl || "") : ""
+                mediaProgress: lockRoot.player && lockRoot.player.length > 0 ? lockRoot.player.position / lockRoot.player.length : 0
+                notifApps: lockRoot.notifApps
+                captures: lockRoot.captures
+                wifiOn: lockRoot.wifiOn
+                muted: lockRoot.muted
+                lockedAt: lockRoot.lockedAt
+                realName: lockRoot.realName
+                avatar: lockRoot.avatar
                 // the core is the expensive part: only animate it on the focused monitor
                 reducedMotion: surface.screen !== null && Hyprland.focusedMonitor !== null
                                && surface.screen.name !== Hyprland.focusedMonitor.name

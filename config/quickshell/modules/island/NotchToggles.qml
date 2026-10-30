@@ -1,7 +1,8 @@
-// Quick toggles row: Wi‑Fi, Bluetooth, No molestar, Cafeína, Luz nocturna. Right click on Wi‑Fi / Bluetooth /
-// No molestar opens the related popover.
+// Quick toggles row: Wi‑Fi, Bluetooth, No molestar, Cafeína, Luz nocturna, Enfoque. Right click on Wi‑Fi / Bluetooth /
+// No molestar opens the related popover; on Enfoque it offers 25 / 45 / 90 min (a click = 45 min, or stops it).
 import QtQuick
 import QtQuick.Layouts
+import Quickshell
 import "../.."
 import "../../services"
 import "../../components"
@@ -107,5 +108,48 @@ RowLayout {
         label: "Noche"
         checked: Toggles.nightLight
         onClicked: Toggles.toggleNightLight()
+    }
+    Tile {
+        id: focusTile
+        icon: Icons.clock
+        label: Focus.active ? `${Math.ceil(Focus.remaining / 60)} min` : "Enfoque"
+        checked: Focus.active
+        onClicked: Focus.active ? Focus.stop() : Focus.start(45)
+        onSecondaryClicked: focusMenu.visible = !focusMenu.visible
+    }
+
+    // 25 / 45 / 90 min under the Enfoque tile
+    PopupWindow {
+        id: focusMenu
+        visible: false
+        anchor.item: focusTile
+        anchor.edges: Edges.Bottom
+        anchor.gravity: Edges.Bottom
+        anchor.margins.bottom: -4
+        implicitWidth: focusRow.implicitWidth + 12
+        implicitHeight: 40
+        color: Theme.transparent
+        Rectangle {
+            anchors.fill: parent
+            radius: 12
+            color: Theme.alpha(Theme.islandInk, 0.95)
+            border.width: 1
+            border.color: Theme.glassBorder
+            HoverHandler { onHoveredChanged: if (!hovered) focusMenu.visible = false }
+            Row {
+                id: focusRow
+                anchors.centerIn: parent
+                spacing: 4
+                Repeater {
+                    model: [25, 45, 90]
+                    delegate: PillButton {
+                        required property int modelData
+                        label: `${modelData} min`
+                        implicitHeight: 28
+                        onPressed: { Focus.start(modelData); focusMenu.visible = false; }
+                    }
+                }
+            }
+        }
     }
 }

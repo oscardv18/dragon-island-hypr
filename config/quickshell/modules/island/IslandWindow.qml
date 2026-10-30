@@ -49,6 +49,12 @@ PanelWindow {
         HoverHandler { onHoveredChanged: BarState.hover("edge", hovered) }
     }
 
+    // the idle sequence waits while an agent works, the recording mode is on or a video plays (services/Idle.qml)
+    IdleInhibitor {
+        window: win
+        enabled: Idle.inhibit
+    }
+
     HyprlandFocusGrab {
         windows: [win]
         active: win.expanded

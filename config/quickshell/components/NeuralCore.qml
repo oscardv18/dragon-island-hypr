@@ -20,6 +20,9 @@
 //   bare: bool                 no orbital rings, dial or HUD around the sphere (the dock's 64 px core), default false
 //   fps: int                   0 = every vsync (FrameAnimation, default); > 0 = a Timer at that rate (doubled while the
 //                              mood is not calm), so a small core does not keep its whole window repainting at 60 Hz
+//   identity: list<color>      the three node colours at rest [pink lavender, lavender, cyan]; the shell passes
+//                              Theme.coreIdentity (it follows the wallpaper palette), SDDM its accent.conf. alert / ok keep
+//                              their fixed semantic colours. A change blends like a mood change. Default: the Dragon palette
 //   pulse(): void              call on every key press
 //   radius: real [readonly]    current sphere radius in px (for placing text inside)
 
@@ -36,6 +39,7 @@ Item {
     property bool reducedMotion: false
     property int pointCount: 240
     property bool running: visible
+    property var identity: ["#e896ec", "#c8b6e6", "#67e8f9"]
     readonly property bool compact: Math.min(width, height) < 64
     readonly property real radius: Math.min(width, height) * (compact ? 0.3 : 0.25) * _expand * _breath
 
@@ -43,7 +47,7 @@ Item {
 
     // ── internal state ───────────────────────────────────────────────
     // [node A (pink lavender), node B (lavender), node C / live accent (cyan)]
-    readonly property var _identity: ["#e896ec", "#c8b6e6", "#67e8f9"]
+    readonly property var _identity: identity && identity.length >= 3 ? identity : ["#e896ec", "#c8b6e6", "#67e8f9"]
     readonly property var _palettes: ({
         alert:     ["#ed254e", "#ff4d73", "#f9ae58"],
         ok:        ["#06c993", "#00c1e4", "#7cf5c9"]
@@ -90,6 +94,7 @@ Item {
         if (mood === "alert") _flash = 1.0
     }
     onMoodChanged: _applyPalette()
+    on_IdentityChanged: if (!_palettes[mood]) _applyPalette()
 
     function _build() {
         const n = compact ? 48 : Math.max(40, pointCount)

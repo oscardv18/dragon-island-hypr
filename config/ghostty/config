@@ -5,13 +5,16 @@
 
 # Typography
 # font-family = JetBrains Mono Nerd Font
-font-family = JetBrainsMono NF SemiBold
+# font-family = JetBrainsMono NF SemiBold
+font-family = Liga SFMonoNerdFont
 # font-family = CaskaydiaCove NF
-font-size = 10
+# font-family = Hack Nerd Font
+font-size = 10.5
 
 # Transparency (0.65 over the glass: the backdrop is still recognisable): Ghostty only makes its background see-through. The blur / liquid glass behind it is
 # done by hyprglass (config/hypr/glass.lua, window tag hyprglass_enabled), so Ghostty's own blur stays off.
-background-opacity = 0.65
+# background-opacity = 0.65
+background-opacity = 0.79
 background-blur = false
 
 # Window decorations. Hyprland's hyprbars already draws a title bar with the close / fullscreen / float

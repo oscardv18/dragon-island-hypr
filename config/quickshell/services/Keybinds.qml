@@ -99,9 +99,15 @@ Singleton {
     // Keys that work INSIDE the panels (no Hyprland bind): listed here so everything is in one place. Keep in step with
     // docs/KEYBINDS.md ("Teclado dentro de los paneles").
     readonly property var panelGroups: [
+        { name: "Capturas (dentro)", rows: [
+            { text: "Región · Ventana · Pantalla", combos: [["1", "2", "3"]] },
+            { text: "Mover la selección", combos: [["Espacio", "arrastrar"]] },
+            { text: "Copiar y guardar", combos: [["Enter"]] },
+            { text: "Cerrar", combos: [["Esc"]] }
+        ] },
         { name: "Ajustes (dentro)", rows: [
             { text: "Estilo de barra A · B · C · D (página Barra superior)", combos: [["1", "2", "3", "4"]] },
-            { text: "Cambiar de página", combos: [["Tab"]] },
+            { text: "Cambiar de página", combos: [["Tab"], ["Shift+Tab"]] },
             { text: "Cerrar", combos: [["Esc"]] }
         ] },
         { name: "Referencia de herdr (dentro)", rows: [
@@ -131,7 +137,11 @@ Singleton {
             { text: "Cerrar panel · zoom", combos: [["x"], ["z"]] },
             { text: "Nuevo espacio · selector de espacios", combos: [["Shift+N"], ["w"]] },
             { text: "Separar (la sesión sigue viva) · ayuda", combos: [["q"], ["?"]] } ] },
-        { name: "Fondos de pantalla (dentro)", rows: [
+        { name: "Fondos orbital (SUPER + W o clic derecho en el escritorio)", rows: [
+            { text: "Elegir una miniatura · aplicarla", combos: [["←", "→"], ["Enter"], ["clic"]] },
+            { text: "Girar el anillo (más de 12 fondos)", combos: [["rueda"]] },
+            { text: "Cerrar", combos: [["Esc"], ["clic fuera"]] } ] },
+        { name: "Fondos de pantalla, cuadrícula (dentro)", rows: [
             { text: "Filtrar por nombre", combos: [["escribir"]] },
             { text: "Mover la selección", combos: [["←", "→", "↑", "↓"]] },
             { text: "Aplicar el fondo", combos: [["Enter"], ["clic"]] } ] },

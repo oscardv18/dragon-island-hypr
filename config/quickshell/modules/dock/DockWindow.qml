@@ -110,11 +110,14 @@ PanelWindow {
     readonly property bool anyAgent: pinned.concat(opened).some(i => i.agent.length > 0)
     readonly property bool anyMoons: pinned.concat(opened).some(i => i.count > 0)
     Timer {
-        interval: Math.round(1000 / Theme.dockFps)
+        // hidden, only the thread's dots breathe: a slow tick is enough
+        interval: Math.round(1000 / (win.shownT > 0.01 ? Theme.dockFps : Theme.dockFpsHidden))
         repeat: true
         running: Theme.animationsEnabled && ((win.shownT > 0.01 && (win.anyMoons || win.anyAgent)) || (win.shownT < 0.99 && win.anyMoons))
         onTriggered: win.now += interval
     }
+    // the nodes (moons, synapses, halo) follow the clock only while they are shown: hidden, `liveNow` stays put
+    readonly property real liveNow: shownT > 0.01 ? now : 0
     readonly property real breath: 0.725 + 0.275 * Math.sin(now / Theme.dockBreath * Math.PI * 2)
 
     // ------------------------------------------------------------ input mask (fixed items, window coordinates)
@@ -246,6 +249,7 @@ PanelWindow {
                 border.color: Theme.dockNodeEdge
             }
             NeuralCore {
+                identity: Theme.coreIdentity
                 anchors.fill: parent
                 anchors.margins: 2
                 bare: true

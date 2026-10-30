@@ -12,6 +12,12 @@
  *   - latestNotification: Notification [readonly]
  *   - popups: list<Notification> [readonly] (currently shown as popup / island state, newest first)
  *   - maxHistory: int (oldest are expired beyond this, default 100)
+ *   - silentApps: list<string> [readonly] (apps kept in the center without popup or peek: the shell's own "Capturas")
+ *   - holdAll: bool (recording mode: every notification is kept without popup or peek)
+ *   - holdApps: list<string> (focus mode: these apps are kept without popup or peek; matched by app name / desktop entry)
+ *   - held: int [readonly] (notifications kept by holdAll / holdApps since the hold started)
+ *   - entries: list<var> [readonly] (the center's list, newest first: { group: false, n } or, for "Capturas" and any app
+ *       with 3 or more, { group: true, app, items: list<Notification>, latest } — expanded groups show their items too)
  *
  * Functions:
  *   - toggleDnd(): void              setDnd(enabled: bool): void
@@ -23,6 +29,9 @@
  *   - iconFor(n): string             (image source for the notification or its app, may be "")
  *   - relativeTime(n): string        ("ahora", "hace 5 min", "16:23", "ayer")
  *   - popupDuration(n): int          (ms; 0 = until dismissed, for critical)
+ *   - releaseHeld(): int             (returns how many were held and resets the count)
+ *   - toggleGroup(app: string): void (expand / collapse a group in the center)
+ *   - dismissApp(app: string): void  (dismiss every notification of an app)
  *
  * Signals:
  *   - arrived(notification: var)    (not emitted while DND is on or for re-emitted notifications after reload)
@@ -53,6 +62,43 @@ Singleton {
 
     property var popups: []
 
+    readonly property var silentApps: ["Capturas"]
+    property bool holdAll: false
+    property var holdApps: []
+    property int held: 0
+    function releaseHeld(): int { const n = root.held; root.held = 0; return n; }
+    function _isHeld(n): bool {
+        if (root.holdAll) return true;
+        const app = (n.appName || "").toLowerCase(), de = (n.desktopEntry || "").toLowerCase();
+        return root.holdApps.some(a => { const x = a.toLowerCase(); return app === x || de.includes(x); });
+    }
+
+    property var expandedGroups: ({})
+    function toggleGroup(app: string): void {
+        const e = Object.assign({}, root.expandedGroups);
+        e[app] = !e[app];
+        root.expandedGroups = e;
+    }
+    function dismissApp(app: string): void {
+        for (const n of root.notifications.filter(x => (x.appName || "") === app)) n.dismiss();
+    }
+    readonly property var entries: {
+        const byApp = {};
+        for (const n of root.notifications) (byApp[n.appName || ""] = byApp[n.appName || ""] || []).push(n);
+        const out = [], done = {};
+        for (const n of root.notifications) {
+            const app = n.appName || "";
+            const list = byApp[app];
+            const grouped = app.length > 0 && (list.length >= 3 || (root.silentApps.indexOf(app) >= 0 && list.length > 1));
+            if (!grouped) { out.push({ group: false, n: n }); continue; }
+            if (done[app]) continue;
+            done[app] = true;
+            out.push({ group: true, app: app, items: list, latest: list[0] });
+            if (root.expandedGroups[app]) for (const x of list) out.push({ group: false, n: x, inGroup: true });
+        }
+        return out;
+    }
+
     NotificationServer {
         id: server
         actionsSupported: true
@@ -73,7 +119,10 @@ Singleton {
             const all = server.trackedNotifications.values;
             if (all.length > root.maxHistory) all[0].expire();
 
-            if (!root.dnd && !n.lastGeneration) {
+            if (n.lastGeneration) return;
+            if (root.silentApps.indexOf(n.appName) >= 0) return;          // the shell's own captures: center only
+            if (root._isHeld(n)) { root.held++; return; }                 // recording / focus mode: kept, no popup
+            if (!root.dnd) {
                 root.popups = [n].concat(root.popups.filter(p => p !== n));
                 root.arrived(n);
             }

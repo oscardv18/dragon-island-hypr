@@ -38,23 +38,29 @@ Item {
     readonly property bool hovered: hoverArea.containsMouse
     onHoveredChanged: BarState.hover("notch", hovered)
     // style D: the micro-island, only while something is going on
-    readonly property bool micro: Theme.barLook === "D" && !expanded
-    readonly property bool microActive: Media.isPlaying || Toggles.isRecording || (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agent"
-    readonly property bool peek: !expanded && !micro && appeared && (hovered || IslandState.isTransient)
+    // the micro-island only stands in for the quiet content: important states show the full island also in D
+    readonly property bool micro: Theme.barLook === "D" && !expanded && !IslandState.isTransient
+                                  && ["focus", "recording", "capture", "dropdown", "agentBlocked", "idleWarn"].indexOf(IslandState.mode) < 0
+    readonly property bool microActive: Media.isPlaying || Toggles.isRecording || (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
+    readonly property bool lid: IslandState.mode === "dropdown" && Dropdown.screenName === screenName && !expanded   // drop-down terminal under it
+    readonly property bool peek: !expanded && !micro && !lid && appeared && (hovered || IslandState.isTransient)
 
     // free room towards the bar islands (ears included)
     readonly property real maxCollapsed: BarMetrics.maxNotchWidth(screenName, root.width)
     readonly property real collapsedWidth: micro ? Theme.notchMicroWidth
-                                                 : Math.min(maxCollapsed, Math.max(Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
+                                                 : Math.min(maxCollapsed, Math.max(snug ? 0 : Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
+    // short notices sized to their text (Bloq Mayús, keyboard layout)
+    readonly property bool snug: IslandState.mode === "osd" && (Osd.kind === "capslock" || Osd.kind === "layout")
 
-    readonly property real targetWidth: expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
+    readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
                                                  : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0))
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
-                                                  : (!appeared || (micro && !microActive) ? 0 : Theme.notchHeight + (peek ? Theme.notchPeekDy : 0))
+                                                  : (!appeared || (micro && !microActive) ? 0
+                                                     : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8) + (peek ? Theme.notchPeekDy : 0))
 
     // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped
-    readonly property real targetX: expanded ? (root.width - targetWidth) / 2
+    readonly property real targetX: expanded || lid ? (root.width - targetWidth) / 2
                                              : BarMetrics.notchX(screenName, root.width, targetWidth)
 
     property real animWidth: targetWidth
@@ -116,8 +122,9 @@ Item {
         width: Math.max(0, root.animWidth)
         height: Math.max(0, root.animHeight)
         attached: root.attached
+        edgeColor: IslandState.mode === "agentBlocked" && !root.expanded ? Theme.alpha(Theme.warn, 0.5) : Theme.transparent
         // floating and collapsed (B, D): always a pill, also while it peeks taller (radius = height / 2)
-        bottomRadius: root.expanded ? Theme.notchExpandedRadius : (root.attached ? Theme.notchRadius : Math.max(Theme.notchRadius, root.targetHeight / 2))
+        bottomRadius: root.lid ? Theme.dropdownJoinRadius : root.expanded ? Theme.notchExpandedRadius : (root.attached ? Theme.notchRadius : Math.max(Theme.notchRadius, root.targetHeight / 2))
         topRadius: root.expanded ? Theme.notchFloatTopRadius : Math.max(Theme.notchRadius, root.targetHeight / 2)
         opacity: root.hidden || (root.micro && !root.microActive) ? 0 : 1
 
@@ -160,10 +167,12 @@ Item {
                     color: Theme.error
                 }
                 NeuralCore {
-                    visible: (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agent"
+                    identity: Theme.coreIdentity
+                    visible: (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
                     anchors.verticalCenter: parent.verticalCenter
                     width: 14; height: 14
                     mood: "thinking"
+                    fps: 6
                     reducedMotion: !Theme.animationsEnabled
                     running: visible && Theme.animationsEnabled
                 }
@@ -199,8 +208,19 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+            // the wheel over the volume OSD keeps adjusting it without opening the panel
+            onWheel: w => {
+                if (IslandState.mode === "osd" && (Osd.kind === "volume" || Osd.kind === "mic")) {
+                    const d = w.angleDelta.y > 0 ? 0.05 : -0.05;
+                    if (Osd.kind === "mic") Audio.setMicVolume(Audio.micVolume + d); else Audio.setVolume(Audio.volume + d);
+                } else w.accepted = false;
+            }
             onClicked: m => {
-                if (IslandState.mode === "agent" && m.button === Qt.LeftButton) { Herdr.focusAgent(IslandState.agentEvent?.agent); IslandState.agentFlash = false; }
+                if (IslandState.mode === "agentBlocked" && m.button === Qt.LeftButton) Herdr.focusAgent(IslandState.blockedAgent);
+                // recording: stop the shell's own recording; another app capturing → which one (privacy popover)
+                else if (IslandState.mode === "recording" && m.button === Qt.LeftButton) {
+                    if (RecordingMode.shellRecording) RecordingMode.stop(); else ShellState.open("privacy", root.screenName);
+                }
                 else if (m.button === Qt.MiddleButton && IslandState.mode === "media") Media.playPause();
                 else if (m.button === Qt.LeftButton) ShellState.toggle("dashboard", root.screenName);
             }

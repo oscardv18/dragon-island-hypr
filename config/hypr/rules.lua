@@ -113,6 +113,26 @@ hl.window_rule({
     workspace = "5",
 })
 
+-- Drop-down terminal (SUPER + grave, bin/dragon-dropdown): one Ghostty in special:dropdown, floating, 69 % × 55 % of the
+-- monitor, centred; Quickshell (services/Dropdown.qml) moves its top edge right under the island when it shows, so
+-- the island and the terminal read as one piece. It slides vertically (the curves are the global windowsIn / Out).
+hl.window_rule({
+    name      = "dropdown-terminal",
+    match     = { class = "^org\\.dragonisland\\.Dropdown$" },
+    float     = true,
+    workspace = "special:dropdown",
+    size      = { "monitor_w * 0.69", "monitor_h * 0.55" },
+    move      = { "monitor_w * 0.155", "36" },
+    animation = "slidevert",
+})
+if hl.plugin and hl.plugin.hyprbars then
+    hl.window_rule({
+        name               = "dropdown-terminal-no-titlebar",
+        match              = { class = "^org\\.dragonisland\\.Dropdown$" },
+        ["hyprbars:no_bar"] = true,
+    })
+end
+
 -- First-run setup terminal: floating and centered
 hl.window_rule({
     name   = "float-firstrun",

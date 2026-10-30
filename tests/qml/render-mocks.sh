@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Renders the pure views of the bottom islands offscreen with simulated data (no Quickshell, no services).
-# usage: tests/qml/render-mocks.sh <out dir>      → apps-0/3/12.png (right island), herdr-*.png (left island, when it exists)
+# usage: tests/qml/render-mocks.sh <out dir>      → apps-0/3/12.png (right island), herdr-*.png (left island, when it exists),
+#        lock-*.png (lock screen), sddm-*.png (login theme)
 # Quickshell's QML plugin cannot be loaded by the plain `qml6` runner, so the script renders a patched COPY of the
 # project's Theme (root type Singleton → QtObject); nothing in the repo is modified.
 set -Eeuo pipefail
@@ -11,6 +12,7 @@ WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/config" "$WORK/tests/qml"
 cp -r "$REPO_DIR/config/quickshell" "$WORK/config/quickshell"
+cp -r "$REPO_DIR/sddm" "$WORK/sddm"
 cp "$REPO_DIR"/tests/qml/*_mock.qml "$WORK/tests/qml/"
 for f in Theme Icons; do
     sed -i -e '/^import Quickshell$/d' -e 's/^Singleton {/QtObject {/' "$WORK/config/quickshell/$f.qml"

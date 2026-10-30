@@ -19,6 +19,7 @@ end
 -- Core applications
 bind(mainMod .. " + Return", hl.dsp.exec_cmd("ghostty"),                            "Aplicaciones · Terminal (Ghostty)")
 bind(mainMod .. " + E",      hl.dsp.exec_cmd("dolphin"),                            "Aplicaciones · Archivos (Dolphin)")
+bind(mainMod .. " + grave",  hl.dsp.exec_cmd("$HOME/.local/bin/dragon-dropdown"),   "Aplicaciones · Terminal desplegable")
 bind(mainMod .. " + Space",  hl.dsp.exec_cmd("qs ipc call shell toggle launcher"),  "Aplicaciones · Lanzador")
 
 -- Keyboard layout: next one in kb_layout (also Alt+Shift through kb_options, and the bar capsule)
@@ -86,7 +87,7 @@ bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), "Ratón · Redimensionar
 
 -- Quickshell interactive panels (via qs ipc)
 bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Notch (Nook / Tray)")
-bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper toggle"), "Shell · Fondos de pantalla")
+bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper orbital"), "Shell · Fondos de pantalla (orbital)")
 bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs ipc call wallpaper random"), "Shell · Fondo aleatorio")
 bind(mainMod .. " + X", hl.dsp.exec_cmd("qs ipc call dock toggle"), "Dock · Fijar / liberar el dock")
 bind(mainMod .. " + M", hl.dsp.exec_cmd("qs ipc call dock minimize"), "Dock · Minimizar la ventana (escritorio especial)")
@@ -94,18 +95,21 @@ bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("qs ipc call toggles record"), "
 bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd("qs ipc call shell toggle herdrhelp"), "Agentes · Atajos y funciones de herdr (referencia)")
 bind(mainMod .. " + I",         hl.dsp.exec_cmd("qs ipc call shell toggle store"), "Shell · Tienda de apps (pacman + AUR)")
 bind(mainMod .. " + A",         hl.dsp.exec_cmd("$HOME/.local/bin/dragon-herdr"), "Agentes · Abrir o enfocar herdr (escritorio 5)")
+bind(mainMod .. " + ALT + A",   hl.dsp.exec_cmd("qs ipc call shell nook ia"), "Agentes · Ver agentes y comandos en la isla")
 bind(mainMod .. " + N",      hl.dsp.exec_cmd("qs ipc call shell toggle notifications"), "Shell · Notificaciones")
 bind(mainMod .. " + Escape", hl.dsp.exec_cmd("qs ipc call shell toggle power"),         "Shell · Menú de energía")
 bind(mainMod .. " + F1",     hl.dsp.exec_cmd("qs ipc call shell toggle keybinds"),      "Shell · Esta ayuda de atajos")
 bind(mainMod .. " + F2",     hl.dsp.exec_cmd("qs ipc call shell toggle settings"),      "Shell · Ajustes")
 bind(mainMod .. " + ALT + B", hl.dsp.exec_cmd("qs ipc call settings cycleBarStyle"),   "Shell · Cambiar el estilo de la barra")
+bind(mainMod .. " + ALT + F", hl.dsp.exec_cmd("qs ipc call focus toggle"),             "Shell · Modo enfoque (45 min)")
 
 -- Session lock & system
 bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc call lock lock || hyprlock"), "Sistema · Bloquear la sesión")
 
--- Screenshots (grimblast / grim + slurp)
-bind("Print",                   hl.dsp.exec_cmd("grimblast --notify copysave output"), "Capturas · Pantalla completa")
-bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("grimblast --notify copysave area"),   "Capturas · Región")
+-- Screenshots from the island (services/Capture.qml: grim, copy + save in the pictures folder)
+bind("Print",                   hl.dsp.exec_cmd("qs ipc call capture screen"),      "Capturas · Pantalla completa (copiar y guardar)")
+bind("SHIFT + Print",           hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
+bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
 
 -- Clipboard history (cliphist, shown by the Quickshell clipboard panel)
 bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call shell toggle clipboard"), "Shell · Historial del portapapeles")

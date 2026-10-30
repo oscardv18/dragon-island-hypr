@@ -63,7 +63,7 @@ Singleton {
             minimized: (t.workspace?.name ?? "").startsWith("special:minimized"),
             floating: t.lastIpcObject?.floating ?? false
         };
-    }).filter(w => w.cls.length > 0)
+    }).filter(w => w.cls.length > 0 && w.cls !== Dropdown.windowClass)   // the drop-down terminal is not an app of the dock
 
     function _unreadFor(name: string, id: string): int {
         const n = (name || "").toLowerCase(), i = (id || "").toLowerCase();

@@ -276,6 +276,10 @@ step_configs() {
     local target src copies=() links=0
     while IFS=$'\t' read -r target src; do
         [[ -n "$target" && -e "$src" ]] || continue
+        if palette_config_managed "$target"; then
+            log_info "Configuración conservada con su inclusión de paleta: $target"
+            continue
+        fi
         if [[ -L "$target" ]]; then
             links=$((links + 1))
             [[ "$(readlink -f "$target")" == "$(readlink -f "$src")" ]] || log_warn "$target apunta a otro sitio (no es el repo)."

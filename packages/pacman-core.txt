@@ -47,3 +47,6 @@ upower
 khal
 ddcutil
 jq
+# Wallpaper palette extraction (dragon-palette)
+python
+python-pillow

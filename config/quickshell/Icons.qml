@@ -103,6 +103,12 @@ Singleton {
     readonly property string pin:           g(0xF0403)
     readonly property string palette:       g(0xF03D8)   // Ajustes: Apariencia
     readonly property string barTop:        g(0xF035C)   // Ajustes: Barra superior (menu)
+    readonly property string copy:          g(0xF018F)   // content-copy (captures)
+    readonly property string download:      g(0xF01DA)
+    readonly property string pencil:        g(0xF03EB)
+    readonly property string textRecognition: g(0xF113A)
+    readonly property string selection:     g(0xF0489)   // region capture
+    readonly property string eyeOff:        g(0xF0209)   // hidden titles while recording
     readonly property string branch:        g(0xF062C)   // source-branch (live context of the left island)
     readonly property string pinOff:        g(0xF0404)
     readonly property string windowFloat:   g(0xF0E58)
@@ -110,6 +116,7 @@ Singleton {
     readonly property string calendar:      g(0xF00ED)
     readonly property string clock:         g(0xF0150)
     readonly property string desktop:       g(0xF01C4)
+    readonly property string mouse:         g(0xF037D)
     readonly property string window:        g(0xF05AF)
 
     // Helpers

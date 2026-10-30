@@ -11,14 +11,17 @@ hl.on("hyprland.start", function()
     -- Desktop components
     -- Wallpapers: awww-daemon (images / GIF); Quickshell restores the saved wallpaper and starts mpvpaper for videos
     hl.exec_cmd("awww-daemon")
-    hl.exec_cmd("hypridle")
+    -- idle sequence with the times of Ajustes › Energía (bin/dragon-idle generates hypridle's config); plain
+    -- hypridle with config/hypr/hypridle.conf if the script is missing
+    hl.exec_cmd("sh -c '[ -x \"$HOME/.local/bin/dragon-idle\" ] && exec \"$HOME/.local/bin/dragon-idle\" run || exec hypridle'")
 
     -- Polkit agent (Arch ships a systemd user unit; Plasma's agent only autostarts in Plasma)
     hl.exec_cmd("systemctl --user start hyprpolkitagent")
 
     -- Clipboard history (text & images)
-    hl.exec_cmd("wl-paste --type text --watch cliphist store")
-    hl.exec_cmd("wl-paste --type image --watch cliphist store")
+    -- dragon-clip-store = cliphist store, except while the recording mode pauses the history
+    hl.exec_cmd("wl-paste --type text --watch $HOME/.local/bin/dragon-clip-store")
+    hl.exec_cmd("wl-paste --type image --watch $HOME/.local/bin/dragon-clip-store")
 
     -- Load enabled hyprpm plugins, then reload the config so plugin options and
     -- hyprbars buttons (guarded in plugins.lua) are applied now that the plugins exist.
