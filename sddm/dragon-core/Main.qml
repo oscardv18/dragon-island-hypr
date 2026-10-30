@@ -1,10 +1,11 @@
 // dragon-core — SDDM greeter theme for dragon-island (Qt 6) · docs/design/07-login.png
 // Uses only the SDDM greeter API: sddm, userModel, sessionModel, keyboard, config.
 //
-//   background   theme.conf `background` (default background.jpg; bin/dragon-sddm-sync copies the user's wallpaper here,
-//                1920×1080 and sharp, by hand with sudo), blurred ONCE here (MultiEffect, moderate radius, colours
-//                untouched), a veil darker towards the edges and a fine noise tile (noise.png, theme.conf `noise`) on top
-//                that dithers the 8-bit banding a blurred dark gradient makes
+//   background   theme.conf `background` (default background.png: bin/dragon-sddm-sync writes the user's wallpaper there,
+//                1920×1080, already blurred once with `background_blur` and grained; until it runs, the theme's
+//                background.jpg), shown AS IS: no effect here (MultiEffect's blur left hard-edged blotches on a real
+//                greeter), a veil darker towards the edges and a fine noise tile (noise.png, theme.conf `noise`) on top
+//                that dithers the 8-bit banding of the veil's dark gradient
 //   accent       accent.conf in this folder ([General] accent / accentSoft / glow, written by dragon-sddm-sync from
 //                the wallpaper palette); missing or invalid = the fixed Dragon lavender
 //   centre       greeting by the hour, the shared neural core (components/NeuralCore.qml, from shared/neural-core) with
@@ -18,7 +19,6 @@
 
 import QtQuick
 import QtQuick.Shapes
-import QtQuick.Effects
 import QtCore
 import "components"
 
@@ -147,24 +147,16 @@ Rectangle {
         }
     }
 
-    // ── background: the wallpaper, blurred, under a dark veil ──
+    // ── background: the wallpaper (blurred by dragon-sddm-sync, not here), under a dark veil ──
+    property string bgSource: cfg("background", "background.png")
     Image {
-        id: bg
         anchors.fill: parent
-        source: root.cfg("background", "background.jpg")
+        source: root.bgSource
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
         sourceSize: Qt.size(root.width, root.height)
-        visible: false
-    }
-    MultiEffect {   // the only blur
-        anchors.fill: parent
-        source: bg
-        visible: bg.status === Image.Ready
-        blurEnabled: true
-        blur: 1.0
-        blurMax: 32
-        autoPaddingEnabled: false
+        // dragon-sddm-sync has not run yet (or the path is unreadable): the theme's own background
+        onStatusChanged: if (status === Image.Error && root.bgSource !== "background.jpg") root.bgSource = "background.jpg"
     }
     // veil: theme.conf `veil` in the middle, darker towards the edges
     readonly property real veilMid: Math.max(0, Math.min(1, parseFloat(cfg("veil", "0.62")) || 0))
@@ -184,7 +176,7 @@ Rectangle {
             PathRectangle { width: root.width; height: root.height }
         }
     }
-    Image {   // grain over the blur and the veil: ±3 levels of 8 bits break the bands; 0 = off
+    Image {   // grain over the veil: ±3 levels of 8 bits break the bands; 0 = off
         anchors.fill: parent
         source: "noise.png"
         fillMode: Image.Tile

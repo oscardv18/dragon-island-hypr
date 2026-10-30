@@ -5,8 +5,10 @@
 //   or by hand, to compare backgrounds and sizes (options before the out dir, which stays the last argument):
 //   QT_QPA_PLATFORM=offscreen qml6 tests/qml/sddm_mock.qml -- size=1920x1080 bg=/abs/wall.jpg noise=0 face=/abs/face.png
 //     prefix=4k- <out dir>      (noise = theme.conf `noise`; face = the selected user's icon; prefix goes before the names)
-//   The offscreen platform has no GPU: MultiEffect draws nothing there, so the blurred wallpaper is missing. To see it,
-//   run with QT_QPA_PLATFORM=wayland (a window shows for ~2 s; the grab keeps `size` whatever the compositor does).
+//   The theme shows the wallpaper as is (dragon-sddm-sync blurs it), so offscreen draws it too; bg= takes the file as
+//   given, so pass a background.png the script made to see the real login. QT_QPA_PLATFORM=wayland also works (a
+//   window shows for ~2 s; the grab keeps `size` whatever the compositor does). The real check is the greeter itself:
+//   sddm-greeter-qt6 --test-mode --theme <theme dir>
 import QtQuick
 import QtQuick.Window
 
