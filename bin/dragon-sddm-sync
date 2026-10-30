@@ -1,0 +1,99 @@
+#!/usr/bin/env bash
+# dragon-sddm-sync — give the login screen (SDDM theme dragon-core) your current wallpaper and its accent.
+# SDDM runs before your session as the 'sddm' user and cannot read your home, so this COPIES, with sudo:
+#   ~/.cache/dragon-island/current-wallpaper → /usr/share/sddm/themes/dragon-core/background.jpg (resized, pre-blurred)
+#   ~/.local/state/dragon-island/palette.json → …/dragon-core/accent.conf ([General] accent / accentSoft / glow);
+#     without a palette (or with the wallpaper palette off) accent.conf is removed and the login uses the Dragon accent
+# It is never run from the shell: run it by hand after changing the wallpaper (migration 024 runs it once).
+#   dragon-sddm-sync [--dry-run] [--yes] [--reset]
+#     --dry-run  show what would change, change nothing
+#     --yes      do not ask before the sudo step
+#     --reset    put back the theme's default background and the Dragon accent
+# Each replaced file keeps a .bak-dragon copy next to it. Env: DRY_RUN=true, ASSUME_YES=true work too.
+set -Eeuo pipefail
+
+THEME="${DRAGON_SDDM_THEME:-/usr/share/sddm/themes/dragon-core}"
+CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dragon-island"
+STATE="${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island"
+SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/settings.json"
+REPO_DEFAULT="$(cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)/sddm/dragon-core/background.jpg"
+DRY_RUN="${DRY_RUN:-false}"
+ASSUME_YES="${ASSUME_YES:-false}"
+RESET=false
+
+for a in "$@"; do
+    case "$a" in
+        --dry-run) DRY_RUN=true ;;
+        --yes|-y)  ASSUME_YES=true ;;
+        --reset)   RESET=true ;;
+        -h|--help) sed -n '2,13p' "$0" | sed 's/^# \{0,1\}//'; exit 0 ;;
+        *) echo "uso: dragon-sddm-sync [--dry-run] [--yes] [--reset]" >&2; exit 2 ;;
+    esac
+done
+
+say()  { printf '\033[35m▸\033[0m %s\n' "$*"; }
+warn() { printf '\033[33m!\033[0m %s\n' "$*" >&2; }
+
+[[ -d "$THEME" ]] || { warn "El tema dragon-core no está instalado en $THEME (sddm/install-theme.sh)."; exit 1; }
+command -v magick >/dev/null 2>&1 || { warn "Falta ImageMagick (magick)."; exit 1; }
+
+WORK="$(mktemp -d)"
+trap 'rm -rf "$WORK"' EXIT
+
+# ---- background ----
+src="$REPO_DEFAULT"
+if ! $RESET; then
+    if [[ -e "$CACHE/current-wallpaper" ]]; then src="$(readlink -f "$CACHE/current-wallpaper")"
+    else warn "No hay fondo actual ($CACHE/current-wallpaper): se usa el fondo por defecto."; fi
+fi
+[[ -r "$src" ]] || { warn "No se puede leer $src"; exit 1; }
+if [[ "$src" == "$REPO_DEFAULT" ]]; then
+    cp -- "$src" "$WORK/background.jpg"
+else
+    # a 1280 px pre-blurred copy: small for the greeter, which blurs it again under its veil
+    magick "${src}[0]" -resize 1280x720^ -gravity center -extent 1280x720 -blur 0x16 -quality 82 "$WORK/background.jpg"
+fi
+
+# ---- accent ----
+accent_on=false
+if ! $RESET && [[ -f "$STATE/palette.json" ]]; then
+    enabled="$(python3 -c 'import json,sys
+try: print(str(json.load(open(sys.argv[1])).get("wallpaperPalette", True)).lower())
+except Exception: print("true")' "$SETTINGS" 2>/dev/null || echo true)"
+    if [[ "$enabled" == true ]] && python3 - "$STATE/palette.json" "$WORK/accent.conf" <<'PY'
+import json, re, sys
+d = json.load(open(sys.argv[1]))
+hexc = re.compile(r"^#[0-9A-Fa-f]{6}$")
+keys = ("accent", "accentSoft", "glow")
+if d.get("version") != 1 or d.get("fallback") is True or not all(hexc.match(str(d.get(k, ""))) for k in keys):
+    sys.exit(1)
+with open(sys.argv[2], "w") as f:
+    f.write("# written by dragon-sddm-sync from ~/.local/state/dragon-island/palette.json\n[General]\n")
+    for k in keys:
+        f.write(f"{k}={d[k].upper()}\n")
+PY
+    then accent_on=true; fi
+fi
+
+say "Tema: $THEME"
+say "Fondo: $src"
+if $accent_on; then say "Acento: $(grep '^accent=' "$WORK/accent.conf" | cut -d= -f2) (paleta del fondo)"
+else say "Acento: Dragon fijo (se quita accent.conf)"; fi
+
+if $DRY_RUN; then say "[dry-run] no se cambia nada."; exit 0; fi
+if ! $ASSUME_YES; then
+    read -r -p "¿Copiar al tema con sudo? [s/N] " ans
+    [[ "$ans" =~ ^[sSyY]$ ]] || { say "Cancelado."; exit 0; }
+fi
+
+backup() { [[ -f "$THEME/$1" ]] && sudo cp -a -- "$THEME/$1" "$THEME/$1.bak-dragon" || true; }
+backup background.jpg
+sudo install -m 644 "$WORK/background.jpg" "$THEME/background.jpg"
+if $accent_on; then
+    backup accent.conf
+    sudo install -m 644 "$WORK/accent.conf" "$THEME/accent.conf"
+elif [[ -f "$THEME/accent.conf" ]]; then
+    backup accent.conf
+    sudo rm -f -- "$THEME/accent.conf"
+fi
+say "Listo: se verá en el próximo inicio de sesión (prueba: sddm-greeter-qt6 --test-mode --theme $THEME)."

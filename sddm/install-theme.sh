@@ -89,6 +89,8 @@ TXT
 
     sudo install -d -m 755 "$DEST" "$DEST/components" "$DEST/fonts"
     sudo install -m 644 "$SRC"/*.qml "$SRC"/metadata.desktop "$SRC"/theme.conf "$SRC"/preview.png "$SRC"/LICENSE "$DEST/"
+    # background.jpg / accent.conf belong to dragon-sddm-sync once it has run: only the default background goes in
+    [[ -f "$DEST/background.jpg" ]] || sudo install -m 644 "$SRC"/background.jpg "$DEST/"
     sudo install -m 644 "$SRC"/components/*.qml "$DEST/components/"
     sudo install -m 644 "$SRC"/fonts/*.ttf "$DEST/fonts/"
 
@@ -103,6 +105,7 @@ TXT
 
     check_keyboard
     say "Listo. Pruébalo sin reiniciar: $0 --test   ·   Se verá en el próximo arranque o al cerrar sesión."
+    say "Para usar tu fondo y su acento en el login: dragon-sddm-sync (pide sudo; vuelve a ejecutarlo cuando cambies de fondo)."
 }
 
 do_uninstall() {
