@@ -31,9 +31,15 @@
  *   - engineAvailable: bool [readonly] (false once a call found dragon-search missing)
  *   - appMatches: int [readonly]   (apps mode: how many apps match)
  *
+ *   - clipRequested: bool          (the next opening of the launcher starts in the clipboard ring; the launcher clears it)
+ *
  * Functions:
  *   - run(result): bool            (does its action; true when the launcher should close)
  *   - reset(): void
+ *   - openClipboard(): void        (SUPER + V: the launcher in its clipboard ring; with launcherGravity off, the previous
+ *                                   clipboard panel)
+ *
+ * IPC (`qs ipc call launcher <fn>`): clipboard(), toggle()
  */
 pragma Singleton
 import Quickshell
@@ -199,6 +205,19 @@ Singleton {
             default:
                 return false;
         }
+    }
+
+    property bool clipRequested: false
+    function openClipboard(): void {
+        if (!Settings.launcherGravity) { ShellState.toggle("clipboard", ""); return; }
+        if (ShellState.openPanel === "launcher") { ShellState.close(); return; }
+        root.clipRequested = true;
+        ShellState.open("launcher", "");
+    }
+    IpcHandler {
+        target: "launcher"
+        function clipboard(): void { root.openClipboard(); }
+        function toggle(): void { ShellState.toggle("launcher", ""); }
     }
 
     function reset(): void {

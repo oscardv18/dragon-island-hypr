@@ -468,7 +468,8 @@ Singleton {
     readonly property color gravitySelection:  alpha(cyan, 0.10)
     readonly property color gravitySelectionEdge: alpha(cyan, 0.55)
     // search modes: prefix → chip colour (03-busqueda)
-    readonly property var  searchModeColors: ({ "=": warn, ">": cyan, "?": violetSoft, ":": "#f472b6", "@": ok, "/": warn })
+    readonly property color pink:             "#f472b6"   // emoji mode chip, image clipboard entries
+    readonly property var  searchModeColors: ({ "=": warn, ">": cyan, "?": violetSoft, ":": pink, "@": ok, "/": warn })
     readonly property int  searchDebounce:   80        // ms after the last key before dragon-search runs (not scaled)
     readonly property color gravityBackdrop: alpha(bg, 0.55)                 // the view's own dim over the scrim
 
@@ -485,6 +486,19 @@ Singleton {
     readonly property real switcherChipsTop:  34
     readonly property real switcherTitleGap:  56             // big title under the chosen card
     readonly property color switcherCardFill: alpha(islandInk, 0.86)
+
+    // Gravity clipboard ring (docs/design/12-portapapeles.png)
+    readonly property real clipFieldTop:    95             // the search field moves up here
+    readonly property real clipCenterY:     0.55           // ring centre, fraction of the screen height
+    readonly property real clipRingRx:      470
+    readonly property real clipRingRy:      125
+    readonly property real clipCard:        400            // the chosen card
+    readonly property real clipCardH:       170
+    readonly property real clipCardSide:    230            // the others (taller than their share: a few more lines show)
+    readonly property real clipCardSideExtra: 30
+    readonly property int  clipMax:         8              // cards on the ring at once; more turn with ← → / the wheel
+    readonly property real clipFieldWidth:  440
+    readonly property var  clipKindColors:  ({ text: textSoft, command: warn, link: cyan, path: violetSoft, color: violetBase, image: pink })
 
     // Workspaces overview (docs/design/11-escritorios.png)
     readonly property real overviewCardW:     220

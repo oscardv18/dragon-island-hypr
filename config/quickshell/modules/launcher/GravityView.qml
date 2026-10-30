@@ -42,10 +42,17 @@ Item {
     }
 
     readonly property string query: input.text
-    readonly property bool searching: query.trim().length > 0
+    // «/» (or SUPER + V): the clipboard ring (ClipOrbit) replaces the core and its rings; the «/» becomes a chip
+    property bool clipMode: false
+    readonly property bool searching: !clipMode && query.trim().length > 0
+    property real scene: clipMode ? 0 : 1
+    Behavior on scene { NumberAnimation { duration: Theme.durEmerge; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+    readonly property real orbitReveal: reveal * scene
+    property string pasteAddress: ""
+    property string pasteClass: ""
 
     // ---------------------------------------------------------------- search
-    Binding { target: Search; property: "text"; value: view.query; when: view.shown }
+    Binding { target: Search; property: "text"; value: view.clipMode ? "/" + view.query : view.query; when: view.shown }
     readonly property bool appSearch: searching && Search.mode === "apps"
     property int resultSel: 0
     property int moonSel: -1
@@ -146,7 +153,7 @@ Item {
         id: spin
         interval: Math.round(1000 / Theme.gravityFps)
         repeat: true
-        running: view.shown && !Settings.calmMotion && view.hoverKey === "" && !view.keyHold && !view.searching
+        running: view.shown && !Settings.calmMotion && view.hoverKey === "" && !view.keyHold && !view.searching && !view.clipMode
         property real last: 0
         onRunningChanged: last = Date.now()
         onTriggered: { const now = Date.now(); view.spinT += Math.min(now - last, 100); last = now; }
@@ -242,6 +249,9 @@ Item {
 
     function focusInput(): void { input.forceActiveFocus(); }
     function reset(): void {
+        clipMode = Search.clipRequested;
+        Search.clipRequested = false;
+        if (clipMode) clip.reset();
         input.text = "";
         hoverKey = "";
         keyHold = false;
@@ -251,7 +261,15 @@ Item {
         turnToFront(selRing, 0);
     }
     // later: `entries` follows `active` through a binding that has not been re-evaluated yet inside this handler
-    onShownChanged: if (shown) { Usage.refresh(); Qt.callLater(reset); focusInput(); } else Search.reset()
+    onShownChanged: {
+        if (shown) {
+            pasteAddress = Hypr.activeToplevel?.address ?? "";       // Enter in the clipboard ring pastes there
+            pasteClass = Hypr.activeClass;
+            Usage.refresh();
+            Qt.callLater(reset);
+            focusInput();
+        } else Search.reset();
+    }
 
     // ---------------------------------------------------------------- backdrop
     Rectangle {
@@ -274,11 +292,11 @@ Item {
         delegate: Item {
             id: guide
             required property int index
-            readonly property real rx: Theme.gravityRingRx[index] * view.gs * view.reveal
-            readonly property real ry: Theme.gravityRingRy[index] * view.gs * view.reveal
+            readonly property real rx: Theme.gravityRingRx[index] * view.gs * view.orbitReveal
+            readonly property real ry: Theme.gravityRingRy[index] * view.gs * view.orbitReveal
             anchors.fill: parent
             z: -10
-            opacity: view.reveal * (view.searching ? 0.4 : 1)
+            opacity: view.orbitReveal * (view.searching ? 0.4 : 1)
             Shape {
                 anchors.fill: parent
                 preferredRendererType: Shape.CurveRenderer
@@ -312,13 +330,13 @@ Item {
         x: view.cx - width / 2
         y: view.cy - height / 2
         z: 0
-        scale: 0.6 + 0.4 * view.reveal
-        opacity: view.reveal
+        scale: 0.6 + 0.4 * view.orbitReveal
+        opacity: view.orbitReveal
         identity: Theme.coreIdentity
         reducedMotion: Settings.calmMotion
         fps: Theme.gravityFps
         pointCount: 220
-        running: view.reveal > 0.01
+        running: view.orbitReveal > 0.01
         mood: "calm"
         energy: view.searching ? Math.min(0.7, 0.3 + view.query.length * 0.05) : 0.1
     }
@@ -342,7 +360,7 @@ Item {
     Item {
         anchors.fill: parent
         z: -12
-        opacity: view.searching ? view.reveal : 0
+        opacity: view.searching ? view.orbitReveal : 0
         visible: opacity > 0.01
         Behavior on opacity { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
         layer.enabled: visible
@@ -370,7 +388,7 @@ Item {
         z: 55
         gs: view.gs
         visible: view.searching
-        opacity: view.reveal
+        opacity: view.orbitReveal
         x: Theme.gravityEdge * view.gs
         y: Theme.gravityPanelTop * view.gs
     }
@@ -378,7 +396,7 @@ Item {
         z: 55
         gs: view.gs
         visible: view.searching
-        opacity: view.reveal
+        opacity: view.orbitReveal
         x: view.width - width - Theme.gravityEdge * view.gs
         y: Theme.gravityPanelTop * view.gs
         results: view.results
@@ -395,7 +413,7 @@ Item {
     Column {
         z: 40
         visible: view.focusApp !== null && !view.searching
-        opacity: view.reveal
+        opacity: view.orbitReveal
         x: view.cx - width / 2
         y: view.cy + Theme.gravityNameOffset * view.gs
         spacing: Theme.spacingXs * view.gs
@@ -414,14 +432,28 @@ Item {
         }
     }
 
+    // ---------------------------------------------------------------- clipboard ring («/», SUPER + V)
+    ClipOrbit {
+        id: clip
+        anchors.fill: parent
+        z: 45
+        gs: view.gs
+        visible: opacity > 0.01
+        opacity: view.reveal * (1 - view.scene)
+        query: view.clipMode ? view.query : ""
+        pasteAddress: view.pasteAddress
+        pasteClass: view.pasteClass
+        onCloseRequested: view.closeRequested()
+    }
+
     // ---------------------------------------------------------------- search field (over the core)
     Rectangle {
         id: field
         z: 50
-        width: Theme.gravityFieldWidth * view.gs
+        width: (Theme.gravityFieldWidth * view.scene + Theme.clipFieldWidth * (1 - view.scene)) * view.gs
         height: Theme.gravityFieldHeight * view.gs
         x: view.cx - width / 2
-        y: view.cy - height / 2
+        y: (view.cy - height / 2) * view.scene + Theme.clipFieldTop * view.gs * (1 - view.scene)
         radius: height / 2
         color: Theme.gravityPanel
         border.width: 1
@@ -439,12 +471,29 @@ Item {
         opacity: view.reveal
         scale: 0.92 + 0.08 * view.reveal
 
-        Glyph {
+        Item {
             id: lens
             anchors { left: parent.left; leftMargin: Theme.spacingLg * view.gs; verticalCenter: parent.verticalCenter }
-            icon: Icons.search
-            size: Theme.iconLg * 1.2 * view.gs
-            color: view.searching ? Theme.cyan : Theme.textSoft
+            width: view.clipMode ? slash.width : glass.implicitWidth
+            height: glass.implicitHeight
+            Glyph {
+                id: glass
+                visible: !view.clipMode
+                anchors.centerIn: parent
+                icon: Icons.search
+                size: Theme.iconLg * 1.2 * view.gs
+                color: view.searching ? Theme.cyan : Theme.textSoft
+            }
+            Rectangle {
+                id: slash
+                visible: view.clipMode
+                anchors.verticalCenter: parent.verticalCenter
+                width: Theme.gravityChip * 1.3 * view.gs
+                height: width
+                radius: Theme.keyCapRadius * view.gs
+                color: Theme.alpha(Theme.warn, 0.14)
+                UiText { anchors.centerIn: parent; text: "/"; mono: true; size: Theme.sizeTitle * Math.max(1, view.gs); weight: Theme.weightSemiBold; color: Theme.warn }
+            }
         }
         TextInput {
             id: input
@@ -459,11 +508,12 @@ Item {
             UiText {
                 visible: !parent.text
                 anchors.verticalCenter: parent.verticalCenter
-                text: "Escribe para atraer apps…"
+                text: view.clipMode ? "Buscar en el portapapeles…" : "Escribe para atraer apps…"
                 size: Theme.gravityFieldFont * view.gs
                 color: Theme.textDim
             }
             Keys.onPressed: event => view.key(event)
+            onTextChanged: if (!view.clipMode && text.startsWith("/")) { clip.reset(); view.clipMode = true; text = text.slice(1); }
         }
         Rectangle {
             id: counter
@@ -475,7 +525,8 @@ Item {
             UiText {
                 id: count
                 anchors.centerIn: parent
-                text: !view.searching ? `${view.entries.length} apps`
+                text: view.clipMode ? `${clip.count} elementos`
+                    : !view.searching ? `${view.entries.length} apps`
                     : view.appSearch ? `${Search.appMatches} de ${view.entries.length}`
                     : (Search.busy ? "…" : `${view.results.length}`)
                 mono: true
@@ -488,6 +539,10 @@ Item {
     function key(event): void {
         const k = event.key;
         if (k === Qt.Key_Escape) { if (input.text !== "") input.text = ""; else view.closeRequested(); }
+        else if (clipMode) {
+            if (k === Qt.Key_Backspace && input.text === "") clipMode = false;
+            else if (!clip.key(event)) return;
+        }
         else if (searching) {
             if (k === Qt.Key_Up) { resultSel = Math.max(0, resultSel - 1); moonSel = -1; }
             else if (k === Qt.Key_Down) { resultSel = Math.max(0, Math.min(results.length - 1, resultSel + 1)); moonSel = -1; }
@@ -520,7 +575,7 @@ Item {
     // ---------------------------------------------------------------- corners and footer
     Row {
         z: 60
-        opacity: view.reveal
+        opacity: view.orbitReveal
         x: Theme.gravityEdge * view.gs
         y: Theme.gravityEdge * view.gs
         spacing: Theme.spacingMd * view.gs
@@ -543,7 +598,7 @@ Item {
     }
     UiText {
         z: 60
-        opacity: view.reveal
+        opacity: view.orbitReveal
         anchors { right: parent.right; rightMargin: Theme.gravityEdge * view.gs }
         y: Theme.gravityEdge * view.gs
         text: `${Clock.dateFormatted} · ${Clock.time}`
@@ -554,7 +609,7 @@ Item {
     Column {
         z: 60
         visible: !view.searching
-        opacity: view.reveal
+        opacity: view.orbitReveal
         x: Theme.gravityEdge * view.gs
         anchors { bottom: parent.bottom; bottomMargin: Theme.gravityLegendBottom * view.gs }
         spacing: Theme.spacingSm * view.gs
@@ -578,7 +633,8 @@ Item {
         opacity: view.reveal
         factor: Math.max(1, view.gs)
         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: Theme.gravityHintsBottom * view.gs }
-        hints: !view.searching ? [["← →", "rotar"], ["↑ ↓", "anillo"], ["ENTER", "abrir"], ["TAB", "ir a ventana"], ["ESC", "cerrar"]]
+        hints: view.clipMode ? [["ENTER", "pegar"], ["CTRL+P", "fijar"], ["SUPR", "borrar"], ["← →", "recorrer"]]
+            : !view.searching ? [["← →", "rotar"], ["↑ ↓", "anillo"], ["ENTER", "abrir"], ["TAB", "ir a ventana"], ["ESC", "cerrar"]]
             : [["↑ ↓", "elegir"]].concat(view.enterLabel ? [["ENTER", view.enterLabel]] : []).concat(view.moons.length > 1 ? [["TAB", "ir a una luna"]] : []).concat([["ESC", "cerrar"]])
     }
 }

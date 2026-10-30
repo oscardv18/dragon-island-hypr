@@ -29,7 +29,7 @@ bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd("hyprctl switchxkblayout all n
 bind(mainMod .. " + Q",         hl.dsp.window.close(),                                                "Ventanas · Cerrar")
 bind(mainMod .. " + F",         hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }),  "Ventanas · Maximizar / restaurar")
 bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), "Ventanas · Pantalla completa")
-bind(mainMod .. " + V",         hl.dsp.window.float({ action = "toggle" }),                           "Ventanas · Alternar flotante")
+bind(mainMod .. " + SHIFT + Space", hl.dsp.window.float({ action = "toggle" }),                       "Ventanas · Alternar flotante")
 
 -- Focus movement with arrow keys
 bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }),  "Foco · Mover el foco")
@@ -135,8 +135,10 @@ bind("Print",                   hl.dsp.exec_cmd("qs ipc call capture screen"),  
 bind("SHIFT + Print",           hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
 bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
 
--- Clipboard history (cliphist, shown by the Quickshell clipboard panel)
-bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call shell toggle clipboard"), "Shell · Historial del portapapeles")
+-- Clipboard history (cliphist): the Gravity launcher's clipboard ring (Enter pastes into the window that had the focus);
+-- with «Launcher Gravedad» off, the previous clipboard panel. SUPER + SHIFT + V stays as an alias (it used to be the key).
+bind(mainMod .. " + V",         hl.dsp.exec_cmd("qs ipc call launcher clipboard"), "Shell · Portapapeles (anillo; Enter pega)")
+bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call launcher clipboard"), "Shell · Portapapeles (anillo; Enter pega)")
 
 -- Hardware & Multimedia keys (audio, mic, brightness, player)
 bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+"), "Multimedia · Subir volumen",       { locked = true, repeating = true })

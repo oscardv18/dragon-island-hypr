@@ -20,8 +20,8 @@ Item {
     required property int count            // planets on this ring
 
     readonly property real gs: host.gs
-    readonly property real rx: Theme.gravityRingRx[ring] * gs * host.reveal
-    readonly property real ry: Theme.gravityRingRy[ring] * gs * host.reveal
+    readonly property real rx: Theme.gravityRingRx[ring] * gs * host.orbitReveal
+    readonly property real ry: Theme.gravityRingRy[ring] * gs * host.orbitReveal
     readonly property real theta: 2 * Math.PI * slot / Math.max(1, count) + host.ringAngle(ring)
     readonly property real depth: Math.sin(theta)                  // +1 front (bottom of the ellipse), −1 back
     readonly property real front: (depth + 1) / 2
@@ -59,8 +59,8 @@ Item {
     x: cxp - width / 2
     y: cyp - height / 2
     z: hovered || attract > 0.5 ? 30 : (depth >= 0 ? 5 + depth : -3 + depth)
-    visible: host.reveal > 0.01 && ghost < 0.99
-    opacity: (attract > 0 ? 1 : Theme.gravityBackOpacity + (1 - Theme.gravityBackOpacity) * front) * host.reveal * (1 - ghost)
+    visible: host.orbitReveal > 0.01 && ghost < 0.99
+    opacity: (attract > 0 ? 1 : Theme.gravityBackOpacity + (1 - Theme.gravityBackOpacity) * front) * host.orbitReveal * (1 - ghost)
 
     readonly property real blurAmount: attract > 0 || hovered ? 0 : Theme.gravityBackBlur * Math.max(0, -depth)
 
