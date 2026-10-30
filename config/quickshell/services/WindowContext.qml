@@ -4,11 +4,12 @@
 // Data only: the UI binds to these properties.
 // =============================================================================
 /**
- * Terminals and editors: the working directory of the deepest child process of the window's process (/proc,
- * following the newest child at each level), its git branch (`git -C <cwd> rev-parse --abbrev-ref HEAD`) and the
- * repository name. Cached per process for ~5 s and refreshed every 5 s while such a window is focused (a `cd`
- * changes it). Ghostty running herdr: the cwd of herdr's focused agent pane (services/Herdr.qml), because every
- * herdr pane hangs from the same client process.
+ * Terminals and editors: the working directory, its git branch (`git -C <cwd> rev-parse --abbrev-ref HEAD`) and the
+ * repository name. The directory comes, in this order, from: herdr's focused agent pane when the window runs herdr
+ * (every pane hangs from the same client process; services/Herdr.qml) · the window title when the shell puts the
+ * directory there ("user@host:~/path", "~/path", "/path": zsh / Ghostty shell integration) · the deepest child
+ * process of the window (/proc, newest child at each level; shells may keep helpers with another cwd, hence last).
+ * Cached for ~5 s and refreshed every 5 s while such a window is focused (a `cd` changes it).
  * Apps with notifications (Telegram…): the unread notifications of that app (Notifs).
  *
  * Properties:
@@ -74,17 +75,26 @@ Singleton {
 
     property var _cache: ({})     // key → { at, cwd, branch, repo }
 
-    function _key(): string { return _inHerdr ? `herdr:${_herdrFocused.cwd}` : `pid:${_pid}`; }
+    // "oddv@host:~/Devs/x", "~/Devs/x", "/tmp" → the directory ("" if the title is something else)
+    readonly property string _titleDir: {
+        if (!isDev) return "";
+        const m = /(?:^|:)\s*((?:~|\/)[^\s:]*)\s*$/.exec(Hypr.activeTitle);
+        if (!m) return "";
+        return m[1].startsWith("~") ? Quickshell.env("HOME") + m[1].slice(1) : m[1];
+    }
+    readonly property string _knownDir: _inHerdr ? _herdrFocused.cwd : _titleDir
+
+    function _key(): string { return _knownDir.length > 0 ? `dir:${_knownDir}` : `pid:${_pid}`; }
 
     function refresh(): void { root._cache = ({}); _update(); }
 
     function _update(): void {
-        if (!isDev || (_pid <= 0 && !_inHerdr)) { root.cwd = ""; root._branch = ""; root._repo = ""; return; }
+        if (!isDev || (_pid <= 0 && _knownDir.length === 0)) { root.cwd = ""; root._branch = ""; root._repo = ""; return; }
         const k = _key();
         const c = root._cache[k];
         if (c && Date.now() - c.at < 5000) { root.cwd = c.cwd; root._branch = c.branch; root._repo = c.repo; return; }
         probe.key = k;
-        probe.exec(["sh", "-c", root._script, "sh", _inHerdr ? "" : `${_pid}`, _inHerdr ? _herdrFocused.cwd : ""]);
+        probe.exec(["sh", "-c", root._script, "sh", `${_pid}`, _knownDir]);
     }
 
     // $1 = pid (deepest descendant's cwd) or "" with $2 = a known cwd. Prints cwd, branch, repository top level.
@@ -121,8 +131,7 @@ Singleton {
 
     on_PidChanged: _update()
     onIsDevChanged: _update()
-    on_InHerdrChanged: _update()
-    on_HerdrFocusedChanged: if (_inHerdr) _update()
+    on_KnownDirChanged: _update()
 
     // a `cd` in the terminal changes the cwd: look again every 5 s while a terminal / editor is focused
     Timer {
