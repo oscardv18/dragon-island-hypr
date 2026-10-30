@@ -780,3 +780,23 @@ Rama `feat/nueva-identidad` (sobre el PR #1 ya fusionado), prompt `docs/design/P
 - La foto desde `~/.face`: `/home/oddv` es 700 y el usuario `sddm` no puede leerla. Para que se vea, la foto tiene que estar en `/var/lib/AccountsService/icons/<usuario>` (Ajustes de Plasma → Usuarios la pone ahí).
 
 **Revertir:** `git revert` de los commits de esta sección; `sudo cp -a /usr/share/sddm/themes/dragon-core.bak-dragon-<fecha>/. /usr/share/sddm/themes/dragon-core/`.
+
+## 8e. Login SDDM: desenfoque una sola vez, fuera del greeter (2026-10-30)
+
+**Problema:** con el fondo ya a 1920×1080 y nítido, el login instalado seguía con manchas de bordes duros. Diagnóstico con el **greeter real** (`sddm-greeter-qt6 --test-mode --theme …`, capturado con `grim`; capturas en `~/Pictures/dragon-sddm-diag/`): el `MultiEffect` las pinta. Con el tema instalado (que aún era el anterior a 8d: blurMax 48, fuente recortada a 1280 px, sin `noise.png`) salían manchas grandes (tramos de color idéntico en una fila oscura: media 29,7 px, máx. 173); con el `Main.qml` de 8d (blurMax 32), bloques de bordes rectos que se ven al ampliar. El mock no lo veía: offscreen, `MultiEffect` no pinta nada.
+
+**Hecho**
+- `bin/dragon-sddm-sync` desenfoca una vez: 1920×1080 «cover» → mitad → gaussiano (sigma `background_blur`/2 a 960×540) → 1920×1080 bicúbico (Catrom) → grano gaussiano fino (~1,6 niveles de media, antes de redondear a 8 bits) → `background.png` PNG de 24 bits. Con ffmpeg: `scale` área, `gblur`, `scale` bicúbico y `noise=alls=3`. `background_blur=0` = nítido (sin reducir). El radio se lee del `theme.conf` **instalado** (0–100; sin clave o sin archivo, 12). La caché OpenCL de ImageMagick va al directorio temporal (un dry-run no deja nada en `~/.cache`). `--reset` pasa el fondo del tema por el mismo proceso.
+- `sddm/dragon-core/Main.qml`: sin `MultiEffect` ni `import QtQuick.Effects`; muestra `background.png` tal cual y, si no existe (tema recién instalado, antes del sync), `background.jpg` del tema. Siguen el velo radial y el ruido en mosaico (rompe las bandas del degradado del velo, que se pinta en 8 bits).
+- `theme.conf`: `background=background.png` y `background_blur=12` (variante b, suave). Tres variantes capturadas con el greeter real y el fondo actual (cyberpunk 4K): a = 0, b = 12, c = 32. Las tres sin manchas ni bandas (tramos medios 1,2–1,4 px, máx. ≤ 8); b queda por defecto.
+- Migración `033-sddm-blur-once.sh`: redepliega el script si es copia; si el tema está instalado y difiere del repo (sin contar `background_blur`) o no tiene `background.png`, pregunta con gum, copia de seguridad completa, copia el tema conservando un `background_blur` propio y ejecuta `dragon-sddm-sync` (sin terminal o con `--yes`: exit 10).
+- `tests/sddm-sync.sh`: magick y ffmpeg, 4K y pequeño → PNG de 24 bits (o JPEG ≥ 90) de 1920×1080; `background_blur=0` tan nítido como un redimensionado simple y el radio por defecto claramente más suave (medido a 480×270, donde el grano se promedia); `--dry-run` y `DRY_RUN=1` enseñan los `sudo` sin ejecutar ninguno (un `sudo` falso que apunta cada llamada); `Main.qml` sin `MultiEffect` ni otro desenfoque.
+
+**Verificado**
+- Greeter real con las tres variantes (tema copiado a un directorio temporal, `dragon-sddm-sync` con `sudo` falso); `tests/run-all.sh` en verde (incluye `migrations-dry-run.sh`); `shellcheck -x`; 033 en seco contra el tema instalado y con temas temporales (viejo → exit 10 sin terminal; al día → nada); mock offscreen sin errores, con caída a `background.jpg`.
+
+**No verificado**
+- La instalación real con sudo (pendiente del usuario: `./update.sh` o la 033 a mano y después mirar el login). En esta máquina el gestor es Plasma Login Manager.
+- En `--test-mode` no salen las esquinas inferiores (teclado, apagar): ya pasaba antes de este cambio.
+
+**Revertir:** `git revert` de los commits de esta sección; `sudo cp -a /usr/share/sddm/themes/dragon-core.bak-dragon-<fecha>/. /usr/share/sddm/themes/dragon-core/`.
