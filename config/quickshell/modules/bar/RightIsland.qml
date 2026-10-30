@@ -324,11 +324,8 @@ Rectangle {
                     }
                     Item {
                         anchors.fill: parent
+                        // one step per second: a smooth 1 s rotation every second kept the window repainting at 60 Hz
                         rotation: Clock.seconds * 6
-                        Behavior on rotation {
-                            enabled: Theme.animationsEnabled
-                            RotationAnimation { duration: 1000; direction: RotationAnimation.Clockwise }
-                        }
                         Rectangle {
                             x: parent.width / 2 - width / 2
                             y: -width / 2 + 0.5

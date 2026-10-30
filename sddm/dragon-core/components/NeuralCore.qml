@@ -16,7 +16,7 @@
 //   reducedMotion: bool        slow breathing, no spin
 //   pointCount: int            sphere nodes (lower = cheaper), default 240
 //   running: bool              pause rendering when false
-//   compact: bool [readonly]   side < 64 px (bar button): ~60 nodes, no halos / rings / dial, at most 30 fps
+//   compact: bool [readonly]   side < 64 px (bar button): 48 nodes, no halos / rings / dial, 12 fps at rest / 24 fps when active
 //   pulse(): void              call on every key press
 //   radius: real [readonly]    current sphere radius in px (for placing text inside)
 
@@ -72,7 +72,6 @@ Item {
     property real _t: 0
     property real _ry: 0
     property real _rx: 0
-    property real _acc: 0       // compact: time accumulated until the next 30 fps frame
     property real _nextWave: 0
 
     property var _pts: []      // [x,y,z, colour index 0..2] unit sphere
@@ -88,7 +87,7 @@ Item {
     onMoodChanged: _applyPalette()
 
     function _build() {
-        const n = compact ? 60 : Math.max(40, pointCount)
+        const n = compact ? 48 : Math.max(40, pointCount)
         const pts = []
         const golden = Math.PI * (3 - Math.sqrt(5))
         for (let i = 0; i < n; i++) {
@@ -132,11 +131,6 @@ Item {
 
     function _step(dt) {
         dt = Math.min(dt, 0.05)
-        if (compact) {   // the bar button: 30 fps is plenty
-            _acc += dt
-            if (_acc < 1 / 30) return
-            dt = Math.min(_acc, 0.05); _acc = 0
-        }
         _t += dt
         const e = Math.min(1, _energy + _kick * 0.6)
         if (!reducedMotion) {
@@ -161,8 +155,17 @@ Item {
     }
 
     FrameAnimation {
-        running: core.running && !core.reducedMotion
+        running: core.running && !core.reducedMotion && !core.compact
         onTriggered: core._step(frameTime)
+    }
+    // compact (bar button): a timer, NOT a FrameAnimation, which keeps the whole window repainting every vsync.
+    // 12 fps at rest (a slow spin), 24 fps while it reacts (listening / thinking / speaking): the Canvas is painted
+    // in JS and costs CPU on every frame (measured: ~6 % of a core at 20 fps on an AMD Lucienne laptop)
+    Timer {
+        readonly property int fps: core.mood === "calm" ? 12 : 24
+        running: core.running && !core.reducedMotion && core.compact
+        interval: Math.round(1000 / fps); repeat: true
+        onTriggered: core._step(interval / 1000)
     }
     Timer {   // reduced motion: slow breathing at 12 fps
         running: core.running && core.reducedMotion
