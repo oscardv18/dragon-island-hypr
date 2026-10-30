@@ -31,6 +31,8 @@ fi
 [[ -f $_dragon_zsh/aliases.zsh ]] && source $_dragon_zsh/aliases.zsh
 [[ -f $_dragon_zsh/commands.zsh ]] && source $_dragon_zsh/commands.zsh   # long commands → the island
 
+[[ -f $_dragon_zsh/fastfetch.zsh ]] && source $_dragon_zsh/fastfetch.zsh
+
 # zoxide: `z dir` / `zi` (interactive); `cd` stays the normal cd
 command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
 

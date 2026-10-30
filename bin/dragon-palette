@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# dragon-island — no daemon: extract wallpaper colors and theme external apps.
+set -Eeuo pipefail
+PALETTE_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+PALETTE_REPO="$(dirname -- "$(dirname -- "$PALETTE_BIN")")"
+PALETTE_LIB="$PALETTE_REPO/dragon-core/palette.py"
+if [[ ! -f "$PALETTE_LIB" ]]; then
+    PALETTE_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/palette/palette.py"
+fi
+exec python3 "$PALETTE_LIB" "$@"

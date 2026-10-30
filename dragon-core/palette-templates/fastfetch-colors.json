@@ -1,0 +1,8 @@
+{
+  "accent": "${accent}",
+  "accent_deep": "${accent_deep}",
+  "glow": "${glow}",
+  "cyan": "${cyan}",
+  "ok": "${ok}",
+  "warn": "${warn}"
+}
