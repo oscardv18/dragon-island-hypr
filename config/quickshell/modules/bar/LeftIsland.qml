@@ -1,5 +1,11 @@
-// Left island: launcher button · workspace pills 1–5 (app icons, hover preview) · submap · divider · active window
-// (icon, class, title; on hover the title turns into actions: close, float, pin, move to a workspace)
+// Left island (docs/design/19-islas.png, componente-lados.png), left to right:
+//   core button  a 22 px circle (white 5 %) with a compact NeuralCore ("calm", "listening" while hovered):
+//                click = launcher, right click = dashboard (as the old launcher button)
+//   constellation of workspaces (Constellation.qml: planet travels, hover preview, wheel)
+//   submap       only while there is one
+//   live context app icon · friendly name or repository · chip (git branch / "N sin leer") from WindowContext;
+//                hovering it turns the name + chip into the window actions (close, float, pin, move to a workspace)
+// Style D (minimal): only the constellation. Style C (bare): no box, it sits inside the joined strip.
 import QtQuick
 import Quickshell.Widgets
 import "../.."
@@ -11,6 +17,7 @@ Rectangle {
 
     required property var bar
     property real windowX: 0     // screen x of this island's window
+    property bool live: true     // its window is mapped (false: the core does not animate)
 
     // popovers of the left island: left edge on the capsule's left edge
     function openPopover(name: string, item): void { bar.openFrom(name, item, "left", windowX); }
@@ -21,7 +28,7 @@ Rectangle {
 
     implicitHeight: Theme.barHeight
     height: Theme.barHeight
-    width: Math.min(row.implicitWidth + Theme.barIslandPadH * 2, maxWidth)
+    width: Math.min(row.implicitWidth + padH * 2, maxWidth)
     radius: Theme.barIslandRadius
     color: bare ? Theme.transparent : Theme.glassBg
     border.width: bare ? 0 : 1
@@ -29,6 +36,9 @@ Rectangle {
     clip: true
     Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
     Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
+
+    readonly property real padH: minimal ? Theme.spacingSm : Theme.barIslandPadH
+    readonly property real fixedWidth: core.width + constellation.width + submapChip.width + divider.width + row.spacing * 4
 
     // inner top highlight, white 6 %
     Rectangle {
@@ -42,42 +52,32 @@ Rectangle {
         }
     }
 
-    readonly property real fixedWidth: launcher.width + workspaces.width + submapChip.width + divider.width + row.spacing * 4
-
     Row {
         id: row
-        x: Theme.barIslandPadH
+        x: root.padH
         anchors.verticalCenter: parent.verticalCenter
-        spacing: Theme.barIslandGap
+        spacing: Theme.spacingSm
 
-        // Launcher button: 30×30, radius 9, brand gradient
-        Item {
-            id: launcher
+        // ---- core button: replaces the gradient launcher button ----
+        Rectangle {
+            id: core
             visible: !root.minimal
-            width: Theme.barCapsuleHeight + 2
+            width: Theme.barHeight - 4
             height: width
+            radius: width / 2
             anchors.verticalCenter: parent.verticalCenter
+            color: coreMouse.containsMouse || root.bar.isOpen("launcher") ? Theme.hoverOverlay : Qt.rgba(1, 1, 1, 0.05)
+            Behavior on color { ColorAnimation { duration: Theme.durHover } }
 
-            AccentFill {
+            NeuralCore {
                 anchors.fill: parent
-                radius: Theme.capsuleRadius
-            }
-            Rectangle {
-                anchors.fill: parent
-                radius: Theme.capsuleRadius
-                color: Theme.hoverOverlay
-                opacity: launcherMouse.containsMouse || root.bar.isOpen("launcher") ? 1 : 0
-                Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
-            }
-            Glyph {
-                shadow: true
-                anchors.centerIn: parent
-                icon: Icons.apps
-                size: Theme.iconMd
-                color: Theme.lavenderInk
+                anchors.margins: 1
+                mood: coreMouse.containsMouse ? "listening" : "calm"
+                reducedMotion: !Theme.animationsEnabled
+                running: core.visible && root.live && Theme.animationsEnabled
             }
             MouseArea {
-                id: launcherMouse
+                id: coreMouse
                 anchors.fill: parent
                 hoverEnabled: true
                 cursorShape: Qt.PointingHandCursor
@@ -86,115 +86,139 @@ Rectangle {
             }
         }
 
-        // Workspace pills (scroll to move between existing workspaces)
-        Row {
-            id: workspaces
+        Constellation {
+            id: constellation
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Theme.spacingXs
-
-            Repeater {
-                model: Hypr.workspaceCount
-                delegate: WorkspacePill { islandX: root.windowX; screenName: root.bar.screenName }
-            }
-
-            WheelHandler {
-                acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-                onWheel: e => Hypr.focusRelative(e.angleDelta.y > 0 ? -1 : 1)
-            }
+            compact: root.minimal
+            islandX: root.windowX
+            screenName: root.bar.screenName
         }
 
         // active submap (Hyprland `submap` event), only while there is one
         Rectangle {
             id: submapChip
-            readonly property bool shown: Hypr.submap.length > 0
+            readonly property bool shown: Hypr.submap.length > 0 && !root.minimal
             property string last: ""
             onShownChanged: if (shown) last = Hypr.submap
             anchors.verticalCenter: parent.verticalCenter
             height: Theme.barCapsuleHeight - 2
-            radius: Theme.capsuleRadius - 2
-            color: Theme.alpha(Theme.accent, 0.25)
+            radius: height / 2
+            color: Theme.accentTint
             border.width: 1
-            border.color: Theme.alpha(Theme.accent, 0.6)
+            border.color: Theme.accentEdge
             width: shown ? submapRow.implicitWidth + Theme.spacingMd : 0
             opacity: shown ? 1 : 0
             visible: width > 0.5
             clip: true
-            Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
-            Behavior on opacity { NumberAnimation { duration: Theme.durPill } }
+            Behavior on width { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+            Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
             Connections { target: Hypr; function onSubmapChanged() { if (Hypr.submap.length > 0) submapChip.last = Hypr.submap; } }
             Row {
                 id: submapRow
                 anchors.centerIn: parent
                 spacing: Theme.spacingXs
-                Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.keyboard; size: Theme.iconSm; color: Theme.accent }
-                UiText { shadow: true; anchors.verticalCenter: parent.verticalCenter; text: submapChip.last; mono: true; size: Theme.sizeCaption + 1; weight: Theme.weightSemiBold }
+                Glyph { anchors.verticalCenter: parent.verticalCenter; icon: Icons.keyboard; size: Theme.iconSm - 2; color: Theme.lavender }
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: submapChip.last; mono: true; size: Theme.sizeCaption; weight: Theme.weightSemiBold; color: Theme.lavenderInk }
             }
         }
 
         Rectangle {
             id: divider
             width: 1
-            height: Theme.barCapsuleHeight - 6
+            height: Theme.barHeight - 12
             anchors.verticalCenter: parent.verticalCenter
             color: Theme.divider
             visible: Hypr.hasActiveWindow && !root.minimal
         }
 
-        // Active window: app icon + class + title (dim)
+        // ---- live context: icon · name · chip  ↔  window actions on hover ----
         Row {
-            id: activeWindow
+            id: context
             visible: Hypr.hasActiveWindow && !root.minimal
             anchors.verticalCenter: parent.verticalCenter
-            spacing: Theme.capsuleGap
-            readonly property real available: Math.max(0, root.maxWidth - Theme.barIslandPadH * 2 - root.fixedWidth - Theme.capsulePadH)
+            spacing: Theme.spacingSm
+            readonly property real available: Math.max(0, root.maxWidth - root.padH * 2 - root.fixedWidth - Theme.spacingSm)
+            readonly property bool actions: windowHover.hovered
 
             IconImage {
                 anchors.verticalCenter: parent.verticalCenter
-                source: Hypr.activeIcon
-                implicitSize: Theme.iconMd
+                source: WindowContext.icon
+                implicitSize: Theme.iconMd - 2
                 asynchronous: true
-                visible: Hypr.activeIcon.length > 0
+                visible: WindowContext.icon.length > 0
             }
 
-            UiText {
-
-                shadow: true
-                id: appClass
-                anchors.verticalCenter: parent.verticalCenter
-                text: Hypr.activeClass
-                size: Theme.sizeBar
-                weight: Theme.weightMedium
-                width: Math.min(implicitWidth, activeWindow.available * 0.4)
-            }
-
-            // title ↔ actions: the title turns into window actions while the pointer is over the active window
             Item {
-                id: titleBox
-                readonly property bool actions: windowHover.hovered
-                readonly property real titleWidth: Math.max(0, Math.min(titleText.implicitWidth, activeWindow.available - appClass.width - Theme.iconMd - Theme.capsuleGap * 2))
+                id: swapBox
+                // natural width from implicitWidth (never from the clipped widths: that loop shrank the name to its minimum)
+                readonly property real chipSpace: chip.visible ? chip.width + Theme.spacingSm : 0
+                readonly property real infoWidth: Math.min(nameText.implicitWidth + chipSpace, Math.max(0, context.available - Theme.iconMd - Theme.spacingSm))
                 anchors.verticalCenter: parent.verticalCenter
                 height: Theme.barCapsuleHeight
-                width: actions ? actionsRow.implicitWidth : titleWidth
+                width: context.actions ? actionsRow.implicitWidth : infoWidth
                 clip: true
-                Behavior on width { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
+                Behavior on width { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
 
-                UiText {
-                    id: titleText
-                    shadow: true
+                Row {
+                    id: info
                     anchors.verticalCenter: parent.verticalCenter
-                    text: Hypr.activeTitle
-                    size: Theme.sizeBar
-                    color: Theme.textDim
-                    width: titleBox.titleWidth
-                    opacity: titleBox.actions ? 0 : 1
+                    spacing: Theme.spacingSm
+                    opacity: context.actions ? 0 : 1
                     Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
+
+                    UiText {
+                        id: nameText
+                        anchors.verticalCenter: parent.verticalCenter
+                        text: WindowContext.title
+                        size: Theme.sizeBar
+                        weight: Theme.weightSemiBold
+                        color: Theme.text
+                        width: Math.min(implicitWidth, Math.max(40, swapBox.infoWidth - swapBox.chipSpace))
+                    }
+
+                    // chip: git branch · N unread
+                    Rectangle {
+                        id: chip
+                        visible: WindowContext.chip.length > 0
+                        anchors.verticalCenter: parent.verticalCenter
+                        height: Theme.barCapsuleHeight - 4
+                        radius: height / 2
+                        color: Theme.neutralFill
+                        width: chipRow.implicitWidth + Theme.spacingMd
+                        Row {
+                            id: chipRow
+                            anchors.centerIn: parent
+                            spacing: Theme.spacingXs
+                            Glyph {
+                                visible: WindowContext.chipKind === "branch"
+                                anchors.verticalCenter: parent.verticalCenter
+                                icon: Icons.branch
+                                size: Theme.iconSm - 3
+                                color: Theme.textDim
+                            }
+                            Rectangle {
+                                visible: WindowContext.chipKind === "unread"
+                                anchors.verticalCenter: parent.verticalCenter
+                                width: 5; height: 5; radius: 2.5
+                                color: Theme.cyan
+                            }
+                            UiText {
+                                anchors.verticalCenter: parent.verticalCenter
+                                text: WindowContext.chip
+                                mono: true
+                                size: Theme.sizeCaption
+                                color: Theme.textDim
+                                width: Math.min(implicitWidth, 140)
+                            }
+                        }
+                    }
                 }
 
                 Row {
                     id: actionsRow
                     anchors.verticalCenter: parent.verticalCenter
                     spacing: Theme.spacingXs
-                    opacity: titleBox.actions ? 1 : 0
+                    opacity: context.actions ? 1 : 0
                     visible: opacity > 0
                     Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
 
@@ -206,10 +230,12 @@ Rectangle {
                         signal clicked()
                         width: Theme.barCapsuleHeight
                         height: Theme.barCapsuleHeight
-                        radius: Theme.capsuleRadius - 3
-                        color: abMouse.containsMouse ? Theme.surfaceHi : (on ? Theme.alpha(Theme.accent, 0.3) : Theme.surface2)
+                        radius: height / 2
+                        color: on ? Theme.accentTint : (abMouse.containsMouse ? Theme.hoverOverlay : Theme.transparent)
+                        border.width: on ? 1 : 0
+                        border.color: Theme.accentEdge
                         Behavior on color { ColorAnimation { duration: Theme.durHover } }
-                        Glyph { anchors.centerIn: parent; icon: ab.icon; size: Theme.iconSm; color: abMouse.containsMouse ? Theme.text : ab.tint }
+                        Glyph { anchors.centerIn: parent; icon: ab.icon; size: Theme.iconSm - 1; color: ab.on ? Theme.lavenderInk : (abMouse.containsMouse ? Theme.text : ab.tint) }
                         MouseArea { id: abMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: ab.clicked() }
                     }
 
@@ -217,7 +243,7 @@ Rectangle {
                     ActionButton { icon: Icons.windowFloat; on: Hypr.activeFloating; onClicked: Hypr.toggleFloat() }
                     ActionButton { visible: Hypr.activeFloating; icon: Hypr.activePinned ? Icons.pinOff : Icons.pin; on: Hypr.activePinned; onClicked: Hypr.togglePin() }
 
-                    Rectangle { width: 1; height: Theme.dividerHeight - 4; anchors.verticalCenter: parent.verticalCenter; color: Theme.divider }
+                    Rectangle { width: 1; height: Theme.barCapsuleHeight - 6; anchors.verticalCenter: parent.verticalCenter; color: Theme.divider }
 
                     // move to a workspace
                     Repeater {
@@ -228,8 +254,10 @@ Rectangle {
                             visible: wsId !== Hypr.focusedWorkspaceId
                             width: visible ? Theme.barCapsuleHeight : 0
                             height: Theme.barCapsuleHeight
-                            radius: Theme.capsuleRadius - 3
-                            color: moveMouse.containsMouse ? Theme.accentTint : Theme.surface2
+                            radius: height / 2
+                            color: moveMouse.containsMouse ? Theme.accentTint : Theme.transparent
+                            border.width: moveMouse.containsMouse ? 1 : 0
+                            border.color: Theme.accentEdge
                             Behavior on color { ColorAnimation { duration: Theme.durHover } }
                             UiText { anchors.centerIn: parent; text: `${wsId}`; mono: true; size: Theme.sizeCaption; weight: Theme.weightSemiBold; color: moveMouse.containsMouse ? Theme.lavenderInk : Theme.textSoft }
                             MouseArea { id: moveMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Hypr.moveWindowToWorkspace(wsId) }

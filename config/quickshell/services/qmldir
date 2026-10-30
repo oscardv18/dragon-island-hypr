@@ -35,3 +35,4 @@ singleton EditorWatcher 1.0 EditorWatcher.qml
 singleton HerdrHelp 1.0 HerdrHelp.qml
 singleton Tiling 1.0 Tiling.qml
 singleton BarState 1.0 BarState.qml
+singleton WindowContext 1.0 WindowContext.qml

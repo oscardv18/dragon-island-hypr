@@ -101,6 +101,7 @@ Scope {
             bar: bar
             y: Theme.barMarginTop
             windowX: leftWindow.screenX
+            live: !bar.joined
             opacity: bar.contentOpacity
             // never reach the centre, where the collapsed notch sits
             maxWidth: Math.max(0, (bar.screenWidth - Theme.barMarginSide * 2) / 2 - Theme.notchReserve / 2 - Theme.barIslandGap)
@@ -184,6 +185,7 @@ Scope {
                 id: stripLeft
                 bar: bar
                 bare: true
+                live: bar.joined
                 x: Theme.spacingSm
                 windowX: 0
                 maxWidth: Math.max(0, bar.screenWidth / 2 - Theme.notchReserve / 2 - Theme.spacingSm)
