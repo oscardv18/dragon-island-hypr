@@ -36,11 +36,14 @@ ColumnLayout {
         clip: true
         spacing: Theme.spacingSm
         boundsBehavior: Flickable.StopAtBounds
-        model: ScriptModel { values: Notifs.notifications; comparisonMode: ObjectComparison.Identity }
-        delegate: NotificationCard {
+        // Notifs.entries: single cards, and one card per group (captures, or an app with 3 or more)
+        model: Notifs.entries
+        delegate: Loader {
             required property var modelData
             width: ListView.view.width
-            notification: modelData
+            sourceComponent: modelData.group ? groupCard : singleCard
+            Component { id: singleCard; NotificationCard { notification: modelData.n; opacity: modelData.inGroup ? 0.85 : 1 } }
+            Component { id: groupCard; NotificationGroup { entry: modelData } }
         }
     }
 

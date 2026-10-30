@@ -19,7 +19,8 @@
  *   - toggleDnd(): void
  *   - toggleNightLight(): void
  *   - toggleRecording(): void        (asks for an output/region with slurp, saves to XDG Videos)
- *   - triggerScreenshot(): void      (region screenshot after the shell panels close)
+ *   - startRecording(geometry: string): void (records that area, "x,y wxh", without slurp: the capture bar's ●)
+ *   - triggerScreenshot(): void      (opens the capture bar of the island)
  *
  * Signals:
  *   - toggleChanged(name: string, state: bool)
@@ -47,14 +48,16 @@ Singleton {
         command: ["hyprsunset", "-t", "4500"]
     }
 
-    // Screen recording: `exec` so SIGINT reaches wf-recorder and it finalizes the file
+    // Screen recording: `exec` so SIGINT reaches wf-recorder and it finalizes the file. $1 = a geometry from the capture
+    // bar; empty = ask with slurp
+    property string _recordGeom: ""
     Process {
         id: recordProc
         command: ["sh", "-c",
             "dir=$(xdg-user-dir VIDEOS 2>/dev/null); [ -n \"$dir\" ] && [ \"$dir\" != \"$HOME\" ] || dir=\"$HOME/Videos\"; " +
-            "mkdir -p \"$dir\"; geom=$(slurp -o -d) || exit 0; " +
+            "mkdir -p \"$dir\"; geom=\"$1\"; [ -n \"$geom\" ] || geom=$(slurp -o -d) || exit 0; " +
             "f=\"$dir/grabacion_$(date +%Y-%m-%d_%H-%M-%S).mp4\"; " +
-            "notify-send -a dragon-island 'Grabando pantalla' \"$f\"; exec wf-recorder -g \"$geom\" -f \"$f\""]
+            "notify-send -a dragon-island 'Grabando pantalla' \"$f\"; exec wf-recorder -g \"$geom\" -f \"$f\"", "sh", root._recordGeom]
         onExited: (code, status) => {
             root.recordingSeconds = 0;
             Quickshell.execDetached(["notify-send", "-a", "dragon-island", "Grabación finalizada", "Guardada en la carpeta Vídeos"]);
@@ -92,14 +95,19 @@ Singleton {
         // SIGINT to wf-recorder finalizes the file; while the output picker (slurp) is still open the shell is
         // waiting on it and would ignore the signal, so slurp is closed too
         if (recordProc.running) Quickshell.execDetached(["sh", "-c", "pkill -INT -x wf-recorder; pkill -x slurp"]);
-        else recordProc.running = true;
+        else { root._recordGeom = ""; recordProc.running = true; }
         root.toggleChanged("recording", recordProc.running);
     }
 
-    function triggerScreenshot(): void {
-        // small delay so the dashboard/scrim are gone before slurp draws
-        Quickshell.execDetached(["sh", "-c", "sleep 0.4; grimblast --notify copysave area"]);
+    function startRecording(geometry: string): void {
+        if (recordProc.running) return;
+        root._recordGeom = geometry;
+        recordProc.running = true;
+        root.toggleChanged("recording", true);
     }
+
+    // the capture bar of the island (services/Capture.qml closes the open panel first)
+    function triggerScreenshot(): void { Capture.open("region"); }
 
     signal toggleChanged(name: string, state: bool)
 

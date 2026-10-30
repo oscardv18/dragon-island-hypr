@@ -21,6 +21,7 @@ import "modules/wallpapers"
 import "modules/store"
 import "modules/herdrhelp"
 import "modules/settings"
+import "modules/capture"
 import "modules/dock"
 import "modules/lock"
 import "debug"
@@ -106,6 +107,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { HerdrHelpWindow {} }
+    }
+
+    // capture overlay (SUPER + SHIFT + S): the frozen screen, the selection and the actions
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { CaptureWindow {} }
     }
 
     // Ajustes (SUPER + F2): no scrim, the bar stays visible while its style changes

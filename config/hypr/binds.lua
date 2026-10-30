@@ -104,9 +104,10 @@ bind(mainMod .. " + ALT + B", hl.dsp.exec_cmd("qs ipc call settings cycleBarStyl
 -- Session lock & system
 bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc call lock lock || hyprlock"), "Sistema · Bloquear la sesión")
 
--- Screenshots (grimblast / grim + slurp)
-bind("Print",                   hl.dsp.exec_cmd("grimblast --notify copysave output"), "Capturas · Pantalla completa")
-bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("grimblast --notify copysave area"),   "Capturas · Región")
+-- Screenshots from the island (services/Capture.qml: grim, copy + save in the pictures folder)
+bind("Print",                   hl.dsp.exec_cmd("qs ipc call capture screen"),      "Capturas · Pantalla completa (copiar y guardar)")
+bind("SHIFT + Print",           hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
+bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
 
 -- Clipboard history (cliphist, shown by the Quickshell clipboard panel)
 bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call shell toggle clipboard"), "Shell · Historial del portapapeles")
