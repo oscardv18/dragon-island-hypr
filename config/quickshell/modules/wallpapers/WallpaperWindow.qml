@@ -1,7 +1,9 @@
 // =============================================================================
 // dragon-island — WallpaperWindow.qml
-// Overlay of the wallpaper picker (namespace "dragon-wallpapers"), one per monitor. Click outside / Esc
-// closes; the scrim is ScrimWindow. Own namespace so hyprglass can style it on its own.
+// Overlay of the wallpaper pickers (namespace "dragon-wallpapers"), one per monitor: the orbital one (panel
+// "orbital", SUPER + W / right click on the desktop, no scrim) and the classic grid (panel "wallpapers", with
+// ScrimWindow). Click outside / Esc closes. Own namespace so hyprglass can style it on its own. One input Region with
+// one fixed item: the whole screen while open, nothing while closed.
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
@@ -25,10 +27,16 @@ PanelWindow {
     WlrLayershell.keyboardFocus: open ? WlrKeyboardFocus.Exclusive : WlrKeyboardFocus.None
 
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
-    readonly property bool open: panel === "wallpapers"
+    readonly property bool gridOpen: panel === "wallpapers"
+    readonly property bool orbitalOpen: panel === "orbital"
+    readonly property bool open: gridOpen || orbitalOpen
 
-    mask: open ? null : idleMask
-    Region { id: idleMask }
+    mask: Region { item: maskItem }
+    Item {
+        id: maskItem
+        width: win.open ? win.width : 0
+        height: win.open ? win.height : 0
+    }
 
     // Unmapped while nothing is open (and for the close animation after): an idle full-screen layer would
     // still be rendered into hyprglass' alpha mask every frame (GPU), for nothing
@@ -46,14 +54,27 @@ PanelWindow {
         id: keys
         anchors.fill: parent
         focus: true
-        Keys.onEscapePressed: ShellState.close()
+        Keys.onEscapePressed: if (!orbital.flying) ShellState.close()
+        Keys.onLeftPressed: orbital.step(-1)
+        Keys.onRightPressed: orbital.step(1)
+        Keys.onReturnPressed: orbital.applyKey()
+        Keys.onEnterPressed: orbital.applyKey()
     }
 
-    onOpenChanged: { if (open) Qt.callLater(() => wallpapers.focusSearch()); else lingering.restart(); }
+    onOpenChanged: if (!open) lingering.restart()
+    onGridOpenChanged: if (gridOpen) Qt.callLater(() => wallpapers.focusSearch())
+    onOrbitalOpenChanged: if (orbitalOpen) keys.forceActiveFocus()
 
     WallpaperPanel {
         id: wallpapers
         anchors.fill: parent
-        shown: win.open
+        shown: win.gridOpen
+    }
+
+    OrbitalPicker {
+        id: orbital
+        anchors.fill: parent
+        shown: win.orbitalOpen
+        screen: win.modelData
     }
 }

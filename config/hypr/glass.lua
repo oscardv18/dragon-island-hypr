@@ -77,6 +77,7 @@ if hl.plugin and hl.plugin.hyprglass then
     hg.layer("dragon-island", { exclude = true })
     hg.layer("dragon-dock",   { exclude = true })   -- the dock is opaque black like the notch
     hg.layer("dragon-scrim",  { exclude = true })
+    hg.layer("dragon-desktop", { exclude = true })  -- the invisible right-click catcher on the desktop (Bottom layer)
 
     -- ---- windows ----
     -- Liquid glass goes on every window that is actually translucent (Ghostty, kitty, Quickshell-less GTK/Qt

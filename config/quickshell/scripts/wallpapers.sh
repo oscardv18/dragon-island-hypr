@@ -3,7 +3,8 @@
 # dragon-island — wallpapers.sh: helper of services/Wallpaper.qml (no native Quickshell API for these)
 #   scan <dir>                    list wallpapers: path <TAB> kind <TAB> thumbnail <TAB> mtime
 #   thumbs <dir>                  create the missing / outdated thumbnails; prints "ready <TAB> path" for each
-#   apply-image <path> [type]     stop mpvpaper, make sure awww-daemon runs, show the image / GIF
+#   apply-image <path> [type] [pos]  stop mpvpaper, make sure awww-daemon runs, show the image / GIF; pos = awww's
+#                                 --transition-pos ("center" or x,y in pixels from the bottom-left), default center
 #   apply-video <path> <out>...   stop awww and any old mpvpaper, start one mpvpaper per output (IPC socket each).
 #                                 A video bigger than the screen (a 4K clip on a 768p laptop) costs a lot of GPU: it plays
 #                                 at once, a screen-sized copy is made in the background (cache/video) and swapped in
@@ -167,9 +168,11 @@ case "$cmd" in
     apply-image)
         path="${1:?path}"
         type="${2:-grow}"
+        pos="${3:-center}"
+        [[ "$pos" == center || "$pos" =~ ^[0-9]+,[0-9]+$ ]] || pos=center
         stop_video
         ensure_awww
-        awww img "$path" --transition-type "$type" --transition-pos center \
+        awww img "$path" --transition-type "$type" --transition-pos "$pos" \
             --transition-fps 60 --transition-duration 1.2 --transition-step 90
         link_current "$path"
         palette_bg ;;

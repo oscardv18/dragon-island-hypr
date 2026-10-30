@@ -137,7 +137,11 @@ Singleton {
             { text: "Cerrar panel · zoom", combos: [["x"], ["z"]] },
             { text: "Nuevo espacio · selector de espacios", combos: [["Shift+N"], ["w"]] },
             { text: "Separar (la sesión sigue viva) · ayuda", combos: [["q"], ["?"]] } ] },
-        { name: "Fondos de pantalla (dentro)", rows: [
+        { name: "Fondos orbital (SUPER + W o clic derecho en el escritorio)", rows: [
+            { text: "Elegir una miniatura · aplicarla", combos: [["←", "→"], ["Enter"], ["clic"]] },
+            { text: "Girar el anillo (más de 12 fondos)", combos: [["rueda"]] },
+            { text: "Cerrar", combos: [["Esc"], ["clic fuera"]] } ] },
+        { name: "Fondos de pantalla, cuadrícula (dentro)", rows: [
             { text: "Filtrar por nombre", combos: [["escribir"]] },
             { text: "Mover la selección", combos: [["←", "→", "↑", "↓"]] },
             { text: "Aplicar el fondo", combos: [["Enter"], ["clic"]] } ] },

@@ -12,7 +12,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + Space` | Lanzador de aplicaciones |
 | `SUPER + E` | Dolphin |
 | `SUPER + D` | Notch: abre / cierra el panel expandido (Nook · Tray). También Esc o clic fuera |
-| `SUPER + W` | Selector de fondos de pantalla (imágenes, GIF y vídeo) |
+| `SUPER + W` | Selector de fondos orbital (también con clic derecho en el escritorio vacío); su botón «Cuadrícula» abre el selector clásico |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
@@ -102,7 +102,16 @@ También se conserva el contenido reciente de los terminales (`experimental.pane
 
 Desde el lanzador orbital: `+hypr` + Enter abre la Tienda buscando «hypr». Por IPC: `qs ipc call shell toggle store`.
 
-## Fondos de pantalla (SUPER + W)
+## Fondos de pantalla orbital (SUPER + W o clic derecho en el escritorio)
+
+| Tecla | Acción |
+|---|---|
+| `←` `→` | Elegir una miniatura (el anillo gira para mostrarla) |
+| `Enter` / clic | Aplicar el fondo (la miniatura cubre la pantalla y se revela con `grow` desde el centro) |
+| Rueda | Girar el anillo (con más de 12 fondos) |
+| `Esc` / clic fuera del anillo | Cerrar |
+
+## Fondos de pantalla, cuadrícula (botón «Cuadrícula» del orbital)
 
 | Tecla | Acción |
 |---|---|
@@ -111,7 +120,7 @@ Desde el lanzador orbital: `+hypr` + Enter abre la Tienda buscando «hypr». Por
 | `Enter` / clic | Aplicar el fondo |
 | `Esc` | Cerrar |
 
-Por IPC: `qs ipc call wallpaper toggle | set <ruta> | random | next | current`.
+Por IPC: `qs ipc call wallpaper orbital | orbitalAt <x> <y> | toggle` (cuadrícula) `| set <ruta> | random | next | current`.
 
 ## Teclas multimedia (funcionan con la pantalla bloqueada)
 
@@ -331,7 +340,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + ALT + B` | Cambiar el estilo de la barra |
 | `SUPER + F1` | Esta ayuda de atajos |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
-| `SUPER + W` | Fondos de pantalla |
+| `SUPER + W` | Fondos de pantalla (orbital) |
 | `SUPER + SHIFT + R` | Grabar pantalla (iniciar / parar) |
 | `SUPER + SHIFT + V` | Historial del portapapeles |
 | `SUPER + Escape` | Menú de energía |

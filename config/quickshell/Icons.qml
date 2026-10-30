@@ -116,6 +116,7 @@ Singleton {
     readonly property string calendar:      g(0xF00ED)
     readonly property string clock:         g(0xF0150)
     readonly property string desktop:       g(0xF01C4)
+    readonly property string mouse:         g(0xF037D)
     readonly property string window:        g(0xF05AF)
 
     // Helpers

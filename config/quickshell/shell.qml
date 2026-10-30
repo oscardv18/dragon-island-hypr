@@ -110,6 +110,12 @@ ShellRoot {
         delegate: Component { DockWindow {} }
     }
 
+    // the empty desktop's right click opens the orbital wallpaper picker (Bottom layer, under every window)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { DesktopCatcher {} }
+    }
+
     Variants {
         model: Quickshell.screens
         delegate: Component { WallpaperWindow {} }

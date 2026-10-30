@@ -327,6 +327,21 @@ Singleton {
     readonly property real wallpaperGridHeight:   360
     readonly property real wallpaperPreviewWidth: 280
     readonly property real wallpaperThumbRadius:  14
+    // Orbital wallpaper picker (docs/design/16-orbital.png): thumbnails on a ring around the right-click point
+    readonly property real orbitalRadiusX:    300    // the ring is an ellipse (to the thumbnail centres): 12 thumbnails 16:9
+    readonly property real orbitalRadiusY:    206    // never overlap their neighbours at any angle
+    readonly property real orbitalThumbW:     128
+    readonly property real orbitalThumbH:     72     // 16:9
+    readonly property real orbitalThumbRadius: 12
+    readonly property real orbitalHoverScale: 1.14
+    readonly property real orbitalCore:       112    // the dashed disc in the middle
+    readonly property real orbitalEdge:      18     // the ring keeps this far from the screen edges
+    readonly property int  orbitalMax:        12     // thumbnails on the ring at once; more turn with the wheel
+    readonly property real orbitalDash:       3      // dash / gap of the disc border, in stroke widths
+    readonly property real orbitalStrip:      8      // the palette preview strip under a hovered thumbnail
+    readonly property color orbitalDisc:      alpha(islandInk, 0.72)
+    readonly property color orbitalDiscEdge:  Qt.rgba(1, 1, 1, 0.38)
+    readonly property color orbitalPill:      alpha(islandInk, 0.82)
 
     // Popovers & cards
     readonly property real popoverWidth:   360
@@ -424,6 +439,10 @@ Singleton {
     readonly property int durStd:    ms(240)
     readonly property int durOut:    ms(160)
     readonly property int durOrbit:  ms(620)
+    readonly property int durOrbitStagger: ms(28)   // orbital picker: delay between two thumbnails appearing
+    readonly property int durOrbitFly:     ms(560)  // the chosen thumbnail flies to the centre and covers the screen
+    readonly property int durOrbitSpin:    ms(260)  // one wheel step of the ring
+    readonly property int durOrbitReveal:  ms(420)  // the screen-sized thumbnail fades over the awww reveal
     readonly property QtObject motion: QtObject {
         readonly property int paleta: root.ms(600)   // the shell blending into a new wallpaper palette
     }
