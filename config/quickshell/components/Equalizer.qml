@@ -5,7 +5,7 @@ import ".."
 Row {
     id: root
     property bool playing: false
-    property color color: Theme.accent
+    property color color: Theme.cyan     // activity is cyan in the new identity
     property real barHeight: Theme.iconMd
 
     spacing: Theme.eqGap
