@@ -38,7 +38,9 @@ Item {
     readonly property bool hovered: hoverArea.containsMouse
     onHoveredChanged: BarState.hover("notch", hovered)
     // style D: the micro-island, only while something is going on
-    readonly property bool micro: Theme.barLook === "D" && !expanded
+    // the micro-island only stands in for the quiet content: important states show the full island also in D
+    readonly property bool micro: Theme.barLook === "D" && !expanded && !IslandState.isTransient
+                                  && ["focus", "recording", "capture", "dropdown", "agentBlocked", "idleWarn"].indexOf(IslandState.mode) < 0
     readonly property bool microActive: Media.isPlaying || Toggles.isRecording || (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
     readonly property bool peek: !expanded && !micro && appeared && (hovered || IslandState.isTransient)
 
@@ -53,7 +55,8 @@ Item {
                                                  : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0))
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
-                                                  : (!appeared || (micro && !microActive) ? 0 : Theme.notchHeight + (peek ? Theme.notchPeekDy : 0))
+                                                  : (!appeared || (micro && !microActive) ? 0
+                                                     : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8) + (peek ? Theme.notchPeekDy : 0))
 
     // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped
     readonly property real targetX: expanded ? (root.width - targetWidth) / 2

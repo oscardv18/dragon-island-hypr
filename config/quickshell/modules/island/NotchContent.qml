@@ -519,9 +519,31 @@ Item {
         id: idleWarnView
         UiText { text: "Inactividad"; weight: Theme.weightMedium; color: Theme.warn }
     }
+    // ---- focus mode: 28 px countdown ring (track white 14 %, teal progress from the top, clockwise) ·
+    //      "Enfoque · 24:12" · below, dim 10 px: what is silenced ----
     Component {
         id: focusView
-        UiText { text: "Enfoque"; weight: Theme.weightMedium }
+        Row {
+            spacing: Theme.spacingSm
+            RingMeter {
+                anchors.verticalCenter: parent.verticalCenter
+                size: 22
+                thickness: 2.5
+                value: 1 - Focus.progress
+                color: Theme.focusTeal
+                warnAt: 2
+            }
+            Column {
+                anchors.verticalCenter: parent.verticalCenter
+                spacing: 0
+                Row {
+                    spacing: Theme.spacingXs
+                    UiText { text: "Enfoque ·"; weight: Theme.weightSemiBold }
+                    UiText { text: `${String(Math.floor(Focus.remaining / 60)).padStart(2, "0")}:${String(Focus.remaining % 60).padStart(2, "0")}`; mono: true; weight: Theme.weightSemiBold }
+                }
+                UiText { text: Focus.summary; size: 10; color: Theme.textDim }
+            }
+        }
     }
 
     // ---- incoming notification: icon · title, app + body in the peek line ----

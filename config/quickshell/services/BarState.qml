@@ -45,7 +45,7 @@ Singleton {
 
     // a popover opened from the revealed bar keeps it revealed until it closes
     property bool _sticky: false
-    readonly property bool revealed: Settings.barStyle === "D" && (hovered || _sticky)
+    readonly property bool revealed: Theme.barStyle === "D" && (hovered || _sticky)   // the effective style (focus mode → D)
     onRevealedChanged: if (!revealed) _sticky = false
     Connections {
         target: ShellState
@@ -53,6 +53,6 @@ Singleton {
     }
 
     function dimmedOn(screen): bool {
-        return Settings.barAutohide && Settings.barStyle !== "D" && !root.hovered && !ShellState.anyOpen && Hypr.fullscreenOn(screen);
+        return Settings.barAutohide && Theme.barStyle !== "D" && !root.hovered && !ShellState.anyOpen && Hypr.fullscreenOn(screen);
     }
 }

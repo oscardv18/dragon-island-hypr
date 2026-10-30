@@ -100,6 +100,7 @@ bind(mainMod .. " + Escape", hl.dsp.exec_cmd("qs ipc call shell toggle power"), 
 bind(mainMod .. " + F1",     hl.dsp.exec_cmd("qs ipc call shell toggle keybinds"),      "Shell · Esta ayuda de atajos")
 bind(mainMod .. " + F2",     hl.dsp.exec_cmd("qs ipc call shell toggle settings"),      "Shell · Ajustes")
 bind(mainMod .. " + ALT + B", hl.dsp.exec_cmd("qs ipc call settings cycleBarStyle"),   "Shell · Cambiar el estilo de la barra")
+bind(mainMod .. " + ALT + F", hl.dsp.exec_cmd("qs ipc call focus toggle"),             "Shell · Modo enfoque (45 min)")
 
 -- Session lock & system
 bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc call lock lock || hyprlock"), "Sistema · Bloquear la sesión")

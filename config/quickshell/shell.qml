@@ -38,10 +38,11 @@ ShellRoot {
     }
 
     // Bar style (A / B / C / D) and the D reveal: Theme derives every bar / notch size from them
+    // focus mode shows the minimal bar (D) for its duration without touching the setting
     Binding {
         target: Theme
         property: "barStyle"
-        value: Settings.barStyle
+        value: Focus.active ? "D" : Settings.barStyle
     }
     Binding {
         target: Theme

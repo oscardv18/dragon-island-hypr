@@ -41,6 +41,7 @@ Singleton {
     readonly property color lavenderDeep: "#a78bcf" // lavender data bars
     readonly property color violetBase:   "#b26bff" // base of the tints (never a solid fill)
     readonly property color islandInk:    "#05040a" // central island / notch (almost black)
+    readonly property color focusTeal:    "#5eead4"   // focus mode countdown ring
     readonly property color captureDim:   Qt.rgba(0, 0, 0, 0.62)   // outside the capture selection
     readonly property color sunWarm:      "#fcd34d" // brightness OSD (with the night light on it warms to warn)
 

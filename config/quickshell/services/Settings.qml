@@ -23,6 +23,7 @@
  *   - longCommandSeconds: int [readonly] (a shell command at least this long reports to the island; ≥ 5, default 30)
  *   - recordingMode: string [readonly] ("auto": the recording mode follows a recording / a screen share · "off"; default "auto")
  *   - recordHold / recordHideTitles / recordPauseClipboard / recordFrame: bool [readonly] (its rules; default true)
+ *   - focusMuteApps: list<string> [readonly] (apps kept silent during focus mode; default ["Telegram"])
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -87,6 +88,7 @@ Singleton {
         return root._data.longCommandSeconds !== undefined && !isNaN(v) ? Math.max(5, Math.round(v)) : 30;
     }
     function _flag(key: string, def: bool): bool { return typeof root._data[key] === "boolean" ? root._data[key] : def; }
+    readonly property var focusMuteApps: Array.isArray(root._data.focusMuteApps) ? root._data.focusMuteApps.filter(a => typeof a === "string") : ["Telegram"]
     readonly property string recordingMode: root._data.recordingMode === "off" ? "off" : "auto"
     readonly property bool recordHold: _flag("recordHold", true)
     readonly property bool recordHideTitles: _flag("recordHideTitles", true)
