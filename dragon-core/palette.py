@@ -156,7 +156,7 @@ def main(argv=None):
     parser.add_argument("--dry-run", action="store_true")
     parser.add_argument("--quiet", action="store_true")
     subcommands = parser.add_subparsers(dest="command", required=True)
-    for name in ("generate", "status"):
+    for name in ("generate", "apply", "reset", "status"):
         sub = subcommands.add_parser(name)
         sub.add_argument("--dry-run", action="store_true", default=argparse.SUPPRESS)
         sub.add_argument("--quiet", action="store_true", default=argparse.SUPPRESS)
@@ -171,6 +171,14 @@ def main(argv=None):
                 atomic_write(path, json.dumps(result, indent=2) + "\n")
             if not args.quiet:
                 print(json.dumps(result, indent=2))
+        elif args.command == "apply":
+            from palette_runtime import application_lock, apply_palette, read_palette
+            with application_lock(args.dry_run):
+                apply_palette(read_palette(), args.dry_run, args.quiet)
+        elif args.command == "reset":
+            from palette_runtime import application_lock, reset_palette
+            with application_lock(args.dry_run):
+                reset_palette(args.dry_run, args.quiet)
         elif args.command == "status":
             if path.exists():
                 data = json.loads(path.read_text())
