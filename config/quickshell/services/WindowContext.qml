@@ -40,6 +40,7 @@ Singleton {
 
     readonly property string appName: {
         if (_class.length === 0) return "";
+        if (_class === Dropdown.windowClass) return "Terminal";       // the drop-down terminal (SUPER + grave)
         if (_entry?.name) return _entry.name;
         // no desktop entry: the last dotted part of the class, capitalised (org.telegram.desktop → Telegram)
         const parts = _class.split(".").filter(p => p.length > 0 && ["desktop", "org", "com", "io", "net", "app"].indexOf(p.toLowerCase()) < 0);
@@ -49,7 +50,7 @@ Singleton {
     readonly property bool masked: RecordingMode.hideTitles
     readonly property string icon: masked ? "" : Hypr.activeIcon
 
-    readonly property bool isDev: /^(com\.mitchellh\.ghostty.*|org\.dragonisland\.(herdr|pkg|setup)|kitty|alacritty|foot|footclient|org\.wezfurlong\.wezterm|wezterm|org\.kde\.konsole|konsole|code|code-oss|codium|vscodium|cursor|zed|dev\.zed\.zed.*|neovide|org\.kde\.kate|kate|jetbrains-.*)$/i.test(_class)
+    readonly property bool isDev: /^(com\.mitchellh\.ghostty.*|org\.dragonisland\.(herdr|pkg|setup|dropdown)|kitty|alacritty|foot|footclient|org\.wezfurlong\.wezterm|wezterm|org\.kde\.konsole|konsole|code|code-oss|codium|vscodium|cursor|zed|dev\.zed\.zed.*|neovide|org\.kde\.kate|kate|jetbrains-.*)$/i.test(_class)
 
     property string cwd: ""
     property string _branch: ""

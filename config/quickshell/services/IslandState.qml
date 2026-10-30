@@ -4,9 +4,10 @@
 //
 // Priority, highest first (P = persistent while its condition holds · T = transient, returns on its own):
 //    1  capture        P  the capture bar is open (Capture.active)
-//    2  dropdown       P  the drop-down terminal is shown: the island is its lid (Dropdown.shown)
-//    3  recording      P  recording / sharing the screen (RecordingMode.active)
-//    4  osd            T  volume, microphone, brightness, Bloq Mayús, keyboard layout (Osd, Theme.durOsd)
+//    2  osd            T  volume, microphone, brightness, Bloq Mayús, keyboard layout (Osd, Theme.durOsd) — above
+//                         recording / dropdown so a volume change while recording shows and REC comes back after it
+//    3  dropdown       P  the drop-down terminal is shown: the island is its lid (Dropdown.shown)
+//    4  recording      P  recording / sharing the screen (RecordingMode.active)
 //    5  agentBlocked   P  a herdr agent waits for an answer (Herdr: state "blocked")
 //    6  notification   T  peek of a notification (not while Notifs holds them)
 //       notice         T  a short notice of the shell ("Copiada · guardada en Imágenes", "N retenidas")
@@ -39,9 +40,13 @@
  *
  * Functions:
  *   - notice(text: string, icon: string, ms: int): void (a short notice in the island; icon = an Icons name or "")
+ *
+ * IPC (`qs ipc call island preview <mode>`): shows a mode for 4 s whatever the priority, with sample data where the
+ *   mode needs it ("commandDone", "commandFail", "agentBlocked", …) — to check the look; nothing else changes.
  */
 pragma Singleton
 import Quickshell
+import Quickshell.Io
 import QtQuick
 import ".."
 
@@ -63,11 +68,13 @@ Singleton {
     readonly property var blockedAgent: Herdr.running ? (Herdr.agents.find(a => a.state === "blocked") ?? null) : null
     readonly property var workingAgents: Herdr.running ? Herdr.agents.filter(a => a.state === "working") : []
 
+    property string previewMode: ""
     readonly property string mode: {
+        if (previewMode.length > 0) return previewMode;
         if (Capture.active) return "capture";
+        if (Osd.visible) return "osd";
         if (Dropdown.shown) return "dropdown";
         if (RecordingMode.active) return "recording";
-        if (Osd.visible) return "osd";
         if (blockedAgent) return "agentBlocked";
         if (notifFlash && notification) return "notification";
         if (noticeFlash) return "notice";
@@ -91,6 +98,21 @@ Singleton {
         root.noticeFlash = true;
         noticeTimer.interval = ms > 0 ? ms : Theme.durNotice;
         noticeTimer.restart();
+    }
+
+    Timer { id: previewTimer; interval: 4000; onTriggered: root.previewMode = "" }
+    IpcHandler {
+        target: "island"
+        function preview(mode: string): void {
+            if (mode === "commandDone" || mode === "commandFail") {
+                root.done = mode === "commandDone" ? { kind: "command", text: "make test-integration", ok: true, detail: "2m14s" }
+                                                   : { kind: "command", text: "make lint-go", ok: false, detail: "salida 1 · 48s" };
+                mode = "commandDone";
+            }
+            if (mode === "notice") { root.noticeText = "Copiada · guardada en Imágenes"; root.noticeIcon = "check"; }
+            root.previewMode = mode;
+            previewTimer.restart();
+        }
     }
 
     // ignore the initial workspace report at startup
