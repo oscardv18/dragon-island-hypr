@@ -275,7 +275,7 @@ Rectangle {
             }
         }
 
-        // Clock: brand gradient, "lun 5 oct  16:23". Notifications and updates live in its popover (calendar +
+        // Clock: neutral (white 6 %) with a lavender dot, "lun 5 oct  16:23". Notifications and updates live in its popover (calendar +
         // notifications + updates), so this capsule only shows small markers: DND, unread, updates.
         // Right click = No molestar.
         Capsule {
@@ -303,17 +303,19 @@ Rectangle {
                 Item { id: box; implicitWidth: childrenRect.width; implicitHeight: parent.height }
             }
 
+            // lavender dot: the clock capsule is neutral now (no brand gradient)
+            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 5; height: 5; radius: 2.5; color: Theme.lavender }
             Marker {
                 shown: Notifs.dnd
-                Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.bellOff; size: Theme.iconSm; color: Theme.onBrand }
+                Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.bellOff; size: Theme.iconSm; color: Theme.textSoft }
             }
             Marker {
                 shown: Notifs.hasUnread && !Notifs.dnd
-                Rectangle { anchors.verticalCenter: parent.verticalCenter; width: Theme.pillDot + 2; height: width; radius: width / 2; color: Theme.onBrand }
+                Rectangle { anchors.verticalCenter: parent.verticalCenter; width: Theme.pillDot + 2; height: width; radius: width / 2; color: Theme.textSoft }
             }
             Marker {
                 shown: Updates.count > 0
-                Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.update; size: Theme.iconSm; color: Theme.onBrand }
+                Glyph { shadow: true; anchors.verticalCenter: parent.verticalCenter; icon: Icons.update; size: Theme.iconSm; color: Theme.textSoft }
             }
             UiText {
                 shadow: true
@@ -322,7 +324,7 @@ Rectangle {
                 mono: true
                 size: Theme.sizeBar
                 weight: Theme.weightSemiBold
-                color: Theme.onBrand
+                color: Theme.text
             }
         }
     }

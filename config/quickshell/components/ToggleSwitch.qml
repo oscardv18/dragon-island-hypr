@@ -1,4 +1,4 @@
-// On/off switch: brand gradient when on
+// On/off switch: cyan tint + 1 px cyan edge when on (mockup 08-ajustes), neutral track when off
 import QtQuick
 import ".."
 
@@ -14,14 +14,16 @@ Item {
     Rectangle {
         anchors.fill: parent
         radius: height / 2
-        color: Theme.surface3
+        color: Theme.alpha(Theme.text, 0.10)
         visible: !root.checked
     }
 
-    BrandFill {
+    AccentFill {
         anchors.fill: parent
         radius: height / 2
         visible: root.checked
+        color: Theme.alpha(Theme.cyan, 0.30)
+        border.color: Theme.alpha(Theme.cyan, 0.55)
     }
 
     Rectangle {
@@ -30,7 +32,7 @@ Item {
         radius: width / 2
         y: Theme.knobInset
         x: root.checked ? root.width - width - Theme.knobInset : Theme.knobInset
-        color: root.checked ? Theme.onBrand : Theme.textDim
+        color: root.checked ? Theme.text : Theme.textSoft
         Behavior on x { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
     }
 

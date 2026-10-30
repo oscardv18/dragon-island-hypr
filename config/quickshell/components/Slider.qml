@@ -51,11 +51,13 @@ Item {
                 color: Theme.surface3
             }
 
-            BrandFill {
+            AccentFill {
                 anchors.verticalCenter: parent.verticalCenter
                 width: Math.max(height, track.width * root.shown)
                 height: Theme.trackHeight
                 radius: height / 2
+                color: Theme.lavender
+                border.width: 0
                 opacity: root.dimmed ? 0.4 : 1
             }
 
@@ -65,7 +67,9 @@ Item {
                 radius: width / 2
                 anchors.verticalCenter: parent.verticalCenter
                 x: Math.max(0, Math.min(track.width - width, track.width * root.shown - width / 2))
-                color: Theme.onBrand
+                color: Theme.lavender
+                border.width: 2
+                border.color: Theme.alpha(Theme.lavenderInk, 0.5)
                 scale: area.pressed || area.containsMouse ? 1.15 : 1
                 Behavior on scale { NumberAnimation { duration: Theme.durHover } }
             }

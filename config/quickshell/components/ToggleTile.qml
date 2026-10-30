@@ -27,7 +27,7 @@ Item {
         Behavior on color { ColorAnimation { duration: Theme.durHover } }
     }
 
-    BrandFill {
+    AccentFill {
         anchors.fill: parent
         radius: Theme.tileRadius
         visible: root.checked
@@ -50,7 +50,7 @@ Item {
         Glyph {
             icon: root.icon
             size: Theme.iconLg
-            color: root.checked ? Theme.onBrand : Theme.textSoft
+            color: root.checked ? Theme.lavenderInk : Theme.textSoft
         }
 
         ColumnLayout {
@@ -61,14 +61,14 @@ Item {
                 Layout.fillWidth: true
                 text: root.label
                 weight: Theme.weightSemiBold
-                color: root.checked ? Theme.onBrand : Theme.text
+                color: root.checked ? Theme.lavenderInk : Theme.text
             }
             UiText {
                 Layout.fillWidth: true
                 visible: text.length > 0
                 text: root.sublabel
                 size: Theme.sizeCaption
-                color: root.checked ? Theme.alpha(Theme.onBrand, 0.8) : Theme.textDim
+                color: root.checked ? Theme.alpha(Theme.lavenderInk, 0.8) : Theme.textDim
             }
         }
     }

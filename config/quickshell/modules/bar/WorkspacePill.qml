@@ -1,8 +1,7 @@
 // Workspace pill: height 22, radius 8.
-// active: brand gradient + name + glow · occupied: surface3 + 4 px coloured dot · empty: textDim, no background.
+// active: accent tint + 1 px edge + name (no glow) · occupied: surface3 + 4 px coloured dot · empty: textDim, no background.
 // Width and colour change over 200 ms OutCubic.
 import QtQuick
-import QtQuick.Effects
 import Quickshell.Widgets
 import Quickshell.Hyprland
 import "../.."
@@ -39,15 +38,6 @@ Item {
 
     Behavior on implicitWidth { NumberAnimation { duration: Theme.durPill; easing.type: Easing.OutCubic } }
 
-    RectangularShadow {
-        anchors.fill: brand
-        radius: Theme.pillRadius
-        blur: Theme.glowBlurSmall
-        color: Theme.glowStrong
-        opacity: pill.active ? 1 : 0
-        Behavior on opacity { NumberAnimation { duration: Theme.durPill } }
-    }
-
     Rectangle {
         anchors.fill: parent
         radius: Theme.pillRadius
@@ -63,7 +53,7 @@ Item {
         visible: mouse.containsMouse && !pill.active
     }
 
-    BrandFill {
+    AccentFill {
         id: brand
         anchors.fill: parent
         radius: Theme.pillRadius
@@ -114,7 +104,7 @@ Item {
             mono: true
             size: Theme.sizeCaption
             weight: Theme.weightBold
-            color: Theme.onBrand
+            color: Theme.lavenderInk
         }
         PillIcons { anchors.verticalCenter: parent.verticalCenter; list: pill.iconList }
     }

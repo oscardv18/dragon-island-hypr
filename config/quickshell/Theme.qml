@@ -13,27 +13,34 @@ Singleton {
     // -------------------------------------------------------------------------
     // Palette (Sweet / Garuda Dragonized)
     // -------------------------------------------------------------------------
-    readonly property color bg:         "#0b0c14" // wallpaper fallback / deepest background
+    readonly property color bg:         "#07060d" // wallpaper fallback / deepest background
     readonly property color surface0:   "#161925" // islands (72-86 % opacity), hyprbars bar
     readonly property color surface1:   "#12131e" // cards inside panels
     readonly property color surface2:   "#1d2031" // capsules, list rows, off toggles
     readonly property color surface3:   "#22243a" // inactive pills, progress tracks
     readonly property color surfaceHi:  "#34385a" // capsule hover / while its popover is open
     readonly property color outline:    "#262838" // inactive window border
-    readonly property color muted:      "#3a3d55" // inactive hyprbars buttons, empty dots
-    readonly property color text:       "#e6e8ef" // primary text
-    readonly property color textSoft:   "#c3c7d1" // body text
-    readonly property color textDim:    "#8a8fa3" // captions, empty workspaces
+    readonly property color muted:      "#7f7a93" // empty dots, disabled
+    readonly property color text:       "#edebf5" // primary text
+    readonly property color textSoft:   "#c8c4d8" // body text, neutral icons
+    readonly property color textDim:    "#a29eb6" // captions, subtitles
     readonly property color accent:     "#c50ed2" // magenta brand accent
     readonly property color violet:     "#7c3aed" // gradient end
     readonly property color violetSoft: "#a855f7" // RAM, secondary accents
-    readonly property color cyan:       "#00c1e4" // CPU, links, info
-    readonly property color ok:         "#06c993" // battery, success
-    readonly property color warn:       "#f9ae58" // warnings, temperature
+    readonly property color cyan:       "#67e8f9" // what is alive: CPU, activity, working agents, selection
+    readonly property color ok:         "#86efac" // success
+    readonly property color warn:       "#f5b04a" // waiting / attention
     readonly property color error:      "#ed254e" // errors, power button
-    readonly property color island:     "#000000" // notch background (always opaque black)
+    readonly property color island:     "#05040a" // notch background (opaque, = islandInk)
     readonly property color onBrand:    "#ffffff" // text/icons on the brand gradient
     readonly property color transparent: "transparent"
+
+    // New identity: purple is a tint, never a fill. Active states = accentTint + 1 px accentEdge + lavenderInk text
+    readonly property color lavender:     "#c8b6e6" // soft accent: RAM, focus, active states
+    readonly property color lavenderInk:  "#ede3fb" // text on an active state
+    readonly property color lavenderDeep: "#a78bcf" // lavender data bars
+    readonly property color violetBase:   "#b26bff" // base of the tints (never a solid fill)
+    readonly property color islandInk:    "#05040a" // central island / notch (almost black)
 
     function alpha(c: color, a: real): color {
         return Qt.rgba(c.r, c.g, c.b, a);
@@ -48,7 +55,7 @@ Singleton {
     readonly property color glassBg:       alpha(surface0, glassAlpha)     // acrylic island / popover / card background
     readonly property bool textShadows:    false                           // MultiEffect shadows on bar text: rendered through a texture, they made it look soft / pixelated
     readonly property color textShadow:    Qt.rgba(0, 0, 0, 0.55)         // text / icon shadow on glass (only inside the islands)
-    readonly property color glassBorder:   Qt.rgba(1, 1, 1, 0.08)          // 1 px, white 8 %
+    readonly property color glassBorder:   Qt.rgba(1, 1, 1, 0.09)          // 1 px, white 9 %
     readonly property color pillBg:        alpha(surface2, 0.38)           // dock capsules / launcher pills: translucent, the liquid glass shows through
     readonly property color pillBgHi:      alpha(surfaceHi, 0.55)
     readonly property color popoverBg:     alpha(surface0, popoverAlpha)
@@ -58,7 +65,14 @@ Singleton {
     readonly property color glowStrong:    alpha(accent, 0.55)             // active pill / unread dot
     readonly property color scrim:         Qt.rgba(0, 0, 0, scrimAlpha)
     readonly property color errorTint:     alpha(error, 0.16)
-    readonly property color hoverOverlay:  Qt.rgba(1, 1, 1, 0.06)
+    readonly property color hoverOverlay:  Qt.rgba(1, 1, 1, 0.08)          // hover on a neutral control, white 8 %
+    readonly property color neutralFill:   Qt.rgba(1, 1, 1, 0.06)          // clock / neutral capsules, white 6 %
+    readonly property color glassHighlight: Qt.rgba(1, 1, 1, 0.06)         // inner top highlight of the islands
+
+    // Accent intensity (Settings.accentIntensity, 0–1, bound in shell.qml): how much purple the active states carry
+    property real accentIntensity: 0.3
+    readonly property color accentTint: alpha(violetBase, 0.06 + accentIntensity * 0.40)   // fill of an active state
+    readonly property color accentEdge: alpha(violetBase, 0.15 + accentIntensity * 0.50)   // its 1 px inner border
 
     // Gradients (135°)
     readonly property var brandStops:  [accent, violet]

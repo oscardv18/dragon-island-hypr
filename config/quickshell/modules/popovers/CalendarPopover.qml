@@ -111,7 +111,7 @@ PopoverFrame {
                             radius: width / 2
                             color: cellMouse.containsMouse || cell.isSelected ? Theme.surfaceHi : Theme.transparent
                         }
-                        BrandFill {
+                        AccentFill {
                             anchors.centerIn: parent
                             width: Theme.calendarCell
                             height: Theme.calendarCell
@@ -134,7 +134,7 @@ PopoverFrame {
                             mono: true
                             size: Theme.sizeBody
                             weight: cell.modelData.isToday ? Theme.weightBold : Theme.weightRegular
-                            color: cell.modelData.isToday ? Theme.onBrand : (cell.modelData.inMonth ? Theme.text : Theme.muted)
+                            color: cell.modelData.isToday ? Theme.lavenderInk : (cell.modelData.inMonth ? Theme.text : Theme.muted)
                         }
                         MouseArea {
                             id: cellMouse

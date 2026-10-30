@@ -33,7 +33,7 @@ RowLayout {
             color: tile.hovered ? Theme.surfaceHi : Theme.surface2
             Behavior on color { ColorAnimation { duration: Theme.durHover } }
         }
-        BrandFill {
+        AccentFill {
             anchors.fill: parent
             radius: Theme.tileRadius - 4
             visible: tile.checked
@@ -52,14 +52,14 @@ RowLayout {
                 anchors.horizontalCenter: parent.horizontalCenter
                 icon: tile.icon
                 size: Theme.iconMd
-                color: tile.checked ? Theme.onBrand : Theme.textSoft
+                color: tile.checked ? Theme.lavenderInk : Theme.textSoft
             }
             UiText {
                 anchors.horizontalCenter: parent.horizontalCenter
                 width: Math.min(implicitWidth, tile.width - Theme.spacingXs * 2)
                 text: tile.label
                 size: Theme.sizeCaption - 1
-                color: tile.checked ? Theme.onBrand : Theme.textDim
+                color: tile.checked ? Theme.alpha(Theme.lavenderInk, 0.8) : Theme.textDim
             }
         }
         MouseArea {

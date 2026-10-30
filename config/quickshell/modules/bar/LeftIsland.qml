@@ -40,7 +40,7 @@ Rectangle {
             height: Theme.launcherButton
             anchors.verticalCenter: parent.verticalCenter
 
-            BrandFill {
+            AccentFill {
                 anchors.fill: parent
                 radius: Theme.capsuleRadius
             }
@@ -56,7 +56,7 @@ Rectangle {
                 anchors.centerIn: parent
                 icon: Icons.apps
                 size: Theme.iconMd
-                color: Theme.onBrand
+                color: Theme.lavenderInk
             }
             MouseArea {
                 id: launcherMouse
@@ -211,9 +211,9 @@ Rectangle {
                             width: visible ? 22 : 0
                             height: 22
                             radius: Theme.capsuleRadius - 3
-                            color: moveMouse.containsMouse ? Theme.accent : Theme.surface2
+                            color: moveMouse.containsMouse ? Theme.accentTint : Theme.surface2
                             Behavior on color { ColorAnimation { duration: Theme.durHover } }
-                            UiText { anchors.centerIn: parent; text: `${wsId}`; mono: true; size: Theme.sizeCaption; weight: Theme.weightSemiBold; color: moveMouse.containsMouse ? Theme.onBrand : Theme.textSoft }
+                            UiText { anchors.centerIn: parent; text: `${wsId}`; mono: true; size: Theme.sizeCaption; weight: Theme.weightSemiBold; color: moveMouse.containsMouse ? Theme.lavenderInk : Theme.textSoft }
                             MouseArea { id: moveMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: Hypr.moveWindowToWorkspace(wsId) }
                         }
                     }

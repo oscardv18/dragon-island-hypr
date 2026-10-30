@@ -36,7 +36,7 @@ Rectangle {
                     visible: !seg.isCurrent && segMouse.containsMouse
                     color: Theme.surfaceHi
                 }
-                BrandFill {
+                AccentFill {
                     anchors.fill: parent
                     radius: Theme.capsuleRadius
                     visible: seg.isCurrent
@@ -48,13 +48,13 @@ Rectangle {
                         visible: (seg.modelData.icon ?? "").length > 0
                         icon: seg.modelData.icon ?? ""
                         size: Theme.iconSm
-                        color: seg.isCurrent ? Theme.onBrand : Theme.textSoft
+                        color: seg.isCurrent ? Theme.lavenderInk : Theme.textSoft
                     }
                     UiText {
                         text: seg.modelData.label
                         size: Theme.sizeCaption + 1
                         weight: Theme.weightMedium
-                        color: seg.isCurrent ? Theme.onBrand : Theme.textSoft
+                        color: seg.isCurrent ? Theme.lavenderInk : Theme.textSoft
                     }
                 }
                 MouseArea {

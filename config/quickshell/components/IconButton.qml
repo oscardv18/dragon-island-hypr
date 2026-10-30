@@ -30,7 +30,7 @@ Item {
         Behavior on color { ColorAnimation { duration: Theme.durHover } }
     }
 
-    BrandFill {
+    AccentFill {
         anchors.fill: parent
         radius: root.radius
         visible: root.brand || root.checked
@@ -48,7 +48,7 @@ Item {
         anchors.centerIn: parent
         icon: root.icon
         size: root.iconSize
-        color: root.brand || root.checked ? Theme.onBrand : root.iconColor
+        color: root.brand || root.checked ? Theme.lavenderInk : root.iconColor
     }
 
     MouseArea {
