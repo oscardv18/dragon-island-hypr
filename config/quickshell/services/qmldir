@@ -46,3 +46,4 @@ singleton WallPalette 1.0 WallPalette.qml
 singleton Usage 1.0 Usage.qml
 singleton Search 1.0 Search.qml
 singleton Switcher 1.0 Switcher.qml
+singleton Overview 1.0 Overview.qml

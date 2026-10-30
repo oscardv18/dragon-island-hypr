@@ -26,6 +26,7 @@ import "modules/recording"
 import "modules/idle"
 import "modules/dock"
 import "modules/switcher"
+import "modules/overview"
 import "modules/lock"
 import "debug"
 
@@ -115,6 +116,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { SwitcherWindow {} }
+    }
+
+    // workspaces overview, SUPER + Tab (services/Overview.qml)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { OverviewWindow {} }
     }
 
     // the empty desktop's right click opens the orbital wallpaper picker (Bottom layer, under every window)

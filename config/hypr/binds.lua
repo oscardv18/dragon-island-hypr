@@ -87,6 +87,7 @@ bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), "Ratón · Redimensionar
 
 -- Quickshell interactive panels (via qs ipc)
 bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Notch (Nook / Tray)")
+bind(mainMod .. " + Tab",    hl.dsp.exec_cmd("qs ipc call overview toggle"),            "Escritorios · Vista general (arrastrar ventanas entre escritorios)")
 bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper orbital"), "Shell · Fondos de pantalla (orbital)")
 bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs ipc call wallpaper random"), "Shell · Fondo aleatorio")
 bind(mainMod .. " + X", hl.dsp.exec_cmd("qs ipc call dock toggle"), "Dock · Fijar / liberar el dock")
