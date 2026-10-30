@@ -12,7 +12,7 @@ if [[ -e "$NEW" ]]; then
     log_info "launcher.json ya existe: nada que migrar."
     exit 0
 fi
-OLD="$(find "${XDG_STATE_HOME:-$HOME/.local/state}/quickshell" -name app-usage.json 2>/dev/null | head -n1)"
+OLD="$(find "${XDG_STATE_HOME:-$HOME/.local/state}/quickshell" -name app-usage.json 2>/dev/null | head -n1 || true)"   # no quickshell state dir = nothing to carry over
 if [[ -z "$OLD" ]]; then
     log_info "Sin historial del lanzador antiguo: empieza vacío."
     exit 0
