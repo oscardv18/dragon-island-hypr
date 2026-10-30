@@ -27,10 +27,10 @@ Item {
         { key: "bar",        label: "Barra superior", icon: Icons.barTop }
     ]
     readonly property var styles: [
-        { key: "A", name: "A · Notch",  px: 31, text: "Pegado al borde, islas a los lados" },
-        { key: "B", name: "B · Island", px: 26, text: "Píldora flotante que cambia de forma" },
-        { key: "C", name: "C · Unida",  px: 24, text: "Franja completa, notch del mismo alto" },
-        { key: "D", name: "D · Mínima", px: 18, text: "Solo puntos y hora; se despliega al acercarte" }
+        { key: "A", name: "A · Notch",  text: "Pegado al borde, islas a los lados" },
+        { key: "B", name: "B · Island", text: "Píldora flotante que cambia de forma" },
+        { key: "C", name: "C · Unida",  text: "Franja completa, notch del mismo alto" },
+        { key: "D", name: "D · Mínima", text: "Solo puntos y hora; se despliega al acercarte" }
     ]
 
     function key(e): void {
@@ -204,7 +204,7 @@ Item {
                                     width: parent.width
                                     height: nameText.implicitHeight
                                     UiText { id: nameText; text: styleCard.modelData.name; weight: Theme.weightSemiBold; size: Theme.sizeBodyLg }
-                                    UiText { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: `${styleCard.modelData.px} px`; mono: true; size: Theme.sizeCaption; color: Theme.textDim }
+                                    UiText { anchors.right: parent.right; anchors.verticalCenter: parent.verticalCenter; text: `${Theme.barZoneFor(styleCard.modelData.key, Settings.barSize)} px`; mono: true; size: Theme.sizeCaption; color: Theme.textDim }
                                 }
                                 UiText {
                                     width: parent.width
@@ -223,6 +223,16 @@ Item {
                 // options
                 SettingsGroup {
                     width: parent.width
+                    SettingsRow {
+                        title: "Tamaño de la barra"
+                        subtitle: "Alto de las islas; la zona reservada se ajusta sola"
+                        Segmented {
+                            implicitWidth: 250
+                            model: [{ key: "compacta", label: "Compacta" }, { key: "normal", label: "Normal" }, { key: "amplia", label: "Amplia" }]
+                            current: Settings.barSize
+                            onSelected: k => Settings.setBarSize(k)
+                        }
+                    }
                     SettingsRow {
                         title: "Contenido de la isla"
                         subtitle: "Qué muestra el notch cuando no hay actividad especial"

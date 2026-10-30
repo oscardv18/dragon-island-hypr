@@ -20,8 +20,8 @@ Item {
     property real islandX: 0           // screen x of the island's window
     property string screenName: ""
 
-    readonly property real pitch: compact ? 14 : 20
-    readonly property real planet: compact ? 12 : 18
+    readonly property real pitch: Theme.barNodePitch     // 20 / 22 / 24 (D: 14 / 16 / 18)
+    readonly property real planet: Theme.barPlanet       // 18 / 20 / 22 (D: 12 / 14 / 16)
     readonly property int count: Hypr.workspaceCount
     readonly property int activeIndex: Math.max(0, Math.min(count - 1, Hypr.focusedWorkspaceId - 1))
     readonly property bool activeShown: Hypr.focusedWorkspaceId >= 1 && Hypr.focusedWorkspaceId <= count
@@ -67,7 +67,7 @@ Item {
             // hover disc, white 8 %
             Rectangle {
                 anchors.centerIn: parent
-                width: root.compact ? 10 : 14
+                width: Theme.barNode + 9
                 height: width
                 radius: width / 2
                 color: Theme.hoverOverlay
@@ -79,9 +79,9 @@ Item {
             Rectangle {
                 id: dot
                 anchors.centerIn: parent
-                width: 5
-                height: 5
-                radius: 2.5
+                width: Theme.barNode
+                height: Theme.barNode
+                radius: width / 2
                 color: node.urgent ? Theme.warn : (node.occupied ? (node.hovered ? Theme.text : Theme.textSoft) : Theme.transparent)
                 border.width: node.occupied || node.urgent ? 0 : 1
                 border.color: node.hovered ? Theme.text : Theme.muted
@@ -176,7 +176,7 @@ Item {
         IconImage {
             id: appIcon
             anchors.centerIn: parent
-            implicitSize: root.compact ? 8 : 10
+            implicitSize: Theme.barPlanetIcon
             source: planetItem.mainIcon
             asynchronous: true
             visible: false

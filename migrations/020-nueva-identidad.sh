@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # 020 — new identity (phase 0 + 1): the settings of the four bar styles and the Ajustes panel.
-#   - ~/.config/dragon-island/settings.json gets ONLY the keys it is missing (barStyle, islandContent, barMetrics,
+#   - ~/.config/dragon-island/settings.json gets ONLY the keys it is missing (barStyle, barSize, islandContent, barMetrics,
 #     barAutohide, accentIntensity, wallpaperPalette), with their defaults; the user's values are never touched.
 #     Quickshell already falls back to the same defaults without them: this only makes them visible and editable.
 #   - A *copied* ~/.config/quickshell loses modules/bar/WorkspacePill.qml (replaced by Constellation.qml);
@@ -16,7 +16,7 @@ trap 'log_warn "Error en la línea $LINENO. Revisa $LOG"' ERR
 SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/settings.json"
 QS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/quickshell"
 STALE=(modules/bar/WorkspacePill.qml)
-DEFAULTS='{"barStyle":"B","islandContent":"media","barMetrics":true,"barAutohide":false,"accentIntensity":0.3,"wallpaperPalette":true}'
+DEFAULTS='{"barStyle":"B","barSize":"normal","islandContent":"media","barMetrics":true,"barAutohide":false,"accentIntensity":0.3,"wallpaperPalette":true}'
 
 changed=0
 

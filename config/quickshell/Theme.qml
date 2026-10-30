@@ -91,7 +91,7 @@ Singleton {
     readonly property string fontMono: "JetBrains Mono Nerd Font"
 
     readonly property real sizeCaption:  11
-    readonly property real sizeBar:      12.5
+    readonly property real sizeBar:      12.5 + 0.5 * barStep   // bar text: 12.5 · 13 · 13.5 (Settings.barSize)
     readonly property real sizeBody:     13
     readonly property real sizeBodyLg:   14
     readonly property real sizeTitle:    16
@@ -111,29 +111,54 @@ Singleton {
     // -------------------------------------------------------------------------
     // Geometry
     // -------------------------------------------------------------------------
-    // Bar: four styles (Settings.barStyle, bound in shell.qml). Sizes for 1366×768 at scale 1.
-    //   A thin notch: side islands 26 high at top 5 (radius 9), notch attached to the edge, 26 high; reserves 31
-    //   B dynamic island: side islands 26 at top 6 (radius 13), floating notch pill 26 at top 6; reserves 32
-    //   C joined bar: one edge-to-edge glass strip 24 high, notch exactly 24 high with ears; reserves 24
-    //   D minimal: an 18 high constellation pill and the orbital clock; an 80×18 micro-island only with activity;
-    //     reserves 18. Touching the top edge shows style B (barRevealed) without changing the reserved space.
+    // Bar: four styles (Settings.barStyle) × three sizes (Settings.barSize), both bound in shell.qml.
+    // Sizes for 1366×768 at scale 1; every bar measure below derives from barHeightFor(style, size) and barStep.
+    //   island / strip height and reserved space (zone):
+    //               compacta     normal (default)   amplia
+    //   A notch     26 → 31      30 → 35            34 → 39     side islands at top 5, notch attached, as high as them
+    //   B island    26 → 32      30 → 36            34 → 40     side islands and the floating notch pill at top 6
+    //   C joined    24 → 24      28 → 28            32 → 32     one edge-to-edge strip, notch exactly as high, ears
+    //   D minimal   18 → 18      22 → 22            26 → 26     constellation pill + orbital clock at top 4; micro-island
+    //                                                           only with activity; touching the top edge shows style B
+    //                                                           (barRevealed) without changing the reserved space
     property string barStyle: "B"
+    property string barSize: "normal"
     property bool barRevealed: false
     readonly property string barLook: barStyle === "D" && barRevealed ? "B" : barStyle   // what is drawn right now
-    readonly property var _barGeo: ({
-        A: { top: 5, h: 26, r: 9,  zone: 31, notchTop: 0, notchH: 26, notchR: 13, ear: 8, attached: true },
-        B: { top: 6, h: 26, r: 13, zone: 32, notchTop: 6, notchH: 26, notchR: 13, ear: 0, attached: false },
-        C: { top: 0, h: 24, r: 0,  zone: 24, notchTop: 0, notchH: 24, notchR: 9,  ear: 8, attached: true },
-        D: { top: 4, h: 18, r: 9,  zone: 18, notchTop: 4, notchH: 18, notchR: 9,  ear: 0, attached: false }
+    readonly property var _barBase: ({
+        A: { top: 5, h: 26, attached: true },
+        B: { top: 6, h: 26, attached: false },
+        C: { top: 0, h: 24, attached: true },
+        D: { top: 4, h: 18, attached: false }
     })
-    readonly property var barGeo: _barGeo[barLook] ?? _barGeo.B
-    readonly property real barHeight:     barGeo.h                  // side islands (C: the strip)
+    readonly property var barSizes: ["compacta", "normal", "amplia"]
+    function barStepFor(size: string): int { return Math.max(0, barSizes.indexOf(size)); }   // 0 · 1 · 2
+    function barHeightFor(style: string, size: string): real { return (_barBase[style] ?? _barBase.B).h + 4 * barStepFor(size); }
+    function barZoneFor(style: string, size: string): real {
+        const top = style === "A" || style === "B" ? (_barBase[style]).top : 0;
+        return top + barHeightFor(style, size);
+    }
+    readonly property int  barStep:       barStepFor(barSize)
+    readonly property var  barGeo:        _barBase[barLook] ?? _barBase.B
+    readonly property real barHeight:     barHeightFor(barLook, barSize)    // side islands (C: the strip)
     readonly property real barMarginTop:  barGeo.top
-    readonly property real barZone:       (_barGeo[barStyle] ?? _barGeo.B).zone   // exclusiveZone of dragon-bar-zone (never follows the D reveal)
-    readonly property real barWindowHeight: 36                     // constant height of every bar window (the tallest style + room)
+    readonly property real barZone:       barZoneFor(barStyle, barSize)     // exclusiveZone of dragon-bar-zone (never follows the D reveal)
+    readonly property real barWindowHeight: 44                     // constant height of every bar window (the tallest: B amplia 40, + room)
     readonly property real barMarginSide: 14
-    readonly property real barIslandRadius: barGeo.r
-    readonly property real barCapsuleHeight: barLook === "D" ? 14 : 20   // capsules inside the 26 / 24 / 18 islands
+    readonly property real barIslandRadius: barLook === "A" ? 9 + 2 * barStep : (barLook === "C" ? 0 : barHeight / 2)
+    readonly property real barCapsuleHeight: barHeight - (barLook === "D" ? 4 : 6)   // capsules inside the islands
+    // content of the islands, in proportion with the height (normal: core 26, planet 20, rings 18, spark 34×14 …)
+    readonly property real barCoreButton:  barHeight - 4
+    readonly property real barPlanet:      (barLook === "D" ? 12 : 18) + 2 * barStep
+    readonly property real barPlanetIcon:  (barLook === "D" ? 8 : 10) + barStep
+    readonly property real barNode:        5 + barStep
+    readonly property real barNodePitch:   (barLook === "D" ? 14 : 20) + 2 * barStep
+    readonly property real barRing:        15 + 3 * barStep
+    readonly property real barRingWidth:   2.5 + 0.5 * barStep
+    readonly property real barSparkWidth:  30 + 4 * barStep
+    readonly property real barSparkHeight: 12 + 2 * barStep
+    readonly property real barVolumeWidth: 30 + 4 * barStep
+    readonly property real barOrbit:       14 + 2 * barStep
     readonly property real barStripLine: 1                         // C: bottom line of the strip, white 7 %
     readonly property real barDimOpacity: 0.35                     // barAutohide over a maximized window
     readonly property real barEdge: 3                              // D: hot zone at the top edge
@@ -156,10 +181,10 @@ Singleton {
 
     // Notch island (v2): attached to the top edge, see references/design.md "Notch Island v2"
     readonly property bool notchAttached:      barGeo.attached  // A, C: glued to the edge with ears · B, D: a floating pill
-    readonly property real notchTop:           barGeo.notchTop
-    readonly property real notchHeight:        barGeo.notchH
-    readonly property real notchEarRadius:     barGeo.ear       // concave "ears" where it meets the screen edge
-    readonly property real notchRadius:        barGeo.notchR    // collapsed bottom corners (floating: every corner)
+    readonly property real notchTop:           notchAttached ? 0 : barGeo.top
+    readonly property real notchHeight:        barHeight        // exactly as high as the side islands / the C strip
+    readonly property real notchEarRadius:     notchAttached ? 8 : 0   // concave "ears" where it meets the screen edge
+    readonly property real notchRadius:        barLook === "C" ? 9 + barStep : barHeight / 2   // bottom corners (floating: a pill)
     readonly property real notchMicroWidth:    80               // D: the micro-island (only with activity)
     readonly property real notchFloatTopRadius: 22              // B: top corners of the expanded Nook (it grows from the floating pill)
     readonly property real notchExpandedRadius: 34    // expanded bottom corners
@@ -226,7 +251,7 @@ Singleton {
 
     // Ajustes panel (SUPER + F2)
     readonly property real settingsWidth:    900
-    readonly property real settingsHeight:   560
+    readonly property real settingsHeight:   620
     readonly property real settingsNavWidth: 230
 
     // Store panel (Tienda)

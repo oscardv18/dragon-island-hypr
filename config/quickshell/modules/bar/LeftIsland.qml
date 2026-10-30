@@ -62,7 +62,7 @@ Rectangle {
         Rectangle {
             id: core
             visible: !root.minimal
-            width: Theme.barHeight - 4
+            width: Theme.barCoreButton
             height: width
             radius: width / 2
             anchors.verticalCenter: parent.verticalCenter

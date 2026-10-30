@@ -101,7 +101,7 @@ Rectangle {
                 island: root
                 visible: root.metrics
                 tip: `↓ ${SysStats.formatRate(SysStats.rxRate)} · ↑ ${SysStats.formatRate(SysStats.txRate)}`
-                Sparkline { anchors.verticalCenter: parent.verticalCenter; samples: SysStats.rxHistory; color: Theme.cyan }
+                Sparkline { anchors.verticalCenter: parent.verticalCenter; samples: SysStats.rxHistory; color: Theme.cyan; lineWidth: Theme.barSparkWidth; lineHeight: Theme.barSparkHeight }
             }
 
             Rectangle {
@@ -228,7 +228,7 @@ Rectangle {
                     }
                 }
                 Item {
-                    width: 30
+                    width: Theme.barVolumeWidth
                     height: 4
                     anchors.verticalCenter: parent.verticalCenter
                     Rectangle { anchors.fill: parent; radius: 2; color: Theme.trackFaint }
@@ -312,8 +312,8 @@ Rectangle {
                 // 14 px ring, lavender 40 %, with a 4 px cyan dot going round once a minute
                 Item {
                     id: orbit
-                    width: 14
-                    height: 14
+                    width: Theme.barOrbit
+                    height: Theme.barOrbit
                     anchors.verticalCenter: parent.verticalCenter
                     Rectangle {
                         anchors.fill: parent
@@ -340,7 +340,7 @@ Rectangle {
                     anchors.verticalCenter: parent.verticalCenter
                     text: Clock.time
                     mono: true
-                    size: 12
+                    size: Theme.sizeBar - 0.5
                     weight: Theme.weightSemiBold
                     color: Theme.text
                 }

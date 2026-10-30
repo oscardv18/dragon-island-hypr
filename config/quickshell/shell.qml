@@ -43,6 +43,11 @@ ShellRoot {
     }
     Binding {
         target: Theme
+        property: "barSize"
+        value: Settings.barSize
+    }
+    Binding {
+        target: Theme
         property: "barRevealed"
         value: BarState.revealed
     }

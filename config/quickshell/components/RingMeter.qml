@@ -8,8 +8,8 @@ Shape {
 
     property real value: 0          // 0..1
     property color color: Theme.cyan
-    property real thickness: 1.8
-    property int size: 15
+    property real thickness: Theme.barRingWidth
+    property int size: Theme.barRing
 
     implicitWidth: size
     implicitHeight: size

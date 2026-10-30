@@ -14,6 +14,7 @@
  *   Keys added by the new identity (a missing or invalid value falls back to the default):
  *   - barStyle: string [readonly] ("A" thin notch · "B" dynamic island · "C" joined bar · "D" minimal; default "B")
  *   - barStyles: list<string> [readonly] (["A", "B", "C", "D"], the cycle order)
+ *   - barSize: string [readonly] ("compacta" · "normal" · "amplia": height of the islands / strip; default "normal")
  *   - islandContent: string [readonly] (what the notch shows with no special activity: "media" · "window" · "date"; default "media")
  *   - barMetrics: bool [readonly] (CPU / RAM rings and the network line in the right island; default true)
  *   - barAutohide: bool [readonly] (dim the bar to 0.35 over a maximized window; style D hides until the top edge is touched; default false)
@@ -25,6 +26,7 @@
  *   - setReducedMotion(on: bool): void
  *   - setBarStyle(style: string): void ("A" | "B" | "C" | "D", case-insensitive; anything else is ignored)
  *   - cycleBarStyle(): void (A → B → C → D → A)
+ *   - setBarSize(size: string): void ("compacta" | "normal" | "amplia"; anything else is ignored)
  *   - setIslandContent(content: string): void ("media" | "window" | "date")
  *   - setBarMetrics(on: bool): void
  *   - setBarAutohide(on: bool): void
@@ -32,10 +34,10 @@
  *   - setWallpaperPalette(on: bool): void
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
- *   accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
+ *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
  *   current(): string (every setting, one per line)
  *
- * shell.qml binds Theme.motionScale, Theme.barStyle and Theme.accentIntensity to these.
+ * shell.qml binds Theme.motionScale, Theme.barStyle, Theme.barSize and Theme.accentIntensity to these.
  */
 pragma Singleton
 import Quickshell
@@ -65,6 +67,8 @@ Singleton {
 
     readonly property var barStyles: ["A", "B", "C", "D"]
     readonly property string barStyle: barStyles.indexOf(root._data.barStyle) >= 0 ? root._data.barStyle : "B"
+    readonly property var barSizes: ["compacta", "normal", "amplia"]
+    readonly property string barSize: barSizes.indexOf(root._data.barSize) >= 0 ? root._data.barSize : "normal"
     readonly property string islandContent: ["media", "window", "date"].indexOf(root._data.islandContent) >= 0 ? root._data.islandContent : "media"
     readonly property bool barMetrics: typeof root._data.barMetrics === "boolean" ? root._data.barMetrics : true
     readonly property bool barAutohide: typeof root._data.barAutohide === "boolean" ? root._data.barAutohide : false
@@ -142,6 +146,11 @@ Singleton {
         _set("barStyle", st);
     }
     function cycleBarStyle(): void { setBarStyle(root.barStyles[(root.barStyles.indexOf(root.barStyle) + 1) % root.barStyles.length]); }
+    function setBarSize(size: string): void {
+        const sz = String(size).toLowerCase();
+        if (root.barSizes.indexOf(sz) < 0) { console.warn(`Settings: unknown bar size "${size}"`); return; }
+        _set("barSize", sz);
+    }
     function setIslandContent(content: string): void {
         if (["media", "window", "date"].indexOf(content) < 0) { console.warn(`Settings: unknown island content "${content}"`); return; }
         _set("islandContent", content);
@@ -157,13 +166,14 @@ Singleton {
         function reducedMotion(on: bool): void { root.setReducedMotion(on); }
         function barStyle(s: string): void { root.setBarStyle(s); }
         function cycleBarStyle(): void { root.cycleBarStyle(); }
+        function barSize(s: string): void { root.setBarSize(s); }
         function accent(x: real): void { root.setAccentIntensity(x); }
         function islandContent(s: string): void { root.setIslandContent(s); }
         function metrics(on: bool): void { root.setBarMetrics(on); }
         function autohide(on: bool): void { root.setBarAutohide(on); }
         function wallpaperPalette(on: bool): void { root.setWallpaperPalette(on); }
         function current(): string {
-            return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `islandContent=${root.islandContent}`,
+            return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
                     `wallpaperPalette=${root.wallpaperPalette}`].join("\n");
         }
