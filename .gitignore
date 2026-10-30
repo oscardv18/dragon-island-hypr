@@ -8,3 +8,4 @@ out/
 
 # Per-machine Hyprland overrides (monitors, GPU, keyboard) written by install.sh
 config/hypr/local.lua
+sddm/dragon-core/accent.conf
