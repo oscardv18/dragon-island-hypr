@@ -5,8 +5,8 @@
 -- Everything is guarded: without the plugin nothing here runs and the native blur
 -- (rules.lua, created only when hyprglass is absent) is all you get.
 --
--- * Windows: whitelist. `enabled = false` turns glass off everywhere; only Ghostty opts in with the
---   window tag hyprglass_enabled (+ its own preset), so Brave, Dolphin etc. stay untouched.
+-- * Windows: every translucent window gets glass, including maximized and fullscreen windows.
+--   Browsers, editors and video players are excluded by class below.
 -- * Layers (bar, popovers, notifications, launcher, wallpaper picker): glass masked by ALPHA
 --   (mask_mode = "alpha"): it appears where the layer has alpha above mask_threshold, i.e. the visible
 --   rounded island / card, so corners are clean (a "region" mask is a rectangle: square tips). The shapes
@@ -89,11 +89,12 @@ if hl.plugin and hl.plugin.hyprglass then
         match = { class = "(?i)^(brave.*|google-chrome.*|chromium.*|chrome.*|firefox.*|librewolf.*|vivaldi.*|microsoft-edge.*|code|code-oss|code-url-handler|codium|vscodium|visual-studio-code|cursor|windsurf.*|antigravity.*|zed|dev\\.zed\\.zed.*|sublime_text|sublime_merge|jetbrains-.*|idea.*|pycharm.*|webstorm.*|clion.*|goland.*|rider.*|phpstorm.*|rustrover.*|datagrip.*|android-studio.*|kate|org\\.kde\\.kate|org\\.kde\\.kwrite|kwrite|org\\.kde\\.kdevelop|gedit|org\\.gnome\\.gedit|org\\.gnome\\.texteditor|gnome-text-editor|emacs|lapce|helix|geany|mousepad|pluma|xed)$" },
         tag   = "+hyprglass_disabled",
     })
-    -- No glass on fullscreen windows or video players
+    -- Keep glass through maximize/fullscreen/restore. A state-dependent disabling tag can linger
+    -- after restoring a window, leaving its transparent background without glass or native blur.
     hl.window_rule({
-        name  = "glass-off-fullscreen",
-        match = { fullscreen = true },
-        tag   = "+hyprglass_disabled",
+        name  = "glass-keep-terminals",
+        match = { class = "^(com\\.mitchellh\\.ghostty|com\\.mitchellh\\.ghostty\\..*|kitty|org\\.dragonisland\\.(Herdr|Pkg|Setup))$" },
+        tag   = "-hyprglass_disabled",
     })
     hl.window_rule({
         name  = "glass-off-video-players",

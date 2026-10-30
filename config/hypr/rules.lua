@@ -23,6 +23,51 @@ hl.window_rule({
     no_focus = true,
 })
 
+-- Android Studio's standalone emulator uses class Emulator for the device AND its
+-- separate toolbar/extended controls (observed on XWayland). Float the whole family
+-- without centering/resizing each window: the emulator positions its own toolbar.
+-- Keep its alpha/skin, but remove compositor frames, glass and pixel filtering.
+hl.window_rule({
+    name             = "android-emulator-clean",
+    match            = { class = "^Emulator$" },
+    float            = true,
+    decorate         = false,
+    border_size      = 0,
+    rounding         = 0,
+    no_shadow        = true,
+    no_blur          = true,
+    nearest_neighbor = false,
+    opacity          = "1.0 override 1.0 override",
+    tag              = "+hyprglass_disabled",
+})
+-- The Pixel skin has rounded outer corners, but its XWayland window exposes a
+-- black rectangular backing. Clip only this device window, never its toolbar.
+-- Radius calibrated for the ~300 px wide Pixel 10 Pro XL on the 768p display.
+hl.window_rule({
+    name           = "android-pixel-rounded-skin",
+    match          = { class = "^Emulator$", title = "^Android Emulator - Pixel_10_Pro_XL:.*$" },
+    rounding_power = 2.0,
+})
+-- 0.56.2's Lua rule parser caps rounding at 20; set_prop accepts the radius
+-- needed by the phone skin. Apply on open/title and reload without a shell process.
+local function clipPixelSkin(w)
+    if w and w.class == "Emulator" and w.title:match("^Android Emulator %- Pixel_10_Pro_XL:") then
+        hl.dispatch(hl.dsp.window.set_prop({ window = w, prop = "rounding", value = "48" }))
+    end
+end
+hl.on("window.open", clipPixelSkin)
+hl.on("window.title", clipPixelSkin)
+hl.on("config.reloaded", function()
+    for _, w in ipairs(hl.get_windows()) do clipPixelSkin(w) end
+end)
+if hl.plugin and hl.plugin.hyprbars then
+    hl.window_rule({
+        name               = "android-emulator-no-titlebar",
+        match              = { class = "^Emulator$" },
+        ["hyprbars:no_bar"] = true,
+    })
+end
+
 -- Floating windows for dialogs, settings and utility apps
 hl.window_rule({
     name  = "float-utilities",
@@ -86,25 +131,20 @@ hl.layer_rule({
 
 -- -----------------------------------------------------------------------------
 -- Per-app transparency (window opacity). Syntax: opacity = "<active> <inactive>".
--- Opt in by uncommenting; keep `fullscreen = false` so fullscreen windows stay opaque.
+-- Opt in by uncommenting; omit fullscreen matching to keep transparency in every window state.
 -- -----------------------------------------------------------------------------
 -- hl.window_rule({
 --     name    = "opacity-dolphin",
---     match   = { class = "^org\\.kde\\.dolphin$", fullscreen = false },
+--     match   = { class = "^org\\.kde\\.dolphin$" },
 --     opacity = "0.92 0.88",
 -- })
 -- hl.window_rule({
 --     name    = "opacity-code",
---     match   = { class = "^(code|Code|code-oss)$", fullscreen = false },
+--     match   = { class = "^(code|Code|code-oss)$" },
 --     opacity = "0.93 0.90",
 -- })
 
--- Safety net, always on: never any transparency on fullscreen windows or video players.
-hl.window_rule({
-    name    = "opaque-fullscreen",
-    match   = { fullscreen = true },
-    opacity = "1.0 override 1.0 override",
-})
+-- Keep window transparency in every state so blur/glass remains visible. Video players stay opaque.
 hl.window_rule({
     name    = "opaque-video-players",
     match   = { class = "^(mpv|vlc|celluloid|io\\.github\\.celluloid_player\\.Celluloid|haruna|org\\.kde\\.haruna|smplayer|totem|org\\.gnome\\.Totem)$" },

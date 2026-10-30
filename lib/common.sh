@@ -102,7 +102,45 @@ ensure_herdr() {
     curl -fsSL https://herdr.dev/install.sh | sh || { log_warn "No se pudo instalar herdr (¿sin red?)"; return 1; }
 }
 
-# deploy_herdr: config + launcher + zsh completion
+# Install official session-reporting integrations for detected agents. Detection alone
+# only supplies status: native conversation restore requires these hooks/plugins.
+ensure_herdr_integrations() {
+    local herdr_bin agent agent_dir status file failed=0
+    local -a files
+    herdr_bin="$HOME/.local/bin/herdr"
+    [[ -x "$herdr_bin" ]] || herdr_bin="$(command -v herdr || true)"
+    [[ -n "$herdr_bin" ]] || return 0
+    status="$("$herdr_bin" integration status)" || return 1
+    for agent in claude codex opencode; do
+        command -v "$agent" >/dev/null 2>&1 || continue
+        case "$agent" in
+            claude)
+                agent_dir="${CLAUDE_CONFIG_DIR:-$HOME/.claude}"
+                files=(settings.json hooks/herdr-agent-state.sh) ;;
+            codex)
+                agent_dir="${CODEX_HOME:-$HOME/.codex}"
+                files=(config.toml hooks.json herdr-agent-state.sh) ;;
+            opencode)
+                agent_dir="${XDG_CONFIG_HOME:-$HOME/.config}/opencode"
+                files=(tui.json tui.jsonc cli.json plugins/herdr-agent-state.js
+                    herdr-tui-session.js herdr-opencode/tui.js) ;;
+        esac
+        # Herdr requires agents to have been configured at least once.
+        [[ -d "$agent_dir" ]] || continue
+        if [[ "$status" =~ $agent:\ current\ \( ]]; then
+            log_info "herdr: integración de $agent al día"
+            continue
+        fi
+        for file in "${files[@]}"; do backup_copy "$agent_dir/$file"; done
+        if ! run "$herdr_bin" integration install "$agent"; then
+            log_warn "herdr: no se pudo instalar la integración de $agent"
+            failed=1
+        fi
+    done
+    return "$failed"
+}
+
+# deploy_herdr: config + launcher + zsh completion + native session integrations
 deploy_herdr() {
     deploy_item "$REPO_DIR/config/herdr/config.toml" "$HOME/.config/herdr/config.toml"
     deploy_item "$REPO_DIR/bin/dragon-herdr" "$HOME/.local/bin/dragon-herdr"
@@ -110,6 +148,7 @@ deploy_herdr() {
         run mkdir -p "$HOME/.zfunc"
         [[ "${DRY_RUN:-false}" == "true" ]] || "$HOME/.local/bin/herdr" completion zsh >| "$HOME/.zfunc/_herdr" 2>/dev/null || true
     fi
+    ensure_herdr_integrations
 }
 
 # ensure_omz: oh-my-zsh and the external plugins (zsh-autosuggestions, zsh-syntax-highlighting, fzf-tab) used by config/zsh/.zshrc (git clones, as in the

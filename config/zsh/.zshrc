@@ -34,3 +34,6 @@ source $ZSH/oh-my-zsh.sh   # runs compinit
 # >>> dragon-island fastfetch >>>
 [[ -f "/home/oddv/.config/dragon-island/zsh/fastfetch.zsh" ]] && source "/home/oddv/.config/dragon-island/zsh/fastfetch.zsh"
 # <<< dragon-island fastfetch <<<
+
+# Laravel: ejecutables instalados globalmente con Composer.
+[[ ":$PATH:" == *":${XDG_CONFIG_HOME:-$HOME/.config}/composer/vendor/bin:"* ]] || export PATH="${XDG_CONFIG_HOME:-$HOME/.config}/composer/vendor/bin:$PATH"

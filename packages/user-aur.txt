@@ -1,2 +1,6 @@
 # "Mis apps": packages installed from the Tienda panel (kept by bin/dragon-pkg), AUR
 genoffice-bin
+lmbionic-bin
+otf-apple-sf-mono
+android-studio
+hermes-agent

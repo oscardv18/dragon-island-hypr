@@ -81,6 +81,10 @@ Primero `Ctrl+B` (el prefijo) y luego:
 
 La cápsula de agentes de la barra (robot) solo aparece con agentes: ámbar parpadeante = necesita tu respuesta, cian = trabajando, verde = terminó. Clic abre la lista y otro clic en un agente salta a él. Si un agente se bloquea o termina, el notch lo avisa (clic en el notch = ir a él). Terminal: alias `hd` = `herdr`; actualizar con `herdr update`.
 
+Al volver a abrir herdr después de reiniciar el equipo, recupera espacios, pestañas, divisiones y directorios. Las conversaciones se reanudan si el agente registró su sesión mediante su integración oficial. El instalador configura las de Claude, Codex y OpenCode cuando encuentra el ejecutable y su directorio de configuración; compruébalas con `herdr integration status`. Después de instalar una integración, reabre o reanuda las conversaciones que ya estaban abiertas para que registren su identificador (OpenCode también necesita reiniciar sus servidores compartidos). Para Codex, usa `codex --no-daemon` dentro de herdr si tienes un daemon compartido.
+
+También se conserva el contenido reciente de los terminales (`experimental.pane_history = true`): se escribe en `~/.config/herdr/session-history.json` y puede incluir lo mostrado en pantalla. Reiniciar no vuelve a ejecutar comandos arbitrarios ni continúa una tarea interrumpida automáticamente. Cerrar un panel con `Ctrl+B x` lo elimina de la sesión; para conservarlo, separa el cliente con `Ctrl+B q` o cierra la ventana.
+
 ## Tienda de apps (SUPER + I)
 
 | Tecla | Acción |
