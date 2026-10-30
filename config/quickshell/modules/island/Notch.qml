@@ -45,7 +45,9 @@ Item {
     // free room towards the bar islands (ears included)
     readonly property real maxCollapsed: BarMetrics.maxNotchWidth(screenName, root.width)
     readonly property real collapsedWidth: micro ? Theme.notchMicroWidth
-                                                 : Math.min(maxCollapsed, Math.max(Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
+                                                 : Math.min(maxCollapsed, Math.max(snug ? 0 : Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
+    // short notices sized to their text (Bloq Mayús, keyboard layout)
+    readonly property bool snug: IslandState.mode === "osd" && (Osd.kind === "capslock" || Osd.kind === "layout")
 
     readonly property real targetWidth: expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
                                                  : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0))
@@ -200,6 +202,13 @@ Item {
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
             acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+            // the wheel over the volume OSD keeps adjusting it without opening the panel
+            onWheel: w => {
+                if (IslandState.mode === "osd" && (Osd.kind === "volume" || Osd.kind === "mic")) {
+                    const d = w.angleDelta.y > 0 ? 0.05 : -0.05;
+                    if (Osd.kind === "mic") Audio.setMicVolume(Audio.micVolume + d); else Audio.setVolume(Audio.volume + d);
+                } else w.accepted = false;
+            }
             onClicked: m => {
                 if (IslandState.mode === "agentBlocked" && m.button === Qt.LeftButton) Herdr.focusAgent(IslandState.blockedAgent);
                 else if (m.button === Qt.MiddleButton && IslandState.mode === "media") Media.playPause();

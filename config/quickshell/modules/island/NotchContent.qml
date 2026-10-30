@@ -240,38 +240,87 @@ Item {
         }
     }
 
-    // ---- OSD: icon · bar · value ----
+    // ---- OSD (docs/design/09-isla.png) ----
+    //   volume / mic  level icon · device name above a 5 px bar · value (mono 14 semibold), ~300 wide
+    //   brightness    sun (sunWarm, warn with the night light) · bar · value, ~260 wide
+    //   capslock      arrow in warn · "BLOQ MAYÚS" (mono 11, tracked); turning it off shows the pill with a dim arrow
+    //   layout        "US → LA" in mono
     Component {
         id: osdView
-        Column {
-            spacing: 1
+        Item {
+            readonly property string k: Osd.kind
+            implicitWidth: k === "capslock" ? capsRow.implicitWidth : (k === "layout" ? layoutRow.implicitWidth : (k === "brightness" ? Theme.osdWidthBrightness : Theme.osdWidthVolume))
+            implicitHeight: Math.max(levelRow.implicitHeight, Theme.iconLg)
+
             Row {
-                anchors.horizontalCenter: parent.horizontalCenter
-                spacing: Theme.spacingSm + Theme.spacingXs
+                id: levelRow
+                visible: parent.k === "volume" || parent.k === "mic" || parent.k === "brightness"
+                anchors.verticalCenter: parent.verticalCenter
+                width: parent.width
+                spacing: Theme.spacingMd
+                readonly property bool sun: parent.k === "brightness"
+                readonly property color fill: sun ? (Toggles.nightLight ? Theme.warn : Theme.sunWarm) : Theme.text
                 Glyph {
+                    id: osdIcon
                     anchors.verticalCenter: parent.verticalCenter
                     icon: Icons.named(Osd.icon)
                     size: Theme.iconLg
-                    color: Osd.isMuted ? Theme.textDim : Theme.text
+                    color: parent.sun ? parent.fill : (Osd.isMuted ? Theme.textDim : Theme.text)
+                    Behavior on color { ColorAnimation { duration: Theme.durStd } }
                 }
-                ProgressBar {
+                Column {
                     anchors.verticalCenter: parent.verticalCenter
-                    width: Theme.notchOsdBar
-                    value: Osd.isMuted ? 0 : Osd.value
-                    brand: true
+                    width: parent.width - osdIcon.width - osdValue.width - parent.spacing * 2
+                    spacing: 3
+                    UiText {
+                        visible: !parent.parent.sun && Osd.device.length > 0
+                        width: parent.width
+                        text: Osd.device
+                        size: Theme.sizeCaption
+                        color: Theme.textDim
+                    }
+                    Item {
+                        width: parent.width
+                        height: Theme.osdBar
+                        Rectangle { anchors.fill: parent; radius: height / 2; color: Theme.trackFaint }
+                        Rectangle {
+                            width: parent.width * (Osd.isMuted ? 0 : Osd.value)
+                            height: parent.height
+                            radius: height / 2
+                            color: levelRow.fill
+                            Behavior on width { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
+                        }
+                    }
                 }
                 UiText {
+                    id: osdValue
                     anchors.verticalCenter: parent.verticalCenter
                     text: Osd.isMuted ? "—" : `${Math.round(Osd.value * 100)}`
                     mono: true
-                    width: Theme.sizeBody * 2.2
+                    size: 14
+                    weight: Theme.weightSemiBold
+                    width: 30
                     horizontalAlignment: Text.AlignRight
-                    color: Theme.textSoft
                 }
             }
-            PeekLine {
-                anchors.horizontalCenter: parent.horizontalCenter
-                text: Osd.label
+
+            Row {
+                id: capsRow
+                visible: parent.k === "capslock"
+                anchors.centerIn: parent
+                spacing: Theme.spacingSm
+                Glyph { anchors.verticalCenter: parent.verticalCenter; icon: Icons.arrowUp; size: Theme.iconMd; color: Osd.capsOn ? Theme.warn : Theme.muted }
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: "BLOQ MAYÚS"; mono: true; size: Theme.sizeCaption; weight: Theme.weightSemiBold; font.letterSpacing: Theme.sizeCaption * 0.08; color: Osd.capsOn ? Theme.text : Theme.textDim }
+            }
+
+            Row {
+                id: layoutRow
+                visible: parent.k === "layout"
+                anchors.centerIn: parent
+                spacing: Theme.spacingSm
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: Osd.layoutFrom; mono: true; color: Theme.textDim }
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: "→"; mono: true; color: Theme.textDim }
+                UiText { anchors.verticalCenter: parent.verticalCenter; text: Osd.layoutTo; mono: true; weight: Theme.weightSemiBold }
             }
         }
     }
