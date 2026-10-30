@@ -12,6 +12,7 @@
  *   - gpuPct: int [readonly] (-1 if unknown; AMD/Intel sysfs or nvidia-smi)
  *   - cpuHistory: list<int> [readonly] (last 15 samples, 2 s apart = 30 s, newest last)
  *   - rxRate / txRate: real [readonly] (bytes per second, all interfaces but lo)
+ *   - rxHistory: list<real> [readonly] (last 12 download rates, 2 s apart, newest last: the bar's network line)
  *   - topProcs: list<var> [readonly] ({ name, cpu, memMb }, 4 entries, only while details are wanted)
  *
  * Functions:
@@ -43,6 +44,7 @@ Singleton {
     property var cpuHistory: []
     property real rxRate: 0
     property real txRate: 0
+    property var rxHistory: []
     property var _net: null     // [rx, tx, timestamp ms]
 
     function formatRate(bps: real): string {
@@ -112,6 +114,7 @@ echo "\${g:--1}"
                     const dt = (now - root._net[2]) / 1000;
                     root.rxRate = Math.max(0, (rx - root._net[0]) / dt);
                     root.txRate = Math.max(0, (tx - root._net[1]) / dt);
+                    root.rxHistory = root.rxHistory.concat([root.rxRate]).slice(-12);
                 }
                 root._net = [rx, tx, now];
             } else if (section === "MEM") {

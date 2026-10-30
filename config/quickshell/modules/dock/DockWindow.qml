@@ -1,18 +1,32 @@
 // =============================================================================
-// dragon-island — DockWindow.qml (namespace "dragon-dock")
-// The dock is a black tab with the notch's silhouette (NotchShape) that sticks out of the screen edge (bottom, left
-// or right: Dock.position), as thick as the bar islands. Opaque black, like the notch (excluded from hyprglass).
-// Hiding: the tab sinks into the edge (the content slides out of the window); the 3 px hot zone is a strip of this
-// same window, so the pointer never changes surface. Wheel: scrolls the capsules when there are more than
-// Theme.dockCapacity. Right click on a capsule: its menu; on the tab: the dock settings (position, always visible).
+// dragon-island — DockWindow.qml (namespace "dragon-dock") · docs/design/27-dock-constelacion.png
+// The dock is a CONSTELLATION: apps are round glass nodes on a thread of light, the neural core sits in the middle of
+// the screen edge (click = launcher, wheel = workspaces), pinned apps grow to its left (top), open ones to its right
+// (bottom). The windows of an app are moons orbiting it, a herdr agent working in an app sends synapses along the
+// thread from the core, an agent waiting for an answer makes an amber halo pulse.
+//   thread  a continuous curve: a slight inverted smile (ends Theme.dockArc closer to the edge) plus a gaussian lift
+//           under the pointer, so it "tightens" towards the cursor and always passes through the node centres;
+//           sampled into a Canvas that only repaints when the geometry changes
+//   hidden  (tiled windows, Dock.workspaceFree false) the nodes sink and fade; only the thread stays, Theme.dockHiddenLine
+//           from the edge, with a dot per open app (cyan with an agent) breathing slowly
+//   motion  ONE shared Timer (Theme.dockFps) moves moons, synapses and the breathing; nothing runs every vsync, and
+//           nothing runs while hidden-and-idle or with motionScale 0
+// One window as long as the edge, of constant thickness (Theme.dockWindow); the frame inside is drawn for the bottom
+// edge and turned for left / right (icons and labels turn back). The input mask is made of FIXED items in window
+// coordinates (a Region does not follow a moving / rotated ancestor, HANDOFF §7y): the 3 px hot strip always (it is
+// part of this same window, §7x), the node band while shown, the whole thickness while hovered (lift + label).
+// Kept from the tab dock: pinned + open apps, cycling windows, minimised windows (special:minimized), the app menu and
+// the dock menu (position, always visible), dragging pinned apps to reorder, the wheel to scroll, IPC `dock`.
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
+import Quickshell.Widgets
 import QtQuick
+import QtQuick.Shapes
+import QtQuick.Effects
 import "../.."
 import "../../services"
 import "../../components"
-import "../island"
 
 PanelWindow {
     id: win
@@ -22,24 +36,17 @@ PanelWindow {
     readonly property string screenName: modelData?.name ?? ""
     readonly property string pos: Dock.position
     readonly property bool horiz: pos === "bottom"
-
-    // ------------------------------------------------------------ model
-    readonly property var items: Dock.pinnedItems.concat(Dock.openItems)       // pinned first, then the other open apps
-    readonly property int shown: Math.max(1, Math.min(items.length, Theme.dockCapacity))
-    readonly property int maxOff: Math.max(0, items.length - Theme.dockCapacity)
-    readonly property real length: Theme.dockPad * 2 + Theme.notchEarRadius * 2 + shown * Theme.dockPitch - (Theme.dockPitch - Theme.dockPill)
+    readonly property real len: (horiz ? modelData?.width : modelData?.height) ?? 1366
+    readonly property real thick: Theme.dockWindow
 
     anchors {
-        bottom: pos === "bottom"
-        left: pos === "left"
-        right: pos === "right"
+        bottom: true
+        top: !horiz
+        left: pos !== "right"
+        right: pos !== "left"
     }
-    // the window is dockMagRoom thicker than the tab: the enlarged capsules rise above it (macOS-style)
-    readonly property real size: Theme.dockThickness + Theme.dockMagRoom
-    // centre of the tab across the dock's thickness (the tab hugs the screen edge)
-    readonly property real tabCenter: pos === "left" ? Theme.dockThickness / 2 : size - Theme.dockThickness / 2
-    implicitWidth: horiz ? length : size
-    implicitHeight: horiz ? size : length
+    implicitWidth: horiz ? len : thick
+    implicitHeight: horiz ? thick : len
     exclusionMode: ExclusionMode.Ignore
     color: Theme.transparent
 
@@ -47,243 +54,332 @@ PanelWindow {
     WlrLayershell.namespace: "dragon-dock"
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
-    // visible tab, or only the hot-zone strip while hidden
+    // ------------------------------------------------------------ model and layout (frame coordinates: bottom edge)
+    readonly property var pinned: Dock.pinnedItems
+    readonly property var opened: Dock.openItems
+    // Theme.dockCapacity nodes in all: half per side, but a side that needs fewer lends the rest to the other
+    readonly property int half: Math.floor(Theme.dockCapacity / 2)
+    // and never more than fit between the core and the end of the edge (left / right: under the top bar)
+    readonly property int fitSide: Math.max(1, Math.floor((len / 2 - Theme.dockCore / 2 - Theme.dockNode / 2 - (horiz ? 16 : Theme.barZone + 16)) / Theme.dockPitch) + 1)
+    readonly property int leftCap: Math.min(pinned.length, fitSide, Theme.dockCapacity - Math.min(opened.length, half, fitSide))
+    readonly property int rightCap: Math.min(opened.length, fitSide, Theme.dockCapacity - leftCap)
+    function capOf(side: int): int { return side < 0 ? leftCap : rightCap; }
+    property int leftOff: 0
+    property int rightOff: 0
+    onLeftCapChanged: leftOff = Math.min(leftOff, Math.max(0, pinned.length - leftCap))
+    onRightCapChanged: rightOff = Math.min(rightOff, Math.max(0, opened.length - rightCap))
+
+    readonly property real c: len / 2
+    readonly property real pitch: Theme.dockPitch
+    readonly property int leftShown: leftCap
+    readonly property int rightShown: rightCap
+    // the thread: from Theme.dockOverhang beyond the outermost node (or the core) on each side
+    // (left / right: never under the top bar; along "left" = up for left, down for right)
+    readonly property real edgeA: horiz ? 0 : (pos === "left" ? Theme.barZone : 0)
+    readonly property real edgeB: horiz ? len : (pos === "right" ? len - Theme.barZone : len)
+    readonly property real x0: Math.max(edgeA, c - (leftShown > 0 ? leftShown * pitch : Theme.dockCore / 2) - Theme.dockOverhang)
+    readonly property real x1: Math.min(edgeB, c + (rightShown > 0 ? rightShown * pitch : Theme.dockCore / 2) + Theme.dockOverhang)
+    readonly property real spanHalf: Math.max(c - x0, x1 - c)
+
+    // shown 0 → 1 (Emergente in, Salida out)
+    property real shownT: Dock.wanted ? 1 : 0
+    Behavior on shownT {
+        enabled: Theme.animationsEnabled
+        NumberAnimation {
+            duration: Dock.wanted ? Theme.durEmerge : Theme.durOut * 2
+            easing.type: Easing.BezierSpline
+            easing.bezierCurve: Dock.wanted ? Theme.curveEmergente : Theme.curveSalida
+        }
+    }
+
+    // pointer along the dock and how much the thread tightens towards it
+    property real hx: c
+    property real hoverK: frameHover.hovered && Dock.wanted ? 1 : 0
+    Behavior on hoverK { NumberAnimation { duration: Theme.ms(380); easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEmergente } }
+    Behavior on hx { enabled: Theme.animationsEnabled; NumberAnimation { duration: Theme.ms(140); easing.type: Easing.OutCubic } }
+
+    function curveY(x: real): real {
+        const u = Math.max(-1, Math.min(1, (x - c) / Math.max(1, spanHalf)));
+        const d = (x - hx) / (Theme.dockSigma * pitch);
+        return thick - Theme.dockCenter + Theme.dockArc * u * u - Theme.dockLift * hoverK * Math.exp(-d * d / 2);
+    }
+    function threadY(x: real): real { return (thick - Theme.dockHiddenLine) * (1 - shownT) + curveY(x) * shownT; }
+
+    // ------------------------------------------------------------ the shared tick (moons, synapses, breathing)
+    property real now: 0
+    readonly property bool anyAgent: pinned.concat(opened).some(i => i.agent.length > 0)
+    readonly property bool anyMoons: pinned.concat(opened).some(i => i.count > 0)
+    Timer {
+        interval: Math.round(1000 / Theme.dockFps)
+        repeat: true
+        running: Theme.animationsEnabled && ((win.shownT > 0.01 && (win.anyMoons || win.anyAgent)) || (win.shownT < 0.99 && win.anyMoons))
+        onTriggered: win.now += interval
+    }
+    readonly property real breath: 0.725 + 0.275 * Math.sin(now / Theme.dockBreath * Math.PI * 2)
+
+    // ------------------------------------------------------------ input mask (fixed items, window coordinates)
     mask: Region {
-        Region { item: strip }                  // always: while the tab is still rising the pointer is on the strip
-        // the tab's band; the whole window (room for the enlarged capsules) only while the pointer is on it, so the
-        // empty room above the dock never blocks clicks
-        Region { item: Dock.wanted ? (tabHover.hovered ? hitbox : band) : null }
+        Region { item: strip }
+        Region { item: Dock.wanted ? (frameHover.hovered ? hitArea : bandArea) : null }
     }
+    // a rect given in frame coordinates (along a0..a1, distance from the edge d0..d1) → window coordinates
+    function rx(a0: real, a1: real, d0: real, d1: real): real { return pos === "bottom" ? a0 : (pos === "left" ? d0 : thick - d1); }
+    function ry(a0: real, a1: real, d0: real, d1: real): real { return pos === "bottom" ? thick - d1 : (pos === "left" ? a0 : len - a1); }
+    function rw(a0: real, a1: real, d0: real, d1: real): real { return horiz ? a1 - a0 : d1 - d0; }
+    function rh(a0: real, a1: real, d0: real, d1: real): real { return horiz ? d1 - d0 : a1 - a0; }
+    readonly property real bandDepth: Theme.dockCenter + Theme.dockNodeFocus / 2 + Theme.dockMoonOrbit
+    Item { id: strip;    x: win.rx(0, win.len, 0, Theme.dockEdge); y: win.ry(0, win.len, 0, Theme.dockEdge); width: win.rw(0, win.len, 0, Theme.dockEdge); height: win.rh(0, win.len, 0, Theme.dockEdge) }
+    Item { id: bandArea; x: win.rx(win.x0, win.x1, 0, win.bandDepth); y: win.ry(win.x0, win.x1, 0, win.bandDepth); width: win.rw(win.x0, win.x1, 0, win.bandDepth); height: win.rh(win.x0, win.x1, 0, win.bandDepth) }
+    Item { id: hitArea;  x: win.rx(win.x0, win.x1, 0, win.thick); y: win.ry(win.x0, win.x1, 0, win.thick); width: win.rw(win.x0, win.x1, 0, win.thick); height: win.rh(win.x0, win.x1, 0, win.thick) }
+    HoverHandler { id: stripHover; target: strip }
 
-    // the window's own rectangle (the tab moves while it rises, a Region does not follow the movement of an ancestor)
-    Item { id: hitbox; anchors.fill: parent }
-    Item {
-        id: band
-        x: win.pos === "left" ? 0 : (win.pos === "right" ? win.width - Theme.dockThickness : 0)
-        y: win.pos === "bottom" ? win.height - Theme.dockThickness : 0
-        width: win.horiz ? win.width : Theme.dockThickness
-        height: win.horiz ? Theme.dockThickness : win.height
-    }
-
-    // the hot zone: a thin strip on the screen edge
-    Item {
-        id: strip
-        x: win.pos === "right" ? win.width - Theme.dockEdge : 0
-        y: win.pos === "bottom" ? win.height - Theme.dockEdge : 0
-        width: win.horiz ? win.width : Theme.dockEdge
-        height: win.horiz ? Theme.dockEdge : win.height
-        Rectangle { anchors.fill: parent; color: "#01000000" }
-        HoverHandler { id: stripHover }
-    }
-    readonly property bool pointerOn: stripHover.hovered || tabHover.hovered
+    readonly property bool overFrame: frameHover.hovered
+    readonly property real back: -frame.rotation          // DockNode: icons and labels turn back to stay upright
+    readonly property bool pointerOn: stripHover.hovered || frameHover.hovered
     onPointerOnChanged: Dock.hover(pointerOn)
 
-    // ------------------------------------------------------------ the tab
+    // ------------------------------------------------------------ the frame (drawn for the bottom edge)
     Item {
-        id: content
-        width: win.width
-        height: win.height
-        property real sink: Dock.wanted ? 0 : Theme.dockThickness + 6
-        Behavior on sink { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.2 } }
-        // never below 0: the spring overshoots, and a negative value lifts the tab off the screen edge
-        x: win.pos === "left" ? -Math.max(0, sink) : (win.pos === "right" ? Math.max(0, sink) : 0)
-        y: win.pos === "bottom" ? Math.max(0, sink) : 0
+        id: frame
+        width: win.len
+        height: win.thick
+        anchors.centerIn: parent
+        rotation: win.pos === "bottom" ? 0 : (win.pos === "left" ? 90 : -90)
+        readonly property real back: -rotation      // icons and labels turn back to stay upright
 
-        property int target: 0
-        property real off: target
-        Behavior on off { enabled: Theme.animationsEnabled; SpringAnimation { spring: Theme.notchSpring; damping: Theme.notchDamping; epsilon: 0.005 } }
-        Connections {
-            target: win
-            function onMaxOffChanged() { content.target = Math.min(content.target, win.maxOff); }
+        HoverHandler {
+            id: frameHover
+            onPointChanged: if (hovered) win.hx = point.position.x
         }
-
-        // The tab: the notch's silhouette (concave ears at the edge, rounded far corners), turned towards the edge.
-        // Opaque black like the notch (namespace excluded from hyprglass).
-        Item {
-            id: tab
-            anchors.fill: parent
-            NotchShape {
-                anchors.centerIn: parent
-                anchors.verticalCenterOffset: win.horiz ? win.tabCenter - win.height / 2 : 0
-                anchors.horizontalCenterOffset: win.horiz ? 0 : win.tabCenter - win.width / 2
-                width: win.horiz ? win.width : win.height
-                height: Theme.dockThickness
-                rotation: win.pos === "bottom" ? 180 : (win.pos === "left" ? -90 : 90)
-            }
-        }
-
-        HoverHandler { id: tabHover }
         WheelHandler {
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
-            onWheel: e => content.target = Math.max(0, Math.min(win.maxOff, content.target + (e.angleDelta.y > 0 ? -1 : 1)))
+            onWheel: e => {
+                const step = e.angleDelta.y > 0 ? -1 : 1;
+                if (win.hx < win.c - win.pitch / 2) win.leftOff = Math.max(0, Math.min(Math.max(0, win.pinned.length - win.leftCap), win.leftOff + step));
+                else if (win.hx > win.c + win.pitch / 2) win.rightOff = Math.max(0, Math.min(Math.max(0, win.opened.length - win.rightCap), win.rightOff + step));
+                else Hypr.focusRelative(step);
+            }
         }
         TapHandler {
             acceptedButtons: Qt.RightButton
-            onTapped: win.openMenu(null, tab)
+            onTapped: win.openMenu(null, coreItem)
         }
 
-        component Slot: Item {
-            id: slot
-            property var item: null
-            property int slotIdx: 0
-            property string icon: ""
-            property string label: ""
-            property bool dim: false
-            property real dragOffset: 0
-            readonly property bool hovered: mouse.containsMouse
-            signal clicked(var mouse)
-            signal dragEnded(real dx)
+        // ---- the thread: glow (7 px, 18 %) under a 1.6 px line, lavender → pink lavender → cyan, fading at the ends
+        Canvas {
+            id: thread
+            anchors.fill: parent
+            renderStrategy: Canvas.Cooperative
+            readonly property var deps: [win.hx, win.hoverK, win.shownT, win.x0, win.x1, win.len, win.thick]
+            onDepsChanged: requestPaint()
+            function rgba(col, a) { return `rgba(${Math.round(col.r * 255)},${Math.round(col.g * 255)},${Math.round(col.b * 255)},${a})`; }
+            onPaint: {
+                const ctx = getContext("2d");
+                ctx.reset();
+                ctx.clearRect(0, 0, width, height);
+                const a = win.x0, b = win.x1;
+                if (b - a < 2) return;
+                const g = ctx.createLinearGradient(a, 0, b, 0);
+                g.addColorStop(0, rgba(Theme.lavender, 0));
+                g.addColorStop(0.16, rgba(Theme.lavender, 1));
+                g.addColorStop(0.5, rgba(Theme.threadPink, 1));
+                g.addColorStop(0.84, rgba(Theme.cyan, 1));
+                g.addColorStop(1, rgba(Theme.cyan, 0));
+                ctx.beginPath();
+                for (let x = a; x <= b; x += 4) {
+                    const y = win.threadY(x);
+                    if (x === a) ctx.moveTo(x, y); else ctx.lineTo(x, y);
+                }
+                ctx.strokeStyle = g;
+                ctx.lineCap = "round";
+                ctx.globalAlpha = 0.18;
+                ctx.lineWidth = Theme.dockThreadGlow;
+                ctx.stroke();
+                ctx.globalAlpha = 0.55 + 0.45 * win.shownT;
+                ctx.lineWidth = Theme.dockThread;
+                ctx.stroke();
+            }
+        }
 
-            readonly property real rel: slotIdx - content.off                    // 0 .. capacity-1 when fully visible
-            readonly property real out: Math.max(-rel, rel - (Theme.dockCapacity - 1))
-            readonly property real fade: Math.max(0, Math.min(1, 1 - out / 0.8))
-            readonly property real along: Theme.dockPad + Theme.notchEarRadius + Theme.dockPill / 2 + rel * Theme.dockPitch + dragOffset
-            readonly property real cross: win.tabCenter
+        // ---- hidden: a dot per open app on the thread, breathing ----
+        Repeater {
+            model: win.pinned.map((it, k) => ({ it: it, slot: -(k + 1 - win.leftOff), k: k, side: -1 }))
+                      .concat(win.opened.map((it, k) => ({ it: it, slot: k + 1 - win.rightOff, k: k, side: 1 })))
+                      .filter(n => n.it.count > 0 && (n.side < 0 ? n.k - win.leftOff : n.k - win.rightOff) >= 0
+                                   && (n.side < 0 ? n.k - win.leftOff : n.k - win.rightOff) < win.capOf(n.side))
+            delegate: Rectangle {
+                required property var modelData
+                readonly property real nx: win.c + modelData.slot * win.pitch
+                width: Theme.dockHiddenDot * 2
+                height: width
+                radius: width / 2
+                x: nx - width / 2
+                y: win.threadY(nx) - height / 2
+                color: modelData.it.agent.length > 0 ? Theme.cyan : Theme.lavenderInk
+                opacity: (1 - win.shownT) * (Theme.animationsEnabled ? win.breath : 1)
+                visible: opacity > 0.01
+            }
+        }
 
-            // macOS-style magnification: the capsules near the pointer grow away from the screen edge
-            readonly property real pointerAlong: win.horiz ? tabHover.point.position.x : tabHover.point.position.y
-            readonly property real away: Math.abs(pointerAlong - along + dragOffset)
-            readonly property real mag: tabHover.hovered && dragOffset === 0 ? 1 + Theme.dockMagnify * Math.exp(-(away * away) / (2 * Theme.dockMagSigma * Theme.dockMagSigma)) : 1
-            property real magSmooth: mag
-            Behavior on magSmooth { NumberAnimation { duration: Theme.ms(70) } }
-            scale: magSmooth
-            transformOrigin: win.pos === "bottom" ? Item.Bottom : (win.pos === "left" ? Item.Left : Item.Right)
-            z: magSmooth
+        // ---- the core ----
+        Item {
+            id: coreItem
+            readonly property real cy: win.curveY(win.c) + (1 - win.shownT) * 60
+            width: Theme.dockCore
+            height: Theme.dockCore
+            x: win.c - width / 2
+            y: cy - height / 2
+            opacity: win.shownT
+            visible: opacity > 0.01
 
-            width: Theme.dockPill
-            height: Theme.dockPill
-            x: (win.horiz ? along : cross) - width / 2
-            y: (win.horiz ? cross : along) - height / 2
-            opacity: (dim ? 0.45 : 1) * fade
-            Behavior on opacity { NumberAnimation { duration: Theme.durFade } }
-
+            RectangularShadow {
+                anchors.fill: parent
+                radius: width / 2
+                blur: 22
+                color: Theme.alpha(Theme.violetBase, 0.35)
+            }
             Rectangle {
                 anchors.fill: parent
-                radius: Theme.capsuleRadius + 1
-                color: slot.hovered ? Theme.surfaceHi : Theme.surface2
-                Behavior on color { ColorAnimation { duration: Theme.durHover } }
+                radius: width / 2
+                color: Theme.dockNodeBase
+                border.width: 1
+                border.color: Theme.dockNodeEdge
             }
-            Image {
-                anchors.centerIn: parent
-                width: Theme.dockIconInner
-                height: Theme.dockIconInner
-                source: slot.icon
-                sourceSize: Qt.size(Theme.dockIconInner * 2, Theme.dockIconInner * 2)
-                fillMode: Image.PreserveAspectFit
-                asynchronous: true
-                mipmap: true
+            NeuralCore {
+                anchors.fill: parent
+                anchors.margins: 2
+                bare: true
+                fps: 15
+                pointCount: 110
+                mood: (Herdr.counts?.working ?? 0) > 0 ? "thinking" : (coreMouse.containsMouse ? "listening" : "calm")
+                reducedMotion: !Theme.animationsEnabled
+                running: win.shownT > 0.5 && Theme.animationsEnabled
             }
-
-            // open windows: 1 to 3 dots
-            Row {
-                visible: (slot.item?.count ?? 0) > 0
-                anchors.horizontalCenter: parent.horizontalCenter
-                anchors.bottom: parent.bottom
-                anchors.bottomMargin: 3
-                spacing: 3
-                Repeater {
-                    model: Math.min(3, slot.item?.count ?? 0)
-                    delegate: Rectangle { width: 4; height: 4; radius: 2; color: slot.item?.minimizedOnly ? Theme.textDim : Theme.accent }
-                }
-            }
-
-            // unread notifications of the app
-            Rectangle {
-                visible: (slot.item?.badge ?? 0) > 0
-                anchors.right: parent.right
-                anchors.top: parent.top
-                anchors.rightMargin: -4
-                anchors.topMargin: -4
-                width: Math.max(16, badgeText.implicitWidth + 8)
-                height: 16
-                radius: 8
-                color: Theme.accent
-                UiText { id: badgeText; anchors.centerIn: parent; text: `${Math.min(99, slot.item?.badge ?? 0)}`; size: Theme.sizeCaption; weight: Theme.weightBold; color: Theme.onBrand }
-            }
-
             MouseArea {
-                id: mouse
+                id: coreMouse
                 anchors.fill: parent
                 hoverEnabled: true
-                enabled: slot.fade > 0.4
-                acceptedButtons: Qt.LeftButton | Qt.MiddleButton | Qt.RightButton
                 cursorShape: Qt.PointingHandCursor
-                property real pressPos: 0
-                property bool dragging: false
-                onPressed: m => { pressPos = win.horiz ? m.x : m.y; dragging = false; }
-                onPositionChanged: m => {
-                    if (!(pressedButtons & Qt.LeftButton) || !(slot.item?.pinned)) return;
-                    const d = (win.horiz ? m.x : m.y) - pressPos;
-                    if (Math.abs(d) > 8) dragging = true;
-                    if (dragging) slot.dragOffset = d;
-                }
-                onReleased: m => {
-                    if (dragging) { slot.dragEnded(slot.dragOffset); slot.dragOffset = 0; dragging = false; }
-                }
-                onClicked: m => { if (!dragging) slot.clicked(m); }
+                acceptedButtons: Qt.LeftButton | Qt.RightButton
+                onClicked: m => { if (m.button === Qt.RightButton) win.openMenu(null, coreItem); else ShellState.toggle("launcher", win.screenName); }
             }
         }
 
+        // ---- the app nodes (DockNode.qml) ----
         Repeater {
-            model: win.items
-            delegate: Slot {
-                id: sl
+            model: win.pinned
+            delegate: DockNode {
                 required property var modelData
                 required property int index
+                dock: win
                 item: modelData
-                slotIdx: index
-                icon: modelData.icon
-                label: modelData.name
-                dim: modelData.minimizedOnly
-                onHoveredChanged: win.hoverSlot = hovered ? sl : (win.hoverSlot === sl ? null : win.hoverSlot)
-                onClicked: m => win.itemClicked(modelData, m, sl)
-                onDragEnded: dx => Dock.reorder(index, index + Math.round(dx / Theme.dockPitch))
+                k: index
+                side: -1
+            }
+        }
+        Repeater {
+            model: win.opened
+            delegate: DockNode {
+                required property var modelData
+                required property int index
+                dock: win
+                item: modelData
+                k: index
+                side: 1
             }
         }
     }
 
-    // ------------------------------------------------------------ name tooltip, app menu and dock settings
-    property var hoverSlot: null
+    // ------------------------------------------------------------ app menu, dock menu and window thumbnails
     property var menuItem: null         // app of the open menu; null + menuOpen = the dock settings
     property bool menuOpen: false
-    property Item menuAnchor: tab
+    property Item menuAnchor: coreItem
+    property var thumbsItem: null
+    property bool thumbsOpen: false
+    property Item thumbsAnchor: coreItem
 
     function openMenu(item, anchorItem): void {
+        win.thumbsOpen = false;
         win.menuItem = item;
         win.menuAnchor = anchorItem;
         win.menuOpen = true;
     }
-    function itemClicked(item, m, slot): void {
-        if (m.button === Qt.RightButton) win.openMenu(item, slot);
+    function openThumbs(item, anchorItem): void {
+        win.menuOpen = false;
+        win.thumbsItem = item;
+        win.thumbsAnchor = anchorItem;
+        win.thumbsOpen = true;
+    }
+    function itemClicked(item, m, anchorItem): void {
+        if (m.button === Qt.RightButton) win.openMenu(item, anchorItem);
         else if (m.button === Qt.MiddleButton) Dock.newInstance(item);
-        else { win.menuOpen = false; Dock.activate(item); }
+        else { win.menuOpen = false; win.thumbsOpen = false; Dock.activate(item); }
     }
 
     Connections {
         target: Dock
-        function onWantedChanged() { if (!Dock.wanted) win.menuOpen = false; }
+        function onWantedChanged() { if (!Dock.wanted) { win.menuOpen = false; win.thumbsOpen = false; } }
     }
 
     // the popups open away from the edge
     readonly property var popEdge: pos === "bottom" ? Edges.Top : (pos === "left" ? Edges.Right : Edges.Left)
 
     PopupWindow {
-        id: tip
-        visible: win.hoverSlot !== null && !win.menuOpen && Dock.wanted && (win.hoverSlot?.label ?? "").length > 0
-        anchor.item: win.hoverSlot
+        id: thumbs
+        visible: win.thumbsOpen && win.thumbsItem !== null
+        anchor.item: win.thumbsAnchor
         anchor.edges: win.popEdge
         anchor.gravity: win.popEdge
-        anchor.margins.top: 8
-        anchor.margins.left: 8
-        anchor.margins.right: 8
-        implicitWidth: tipLabel.implicitWidth + 24
-        implicitHeight: 28
+        anchor.margins.top: Theme.dockMoonOrbit + 14
+        anchor.margins.left: Theme.dockMoonOrbit + 14
+        anchor.margins.right: Theme.dockMoonOrbit + 14
+        implicitWidth: thumbRow.implicitWidth + Theme.spacingMd * 2
+        implicitHeight: thumbRow.implicitHeight + Theme.spacingMd * 2
         color: Theme.transparent
         Rectangle {
             anchors.fill: parent
-            radius: height / 2
-            color: Theme.alpha(Theme.surface0, 0.92)
-            UiText { id: tipLabel; anchors.centerIn: parent; text: win.hoverSlot?.label ?? ""; size: Theme.sizeBody }
+            radius: Theme.cardRadius
+            color: Theme.alpha(Theme.islandInk, 0.92)
+            border.width: 1
+            border.color: Theme.glassBorder
+            HoverHandler { onHoveredChanged: { Dock.hover(hovered); if (!hovered) closeThumbs.restart(); else closeThumbs.stop(); } }
+            Timer { id: closeThumbs; interval: 700; onTriggered: win.thumbsOpen = false }
+            Row {
+                id: thumbRow
+                anchors.centerIn: parent
+                spacing: Theme.spacingSm
+                Repeater {
+                    model: win.thumbsOpen ? (win.thumbsItem?.windows ?? []) : []
+                    delegate: Column {
+                        required property var modelData
+                        spacing: 4
+                        Rectangle {
+                            width: Theme.previewThumbWidth
+                            height: width * 0.6
+                            radius: 10
+                            color: Theme.dockNodeBase
+                            border.width: 1
+                            border.color: shotMouse.containsMouse ? Theme.alpha(Theme.lavender, 0.7) : Theme.glassBorder
+                            clip: true
+                            ScreencopyView {
+                                anchors.fill: parent
+                                anchors.margins: 1
+                                captureSource: win.thumbsOpen ? modelData.wayland : null
+                                live: false
+                                constraintSize: Qt.size(width, height)
+                            }
+                            MouseArea {
+                                id: shotMouse
+                                anchors.fill: parent
+                                hoverEnabled: true
+                                cursorShape: Qt.PointingHandCursor
+                                onClicked: { Hypr.focusWindow(modelData.address); win.thumbsOpen = false; }
+                            }
+                        }
+                        UiText { width: Theme.previewThumbWidth; text: modelData.title; size: Theme.sizeCaption; color: Theme.textDim }
+                    }
+                }
+            }
         }
     }
 
@@ -293,17 +389,17 @@ PanelWindow {
         anchor.item: win.menuAnchor
         anchor.edges: win.popEdge
         anchor.gravity: win.popEdge
-        anchor.margins.top: 10
-        anchor.margins.left: 10
-        anchor.margins.right: 10
-        implicitWidth: 200
+        anchor.margins.top: Theme.dockMoonOrbit + 10
+        anchor.margins.left: Theme.dockMoonOrbit + 10
+        anchor.margins.right: Theme.dockMoonOrbit + 10
+        implicitWidth: 210
         implicitHeight: menuCol.implicitHeight + Theme.spacingSm * 2
         color: Theme.transparent
 
         Rectangle {
             anchors.fill: parent
             radius: Theme.rowRadius + 4
-            color: Theme.alpha(Theme.surface0, 0.94)
+            color: Theme.alpha(Theme.islandInk, 0.92)
             border.width: 1
             border.color: Theme.glassBorder
             HoverHandler { onHoveredChanged: Dock.hover(hovered) }
@@ -322,15 +418,15 @@ PanelWindow {
                     width: parent.width
                     height: 28
                     radius: 8
-                    color: mrMouse.containsMouse ? Theme.surfaceHi : Theme.transparent
-                    UiText { x: 10; anchors.verticalCenter: parent.verticalCenter; text: mr.text; size: Theme.sizeBody }
-                    Rectangle { visible: mr.checked; anchors.right: parent.right; anchors.rightMargin: 10; anchors.verticalCenter: parent.verticalCenter; width: 8; height: 8; radius: 4; color: Theme.accent }
+                    color: mr.checked ? Theme.accentTint : (mrMouse.containsMouse ? Theme.hoverOverlay : Theme.transparent)
+                    UiText { x: 10; anchors.verticalCenter: parent.verticalCenter; text: mr.text; size: Theme.sizeBody; color: mr.checked ? Theme.lavenderInk : Theme.text }
                     MouseArea { id: mrMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { mr.triggered(); win.menuOpen = false; } }
                 }
 
                 // ---- an app ----
                 MenuRow { visible: win.menuItem !== null; text: win.menuItem?.pinned ? "Quitar del dock" : "Fijar en el dock"; onTriggered: Dock.togglePin(win.menuItem) }
                 MenuRow { visible: (win.menuItem?.entry ?? null) !== null; text: "Nueva ventana"; onTriggered: Dock.newInstance(win.menuItem) }
+                MenuRow { visible: (win.menuItem?.count ?? 0) > 1; text: "Ver ventanas"; onTriggered: win.openThumbs(win.menuItem, win.menuAnchor) }
                 MenuRow { visible: (win.menuItem?.count ?? 0) > 0; text: `Cerrar todas (${win.menuItem?.count ?? 0})`; onTriggered: Dock.closeAll(win.menuItem) }
                 Row {
                     visible: (win.menuItem?.count ?? 0) > 0
@@ -341,10 +437,12 @@ PanelWindow {
                         model: Hypr.workspaceCount
                         delegate: Rectangle {
                             required property int index
-                            width: 24; height: 24; radius: 8
+                            width: 24; height: 24; radius: 12
                             anchors.verticalCenter: parent.verticalCenter
-                            color: wsMouse.containsMouse ? Theme.accent : Theme.surface2
-                            UiText { anchors.centerIn: parent; text: `${index + 1}`; mono: true; size: Theme.sizeCaption; color: wsMouse.containsMouse ? Theme.onBrand : Theme.textSoft }
+                            color: wsMouse.containsMouse ? Theme.accentTint : Theme.neutralFill
+                            border.width: wsMouse.containsMouse ? 1 : 0
+                            border.color: Theme.accentEdge
+                            UiText { anchors.centerIn: parent; text: `${index + 1}`; mono: true; size: Theme.sizeCaption; color: wsMouse.containsMouse ? Theme.lavenderInk : Theme.textSoft }
                             MouseArea { id: wsMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: { Dock.moveAllTo(win.menuItem, index + 1); win.menuOpen = false; } }
                         }
                     }

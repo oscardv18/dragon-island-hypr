@@ -145,13 +145,13 @@ Item {
         opacity: enabled ? 1 : 0.4
         color: danger ? Theme.alpha(Theme.error, btnMouse.containsMouse ? 0.45 : 0.3) : (btnMouse.containsMouse ? Theme.surfaceHi : Theme.surface2)
         Behavior on color { ColorAnimation { duration: Theme.durHover } }
-        BrandFill { anchors.fill: parent; radius: parent.radius; visible: btn.primary }
+        AccentFill { anchors.fill: parent; radius: parent.radius; visible: btn.primary }
         Row {
             id: row
             anchors.centerIn: parent
             spacing: Theme.spacingSm
-            Glyph { visible: btn.icon.length > 0; anchors.verticalCenter: parent.verticalCenter; icon: btn.icon; size: Theme.iconMd; color: btn.primary ? Theme.onBrand : Theme.textSoft }
-            UiText { anchors.verticalCenter: parent.verticalCenter; text: btn.label; weight: Theme.weightMedium; color: btn.primary ? Theme.onBrand : Theme.text }
+            Glyph { visible: btn.icon.length > 0; anchors.verticalCenter: parent.verticalCenter; icon: btn.icon; size: Theme.iconMd; color: btn.primary ? Theme.lavenderInk : Theme.textSoft }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: btn.label; weight: Theme.weightMedium; color: btn.primary ? Theme.lavenderInk : Theme.text }
         }
         MouseArea { id: btnMouse; anchors.fill: parent; hoverEnabled: true; enabled: btn.enabled; cursorShape: Qt.PointingHandCursor; onClicked: btn.clicked() }
     }

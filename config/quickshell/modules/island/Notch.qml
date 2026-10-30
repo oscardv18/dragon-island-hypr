@@ -1,16 +1,20 @@
 // =============================================================================
 // dragon-island — Notch.qml
-// The notch: a black shape attached to the top edge of the screen (y = 0), never a floating pill.
-//   collapsed  height 50 (bottom edge = bottom edge of the bar islands), width by content, at most
-//              the free gap between the bar islands − 16 px per side (BarMetrics); centred on the
-//              screen, sliding aside only when an island would be overlapped
-//   appear     emerges from the edge: height 0 → 50, width 120 → collapsed (SpringAnimation)
-//   peek       hover or transient state (OSD / notification / workspace): +8 px down, +16 px wide
-//   expanded   ≈ 720 × 230 from the same top-centre anchor, bottom radii 34
+// The notch, in the bar style's shape (Theme.barLook):
+//   A, C       attached to the top edge (y = 0) with concave ears; 26 / 24 high
+//   B          a floating islandInk pill at top 6, 26 high, with a soft shadow
+//   D          an 80 × 18 micro-island that only shows with activity (music playing, recording, an agent);
+//              touching the top edge reveals style B (Theme.barRevealed)
+//   collapsed  width by content, at most the free gap between the bar islands − 16 px per side (BarMetrics);
+//              centred on the screen, sliding aside only when an island would be overlapped
+//   appear     emerges from the edge: height 0 → collapsed, width 120 → collapsed (SpringAnimation)
+//   peek       hover or transient state (OSD / notification / workspace): grows down and wider
+//   expanded   ≈ 720 × 230 from the same top-centre anchor (B: from the floating pill, no ears), bottom radii 34
 // Choreography: content fades in once the shape is ~40 % into the animation (Theme.durContentDelay);
 // on close the content fades out first (Theme.durContentOut), then the shape shrinks.
 // =============================================================================
 import QtQuick
+import QtQuick.Effects
 import "../.."
 import "../../services"
 import "../../components"
@@ -29,19 +33,25 @@ Item {
     property bool appeared: false       // first appearance started
     property bool appearing: true       // first-appearance spring until it settles
 
-    readonly property real ear: Theme.notchEarRadius
+    readonly property bool attached: Theme.notchAttached
+    readonly property real ear: attached ? Theme.notchEarRadius : 0
     readonly property bool hovered: hoverArea.containsMouse
-    readonly property bool peek: !expanded && appeared && (hovered || IslandState.isTransient)
+    onHoveredChanged: BarState.hover("notch", hovered)
+    // style D: the micro-island, only while something is going on
+    readonly property bool micro: Theme.barLook === "D" && !expanded
+    readonly property bool microActive: Media.isPlaying || Toggles.isRecording || (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agent"
+    readonly property bool peek: !expanded && !micro && appeared && (hovered || IslandState.isTransient)
 
     // free room towards the bar islands (ears included)
     readonly property real maxCollapsed: BarMetrics.maxNotchWidth(screenName, root.width)
-    readonly property real collapsedWidth: Math.min(maxCollapsed, Math.max(Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
+    readonly property real collapsedWidth: micro ? Theme.notchMicroWidth
+                                                 : Math.min(maxCollapsed, Math.max(Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
 
     readonly property real targetWidth: expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
                                                  : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0))
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
-                                                  : (appeared ? Theme.notchHeight + (peek ? Theme.notchPeekDy : 0) : 0)
+                                                  : (!appeared || (micro && !microActive) ? 0 : Theme.notchHeight + (peek ? Theme.notchPeekDy : 0))
 
     // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped
     readonly property real targetX: expanded ? (root.width - targetWidth) / 2
@@ -86,17 +96,35 @@ Item {
     Timer { id: settleTimer; interval: 900; onTriggered: root.appearing = false }
     Component.onCompleted: appearTimer.start()
 
+    // floating pill (B, D): soft shadow under it
+    RectangularShadow {
+        x: shape.x
+        y: shape.y + 2
+        width: shape.width
+        height: shape.height
+        radius: Math.min(shape.bottomRadius, height / 2)
+        blur: 14
+        color: Theme.alpha(Theme.islandInk, 0.55)
+        opacity: shape.opacity
+        visible: !root.attached && shape.height > 1
+    }
+
     NotchShape {
         id: shape
         x: root.animX
-        y: 0
+        y: root.attached ? 0 : Theme.notchTop
         width: Math.max(0, root.animWidth)
         height: Math.max(0, root.animHeight)
-        bottomRadius: root.expanded ? Theme.notchExpandedRadius : Theme.notchRadius
-        opacity: root.hidden ? 0 : 1
+        attached: root.attached
+        // floating and collapsed (B, D): always a pill, also while it peeks taller (radius = height / 2)
+        bottomRadius: root.expanded ? Theme.notchExpandedRadius : (root.attached ? Theme.notchRadius : Math.max(Theme.notchRadius, root.targetHeight / 2))
+        topRadius: root.expanded ? Theme.notchFloatTopRadius : Math.max(Theme.notchRadius, root.targetHeight / 2)
+        opacity: root.hidden || (root.micro && !root.microActive) ? 0 : 1
 
         Behavior on opacity { NumberAnimation { duration: Theme.durFade } }
+        Behavior on y { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
         Behavior on bottomRadius { NumberAnimation { duration: Theme.durContentIn; easing.type: Easing.OutCubic } }
+        Behavior on topRadius { NumberAnimation { duration: Theme.durContentIn; easing.type: Easing.OutCubic } }
 
         // body between the ears; everything is clipped to it
         Item {
@@ -106,16 +134,45 @@ Item {
             height: shape.height
             clip: true
 
-            // ---- collapsed / peek content, centred on the bar's vertical centre ----
+            // ---- collapsed / peek content, centred in the body ----
             NotchContent {
                 id: content
                 anchors.horizontalCenter: parent.horizontalCenter
-                y: Theme.barMarginTop + (parent.height - Theme.barMarginTop - height) / 2
+                y: (parent.height - height) / 2
                 peek: root.peek
                 maxWidth: root.maxCollapsed - root.ear * 2 - Theme.notchPadH * 2
-                opacity: root.expanded ? 0 : 1
+                opacity: root.expanded || root.micro ? 0 : 1
                 visible: opacity > 0
                 Behavior on opacity { NumberAnimation { duration: Theme.durContentOut } }
+            }
+
+            // ---- style D micro-island: equalizer · recording dot · thinking core ----
+            Row {
+                anchors.centerIn: parent
+                spacing: Theme.spacingSm
+                opacity: root.micro && root.microActive ? 1 : 0
+                visible: opacity > 0
+                Behavior on opacity { NumberAnimation { duration: Theme.durFade } }
+                Rectangle {
+                    visible: Toggles.isRecording
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 6; height: 6; radius: 3
+                    color: Theme.error
+                }
+                NeuralCore {
+                    visible: (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agent"
+                    anchors.verticalCenter: parent.verticalCenter
+                    width: 14; height: 14
+                    mood: "thinking"
+                    reducedMotion: !Theme.animationsEnabled
+                    running: visible && Theme.animationsEnabled
+                }
+                Equalizer {
+                    visible: Media.isPlaying
+                    anchors.verticalCenter: parent.verticalCenter
+                    playing: Media.isPlaying
+                    barHeight: 10
+                }
             }
 
             // ---- expanded content (created while expanded) ----

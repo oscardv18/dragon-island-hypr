@@ -1,0 +1,15 @@
+# dragon-island — the shell's icon theme (//@ pragma IconTheme Dragon-Core in shell.qml).
+# Its own icons will live in apps/scalable; everything else comes from MacTahoe (purple, dark) and then WhiteSur (dark).
+# Deployed to ~/.local/share/icons/Dragon-Core by the theme module (and migration 021).
+[Icon Theme]
+Name=Dragon-Core
+Comment=dragon-island: shell icons on top of MacTahoe-purple-dark, then WhiteSur-dark
+Inherits=MacTahoe-purple-dark,WhiteSur-dark,hicolor
+Directories=apps/scalable
+
+[apps/scalable]
+Size=64
+MinSize=8
+MaxSize=512
+Type=Scalable
+Context=Applications

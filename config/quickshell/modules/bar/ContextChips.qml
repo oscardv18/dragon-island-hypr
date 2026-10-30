@@ -48,7 +48,7 @@ Row {
         readonly property bool shown: root.hiddenItems.length > 0
         readonly property bool open: moreMouse.containsMouse
         anchors.verticalCenter: parent.verticalCenter
-        height: Theme.capsuleHeight
+        height: Theme.barCapsuleHeight
         radius: Theme.capsuleRadius
         color: open ? Theme.surfaceHi : Theme.surface2
         clip: true

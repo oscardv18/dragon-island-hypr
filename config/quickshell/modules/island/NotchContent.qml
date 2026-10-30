@@ -1,8 +1,9 @@
 // Collapsed-notch content, chosen by IslandState.mode (priority handled there):
-//   osd · notification · workspace · media · clock
+//   osd · notification · workspace · media · window · date · clock
 // Every mode is a primary line plus a secondary line that only shows while the notch peeks
 // (hover or transient state). `maxWidth` is the room the notch has between the bar islands.
 import QtQuick
+import Quickshell.Widgets
 import "../.."
 import "../../services"
 import "../../components"
@@ -44,6 +45,8 @@ Item {
                 case "agent":        return agentView;
                 case "workspace":    return workspaceView;
                 case "media":        return mediaView;
+                case "window":       return windowView;
+                case "date":         return dateView;
                 default:             return clockView;
             }
         }
@@ -101,7 +104,47 @@ Item {
         }
     }
 
-    // ---- now playing: art 22×22 · title · "· app" · equalizer ----
+    // ---- focused window (islandContent "window"): icon · context title · chip in the peek line ----
+    Component {
+        id: windowView
+        Column {
+            spacing: 1
+            Row {
+                anchors.horizontalCenter: parent.horizontalCenter
+                spacing: Theme.spacingSm
+                IconImage {
+                    anchors.verticalCenter: parent.verticalCenter
+                    source: WindowContext.icon
+                    implicitSize: Theme.iconSm
+                    asynchronous: true
+                    visible: WindowContext.icon.length > 0
+                }
+                UiText {
+                    anchors.verticalCenter: parent.verticalCenter
+                    text: Hypr.activeTitle || WindowContext.title
+                    weight: Theme.weightMedium
+                    width: Math.min(implicitWidth, Theme.notchMediaTitleMax, Math.max(60, root.maxWidth - Theme.iconSm - Theme.spacingSm))
+                }
+            }
+            PeekLine {
+                anchors.horizontalCenter: parent.horizontalCenter
+                text: [WindowContext.appName, WindowContext.chip].filter(s => s.length > 0).join(" · ")
+            }
+        }
+    }
+
+    // ---- date (islandContent "date"): lavender dot · weekday day month · time ----
+    Component {
+        id: dateView
+        Row {
+            spacing: Theme.spacingSm
+            Rectangle { anchors.verticalCenter: parent.verticalCenter; width: 5; height: 5; radius: 2.5; color: Theme.lavender }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: Clock.dateFormatted; weight: Theme.weightMedium; color: Theme.textSoft }
+            UiText { anchors.verticalCenter: parent.verticalCenter; text: Clock.time; mono: true; weight: Theme.weightSemiBold }
+        }
+    }
+
+    // ---- now playing: art 18×18 · title · "· app" · equalizer ----
     Component {
         id: mediaView
         Column {

@@ -4,3 +4,5 @@ lmbionic-bin
 otf-apple-sf-mono
 android-studio
 hermes-agent
+whitesur-icon-theme
+mactahoe-icon-theme-git

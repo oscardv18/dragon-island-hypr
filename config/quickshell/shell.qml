@@ -1,4 +1,4 @@
-//@ pragma IconTheme Sweet-Purple
+//@ pragma IconTheme Dragon-Core
 // =============================================================================
 // dragon-island — shell.qml
 // Per monitor: the floating bar, the notch (dragon-island), popovers (dragon-popover), the modal panels
@@ -20,6 +20,7 @@ import "modules/notifications"
 import "modules/wallpapers"
 import "modules/store"
 import "modules/herdrhelp"
+import "modules/settings"
 import "modules/dock"
 import "modules/lock"
 import "debug"
@@ -32,6 +33,30 @@ ShellRoot {
         target: Theme
         property: "motionScale"
         value: Settings.motionScale
+    }
+
+    // Bar style (A / B / C / D) and the D reveal: Theme derives every bar / notch size from them
+    Binding {
+        target: Theme
+        property: "barStyle"
+        value: Settings.barStyle
+    }
+    Binding {
+        target: Theme
+        property: "barSize"
+        value: Settings.barSize
+    }
+    Binding {
+        target: Theme
+        property: "barRevealed"
+        value: BarState.revealed
+    }
+
+    // New identity: how much purple the active states carry (Settings → Apariencia)
+    Binding {
+        target: Theme
+        property: "accentIntensity"
+        value: Settings.accentIntensity
     }
 
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
@@ -81,6 +106,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { HerdrHelpWindow {} }
+    }
+
+    // Ajustes (SUPER + F2): no scrim, the bar stays visible while its style changes
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { SettingsWindow {} }
     }
 
     Variants {

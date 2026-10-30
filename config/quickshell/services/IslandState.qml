@@ -1,13 +1,14 @@
 // =============================================================================
 // dragon-island — IslandState.qml
 // Which content the collapsed notch shows. Shared by every monitor.
-// Priority: OSD > notification > workspace change > now playing > clock.
+// Priority: OSD > notification > workspace change > the resting content (Settings.islandContent):
+//   "media" now playing, else the clock · "window" the focused window, else the clock · "date" clock + date.
 // Transient states (OSD, notification, workspace) are shown as a "peek" of the notch and
 // return on their own.
 // =============================================================================
 /**
  * Properties:
- *   - mode: string [readonly] ("osd" | "tiling" | "notification" | "workspace" | "media" | "clock")
+ *   - mode: string [readonly] ("osd" | "tiling" | "notification" | "agent" | "workspace" | "media" | "window" | "date" | "clock")
  *   - isTransient: bool [readonly] (mode is osd / notification / workspace → the notch peeks)
  *   - workspaceId: int [readonly] (the one shown in "workspace" mode)
  *   - notification: Notification [readonly] (the one shown in "notification" mode)
@@ -35,8 +36,11 @@ Singleton {
         if (agentFlash && agentEvent) return "agent";   // above notifications: herdr's own system toast says the same
         if (notifFlash && notification) return "notification";
         if (workspaceFlash) return "workspace";
-        if (Media.hasPlayer && Media.title.length > 0) return "media";
-        return "clock";
+        switch (Settings.islandContent) {
+            case "window": return Hypr.hasActiveWindow ? "window" : "clock";
+            case "date":   return "date";
+            default:       return Media.hasPlayer && Media.title.length > 0 ? "media" : "clock";
+        }
     }
     readonly property bool isTransient: mode === "osd" || mode === "tiling" || mode === "notification" || mode === "agent" || mode === "workspace"
 

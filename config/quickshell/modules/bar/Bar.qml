@@ -1,12 +1,19 @@
 // =============================================================================
 // dragon-island — Bar.qml
-// Floating bar (10 px from the top, 14 px from the sides, height 40) made of two side islands.
-// Each island is its own layer window of exactly the island's size (namespace "dragon-bar"), fully
-// transparent (alpha 0) around the rounded island: hyprglass masks by alpha (mask_mode = "alpha"), so the
-// glass has the island's rounded corners and the gaps between islands stay clean. No BackgroundEffect
-// blurRegion: a Wayland region can only be rectangles, which left square tips at the corners.
-// A third, 1 px high transparent window ("dragon-bar-zone") only reserves the bar's space so tiled
-// windows start below it; it has an empty input mask and no blur.
+// The top bar in one of four styles (Settings.barStyle → Theme.barStyle / Theme.barLook, see Theme "Bar"):
+//   A / B / D  two side islands, each its own layer window (namespace "dragon-bar"), fully transparent (alpha 0)
+//              around the rounded island: hyprglass masks by alpha (mask_mode = "alpha"), so the glass has the
+//              island's rounded corners and the gaps between islands stay clean (one blur region per window, §7e).
+//   C          one edge-to-edge glass strip in ONE window holding both islands' content (a single shape, so it
+//              is still one region per window); the side windows are unmapped meanwhile.
+// Every window keeps a CONSTANT size whatever the style (Theme.barWindowHeight; the islands are placed inside
+// with y): resizing a layer surface is a compositor round trip and lagged behind the animation (§7r). Switching
+// styles maps / unmaps windows and changes the reserved space, nothing else.
+// A 1 px transparent window ("dragon-bar-zone") only reserves the bar's space (Theme.barZone: 31 / 32 / 24 / 18)
+// so tiled windows start below it; it has an empty input mask and no blur.
+// Style D: each window holds its own 3 px hot strip at the top edge (in its input mask, §7x); hovering it, an
+// island or the notch reveals style B (BarState.revealed) without changing the reserved space.
+// barAutohide (A / B / C): over a maximized window the islands dim to Theme.barDimOpacity until hovered.
 // =============================================================================
 import Quickshell
 import Quickshell.Wayland
@@ -20,6 +27,8 @@ Scope {
     property var modelData
     readonly property string screenName: modelData?.name ?? ""
     readonly property real screenWidth: modelData?.width ?? 0
+    readonly property bool joined: Theme.barStyle === "C"
+    readonly property real contentOpacity: BarState.dimmedOn(modelData) ? Theme.barDimOpacity : 1
 
     // Popover under a capsule. `item` is the capsule, `windowX` the screen x of the island's window, `side`
     // "right" (right island: popover's right edge on the capsule's right edge) or "left" (left edges).
@@ -34,8 +43,8 @@ Scope {
     }
 
     // Tell the notch where the islands end (screen x)
-    readonly property real leftEnd: leftWindow.screenX + leftIsland.width
-    readonly property real rightStart: bar.screenWidth - Theme.barMarginSide - rightIsland.width
+    readonly property real leftEnd: joined ? stripLeft.x + stripLeft.width : leftWindow.screenX + leftIsland.width
+    readonly property real rightStart: joined ? stripRight.x : bar.screenWidth - Theme.barMarginSide - rightIsland.width
     onLeftEndChanged: BarMetrics.report(screenName, leftEnd, rightStart)
     onRightStartChanged: BarMetrics.report(screenName, leftEnd, rightStart)
     Component.onCompleted: BarMetrics.report(screenName, leftEnd, rightStart)
@@ -44,33 +53,35 @@ Scope {
     PanelWindow {
         screen: bar.modelData
         anchors { top: true; left: true; right: true }
-        margins { top: Theme.barMarginTop; left: Theme.barMarginSide; right: Theme.barMarginSide }
         implicitHeight: 1
-        exclusiveZone: Theme.barHeight
+        exclusiveZone: Theme.barZone
         color: Theme.transparent
         mask: Region {}
         WlrLayershell.namespace: "dragon-bar-zone"
         WlrLayershell.layer: WlrLayer.Top
     }
 
-    // ---- left island ----
+    // ---- side islands (A, B, D) ----
     // The island windows keep a CONSTANT size (the most their island can ever need) and are transparent around it:
-    // resizing a layer surface is a compositor round trip, so a window that followed the island's animated width
-    // lagged behind it (clipped, late contractions). The input mask is the island itself, and hyprglass takes
-    // its shape from the alpha, so the empty part of the window costs nothing and shows nothing.
+    // the input mask is the island itself (plus the D hot strip), and hyprglass takes its shape from the alpha,
+    // so the empty part of the window costs nothing and shows nothing.
     readonly property real leftWindowWidth: Math.max(1, (bar.screenWidth - Theme.barMarginSide * 2) / 2 - Theme.notchReserve / 2 - Theme.barIslandGap)
     readonly property real rightWindowWidth: Math.max(1, Math.round(bar.screenWidth * 0.47))
 
     PanelWindow {
         id: leftWindow
         screen: bar.modelData
+        visible: !bar.joined
         readonly property real screenX: Theme.barMarginSide
 
         anchors { top: true; left: true }
-        margins { top: Theme.barMarginTop; left: Theme.barMarginSide }
+        margins { left: Theme.barMarginSide }
         implicitWidth: bar.leftWindowWidth
-        mask: Region { item: leftIsland }
-        implicitHeight: Theme.barHeight
+        implicitHeight: Theme.barWindowHeight
+        mask: Region {
+            item: leftIsland
+            Region { item: leftEdge }
+        }
         exclusionMode: ExclusionMode.Ignore
         color: Theme.transparent
 
@@ -80,42 +91,114 @@ Scope {
         // Caffeine: keeps the session from going idle (hypridle / screen off) while enabled
         IdleInhibitor {
             window: leftWindow
-            enabled: Caffeine.enabled
+            enabled: Caffeine.enabled && leftWindow.visible
         }
+
+        EdgeStrip { id: leftEdge; source: "edge-left" }
 
         LeftIsland {
             id: leftIsland
             bar: bar
+            y: Theme.barMarginTop
             windowX: leftWindow.screenX
+            live: !bar.joined
+            opacity: bar.contentOpacity
             // never reach the centre, where the collapsed notch sits
             maxWidth: Math.max(0, (bar.screenWidth - Theme.barMarginSide * 2) / 2 - Theme.notchReserve / 2 - Theme.barIslandGap)
+            HoverHandler { onHoveredChanged: BarState.hover("left", hovered) }
         }
     }
 
-    // ---- right island ----
     PanelWindow {
         id: rightWindow
         screen: bar.modelData
+        visible: !bar.joined
         readonly property real screenX: bar.screenWidth - Theme.barMarginSide - bar.rightWindowWidth
 
         anchors { top: true; right: true }
-        margins { top: Theme.barMarginTop; right: Theme.barMarginSide }
+        margins { right: Theme.barMarginSide }
         implicitWidth: bar.rightWindowWidth
-        mask: Region { item: rightIsland }
-        implicitHeight: Theme.barHeight
+        implicitHeight: Theme.barWindowHeight
+        mask: Region {
+            item: rightIsland
+            Region { item: rightEdge }
+        }
         exclusionMode: ExclusionMode.Ignore
         color: Theme.transparent
 
         WlrLayershell.namespace: "dragon-bar"
         WlrLayershell.layer: WlrLayer.Top
 
+        EdgeStrip { id: rightEdge; source: "edge-right" }
+
         RightIsland {
             id: rightIsland
             bar: bar
+            y: Theme.barMarginTop
             anchors.right: parent.right
             windowX: rightWindow.screenX
+            opacity: bar.contentOpacity
             // the room the left island and the collapsed notch leave it
             maxWidth: Math.max(0, bar.screenWidth - Theme.barMarginSide * 2 - leftIsland.width - Theme.notchSideReserve)
+            HoverHandler { onHoveredChanged: BarState.hover("right", hovered) }
+        }
+    }
+
+    // ---- C: one edge-to-edge glass strip with both islands inside ----
+    PanelWindow {
+        id: stripWindow
+        screen: bar.modelData
+        visible: bar.joined
+
+        anchors { top: true; left: true; right: true }
+        implicitHeight: Theme.barWindowHeight
+        mask: Region { item: strip }
+        exclusionMode: ExclusionMode.Ignore
+        color: Theme.transparent
+
+        WlrLayershell.namespace: "dragon-bar"
+        WlrLayershell.layer: WlrLayer.Top
+
+        IdleInhibitor {
+            window: stripWindow
+            enabled: Caffeine.enabled && stripWindow.visible
+        }
+
+        Rectangle {
+            id: strip
+            width: parent.width
+            height: Theme.barHeight
+            color: Theme.glassBg
+            opacity: bar.contentOpacity
+            Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
+            HoverHandler { onHoveredChanged: BarState.hover("strip", hovered) }
+
+            // bottom line, white 7 %
+            Rectangle {
+                anchors.bottom: parent.bottom
+                width: parent.width
+                height: Theme.barStripLine
+                color: Theme.hairline
+            }
+
+            LeftIsland {
+                id: stripLeft
+                bar: bar
+                bare: true
+                live: bar.joined
+                x: Theme.spacingSm
+                windowX: 0
+                maxWidth: Math.max(0, bar.screenWidth / 2 - Theme.notchReserve / 2 - Theme.spacingSm)
+            }
+
+            RightIsland {
+                id: stripRight
+                bar: bar
+                bare: true
+                x: parent.width - width - Theme.spacingSm
+                windowX: 0
+                maxWidth: Math.max(0, bar.screenWidth - Theme.spacingSm * 2 - stripLeft.width - Theme.notchSideReserve)
+            }
         }
     }
 }

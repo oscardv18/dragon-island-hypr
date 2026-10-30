@@ -9,9 +9,9 @@ hl.config({
 		border_size = 2,
 
 		col = {
-			-- Brand gradient: 135deg, accent (#c50ed2) -> violet (#7c3aed) -> cyan (#00c1e4)
-			active_border = { colors = { "rgba(c50ed2ff)", "rgba(7c3aedff)", "rgba(00c1e4ff)" }, angle = 135 },
-			inactive_border = "rgba(262838cc)", -- outline #262838
+			-- new identity: lavender (#c8b6e6) → cyan (#67e8f9) at 45°; no magenta / pink / green any more
+			active_border = { colors = { "rgba(c8b6e6ff)", "rgba(67e8f9ff)" }, angle = 45 },
+			inactive_border = "rgba(ffffff14)", -- white 8 %: almost invisible
 		},
 
 		resize_on_border = true,

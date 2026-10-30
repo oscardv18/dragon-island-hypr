@@ -54,7 +54,7 @@ ColumnLayout {
                 Layout.fillWidth: true
                 Layout.preferredHeight: 42
 
-                BrandFill {
+                AccentFill {
                     anchors.fill: parent
                     radius: Theme.capsuleRadius + 2
                     visible: day.isToday
@@ -73,7 +73,7 @@ ColumnLayout {
                         text: Clock.daysShort[day.date.getDay()].slice(0, 3).toUpperCase()
                         size: Theme.sizeCaption - 1
                         weight: Theme.weightSemiBold
-                        color: day.isToday ? Theme.alpha(Theme.onBrand, 0.85) : Theme.textDim
+                        color: day.isToday ? Theme.alpha(Theme.lavenderInk, 0.85) : Theme.textDim
                     }
                     UiText {
                         anchors.horizontalCenter: parent.horizontalCenter
@@ -81,7 +81,7 @@ ColumnLayout {
                         mono: true
                         size: Theme.sizeBodyLg
                         weight: day.isToday ? Theme.weightBold : Theme.weightMedium
-                        color: day.isToday ? Theme.onBrand : Theme.text
+                        color: day.isToday ? Theme.lavenderInk : Theme.text
                     }
                 }
                 // day with events

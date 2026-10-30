@@ -121,6 +121,9 @@ fonts="$(fc-list 2>/dev/null || true)"
 ck "Fuente Outfit" "yay -S ttf-outfit (módulo theme)" has "outfit" "$fonts"
 ck "JetBrains Mono Nerd" "sudo pacman -S ttf-jetbrains-mono-nerd" has "JetBrainsMono Nerd|JetBrains Mono Nerd" "$fonts"
 ck "Tema de iconos Sweet-Purple" "yay -S candy-icons-git sweet-folders-icons-git" test -d /usr/share/icons/Sweet-Purple
+ck "Iconos MacTahoe-purple-dark (base de Dragon-Core)" "yay -S mactahoe-icon-theme-git" test -d /usr/share/icons/MacTahoe-purple-dark
+ck "Iconos WhiteSur-dark (respaldo de Dragon-Core)" "yay -S whitesur-icon-theme" test -d /usr/share/icons/WhiteSur-dark
+ck "Tema de iconos del shell Dragon-Core" "./update.sh (migración 021)" test -f "$HOME/.local/share/icons/Dragon-Core/index.theme"
 
 echo "Login"
 dm="$(display_manager)"

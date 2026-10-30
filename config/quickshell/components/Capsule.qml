@@ -1,4 +1,4 @@
-// Bar capsule: height 28, radius 9, padding 0 10, gap 6. Hover/open → surfaceHi (120 ms).
+// Bar capsule: height 28, radius 9, padding 0 10, gap 6. Hover → white 8 %, open → accent tint (120 ms).
 import QtQuick
 import ".."
 
@@ -6,7 +6,7 @@ Item {
     id: root
 
     property bool active: false     // its popover is open
-    property bool brand: false      // brand gradient background (clock)
+    property bool brand: false      // neutral white 6 % background (clock); the brand gradient is no longer a fill
     property bool flat: false       // no background until hovered (inside a grouped capsule)
     property real padH: Theme.capsulePadH
     property real radius: Theme.capsuleRadius
@@ -16,29 +16,27 @@ Item {
     signal clicked(var mouse)
     signal wheel(real delta)
 
-    implicitHeight: Theme.capsuleHeight
+    implicitHeight: Theme.barCapsuleHeight
     implicitWidth: row.implicitWidth + padH * 2
 
     Rectangle {
         anchors.fill: parent
         radius: root.radius
-        visible: !root.brand
-        color: root.active || root.hovered ? Theme.surfaceHi : (root.flat ? Theme.transparent : Theme.surface2)
-        Behavior on color { ColorAnimation { duration: Theme.durHover } }
-    }
-
-    BrandFill {
-        anchors.fill: parent
-        radius: root.radius
-        visible: root.brand
+        color: root.brand ? Theme.neutralFill : (root.flat ? Theme.transparent : Theme.surface2)
     }
 
     Rectangle {
         anchors.fill: parent
         radius: root.radius
-        visible: root.brand
         color: Theme.hoverOverlay
-        opacity: root.hovered || root.active ? 1 : 0
+        opacity: root.hovered && !root.active ? 1 : 0
+        Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
+    }
+
+    AccentFill {
+        anchors.fill: parent
+        radius: root.radius
+        opacity: root.active ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
     }
 

@@ -29,10 +29,12 @@ Item {
             color: root.color
             visible: !root.brand
         }
-        BrandFill {
+        AccentFill {
             anchors.fill: parent
             radius: height / 2
             visible: root.brand
+            color: Theme.lavender
+            border.width: 0
         }
     }
 }
