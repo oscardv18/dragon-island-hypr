@@ -45,5 +45,28 @@ Los identificadores son estables. Las acciones se devuelven sin ejecutarlas.
   Buscar no escribe nada. `dragon-search emoji-use <id>` registra el uso con
   escritura atómica y bloqueo en `emoji-recent.json` (máximo 100 recientes).
 
-Pruebas integradas en `tests/run-all.sh`. Falta cerrar los puntos 2 y 3 y verificar
-el conjunto completo; este documento se completa en los siguientes commits.
+## 2. Uso de aplicaciones
+
+`dragon-usage record <desktop-id>`, `stats --json`, `forget <desktop-id>`, `reset`.
+Mutaciones responden `{"ok":true}`; stats devuelve `{"apps":[...]}` según el contrato.
+Solo se aceptan IDs (letras, cifras, punto, guion, guion bajo, más; máximo 255).
+Nunca rutas, argumentos ni contenido de los lanzamientos. No importa automáticamente
+los contadores de `launcher.json`: la interfaz decide cuándo empezar a registrar.
+
+`$XDG_STATE_HOME/dragon-island/usage.json` tiene versión 1. Cada app conserva hasta
+2000 eventos; el exceso se agrupa por segundo durante siete días y después se
+reduce a contador y suma exponencial con fecha de referencia. Así `week` sigue
+siendo exacto incluso con más de 2000 lanzamientos semanales y la compactación
+conserva la curva de decaimiento, con vida media de siete días. `week` usa
+`ahora-7d < tiempo <= ahora`; `frecency` se normaliza por el máximo y se redondea
+a doce decimales. El cálculo usa una referencia común para evitar que el paso de
+unos segundos altere las proporciones con los mismos eventos. Orden: frecency
+descendente e ID en empates. Sin eventos: lista vacía, sin crear archivos.
+
+Todas las escrituras comparten `flock` sobre un archivo separado, archivo temporal
+0600, fsync y reemplazo atómico. Un estado corrupto produce error sin sobrescribir
+el original. Las consultas no escriben. Verificadas dos instancias simultáneas,
+compactación, ventanas temporales, normalización, olvido y reset.
+
+Pruebas integradas en `tests/run-all.sh`. Falta cerrar el punto 3 y verificar
+el conjunto completo; este documento se completa en el siguiente commit.
