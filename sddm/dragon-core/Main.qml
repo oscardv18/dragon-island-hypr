@@ -226,7 +226,7 @@ Rectangle {
 
     // ── the orbit and the users on it ──
     readonly property real ccx: width / 2
-    readonly property real ccy: height * 0.47
+    readonly property real ccy: height * 0.43
     readonly property real orbitRx: Math.min(width * 0.22, 440 * s)
     readonly property real orbitRy: orbitRx * 0.28
     Shape {
@@ -384,42 +384,59 @@ Rectangle {
         onPicked: { root.manual = false; pw.forceActiveFocus() }
     }
 
-    // ── who, password, session ──
+    // ── who: off the core, on a soft plate ──
+    // the sphere's edge at rest; «ok» swells it ×1.22 (≤ 0.22 r, under the 28 px gap) and listening breathes ±3.5 %
+    readonly property real sphereBottom: core.y + core.height / 2 + core.width * 0.25
+    Rectangle {
+        id: who
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: root.sphereBottom + Math.max(28, 28 * root.s)
+        width: whoCol.implicitWidth + 40 * root.s
+        height: whoCol.implicitHeight + 14 * root.s
+        radius: 18 * root.s
+        // dense enough to dim the HUD dial that crosses here, the wallpaper still shows through
+        color: Qt.rgba(root.cInk.r, root.cInk.g, root.cInk.b, 0.62)
+        border.color: root.cLine
+        Column {
+            id: whoCol
+            anchors.centerIn: parent
+            spacing: 2 * root.s
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: !root.manual
+                text: root.displayName
+                color: root.cText
+                font.family: root.uiFont; font.pixelSize: 24 * root.s; font.weight: Font.Medium
+                style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5)
+            }
+            TextInput {   // «Otro usuario» (or no listed users)
+                id: manualUser
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: root.manual
+                width: 220 * root.s
+                horizontalAlignment: TextInput.AlignHCenter
+                color: root.cText
+                font.family: root.uiFont; font.pixelSize: 22 * root.s
+                KeyNavigation.tab: pw
+                onAccepted: pw.forceActiveFocus()
+                Text { anchors.fill: parent; horizontalAlignment: Text.AlignHCenter; visible: !parent.text; text: "Usuario"; color: root.cDim; font: parent.font }
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: !root.manual
+                text: root.currentUser
+                color: root.cSoft
+                font.family: root.monoFont; font.pixelSize: 12 * root.s
+            }
+        }
+    }
+
+    // ── password, session ──
     Column {
         id: auth
         anchors.horizontalCenter: parent.horizontalCenter
-        y: avatar.y + avatar.height + 14 * root.s
+        y: who.y + who.height + 16 * root.s
         spacing: 2 * root.s
-
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: !root.manual
-            text: root.displayName
-            color: root.cText
-            font.family: root.uiFont; font.pixelSize: 24 * root.s; font.weight: Font.Medium
-            style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.4)
-        }
-        TextInput {   // «Otro usuario» (or no listed users)
-            id: manualUser
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: root.manual
-            width: 220 * root.s
-            horizontalAlignment: TextInput.AlignHCenter
-            color: root.cText
-            font.family: root.uiFont; font.pixelSize: 22 * root.s
-            KeyNavigation.tab: pw
-            onAccepted: pw.forceActiveFocus()
-            Text { anchors.fill: parent; horizontalAlignment: Text.AlignHCenter; visible: !parent.text; text: "Usuario"; color: root.cDim; font: parent.font }
-        }
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: !root.manual
-            text: root.currentUser
-            color: root.cDim
-            font.family: root.monoFont; font.pixelSize: 12 * root.s
-        }
-
-        Item { width: 1; height: 14 * root.s }
 
         // password field
         Rectangle {
@@ -538,7 +555,9 @@ Rectangle {
         width: Math.max(200 * root.s, sessionList.contentWidth + 16 * root.s)
         height: sessionList.contentHeight + 12 * root.s
         x: root.width / 2 - width / 2
-        y: auth.y + auth.height + 8 * root.s
+        // under the pill, or over it when the screen ends first
+        y: auth.y + auth.height + 8 * root.s + height <= root.height - 8 * root.s
+           ? auth.y + auth.height + 8 * root.s : auth.y + sessionPill.y - height - 8 * root.s
         radius: 14 * root.s
         color: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.92)
         border.color: root.cLine
