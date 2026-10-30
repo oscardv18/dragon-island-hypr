@@ -19,13 +19,22 @@ Item {
     id: root
 
     property bool shown: false
-    property string page: "bar"            // "appearance" | "bar"
+    property string page: "bar"            // "appearance" | "bar" | "privacy" | "power"
     property real t: 0
 
     readonly property var pages: [
         { key: "appearance", label: "Apariencia",     icon: Icons.palette },
-        { key: "bar",        label: "Barra superior", icon: Icons.barTop }
+        { key: "bar",        label: "Barra superior", icon: Icons.barTop },
+        { key: "privacy",    label: "Privacidad",     icon: Icons.eyeOff },
+        { key: "power",      label: "Energía",        icon: Icons.sleep }
     ]
+    readonly property var titles: ({
+        appearance: ["Apariencia", "Cuánto púrpura llevan los estados activos y de dónde sale la paleta."],
+        bar:        ["Barra superior", "El cambio se aplica al instante y Hyprland ajusta el espacio reservado."],
+        privacy:    ["Privacidad", "El modo grabación se activa solo mientras grabas o compartes la pantalla."],
+        power:      ["Energía", "Qué pasa cuando dejas el equipo sin usar."]
+    })
+    function minutes(s: int): string { return s % 60 === 0 ? `${s / 60} min` : `${(s / 60).toFixed(1)} min`; }
     readonly property var styles: [
         { key: "A", name: "A · Notch",  text: "Pegado al borde, islas a los lados" },
         { key: "B", name: "B · Island", text: "Píldora flotante que cambia de forma" },
@@ -35,7 +44,11 @@ Item {
 
     function key(e): void {
         if (e.key >= Qt.Key_1 && e.key <= Qt.Key_4 && root.page === "bar") { Settings.setBarStyle(root.styles[e.key - Qt.Key_1].key); e.accepted = true; }
-        else if (e.key === Qt.Key_Tab || e.key === Qt.Key_Backtab) { root.page = root.page === "bar" ? "appearance" : "bar"; e.accepted = true; }
+        else if (e.key === Qt.Key_Tab || e.key === Qt.Key_Backtab) {
+            const keys = root.pages.map(p => p.key), i = keys.indexOf(root.page);
+            root.page = keys[(i + (e.key === Qt.Key_Backtab ? keys.length - 1 : 1)) % keys.length];
+            e.accepted = true;
+        }
     }
 
     onShownChanged: {
@@ -139,7 +152,7 @@ Item {
                     height: titleText.implicitHeight
                     UiText {
                         id: titleText
-                        text: root.page === "bar" ? "Barra superior" : "Apariencia"
+                        text: root.titles[root.page][0]
                         size: Theme.sizeGreeting
                         weight: Theme.weightSemiBold
                     }
@@ -155,16 +168,27 @@ Item {
                     }
                 }
                 UiText {
-                    text: root.page === "bar" ? "El cambio se aplica al instante y Hyprland ajusta el espacio reservado."
-                                              : "Cuánto púrpura llevan los estados activos y de dónde sale la paleta."
+                    text: root.titles[root.page][1]
                     color: Theme.textDim
                 }
             }
 
+            // the pages scroll below the header (Barra superior is taller than a 768 px screen allows)
+            Flickable {
+                id: pageFlick
+                y: header.height + Theme.spacingLg
+                width: parent.width
+                height: parent.height - y
+                contentWidth: width
+                contentHeight: Math.max(barPage.visible ? barPage.implicitHeight : 0, appearancePage.visible ? appearancePage.implicitHeight : 0,
+                                        privacyPage.visible ? privacyPage.implicitHeight : 0, powerPage.visible ? powerPage.implicitHeight : 0)
+                clip: true
+                boundsBehavior: Flickable.StopAtBounds
+
             // ======== Barra superior ========
             Column {
+                id: barPage
                 visible: root.page === "bar"
-                y: header.height + Theme.spacingLg
                 width: parent.width
                 spacing: Theme.spacingLg
 
@@ -249,6 +273,18 @@ Item {
                         ToggleSwitch { checked: Settings.barMetrics; onToggled: Settings.setBarMetrics(!Settings.barMetrics) }
                     }
                     SettingsRow {
+                        title: "Avisar de comandos largos"
+                        subtitle: "Un comando de la terminal que dura al menos esto avisa en la isla al terminar"
+                        Stepper {
+                            value: Settings.longCommandSeconds
+                            step: 10
+                            from: 10
+                            to: 600
+                            format: v => `${v} s`
+                            onChanged: v => Settings.setLongCommandSeconds(v)
+                        }
+                    }
+                    SettingsRow {
                         last: true
                         title: "Ocultar automáticamente"
                         subtitle: Settings.barStyle === "D" ? "La barra mínima se esconde hasta que acercas el cursor al borde" : "La barra se atenúa con ventanas maximizadas"
@@ -259,8 +295,8 @@ Item {
 
             // ======== Apariencia ========
             Column {
+                id: appearancePage
                 visible: root.page === "appearance"
-                y: header.height + Theme.spacingLg
                 width: parent.width
                 spacing: Theme.spacingLg
 
@@ -311,6 +347,99 @@ Item {
                         }
                     }
                 }
+            }
+
+            // ======== Privacidad: the recording mode (docs/design/25-grabacion.png) ========
+            Column {
+                id: privacyPage
+                visible: root.page === "privacy"
+                width: parent.width
+                spacing: Theme.spacingLg
+
+                SettingsGroup {
+                    width: parent.width
+                    SettingsRow {
+                        title: "Modo grabación"
+                        subtitle: "Automático: mientras grabas (SUPER + SHIFT + R) o una app captura la pantalla (OBS, una llamada)"
+                        Segmented {
+                            implicitWidth: 230
+                            model: [{ key: "auto", label: "Automático" }, { key: "off", label: "Desactivado" }]
+                            current: Settings.recordingMode
+                            onSelected: k => Settings.setRecordingMode(k)
+                        }
+                    }
+                    SettingsRow {
+                        title: "Retener notificaciones"
+                        subtitle: "Se guardan sin aviso y la isla dice cuántas al terminar"
+                        ToggleSwitch { checked: Settings.recordHold; onToggled: Settings.setFlag("recordHold", !Settings.recordHold) }
+                    }
+                    SettingsRow {
+                        title: "Ocultar títulos de ventanas"
+                        subtitle: "La barra no muestra chats, rutas ni el contexto vivo"
+                        ToggleSwitch { checked: Settings.recordHideTitles; onToggled: Settings.setFlag("recordHideTitles", !Settings.recordHideTitles) }
+                    }
+                    SettingsRow {
+                        title: "Pausar el portapapeles"
+                        subtitle: "Lo que copies no entra en el historial"
+                        ToggleSwitch { checked: Settings.recordPauseClipboard; onToggled: Settings.setFlag("recordPauseClipboard", !Settings.recordPauseClipboard) }
+                    }
+                    SettingsRow {
+                        last: true
+                        title: "Marco de grabación"
+                        subtitle: "Un borde rojo fino recuerda que grabas"
+                        ToggleSwitch { checked: Settings.recordFrame; onToggled: Settings.setFlag("recordFrame", !Settings.recordFrame) }
+                    }
+                }
+                UiText {
+                    width: parent.width
+                    wrapMode: Text.WordWrap
+                    maximumLineCount: 3
+                    text: "Sin obs-websocket no se distingue que OBS capture la pantalla de que la grabe: en automático el modo se activa en cuanto OBS la captura. Mostrar las teclas pulsadas no está disponible: Wayland no deja leerlas sin permisos de administrador."
+                    size: Theme.sizeCaption + 1
+                    color: Theme.textDim
+                }
+            }
+
+            // ======== Energía: the idle sequence (docs/design/26-inactividad.png) ========
+            Column {
+                id: powerPage
+                visible: root.page === "power"
+                width: parent.width
+                spacing: Theme.spacingLg
+
+                SettingsGroup {
+                    width: parent.width
+                    SettingsRow {
+                        title: "Atenuar y avisar"
+                        subtitle: "La pantalla baja y la isla avisa antes de bloquear"
+                        Stepper { value: Settings.idleDimSeconds; step: 60; from: 60; to: 3600; format: v => root.minutes(v); onChanged: v => Settings.setSeconds("idleDimSeconds", v) }
+                    }
+                    SettingsRow {
+                        title: "Bloquear"
+                        subtitle: "El núcleo aparece y se queda en reposo"
+                        Stepper { value: Settings.idleLockSeconds; step: 60; from: 60; to: 7200; format: v => root.minutes(v); onChanged: v => Settings.setSeconds("idleLockSeconds", v) }
+                    }
+                    SettingsRow {
+                        title: "Apagar pantallas"
+                        Stepper { value: Settings.idleScreenOffSeconds; step: 30; from: 60; to: 7200; format: v => root.minutes(v); onChanged: v => Settings.setSeconds("idleScreenOffSeconds", v) }
+                    }
+                    SettingsRow {
+                        title: "Suspender"
+                        Stepper { value: Settings.idleSuspendSeconds; step: 300; from: 300; to: 14400; format: v => root.minutes(v); onChanged: v => Settings.setSeconds("idleSuspendSeconds", v) }
+                    }
+                    SettingsRow {
+                        last: true
+                        title: "No avanzar con agentes trabajando"
+                        subtitle: "Mientras un agente de herdr trabaja la secuencia espera"
+                        ToggleSwitch { checked: Settings.idleInhibitAgents; onToggled: Settings.setFlag("idleInhibitAgents", !Settings.idleInhibitAgents) }
+                    }
+                }
+                Row {
+                    spacing: Theme.spacingSm
+                    Glyph { anchors.verticalCenter: parent.verticalCenter; icon: Icons.shield; size: Theme.iconMd; color: Theme.cyan }
+                    UiText { anchors.verticalCenter: parent.verticalCenter; text: "No avanza si hay un vídeo en reproducción, un agente trabajando o el modo grabación activo."; color: Theme.textDim }
+                }
+            }
             }
         }
     }

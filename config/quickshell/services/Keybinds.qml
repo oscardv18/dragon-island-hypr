@@ -99,9 +99,15 @@ Singleton {
     // Keys that work INSIDE the panels (no Hyprland bind): listed here so everything is in one place. Keep in step with
     // docs/KEYBINDS.md ("Teclado dentro de los paneles").
     readonly property var panelGroups: [
+        { name: "Capturas (dentro)", rows: [
+            { text: "Región · Ventana · Pantalla", combos: [["1", "2", "3"]] },
+            { text: "Mover la selección", combos: [["Espacio", "arrastrar"]] },
+            { text: "Copiar y guardar", combos: [["Enter"]] },
+            { text: "Cerrar", combos: [["Esc"]] }
+        ] },
         { name: "Ajustes (dentro)", rows: [
             { text: "Estilo de barra A · B · C · D (página Barra superior)", combos: [["1", "2", "3", "4"]] },
-            { text: "Cambiar de página", combos: [["Tab"]] },
+            { text: "Cambiar de página", combos: [["Tab"], ["Shift+Tab"]] },
             { text: "Cerrar", combos: [["Esc"]] }
         ] },
         { name: "Referencia de herdr (dentro)", rows: [
