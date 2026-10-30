@@ -46,7 +46,7 @@ busctl --user status org.freedesktop.secrets | grep -E '^(PID|Comm)='   # debe s
 
 La contraseña se teclea con la distribución activa. El tema de login fuerza el índice 0 (`us`) y la sesión de Hyprland tiene `us,latam` con `us` primera.
 Si el login arranca en otra: `sudo localectl set-x11-keymap us,latam` (o `./install.sh --modules keyboard`). En la TTY: `sudo localectl set-keymap us`.
-Si ya iniciaste sesión, `Alt+Shift` o `SUPER + ALT + Space` cambian de distribución; la cápsula `US`/`LA` de la barra también.
+Si ya iniciaste sesión, `SUPER + ALT + Space` cambia de distribución (también en la pantalla de bloqueo); la cápsula `US`/`LA` de la barra también.
 
 ## El bloqueo se queda trabado (la pantalla no responde al desbloquear)
 

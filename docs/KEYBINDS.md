@@ -66,11 +66,10 @@ Dos distribuciones: **English (US)** (la primera, la que resuelve los atajos) y 
 
 | Atajo | Acción |
 |---|---|
-| `ALT + SHIFT` | Cambiar de distribución (`grp:alt_shift_toggle`, del propio xkb) |
 | `SUPER + ALT + Space` | Cambiar de distribución (`hyprctl switchxkblayout all next`) |
 | Clic en la cápsula `US` / `LA` (isla derecha, antes de Wi‑Fi) | Siguiente distribución |
 
-El bloqueo (hyprlock) usa las mismas dos distribuciones: `ALT + SHIFT` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa.
+El bloqueo usa las mismas dos distribuciones: `SUPER + ALT + Space` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa. `ALT + SHIFT` ya no cambia de distribución (chocaba con `ALT + SHIFT + Tab`, el Alt+Tab orbital hacia atrás).
 
 ## herdr (SUPER + A)
 

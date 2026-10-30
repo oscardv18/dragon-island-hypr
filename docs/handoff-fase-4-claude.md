@@ -38,7 +38,7 @@ Rama `feat/nueva-identidad`. Prompt: `docs/design/PROMPT-identidad-fase-4-claude
 
 ## No verificado (necesita teclado o ratón físicos)
 
-- **Soltar Alt de verdad.** El atajo `ALT + Alt_L` con `release = true, transparent = true` está cargado (`hyprctl binds` lo lista con `release=true`). La ventana también confirma con su propio `Keys.onReleased`. Pero `send_shortcut` no genera la liberación de un modificador, así que no pude probar la secuencia real Alt↓ Tab Tab Alt↑.
+- ~~**Soltar Alt de verdad.**~~ Comprobado después con un teclado virtual (sección «Alt+Shift fuera de `kb_options`»). Nota original: El atajo `ALT + Alt_L` con `release = true, transparent = true` está cargado (`hyprctl binds` lo lista con `release=true`). La ventana también confirma con su propio `Keys.onReleased`. Pero `send_shortcut` no genera la liberación de un modificador, así que no pude probar la secuencia real Alt↓ Tab Tab Alt↑.
 - **Arrastrar** una ventana entre tarjetas de escritorios (no hay ratón virtual). `Hypr.moveWindowSilent` usa el dispatcher documentado (`window.move{window, workspace, follow = false}`), pero no se ejecutó.
 - **Clics y rueda:** clic en planetas, chips, tarjetas y filas; clic central; rueda sobre «Todas» y los anillos. Son las mismas funciones que se probaron por teclado e IPC.
 - Lunas de terminal con dos ventanas de Ghostty reales (solo había una); `Ctrl+P` (fijar) y `Supr` (borrar) en el portapapeles; un segundo monitor.
@@ -53,8 +53,20 @@ Rama `feat/nueva-identidad`. Prompt: `docs/design/PROMPT-identidad-fase-4-claude
 - **Giro a 30 fps** con un `Timer` compartido con el núcleo, en vez de `FrameAnimation`: a 60 Hz el launcher gastaba un 119 % de CPU.
 - **Portapapeles en anillo:** 8 tarjetas a la vez (con 12 se amontonaban); el resto gira con ← →. El recuento de caracteres sale de la vista previa de `cliphist list`, que corta en unos 100.
 - **Alt+Tab:** «activa hace X» solo existe para ventanas enfocadas desde que arrancó Quickshell (antes solo hay `focusHistoryID`, sin hora). «Por app» = la ventana más reciente de cada app.
-- **Conflicto conocido:** `kb_options` cambia de distribución con **Alt+Shift**, así que **Alt+Shift+Tab** (anterior) también cambia de US a LA. No hay solución limpia sin tocar `kb_options`; lo decide el usuario.
+- **Alt+Shift ya no cambia de distribución** (decisión del usuario): `grp:alt_shift_toggle` salió de `kb_options` porque disparaba dentro de Alt+Shift+Tab. Queda SUPER+ALT+Space, ahora `locked` para que funcione en el bloqueo. Migración 027.
 - Capturas de Alt+Tab, escritorios y portapapeles **no subidas**: muestran ventanas e historial reales del usuario.
+
+## Alt+Shift fuera de `kb_options` (migración 027)
+
+- `config/hypr/input.lua`: `kb_options = ""`. SUPER+ALT+Space pasa a ser el único atajo y es `locked`, para poder cambiar de distribución al escribir la contraseña en el bloqueo. Comentarios al día en `binds.lua`, `hyprlock.conf`, `KEYBINDS.md`, `README.md` y `TROUBLESHOOTING.md`. `modules/keyboard.sh` deja de escribir el conmutador en el bloque de `local.lua`.
+- `027-no-alt-shift-layout.sh` quita el conmutador de un `input.lua` **copiado** (conserva otras opciones) y del bloque «keyboard» del instalador en `local.lua`; el resto de `local.lua` no se toca. Hace copia antes, es idempotente y recarga Hyprland. Probada en `tests/migrations-fase4.sh`.
+- La migración `001` sigue poniendo el conmutador en un `input.lua` copiado y antiguo, pero la `027` corre después y lo quita. No se reescribió una migración ya aplicada.
+- **Comprobado con teclas reales** (teclado virtual por `/dev/uinput`, escuchando `activelayout` en el socket de Hyprland):
+  - Alt+Shift+Tab abre el switcher sin cambiar la distribución.
+  - SUPER+ALT+Space cambia el teclado físico (Razer) a Spanish (Latin American).
+  - Control: con `grp:alt_shift_toggle` puesto solo en la sesión, el mismo Alt+Shift+Tab sí la cambiaba.
+  - Todo restaurado después.
+  - El teclado virtual también confirma que, al soltar Alt, el switcher enfoca la ventana elegida (el foco pasó a Brave). Eso cierra el «soltar Alt» de «No verificado».
 
 ## Trampas
 
