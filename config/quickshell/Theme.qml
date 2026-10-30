@@ -472,6 +472,31 @@ Singleton {
     readonly property int  searchDebounce:   80        // ms after the last key before dragon-search runs (not scaled)
     readonly property color gravityBackdrop: alpha(bg, 0.55)                 // the view's own dim over the scrim
 
+    // Alt+Tab orbital switcher (docs/design/10-alttab.png), design px on 1366 × 768 like the Gravity launcher
+    readonly property real switcherRingRx:    470
+    readonly property real switcherRingRy:    110
+    readonly property real switcherCenterY:   0.42           // ring centre, fraction of the screen height
+    readonly property real switcherCard:      440            // the chosen card's width (front)
+    readonly property real switcherCardSide:  250            // the others at the sides; the back ones shrink with depth
+    readonly property real switcherAspect:    0.5625         // card height / width (16:9; the capture keeps its own ratio)
+    readonly property real switcherRadius:    16
+    readonly property int  switcherMax:       12             // cards on the ring; more turn with the wheel / Tab
+    readonly property int  switcherShowDelay: 150            // ms: Alt released before this = switch without showing anything
+    readonly property real switcherChipsTop:  34
+    readonly property real switcherTitleGap:  56             // big title under the chosen card
+    readonly property color switcherCardFill: alpha(islandInk, 0.86)
+
+    // Workspaces overview (docs/design/11-escritorios.png)
+    readonly property real overviewCardW:     220
+    readonly property real overviewCardH:     124
+    readonly property real overviewGap:       18
+    readonly property real overviewTop:       30
+    readonly property real overviewPreviewW:  840            // «VISTA PREVIA» panel under the cards
+    readonly property real overviewPreviewTop: 232
+    readonly property real overviewRadius:    14
+    readonly property color overviewWindow:   alpha(islandInk, 0.86)   // a window drawn as a rectangle
+    readonly property color overviewDrop:     cyan
+
     // -------------------------------------------------------------------------
     // Motion (spec "Motion" table). Every duration goes through motionScale.
     // -------------------------------------------------------------------------

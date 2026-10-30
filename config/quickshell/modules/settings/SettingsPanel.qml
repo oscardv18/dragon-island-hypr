@@ -6,7 +6,7 @@
 //                   at once), "Contenido de la isla" (Música / Ventana / Fecha), "Mostrar CPU y RAM",
 //                   "Ocultar automáticamente"
 //   Apariencia      "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
-//   Launcher        "Launcher Gravedad" (off = the previous orbital launcher), "Reducir movimiento"
+//   Launcher        "Launcher Gravedad" (off = the previous orbital launcher), "Alt+Tab orbital", "Reducir movimiento"
 // Every control writes through Settings (settings.json), so it persists and other monitors follow.
 // Keys: 1–4 pick the bar style A–D · Tab switches page · Esc closes.
 // =============================================================================
@@ -453,6 +453,11 @@ Item {
                         title: "Launcher Gravedad"
                         subtitle: "Anillos de apps alrededor del núcleo; apagado vuelve el launcher orbital de antes"
                         ToggleSwitch { checked: Settings.launcherGravity; onToggled: Settings.setFlag("launcherGravity", !Settings.launcherGravity) }
+                    }
+                    SettingsRow {
+                        title: "Alt+Tab orbital"
+                        subtitle: "Anillo de ventanas con captura; apagado, Alt+Tab queda libre para las apps"
+                        ToggleSwitch { checked: Settings.switcherOrbital; onToggled: Settings.setFlag("switcherOrbital", !Settings.switcherOrbital) }
                     }
                     SettingsRow {
                         last: true

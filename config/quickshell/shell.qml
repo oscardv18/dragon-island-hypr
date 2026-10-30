@@ -25,6 +25,7 @@ import "modules/capture"
 import "modules/recording"
 import "modules/idle"
 import "modules/dock"
+import "modules/switcher"
 import "modules/lock"
 import "debug"
 
@@ -108,6 +109,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { DockWindow {} }
+    }
+
+    // Alt+Tab orbital (services/Switcher.qml): mapped only while the ring is shown
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { SwitcherWindow {} }
     }
 
     // the empty desktop's right click opens the orbital wallpaper picker (Bottom layer, under every window)

@@ -103,6 +103,29 @@ bind(mainMod .. " + F2",     hl.dsp.exec_cmd("qs ipc call shell toggle settings"
 bind(mainMod .. " + ALT + B", hl.dsp.exec_cmd("qs ipc call settings cycleBarStyle"),   "Shell · Cambiar el estilo de la barra")
 bind(mainMod .. " + ALT + F", hl.dsp.exec_cmd("qs ipc call focus toggle"),             "Shell · Modo enfoque (45 min)")
 
+-- A boolean of ~/.config/dragon-island/settings.json, read when this file loads (Quickshell reloads Hyprland when the
+-- ones used here change, services/Switcher.qml). Missing file / key: the default.
+local function dragon_setting(key, default)
+    local dir = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")
+    local f = io.open(dir .. "/dragon-island/settings.json", "r")
+    if not f then return default end
+    local text = f:read("*a")
+    f:close()
+    local v = text:match('"' .. key .. '"%s*:%s*(%a+)')
+    if v == "true" then return true elseif v == "false" then return false end
+    return default
+end
+
+-- Alt+Tab orbital (services/Switcher.qml, docs/design/10-alttab.png). Ajustes › Launcher › «Alt+Tab orbital» off:
+-- nothing is bound, apps get Alt+Tab. Releasing Alt confirms (release bind; transparent so no other bind shadows it);
+-- the switcher window also confirms on its own Alt release once it has the keyboard.
+if dragon_setting("switcherOrbital", true) then
+    bind("ALT + Tab",         hl.dsp.exec_cmd("qs ipc call switcher next"),    "Ventanas · Alt+Tab orbital: siguiente")
+    bind("ALT + SHIFT + Tab", hl.dsp.exec_cmd("qs ipc call switcher prev"),    "Ventanas · Alt+Tab orbital: anterior")
+    bind("ALT + Alt_L",       hl.dsp.exec_cmd("qs ipc call switcher confirm"), "Ventanas · Alt+Tab orbital: soltar Alt confirma",
+         { release = true, transparent = true })
+end
+
 -- Session lock & system
 bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc call lock lock || hyprlock"), "Sistema · Bloquear la sesión")
 
