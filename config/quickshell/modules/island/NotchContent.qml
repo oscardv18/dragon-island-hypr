@@ -369,9 +369,11 @@ Item {
                 width: Theme.notchHeight - 8
                 height: width
                 mood: "thinking"
-                fps: 6          // 12 while thinking: it can stay on for hours while agents work (CPU, HANDOFF 8c)
+                // 6 fps while thinking (NeuralCore doubles `fps` off calm): it can stay on for hours while agents work and
+                // every frame repaints the whole 1366 × 270 island window (pulido: 12 → 6 fps, 8,0 → 6,3 % of CPU)
+                fps: 3
                 reducedMotion: !Theme.animationsEnabled
-                running: Theme.animationsEnabled
+                running: Theme.animationsEnabled && !Settings.calmMotion
             }
             UiText {
                 anchors.verticalCenter: parent.verticalCenter
