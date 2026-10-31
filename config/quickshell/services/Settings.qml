@@ -34,6 +34,7 @@
  *   - switcherOrbital: bool [readonly] (Alt + Tab opens the orbital switcher; off = Hyprland does not bind Alt + Tab at all,
  *       config/hypr/binds.lua reads this key, and the Switcher service reloads Hyprland when it changes; default true)
  *   - calmMotion: bool [readonly] (reduceMotion or reducedMotion: what the views check before any continuous animation)
+ *   - worldClocks: list<var> [readonly] ([{ name, tz }], «Fecha y hora»; default Madrid · Nueva York · Tokio)
  *   - glassStyle: string [readonly] ("ahumado" · "clasico" · "liquido": the glass material, services/Glass.qml applies it;
  *       default "ahumado")
  *
@@ -53,6 +54,8 @@
  *   - setRecordingMode(mode: string): void ("auto" | "off")
  *   - setFlag(key: string, on: bool): void (any boolean key above, e.g. "recordFrame")
  *   - setSeconds(key: string, s: int): void (any idle*Seconds key)
+ *   - setWorldClocks(text: string): void ("Madrid=Europe/Madrid, Tokio=Asia/Tokyo"; an IANA zone alone uses its city)
+ *   - worldClocksText(): string (the same text form, for the Ajustes field)
  *   - setGlassStyle(style: string): void ("ahumado" | "clasico" | "liquido"; use Glass.setStyle from the UI)
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
@@ -122,6 +125,20 @@ Singleton {
     readonly property bool reduceMotion: _flag("reduceMotion", false)
     readonly property bool switcherOrbital: _flag("switcherOrbital", true)
     readonly property bool calmMotion: reduceMotion || reducedMotion
+    readonly property var worldClocks: {
+        const v = root._data.worldClocks;
+        if (!Array.isArray(v)) return [{ name: "Madrid", tz: "Europe/Madrid" }, { name: "Nueva York", tz: "America/New_York" }, { name: "Tokio", tz: "Asia/Tokyo" }];
+        return v.filter(c => c && typeof c.tz === "string" && c.tz.length > 0).map(c => ({ name: String(c.name || c.tz.split("/").pop().replace(/_/g, " ")), tz: c.tz }));
+    }
+    function setWorldClocks(text: string): void {
+        const list = String(text).split(",").map(x => x.trim()).filter(x => x.length > 0).map(x => {
+            const i = x.indexOf("=");
+            const tz = (i >= 0 ? x.substring(i + 1) : x).trim();
+            return { name: (i >= 0 ? x.substring(0, i) : tz.split("/").pop().replace(/_/g, " ")).trim(), tz: tz };
+        }).filter(c => /^[A-Za-z0-9_+\-\/]+$/.test(c.tz));
+        _set("worldClocks", list);
+    }
+    function worldClocksText(): string { return root.worldClocks.map(c => `${c.name}=${c.tz}`).join(", "); }
     readonly property var glassStyles: ["ahumado", "clasico", "liquido"]
     readonly property string glassStyle: glassStyles.indexOf(root._data.glassStyle) >= 0 ? root._data.glassStyle : "ahumado"
 

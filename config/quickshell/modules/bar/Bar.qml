@@ -36,7 +36,8 @@ Scope {
     // mapToItem(null, …) is relative to the capsule's own window, hence + windowX for screen coordinates.
     function openFrom(name: string, item, side: string, windowX: real): void {
         const x = side === "left" ? item.mapToItem(null, 0, 0).x : item.mapToItem(null, item.width, 0).x;
-        ShellState.toggleAt(name, bar.screenName, x + windowX, side);
+        const c = item.mapToItem(null, item.width / 2, 0).x;
+        ShellState.toggleAt(name, bar.screenName, x + windowX, side, c + windowX);
     }
 
     function isOpen(name: string): bool {

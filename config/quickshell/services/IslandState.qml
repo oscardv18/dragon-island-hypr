@@ -175,4 +175,11 @@ Singleton {
             notifTimer.restart();
         }
     }
+
+    // Bluetooth: a device connected / its battery dropped under 15 % (Fecha y hora timers use the same notice line)
+    Connections {
+        target: Bluetooth
+        function onDeviceConnected(name) { if (root._armed) root.notice(`${name} conectado`, "bluetooth", Theme.durNotice); }
+        function onBatteryLow(name, pct) { root.notice(`${name} · batería ${pct} %`, "batteryAlert", Theme.durNotice * 2); }
+    }
 }

@@ -17,6 +17,13 @@
  *   - band: string [readonly] ("2.4 GHz" | "5 GHz" | "6 GHz" | "")
  *   - linkSpeed: string [readonly] ("866 Mbit/s" | "")
  *   - ipAddress: string [readonly] ("192.168.1.20/24" | "")
+ *   - gateway: string [readonly]   dns: string [readonly] (first DNS server)   (current connection, "" if unknown)
+ *   - security: string [readonly] (current Wi‑Fi: "WPA2" · "WPA3" · "Abierta" · …)
+ *   - bands: var [readonly] (SSID → "2.4 GHz" | "5 GHz" | "6 GHz", refreshed while scanning; WifiNetwork has no frequency)
+ *   - qrAvailable: bool [readonly] (qrencode installed: «Compartir con QR» is offered)
+ *   - qrPath: string [readonly] (PNG of the current network's QR code after shareQr(), "" before)
+ *   - qrError: string [readonly]
+ *   - hotspotActive: bool [readonly] (an NM connection of mode ap is up)   hotspotName: string [readonly]
  *   - connectivity: NetworkConnectivity [readonly]   connectivityString: string [readonly]
  *   - pendingNetwork: WifiNetwork [readonly] (network being connected from the UI)
  *   - needsPassword: bool [readonly] (last attempt failed with NoSecrets → ask for a PSK)
@@ -27,6 +34,11 @@
  *   - setScanning(on: bool): void  (enable the scanner while the Wi-Fi popover is open)
  *   - connectToWifi(network: WifiNetwork, psk: string): void
  *   - disconnect(): void
+ *   - shareQr(): void (asks NetworkManager for the saved key and renders WIFI:… with qrencode into qrPath)
+ *   - clearQr(): void
+ *   - connectHidden(ssid: string, psk: string): void (`nmcli device wifi connect … hidden yes`)
+ *   - setHotspot(on: bool): void (`nmcli device wifi hotspot` with a generated key; off = `nmcli connection down`)
+ *   - bandOf(network: WifiNetwork): string
  *   - forget(network: WifiNetwork): void
  *   - isSecure(network: WifiNetwork): bool
  *   - securityLabel(network: WifiNetwork): string
@@ -94,6 +106,9 @@ Singleton {
     property string band: ""
     property string linkSpeed: ""
     property string ipAddress: ""
+    property string gateway: ""
+    property string dns: ""
+    readonly property string security: connectedWifiNetwork ? securityLabel(connectedWifiNetwork) : ""
 
     readonly property string activeIface: wifiConnected ? (wifiDevice?.name ?? "") : (wiredConnected ? (wiredDevice?.name ?? "") : "")
 
@@ -101,10 +116,14 @@ Singleton {
         id: detailsProc
         stdout: StdioCollector {
             onStreamFinished: {
-                let band = "", speed = "", ip = "";
+                let band = "", speed = "", ip = "", gw = "", dns = "";
                 for (const raw of this.text.split("\n")) {
                     const line = raw.trim();
-                    if (line.startsWith("IP4.ADDRESS") && !ip) {
+                    if (line.startsWith("IP4.GATEWAY") && !gw) {
+                        gw = line.substring(line.indexOf(":") + 1);
+                    } else if (line.startsWith("IP4.DNS") && !dns) {
+                        dns = line.substring(line.indexOf(":") + 1);
+                    } else if (line.startsWith("IP4.ADDRESS") && !ip) {
                         ip = line.substring(line.indexOf(":") + 1);
                     } else if (line.startsWith("*:")) {
                         // IN-USE:FREQ:RATE  e.g. "*:5180 MHz:866 Mbit/s"
@@ -120,14 +139,16 @@ Singleton {
                 root.band = band;
                 root.linkSpeed = speed;
                 root.ipAddress = ip;
+                root.gateway = gw;
+                root.dns = dns;
             }
         }
     }
 
     function refreshDetails(): void {
         const iface = root.activeIface;
-        if (!iface) { root.band = ""; root.linkSpeed = ""; root.ipAddress = ""; return; }
-        const cmd = `nmcli -t -f IP4.ADDRESS device show '${iface}'; ` +
+        if (!iface) { root.band = ""; root.linkSpeed = ""; root.ipAddress = ""; root.gateway = ""; root.dns = ""; return; }
+        const cmd = `nmcli -t -f IP4.ADDRESS,IP4.GATEWAY,IP4.DNS device show '${iface}'; ` +
             (root.wifiConnected
                 ? `nmcli -t -f IN-USE,FREQ,RATE device wifi list ifname '${iface}' --rescan no`
                 : `echo "SPEED:$(cat /sys/class/net/'${iface}'/speed 2>/dev/null)"`);
@@ -216,6 +237,101 @@ Singleton {
             "command -v nm-connection-editor >/dev/null && exec nm-connection-editor; " +
             "command -v kcmshell6 >/dev/null && exec kcmshell6 kcm_networkmanagement; " +
             "exec systemsettings kcm_networkmanagement"]);
+    }
+
+    // ---- bands of the nearby networks (Quickshell's WifiNetwork has no frequency): while the Wi‑Fi popover scans ----
+    property var bands: ({})
+    function bandOf(network): string { return root.bands[network?.name ?? ""] ?? ""; }
+    Process {
+        id: bandsProc
+        command: ["nmcli", "-t", "-f", "SSID,FREQ", "device", "wifi", "list", "--rescan", "no"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const b = {};
+                for (const raw of this.text.split("\n")) {
+                    const i = raw.lastIndexOf(":");
+                    if (i <= 0) continue;
+                    const ssid = raw.substring(0, i).replace(/\\:/g, ":"), mhz = parseInt(raw.substring(i + 1));
+                    if (!ssid || isNaN(mhz) || b[ssid]) continue;
+                    b[ssid] = mhz >= 5925 ? "6 GHz" : (mhz >= 4900 ? "5 GHz" : "2.4 GHz");
+                }
+                root.bands = b;
+            }
+        }
+    }
+    Timer {
+        interval: 8000
+        running: root.scanning
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: if (!bandsProc.running) bandsProc.running = true
+    }
+
+    // ---- share the current network as a QR code (qrencode) ----
+    property bool qrAvailable: false
+    property string qrPath: ""
+    property string qrError: ""
+    Process {
+        command: ["sh", "-c", "command -v qrencode"]
+        running: true
+        stdout: StdioCollector { onStreamFinished: root.qrAvailable = this.text.trim().length > 0 }
+    }
+    Process {
+        id: qrProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const out = this.text.trim();
+                if (out.startsWith("/")) { root.qrPath = ""; root.qrPath = out; root.qrError = ""; }
+                else root.qrError = out || "No se pudo leer la clave de la red";
+            }
+        }
+    }
+    function shareQr(): void {
+        if (!root.qrAvailable || !root.connectedWifiNetwork) return;
+        const ssid = root.connectedWifiNetwork.name;
+        const kind = root.isSecure(root.connectedWifiNetwork) ? (root.security === "WEP" ? "WEP" : "WPA") : "nopass";
+        // the key of the active connection (NetworkManager asks the secret agent / keyring); WIFI: escapes \ ; , : "
+        qrProc.exec(["sh", "-c", `
+con=$(nmcli -t -f NAME,DEVICE connection show --active | awk -F: -v d="$2" '$2==d {print $1; exit}')
+key=$(nmcli -s -g 802-11-wireless-security.psk connection show "$con" 2>/dev/null)
+[ "$3" != "nopass" ] && [ -z "$key" ] && { echo "Sin clave guardada"; exit 0; }
+esc() { printf '%s' "$1" | sed 's/[\\;,:"]/\\\\&/g'; }
+out="\${XDG_RUNTIME_DIR:-/tmp}/dragon-wifi-qr.png"
+qrencode -o "$out" -s 6 -m 1 --foreground=EDEBF5 --background=0E0C18 "WIFI:T:$3;S:$(esc "$1");P:$(esc "$key");;" && echo "$out"
+`, "sh", ssid, root.wifiDevice?.name ?? "", kind]);
+    }
+    function clearQr(): void { root.qrPath = ""; root.qrError = ""; }
+    onConnectedWifiNetworkChanged: clearQr()
+
+    // ---- hidden network ----
+    Process { id: hiddenProc; stdout: StdioCollector { onStreamFinished: root.lastError = this.text.indexOf("successfully") >= 0 ? "" : this.text.trim().split("\n").pop() } }
+    function connectHidden(ssid: string, psk: string): void {
+        if (!ssid) return;
+        const args = ["nmcli", "device", "wifi", "connect", ssid, "hidden", "yes"];
+        if (psk) args.push("password", psk);
+        hiddenProc.exec(["sh", "-c", '"$@" 2>&1', "sh"].concat(args));
+    }
+
+    // ---- hotspot (shares the wired / other connection; on the only Wi‑Fi adapter it drops the current network) ----
+    property bool hotspotActive: false
+    property string hotspotName: ""
+    Process {
+        id: apProbe
+        command: ["sh", "-c", "for c in $(nmcli -t -f UUID,TYPE connection show --active | awk -F: '$2==\"802-11-wireless\" {print $1}'); do [ \"$(nmcli -g 802-11-wireless.mode connection show \"$c\")\" = ap ] && nmcli -g connection.id connection show \"$c\"; done"]
+        stdout: StdioCollector { onStreamFinished: { const n = this.text.trim().split("\n")[0] ?? ""; root.hotspotName = n; root.hotspotActive = n.length > 0; } }
+    }
+    Process { id: apProc; onExited: apProbe.running = true }
+    function setHotspot(on: bool): void {
+        const dev = root.wifiDevice?.name ?? "";
+        if (on) apProc.exec(["sh", "-c", 'nmcli device wifi hotspot ifname "$1" ssid "$(hostname)-dragon" password "$(head -c 12 /dev/urandom | base64 | tr -dc A-Za-z0-9 | head -c 12)"', "sh", dev]);
+        else if (root.hotspotName) apProc.exec(["nmcli", "connection", "down", root.hotspotName]);
+    }
+    Timer {
+        interval: 10000
+        running: root.scanning
+        repeat: true
+        triggeredOnStart: true
+        onTriggered: if (!apProbe.running) apProbe.running = true
     }
 
     signal connectionChanged(connected: bool, ssid: string)

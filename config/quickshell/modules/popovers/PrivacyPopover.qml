@@ -8,7 +8,6 @@ import "../../components"
 PopoverFrame {
     id: root
     title: "Privacidad"
-    popWidth: Theme.popoverWidthSm
 
     readonly property var labels: ({
         mic:    { text: "Micrófono",           icon: Icons.microphone,  color: Theme.warn },

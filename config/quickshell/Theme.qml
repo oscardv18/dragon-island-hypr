@@ -374,6 +374,7 @@ Singleton {
     readonly property real popoverRadius:  22
     readonly property real popoverPad:     18
     readonly property real popoverGap:     8
+    readonly property real hudGap:         14     // bar → HUD popover: the beam crosses it
     readonly property real popoverMaxListHeight: 420
     readonly property real cardRadius:     18
     readonly property real cardPad:        14
@@ -414,6 +415,51 @@ Singleton {
     readonly property real notchMediaTitleMax: 180
     readonly property real tempMaxC:       100
     readonly property real tempHotC:       85
+
+    // HUD popovers (docs/design/28-emergentes.png, 29-paneles-*.png): one frame for every bar popover
+    readonly property real hudWidth:         380
+    readonly property real hudRadius:        14
+    readonly property real hudPad:           16
+    readonly property real hudRow:           34     // every list row has this height
+    readonly property real hudRowGap:        6
+    readonly property real hudCardRadius:    12
+    readonly property color hudCard:         Qt.rgba(1, 1, 1, 0.035)   // inner cards (current network, a device…)
+    readonly property color hudCardEdge:     Qt.rgba(1, 1, 1, 0.07)
+    readonly property color hudRowFill:      Qt.rgba(1, 1, 1, 0.03)
+    readonly property color hudRowHover:     Qt.rgba(1, 1, 1, 0.07)
+    readonly property color hudLine:         Qt.rgba(1, 1, 1, 0.16)   // the header line, fades to the right
+    readonly property real hudBracket:       12     // corner brackets: length, stroke, radius, inset from the frame
+    readonly property real hudBracketStroke: 1.5
+    readonly property real hudBracketRadius: 6
+    readonly property real hudBracketInset:  4
+    readonly property real hudBeam:          1.5    // the beam from the capsule to the popover
+    readonly property real hudBeamGlow:      8
+    readonly property real hudRowShift:      8      // rows enter 8 px below their place
+    readonly property int  hudSegments:      18     // segmented level bars
+    readonly property real hudSegGap:        2
+    readonly property real hudSegHeight:     8
+    readonly property real hudSegRadius:     1.5
+    readonly property color hudSegOff:       Qt.rgba(1, 1, 1, 0.08)
+    readonly property real hudChip:          28     // buttons / chips inside the panels
+    readonly property real hudGauge:         124    // Rendimiento: the 270° CPU dial
+    readonly property real hudChart:         46     // Rendimiento: the 60 s area chart
+    readonly property real hudCell:          26     // Rendimiento: one core heat cell
+    readonly property int  hudCellsPerRow:   6
+    readonly property color haloCyan:        alpha(cyan, 0.45)   // the capsule whose popover is open
+    // opening (≤ 600 ms): beam → clipped unfold (width, then down) → rows in cascade → brackets; meters fill after.
+    // closing (≤ 400 ms): rows out → the clip folds back to the beam → the beam retracts. reduceMotion: a 120 ms fade.
+    readonly property int durBeam:        ms(180)
+    readonly property int durUnfoldW:     ms(120)
+    readonly property int durUnfoldH:     ms(180)
+    readonly property int durRowIn:       ms(160)
+    readonly property int durRowStagger:  ms(40)
+    readonly property int durCascade:     ms(260)   // all rows, stagger included (long lists compress the stagger)
+    readonly property int durBrackets:    ms(120)
+    readonly property int durFill:        ms(320)
+    readonly property int durRowsOut:     ms(100)
+    readonly property int durFold:        ms(160)
+    readonly property int durBeamOut:     ms(120)
+    readonly property int durCalmFade:    ms(120)
 
     // Popover animation, calendar, notifications
     readonly property real popoverScaleFrom: 0.96

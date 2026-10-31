@@ -8,7 +8,6 @@ import "../../components"
 PopoverFrame {
     id: root
     title: "Agentes"
-    popWidth: Theme.popoverWidthSm + 40
 
     readonly property var look: ({
         working: { text: "trabajando",    icon: Icons.bolt,     color: Theme.cyan },

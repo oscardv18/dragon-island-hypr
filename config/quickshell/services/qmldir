@@ -48,3 +48,4 @@ singleton Search 1.0 Search.qml
 singleton Switcher 1.0 Switcher.qml
 singleton Overview 1.0 Overview.qml
 singleton Glass 1.0 Glass.qml
+singleton Timers 1.0 Timers.qml

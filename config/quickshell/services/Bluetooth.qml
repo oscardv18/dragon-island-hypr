@@ -25,13 +25,21 @@
  *   - batteryPct(d): int (-1 when the device does not report it)
  *   - isBusy(d): bool (pairing, connecting or disconnecting)
  *
+ *   - discoverable: bool [readonly]   adapterName: string [readonly] («Visible como DragonOS»)
+ *   - setDiscoverable(on: bool): void
+ *   - kindOf(d): string ("audio" · "mouse" · "keyboard" · "phone" · "computer" · "other")   kindLabel(d): string (Spanish)
+ *   - audioNode(d): PwNode (its PipeWire output, or null)   profileOf(d): string («alta calidad» · «manos libres» · "")
+ *   - useAsOutput(d): void (Audio.setDefaultSink on its node)   toggleProfile(d): void (A2DP ↔ HFP with pactl, if present)
+ *
  * Signals:
  *   - powerChanged(enabled: bool)
  *   - deviceConnected(name: string)
+ *   - batteryLow(name: string, pct: int) (a connected device drops under 15 %; once until it charges above 20 %)
  */
 pragma Singleton
 import Quickshell
 import Quickshell.Bluetooth
+import Quickshell.Io
 import QtQuick
 
 Singleton {
@@ -73,6 +81,58 @@ Singleton {
     function pairDevice(device): void { device?.pair(); }
     function forgetDevice(device): void { device?.forget(); }
 
+    readonly property bool discoverable: adapter?.discoverable ?? false
+    readonly property string adapterName: adapter?.name ?? ""
+    function setDiscoverable(on: bool): void { if (adapter) adapter.discoverable = on; }
+
+    function kindOf(d): string {
+        const i = (d?.icon ?? "").toLowerCase();
+        if (i.indexOf("audio") >= 0 || i.indexOf("headset") >= 0 || i.indexOf("headphone") >= 0) return "audio";
+        if (i.indexOf("mouse") >= 0) return "mouse";
+        if (i.indexOf("keyboard") >= 0) return "keyboard";
+        if (i.indexOf("phone") >= 0) return "phone";
+        if (i.indexOf("computer") >= 0) return "computer";
+        return "other";
+    }
+    function kindLabel(d): string {
+        return { audio: "Audio", mouse: "Ratón", keyboard: "Teclado", phone: "Teléfono", computer: "Equipo", other: "Dispositivo" }[kindOf(d)];
+    }
+    // the PipeWire output of a Bluetooth device: bluez_output.<MAC with _>.*
+    function audioNode(d) {
+        const mac = (d?.address ?? "").replace(/:/g, "_");
+        if (!mac) return null;
+        return Audio.sinks.find(n => (n.name ?? "").indexOf(mac) >= 0) ?? null;
+    }
+    function profileOf(d): string {
+        const n = root.audioNode(d);
+        const prof = `${n?.properties?.["api.bluez5.profile"] ?? n?.name ?? ""}`;
+        if (/a2dp/i.test(prof)) return "alta calidad";
+        if (/headset|hfp|hsp/i.test(prof)) return "manos libres";
+        return "";
+    }
+    function useAsOutput(d): void { const n = root.audioNode(d); if (n) Audio.setDefaultSink(n); }
+    Process { id: profileProc }
+    function toggleProfile(d): void {
+        const mac = (d?.address ?? "").replace(/:/g, "_");
+        if (!mac) return;
+        const next = root.profileOf(d) === "alta calidad" ? "headset-head-unit" : "a2dp-sink";
+        profileProc.exec(["sh", "-c", 'command -v pactl >/dev/null && pactl set-card-profile "bluez_card.$1" "$2"', "sh", mac, next]);
+    }
+
+    // low battery: once per device until it is back above 20 %
+    property var _lowWarned: ({})
+    function _checkBatteries(): void {
+        const w = Object.assign({}, root._lowWarned);
+        for (const d of root.connectedDevices) {
+            const p = root.batteryPct(d);
+            if (p < 0) continue;
+            if (p < 15 && !w[d.address]) { w[d.address] = true; root.batteryLow(d.name || "Dispositivo", p); }
+            else if (p > 20 && w[d.address]) delete w[d.address];
+        }
+        root._lowWarned = w;
+    }
+    Timer { interval: 60000; running: root.connectedDevices.length > 0; repeat: true; triggeredOnStart: true; onTriggered: root._checkBatteries() }
+
     function batteryPct(device): int {
         return device?.batteryAvailable ? Math.round(device.battery * 100) : -1;
     }
@@ -85,6 +145,7 @@ Singleton {
 
     signal powerChanged(enabled: bool)
     signal deviceConnected(name: string)
+    signal batteryLow(name: string, pct: int)
 
     onEnabledChanged: root.powerChanged(root.enabled)
     onConnectedDeviceNameChanged: {

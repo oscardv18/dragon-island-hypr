@@ -126,6 +126,15 @@ Singleton {
     readonly property string desktop:       g(0xF01C4)
     readonly property string mouse:         g(0xF037D)
     readonly property string window:        g(0xF05AF)
+    // pulido (HUD panels)
+    readonly property string plus:          g(0xF0415)
+    readonly property string alarm:         g(0xF0020)
+    readonly property string qrcode:        g(0xF0432)
+    readonly property string phone:         g(0xF011C)
+    readonly property string eye:           g(0xF0208)
+    readonly property string hotspot:       g(0xF0002)
+    readonly property string timer:         g(0xF051B)
+    readonly property string stopwatch:     g(0xF13AB)
 
     // Helpers
     function wifiFor(strength: real, enabled: bool): string {

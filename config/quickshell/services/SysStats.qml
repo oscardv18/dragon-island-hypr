@@ -10,7 +10,7 @@
  *   - tempC: int [readonly] (CPU package temperature, -1 if unknown)
  *   - diskPct: int [readonly]  diskUsedGb / diskTotalGb: real [readonly] (root filesystem)
  *   - gpuPct: int [readonly] (-1 if unknown; AMD/Intel sysfs or nvidia-smi)
- *   - cpuHistory: list<int> [readonly] (last 15 samples, 2 s apart = 30 s, newest last)
+ *   - cpuHistory: list<int> [readonly] (last 30 samples, 2 s apart = 60 s, newest last)
  *   - rxRate / txRate: real [readonly] (bytes per second, all interfaces but lo)
  *   - rxHistory: list<real> [readonly] (last 12 download rates, 2 s apart, newest last: the bar's network line)
  *   - topProcs: list<var> [readonly] ({ name, cpu, memMb }, 4 entries, only while details are wanted)
@@ -142,7 +142,7 @@ echo "\${g:--1}"
         }
         root._prev = next;
         root.corePcts = cores;
-        root.cpuHistory = root.cpuHistory.concat([root.cpuPct]).slice(-15);
+        root.cpuHistory = root.cpuHistory.concat([root.cpuPct]).slice(-30);
         root.statsUpdated();
     }
 
