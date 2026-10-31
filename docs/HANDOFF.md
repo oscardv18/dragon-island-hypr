@@ -937,3 +937,61 @@ Cambios: núcleo de la isla izquierda quieto sin actividad (12,1 → 8,0); núcl
 - `FileView` sobre `/proc`: `blockLoading: true` y `reload()` antes de `text()`.
 
 **Revertir**: no fusionar la rama o `git revert main..feat/pulido`. El cristal vuelve a líquido con `qs ipc call settings glassStyle liquido`; `glass-style` y `glassStyle` en `settings.json` son inocuos en versiones anteriores.
+
+## 8i. Ajuste de ventanas: blur, contorno sin barras de título e isla de mando centrada (2026-10-31)
+
+Rama `feat/ajuste-ventanas` (desde `main` con el pulido fusionado), solo Claude Code, un commit por punto. Sesión real: Hyprland **0.57.0**, Quickshell **0.3.2**, 1366 × 768 escala 1.
+
+**Hecho**
+- **1 Blur de las ventanas** (`cd32360`). *Causa:* con el cristal ahumado o clásico (por defecto desde el pulido) hyprglass queda cargado pero con `enabled = false`, y sus opciones `manage_window_blur` y `layers.manage_blur` (true por defecto) seguían quitando el desenfoque **nativo** a las ventanas que él habría acristalado. El blur global estaba bien (`decoration:blur:enabled = true`, size 10, passes 3, vibrancy 0,17, contrast 0,9, brightness 0,8), Ghostty a 0,79 de opacidad y `no_blur = false`: lo anulaba el plugin. Comprobado en vivo: con `manage_window_blur = false` la terminal vuelve a desenfocar el wallpaper. `glass.lua` las apaga fuera de «líquido» y las enciende de forma explícita en «líquido» (sin doble desenfoque). `rules.lua`: `no_blur` en reproductores, juegos (`steam_app_*`, gamescope, `.exe`) y contenido declarado vídeo / juego; las ventanas opacas no pagan blur (Hyprland solo desenfoca tras superficies no opacas; en pantalla completa no hay nada detrás). Migración **036**.
+- **2.1 Sin hyprbars** (`a6a5e9a`). Fuera de `plugins.lua`, `rules.lua`, `autostart.lua`, `plugins-foreground.sh`, `modules/plugins.sh`, `update.sh` y docs; `doctor.sh` avisa si sigue cargado. Cerrar / maximizar / flotar / minimizar: `SUPER + Q / F / SHIFT + Space / M` (ya existían; fuera la fila del doble clic en `KEYBINDS.md`). Migración **037**: desactivarlo en hyprpm **necesita la contraseña** (`/var/cache/hyprpm/$USER/state.toml` es de root), así que lo pide con confirmación; si se omite o falla, `plugins.lua` da `hyprbars:no_bar` a todas las ventanas mientras siga cargado. En vivo lo descarga con `hyprctl plugin unload` (sin sudo).
+- **2.2 FrameDecor** (`c654e7c`). La línea superior y las escuadras salen de `PopoverFrame` a `components/FrameDecor.qml`; tokens únicos en `Theme.frame` (línea: grosor 1, alpha 0,85, degradado, sangría; escuadras: 12 / 1,5 / radio 6 / 4 px dentro, cian; borde nativo de las ventanas). `glassLight*` y `hudBracket*` son alias.
+- **2.3–2.6 Contorno de ventana** (`25f66b7`). Hyprland no emite eventos al mover / redimensionar, así que `config/hypr/framewatch.lua` lee la geometría real en el compositor (eventos de foco / escritorio / pantalla completa + un `hl.timer` de 50 ms que solo compara números) y escribe `$XDG_RUNTIME_DIR/dragon-window-frame` **solo si cambió**. `services/WindowFrame.qml` lo vigila con inotify (sin temporizador ni procesos) y `modules/frame/FrameWindow.qml` (capa **Top** `dragon-frame`, sin entrada, sin blur) dibuja `FrameDecor` sobre la caja de la ventana + su borde, con su radio (rounding + borde = 15). Transición `Theme.motion.estandar`; dos cambios más juntos que eso (arrastre) van sin transición. Oculto en pantalla completa (capa desmapeada), en la terminal desplegable (`special:dropdown`, va unida a la isla), con el bloqueo y con «nada». Sin foco: nada, solo el hilo nativo. Borde nativo de 1 px: cian 30 % activo, negro 30 % inactivo (sin filo claro). Ajustes › Apariencia › **Contorno de ventanas**: escuadras (defecto) · solo hilo · nada (`settings.json` → `windowFrame`). Migración **038**.
+- **3 Isla de mando** (`48060ad`). x = (pantalla − ancho) / 2 siempre; ancho = min(740, 2 × (pantalla/2 − borde interno de la isla lateral más cercana − 16)), mínimo 600 (`BarMetrics.commandWidth`, con las geometrías reales). La forma anima su centro y su ancho: crece hacia los dos lados (medido: 296 → 498 px con el centro fijo en 683). Núcleo y música con ancho mínimo; la pila cede primero; el texto vacío de la pila y las horas de la franja ya no se cortan a 600.
+
+**Isla de mando a 1366 px** (`qs ipc call barmetrics dump`, centro también medido en píxeles sobre `grim`)
+
+| Estilo | compacta | normal | amplia | ¿Cabe entre las islas? |
+|---|---|---|---|---|
+| A | 383 + 600, centro 683 | 383 + 600, centro 683 | 383 + 600, centro 683 | No: tapa ~60–100 px de la isla derecha mientras está abierta |
+| B | 383 + 600, centro 683 | 383 + 600, centro 683 | 383 + 600, centro 683 | No (igual) |
+| C | 383 + 600, centro 683 | 383 + 600, centro 683 | 383 + 600, centro 683 | No (igual) |
+| D | 313 + 740, centro 683 | 313 + 740, centro 683 | 313 + 740, centro 683 | Sí |
+
+En A / B / C la isla derecha empieza en x ≈ 902–943, así que el ancho simétrico sería 438–488 px (< 600): se queda centrada a 600 y cubre parte de la isla derecha (y del título de la izquierda si es largo) mientras está abierta.
+
+**CPU** (`/proc/<pid>/stat`, 15 s, 100 % = un núcleo; con este agente trabajando y el núcleo «pensando», así que hay ruido)
+
+| Medida | Antes | Después |
+|---|---|---|
+| Blur de ventanas (terminal visible) | Hyprland 10,1 % · Quickshell 10,7 % | Hyprland 8,8 % · Quickshell 9,5 % |
+| Contorno (kitty quieto en el escritorio 4) | «nada»: Hyprland 8,8 % · Quickshell 11,7 % | «escuadras»: Hyprland 8,7 % · Quickshell 10,7 % |
+
+El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedido); el blur nativo con `new_optimizations` tampoco.
+
+**Verificado en la sesión real**
+- La terminal de herdr vuelve a desenfocar el wallpaper (capturas antes / después) con ahumado y clásico; con líquido hyprglass vuelve a gestionar el blur (`manage_window_blur = true`); `configerrors` vacío en los tres.
+- `hyprctl plugin list` sin hyprbars; Brave, Ghostty, kitty (tileada y flotante), Dolphin y Nautilus sin barra del compositor (la cabecera de Nautilus es su CSD).
+- Contorno: tileada, flotante, redimensionada, movida, ráfaga tipo arrastre, vuelta a tilear y con un popover encima, el contorno dibujado coincide al píxel con la caja de Hyprland (`qs ipc call frame-eDP-1 dump`); pantalla completa → capa desmapeada. Mismas escuadras que la Tienda (comparadas en la misma captura; con la Tienda abierta el contorno queda bajo su velo, como la ventana).
+- Isla de mando centrada en las 12 combinaciones; Mando, Apps, IA y búsqueda a 600 px.
+- `tests/run-all.sh` (nuevos: `tests/migrations-ventanas.sh`, `tests/window-frame.sh`), `shellcheck -x`, `luac -p`.
+
+**No verificado**
+- `hyprpm disable hyprbars` de verdad: pide contraseña. **Hay que hacerlo a mano una vez** (`hyprpm disable hyprbars`); hasta entonces se vuelve a cargar al iniciar sesión, sin barras gracias a la salvaguarda de `plugins.lua`.
+- El contorno con el bloqueo activo y sobre la terminal desplegable (no se bloqueó la sesión ni se abrió el desplegable); está en el código (`locked`, `special:dropdown`).
+- Arrastre con el ratón real (se simuló con 12 `window.move` seguidos).
+- Varios monitores (la capa es una por pantalla y filtra por nombre de monitor).
+- Ventanas con reglas de borde / radio propias (el emulador de Android: borde 0, radio 48): el contorno usa los valores globales.
+
+**Decisiones**
+- Capa **Top** en lugar de Overlay: así queda bajo todos los paneles de Quickshell (popovers, isla, launcher son Overlay) y un popover tapa el contorno en vez de pintarse debajo de él.
+- Ventanas sin foco: sin contorno dibujado, solo el hilo nativo negro 30 %.
+- «Solo hilo» dibuja la línea superior siempre (no solo con ahumado como en los popovers).
+- `qs ipc call settings page <página>` abre Ajustes en una página (para comprobarla sin teclado).
+
+**Trampas**
+- Editar `shell.qml` con Quickshell en marcha puede tumbarlo en la recarga en caliente y dejar dos instancias (la que se reinicia y la nueva): `qs list` y matar todas antes de relanzar.
+- En `WindowFrame.qml` la geometría se asigna **antes** que `stamp`: la vista lee la geometría al cambiar `stamp` (al revés, el contorno quedaba un paso por detrás).
+- `hyprctl` de una terminal vieja puede apuntar a una firma de Hyprland que ya no existe: la buena es la carpeta más reciente de `/run/user/$UID/hypr/`.
+
+**Revertir**: `git revert main..feat/ajuste-ventanas`. Para volver a tener barras: `hyprpm enable hyprbars` (la configuración ya no las estiliza). El contorno se apaga en Ajustes (`qs ipc call settings windowFrame nada`).
