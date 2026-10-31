@@ -27,6 +27,13 @@ un ID prevalece. Las escrituras anexan bajo `flock` y `fsync`; al superar
 se solapan con los últimos 30 días. Los datos recientes no tienen un límite de
 número de entradas. JSONL corrupto produce error sin sobrescribirlo.
 
+`activity.jsonl.index.sqlite` es un índice derivado 0600 para que las consultas
+no tengan que decodificar todo el historial. Se actualiza bajo el mismo bloqueo;
+inode, tamaño y fechas de modificación/cambio invalidan cualquier caché anterior
+tras una escritura interrumpida o edición externa. Se puede borrar: se reconstruye
+desde el JSONL. Si está roto o no puede escribirse, la consulta usa el JSONL.
+La compactación elimina también las entradas caducadas del índice.
+
 Al leer o escribir, las entradas abiertas de más de 12 h quedan cerradas en
 `start + 12 h` con `status:"unknown"`. La consulta persiste estos cierres bajo el
 mismo bloqueo; sin estado devuelve `{"items":[]}` sin crear archivos. `status`

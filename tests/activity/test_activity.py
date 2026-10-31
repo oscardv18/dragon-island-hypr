@@ -181,6 +181,23 @@ class ActivityTests(EngineCase):
         print(f'\nACTIVITY range: median={median:.1f} ms (6000 entries, 30 days, full CLI)')
         self.assertLess(median, 50, durations)
 
+    def test_index_rebuild_after_external_edit_corruption_and_unavailable_cache(self):
+        identifier = self.add()
+        index = Path(str(self.path) + '.index.sqlite')
+        self.assertEqual(index.stat().st_mode & 0o777, 0o600)
+        original = self.rows()[0]
+        # A valid-looking cached entry must never hide a newer authoritative line.
+        with self.path.open('a') as handle:
+            handle.write(activity.encode(dict(original, end=time.time(), status='fail')))
+        self.assertEqual(self.rows()[0]['status'], 'fail')
+        index.write_bytes(b'broken SQLite index')
+        self.assertEqual(self.rows()[0]['id'], identifier)
+        index.unlink()
+        index.mkdir()  # An unwritable cache must not break JSONL reads or writes.
+        self.assertEqual(self.rows()[0]['id'], identifier)
+        self.add(name='cache unavailable')
+        self.assertEqual(len(self.rows()), 2)
+
     def migration(self, mode='copy', dry='false'):
         env = dict(os.environ, REPO_DIR=str(ROOT), LINK_MODE=mode, DRY_RUN=dry,
                    ASSUME_YES='true', BACKUP_DIR=str(self.home / 'backups'))

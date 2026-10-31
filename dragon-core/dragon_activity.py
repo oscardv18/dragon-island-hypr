@@ -1,7 +1,7 @@
 """Private activity JSONL. Each line is a complete entry; the last line for an ID wins.
 
 add/end append under a separate flock; compaction uses an atomic replacement under
-that same lock. Readers persist expired open entries as unknown. No daemon or index.
+that same lock. Readers persist expired open entries as unknown. No daemon.
 """
 import fcntl
 import json
@@ -91,12 +91,17 @@ def encode(item):
 
 
 def persist(path, items, updates, now):
+    import activity_index
+    previous = activity_index.signature(path) if os.path.exists(path) else None
     data = ''.join(map(encode, updates))
     size = os.path.getsize(path) if os.path.exists(path) else 0
+    compacted = False
     if size + len(data.encode('utf-8')) > COMPACT_BYTES:
         # Retain any interval overlapping the last 30 days, including active work.
         kept = [item for item in items.values()
                 if item['end'] is None or item['end'] >= now - RETENTION]
+        items = {item['id']: item for item in kept}
+        compacted = True
         import tempfile
         fd, temporary = tempfile.mkstemp(prefix='.activity-', dir=os.path.dirname(path))
         try:
@@ -115,6 +120,7 @@ def persist(path, items, updates, now):
             handle.write(data)
             handle.flush()
             os.fsync(handle.fileno())
+    activity_index.refresh(path, items, updates, previous, compacted)
 
 
 def add(kind, name, start, end=None, status='ok'):
@@ -152,15 +158,21 @@ def end(identifier, status='ok'):
 
 
 def activity_range(start, stop):
+    import activity_index
     path = state_path('activity.jsonl')
     if not os.path.exists(path):
         return []
     with ActivityLock(path):
-        items = read_items(path)
         now = time.time()
+        indexed = activity_index.query(path, start, stop, now, OPEN_TIMEOUT)
+        if indexed is not None:
+            return indexed
+        items = read_items(path)
         updates = expired(items, now)
         if updates:
             persist(path, items, updates, now)
+        else:
+            activity_index.refresh(path, items, [], None, True)
         rows = [item for item in items.values()
                 if item['start'] <= stop and (item['end'] is None or item['end'] >= start)]
     return sorted(rows, key=lambda item: (item['start'], item['id']))
