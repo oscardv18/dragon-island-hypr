@@ -50,3 +50,6 @@ singleton Overview 1.0 Overview.qml
 singleton Glass 1.0 Glass.qml
 singleton Timers 1.0 Timers.qml
 singleton NotifFx 1.0 NotifFx.qml
+singleton Activity 1.0 Activity.qml
+singleton Cava 1.0 Cava.qml
+singleton Priority 1.0 Priority.qml

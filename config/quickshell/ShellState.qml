@@ -45,6 +45,16 @@ Singleton {
     property string anchorSide: "right"
     property real anchorCenter: -1
     property string nookTab: "nook"
+    property int commandFocus: 0        // bumped by openCommand(): the isla de mando focuses its command line
+    property string commandText: ""     // what openCommand() puts in the line (IPC `ask`)
+
+    // SUPER + /: the isla de mando with its command line focused
+    function openCommand(text): void {
+        root.commandText = text ?? "";
+        root.nookTab = "nook";
+        if (!(root.openPanel === "dashboard")) root.open("dashboard", "");
+        root.commandFocus++;
+    }
 
     function openNook(tab: string): void {
         root.nookTab = ["nook", "apps", "ia"].indexOf(tab) >= 0 ? tab : "nook";
@@ -107,5 +117,7 @@ Singleton {
         function close(): void { root.close(); }
         function current(): string { return root.current(); }
         function nook(tab: string): void { root.openNook(tab); }
+        function command(): void { root.openCommand(""); }
+        function ask(text: string): void { root.openCommand(text); }
     }
 }

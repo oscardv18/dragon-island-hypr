@@ -256,8 +256,9 @@ Singleton {
     readonly property real notchPeekDy:        16     // hover / transient peek: grows down ...
     readonly property real notchPeekDx:        16      // ... and wider
     readonly property real notchPeekLine:      240 + notchTextExtra   // longest secondary line of a collapsed state
-    readonly property real notchExpandedWidth: 720
-    readonly property real notchExpandedHeight: 230
+    // the isla de mando (docs/design/31-isla-mando.png): 700 · 740 · 780 by bar size, 262 high
+    readonly property real notchExpandedWidth: 700 + 40 * barStep
+    readonly property real notchExpandedHeight: 262
     readonly property real notchWindowHeight:  notchExpandedHeight + 40 // room for spring overshoot
     readonly property real notchPad:           18     // padding inside the expanded body
     readonly property real notchColGap:        16
@@ -268,6 +269,25 @@ Singleton {
     readonly property real notchTile:          40
     readonly property real artSmall:     18
     readonly property real artSmallRadius: 6
+
+    // Isla de mando: command line · priority stack · core · music · time strip · toggles
+    readonly property real cmdMinWidth:    640    // narrowest isla de mando when the side islands leave less room
+    readonly property real cmdField:       34
+    readonly property real cmdChip:        20     // the = > ? @ IA chips inside the field
+    readonly property real cmdTab:         26
+    readonly property real cmdStackWidth:  300
+    readonly property real cmdCore:        92
+    readonly property real cmdMusicWidth:  290
+    readonly property real cmdArt:         56
+    readonly property real cmdStrip:       40     // the 6 h time strip
+    readonly property real cmdStripHours:  6
+    readonly property real cmdToggle:      30
+    readonly property real cmdResult:      34
+    readonly property int  cmdResults:     4
+    readonly property int  waveBars:       24
+    readonly property int  cmdStagger:     ms(40)   // zones enter 40 ms apart
+    readonly property color cmdFill:       Qt.rgba(1, 1, 1, 0.035)
+    readonly property color cmdEdge:       Qt.rgba(1, 1, 1, 0.07)
 
     // Calendar popover (calendar | notifications + updates)
     readonly property real calendarPopoverWidth:  720

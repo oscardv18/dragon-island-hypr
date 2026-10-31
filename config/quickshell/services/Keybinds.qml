@@ -105,6 +105,12 @@ Singleton {
             { text: "Copiar y guardar", combos: [["Enter"]] },
             { text: "Cerrar", combos: [["Esc"]] }
         ] },
+        { name: "Isla de mando (dentro)", rows: [
+            { text: "Elegir resultado", combos: [["↑"], ["↓"]] },
+            { text: "Ejecutar · preguntar a Claude (chip IA)", combos: [["Enter"]] },
+            { text: "Borrar la línea · cerrar", combos: [["Esc"]] },
+            { text: "Pasar tarjetas de la pila", combos: [["←"], ["→"]] }
+        ] },
         { name: "Ajustes (dentro)", rows: [
             { text: "Estilo de barra A · B · C · D (página Barra superior)", combos: [["1", "2", "3", "4"]] },
             { text: "Cambiar de página", combos: [["Tab"], ["Shift+Tab"]] },

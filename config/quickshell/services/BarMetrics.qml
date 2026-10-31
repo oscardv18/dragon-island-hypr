@@ -54,6 +54,7 @@ Singleton {
         root._edges = e;
     }
 
+    function hasEdges(screenName: string): bool { return root._edges[screenName] !== undefined; }
     function minX(screenName: string): real { return (root._edges[screenName]?.l ?? 0) + Theme.notchGap; }
     function maxX(screenName: string): real { return (root._edges[screenName]?.r ?? 0) - Theme.notchGap; }
 

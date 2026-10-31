@@ -55,7 +55,13 @@ Item {
     // short notices sized to their text (Bloq Mayús, keyboard layout)
     readonly property bool snug: IslandState.mode === "osd" && (Osd.kind === "capslock" || Osd.kind === "layout")
 
-    readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
+    // the isla de mando: 700 / 740 / 780 by bar size, but never over the side islands — on 1366 px our right island
+    // (keyboard, tiling, Wi‑Fi, Bluetooth…) leaves less room than the board's, so it narrows to the free gap
+    // (Theme.cmdMinWidth at least) and centres in it; the priority stack takes the difference (HANDOFF 8h)
+    readonly property real expandedWidth: BarMetrics.hasEdges(screenName)
+        ? Math.max(Theme.cmdMinWidth, Math.min(Theme.notchExpandedWidth, BarMetrics.maxX(screenName) - BarMetrics.minX(screenName)))
+        : Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
+    readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? expandedWidth
                                                  : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0) + (notifying ? Theme.notifWiden * 2 : 0))
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
@@ -63,7 +69,7 @@ Item {
                                                      : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8) + (peek ? Theme.notchPeekDy : 0))
 
     // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped
-    readonly property real targetX: expanded || lid ? (root.width - targetWidth) / 2
+    readonly property real targetX: expanded ? BarMetrics.notchX(screenName, root.width, targetWidth) : lid ? (root.width - targetWidth) / 2
                                              : BarMetrics.notchX(screenName, root.width, targetWidth)
 
     property real animWidth: targetWidth
@@ -215,7 +221,7 @@ Item {
                     NumberAnimation { duration: root.contentShown ? Theme.durContentIn : Theme.durContentOut; easing.type: Easing.OutCubic }
                 }
                 sourceComponent: NotchExpanded {
-                    width: Theme.notchExpandedWidth - root.ear * 2
+                    width: root.expandedWidth - root.ear * 2
                     screenName: root.screenName
                 }
             }

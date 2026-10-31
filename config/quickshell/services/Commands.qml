@@ -66,6 +66,8 @@ Singleton {
         if (seconds < Settings.longCommandSeconds) return;
         const entry = { id: key, command: command, code: code, seconds: seconds, cwd: cwd, at: Date.now() };
         root.recent = [entry].concat(root.recent).slice(0, 12);
+        // the island's time strip (dragon-activity): commands of 30 s or more
+        if (seconds >= 30) Activity.add("command", command, Activity.now() - seconds, Activity.now(), code === 0 ? "ok" : "fail", null);
         if (!root._terminalInFront(cwd)) root.done(entry);
     }
 

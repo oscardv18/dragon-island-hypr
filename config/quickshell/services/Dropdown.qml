@@ -18,6 +18,8 @@
  *
  * Functions:
  *   - toggle(): void (runs bin/dragon-dropdown)
+ *   - askClaude(query: string): void (the isla de mando's IA mode: shows the terminal with `claude "<query>"` typed in,
+ *       not run — `dragon-dropdown --type`)
  */
 pragma Singleton
 import Quickshell
@@ -37,6 +39,11 @@ Singleton {
     readonly property real top: Theme.notchAttached ? Theme.notchHeight : Theme.notchTop + Theme.notchHeight
 
     function toggle(): void { Quickshell.execDetached([`${Quickshell.env("HOME")}/.local/bin/dragon-dropdown`]); }
+    function askClaude(query: string): void {
+        const q = String(query).replace(/"/g, '\\"').replace(/\n/g, " ").trim();
+        if (q.length === 0) return;
+        Quickshell.execDetached([`${Quickshell.env("HOME")}/.local/bin/dragon-dropdown`, "--type", `claude "${q}"`]);
+    }
 
     function _place(): void {
         const m = root._mon;

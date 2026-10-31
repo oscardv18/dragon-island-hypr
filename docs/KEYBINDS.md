@@ -25,6 +25,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + S` / `SHIFT + Print` | Barra de capturas en la isla: Región · Ventana · Pantalla · ● grabar · retraso 3 s |
 | ``SUPER + ` `` (grave) | Terminal desplegable bajo la isla (se oculta sin cerrarse) |
 | `SUPER + ALT + A` | La isla con los agentes y los comandos largos (pestaña IA) |
+| `SUPER + /` | La isla de mando con la línea de mando lista para escribir |
 | `SUPER + ALT + F` | Modo enfoque 45 min (No molestar, barra mínima, Telegram silenciado) |
 | `SUPER + V` (o `SUPER + SHIFT + V`) | Portapapeles: el anillo del launcher Gravedad (Enter pega en la ventana que tenía el foco). Con «Launcher Gravedad» apagado, el panel de antes |
 | `SUPER + Tab` | Vista general de escritorios: cinco tarjetas, arrastra una ventana a otra para moverla |
@@ -224,6 +225,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Alt+Tab orbital | `Tab` / `Shift+Tab` (con Alt) · `← →` · `Q` cierra la ventana elegida · `1–5` solo ese escritorio · soltar Alt o `Enter` enfoca · `Esc` cancela |
 | Escritorios (`SUPER + Tab`) | `← →` o `1–5` eligen · `Enter` va · arrastrar una ventana a otra tarjeta la mueve · `Esc` cierra |
 | Lanzador orbital anterior (Gravedad apagado) | Escribir filtra (búsqueda difusa; el mejor resultado pasa al frente y el anillo se detiene) · `← →`, `↑ ↓`, `Tab` o la rueda giran el anillo · `Enter` lanza · `Ctrl+F` fija / quita de favoritos la app del frente · `Ctrl+I` sin resultados (o `+nombre`) abre la Tienda con la búsqueda · `=2*(3+4)` calcula (Enter copia) · `>comando` se ejecuta en Ghostty · `Esc` o clic fuera cierra |
+| Isla de mando (`SUPER + D`, `SUPER + /`) | Escribir busca con el motor del launcher (prefijos `=` `>` `?` `@`; chip `IA` = preguntar a Claude en la terminal desplegable) · `↑ ↓` elige · `Enter` ejecuta · `Esc` borra la línea (otra vez: cierra) · sin texto: `← →` o la rueda pasan las tarjetas de la pila |
 | Menú de energía | `← →` o `Tab` · `Enter`/`Espacio` ejecuta · `1–5` atajo directo · `Esc` cierra |
 | Referencia de herdr (`SUPER + SHIFT + A`) | Escribir filtra · `Tab` cambia de pestaña (Atajos · Comandos · Conceptos y estados) · `↑ ↓` desplazar · `Esc` cierra |
 | Atajos (`SUPER + F1`) | Escribir para filtrar por acción, grupo o tecla · `↑ ↓` desplazar · `Esc` cierra |
@@ -351,6 +353,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + SHIFT + W` | Fondo aleatorio |
 | `SUPER + W` | Fondos de pantalla (orbital) |
 | `SUPER + SHIFT + R` | Grabar pantalla (iniciar / parar) |
+| `SUPER + slash` | Línea de mando de la isla |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + ALT + F` | Modo enfoque (45 min) |
 | `SUPER + D` | Notch (Nook / Tray) |
