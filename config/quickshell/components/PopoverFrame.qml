@@ -54,11 +54,11 @@ Item {
     readonly property real _bx: Math.max(Theme.hudRadius, Math.min(width - Theme.hudRadius, beamX))
 
     onShownChanged: {
-        openAnim.stop(); closeAnim.stop(); calmAnim.stop();
+        openAnim.stop(); closeAnim.stop(); calmAnim.stop(); startLater.stop();
         if (shown) {
             root._closing = false;
             if (root._calm) { root._beam = 1; root._w = 1; root._h = 1; root._rows = 1; root._brackets = 1; root._fill = 1; calmAnim.to = 1; calmAnim.start(); }
-            else { root._fade = 0; openAnim.start(); }
+            else { root._fade = 0; startLater.restart(); }
             root.opened();
         } else {
             root._closing = true;
@@ -68,6 +68,10 @@ Item {
         }
     }
     on_CalmChanged: if (!_calm && shown) { _fade = 0; _beam = 1; }
+
+    // the popover window is unmapped while nothing is open: an animation started in the same tick as the mapping did not
+    // advance on the very first opening after Quickshell starts (its window was not exposed yet), so it starts a beat later
+    Timer { id: startLater; interval: 30; onTriggered: if (root.shown) openAnim.start() }
 
     NumberAnimation { id: calmAnim; target: root; property: "_fade"; duration: Theme.durCalmFade; easing.type: Easing.OutCubic
         onStopped: if (!root.shown) { root._beam = 0; root._w = 0; root._h = 0; root._rows = 0; root._brackets = 0; root._fill = 0; } }
