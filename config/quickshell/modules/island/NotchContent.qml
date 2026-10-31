@@ -365,7 +365,7 @@ Item {
         Row {
             spacing: Theme.spacingSm
             readonly property var list: IslandState.workingAgents
-            NeuralCore {
+            Core {
                 identity: Theme.coreIdentity
                 anchors.verticalCenter: parent.verticalCenter
                 width: Theme.notchHeight - 8
@@ -486,7 +486,7 @@ Item {
             Row {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.spacingSm
-                NeuralCore {
+                Core {
                     identity: Theme.coreIdentity
                     anchors.verticalCenter: parent.verticalCenter
                     width: Theme.notchHeight - 8

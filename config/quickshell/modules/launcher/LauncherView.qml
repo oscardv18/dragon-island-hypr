@@ -33,15 +33,16 @@ Item {
     readonly property bool settled: reveal < 0.001 && !open
     readonly property string query: input.text
 
-    // ── design tokens ──
-    readonly property color cText: "#e6e8ef"
-    readonly property color cDim: "#8a8fa3"
-    readonly property color cLine: Qt.rgba(1, 1, 1, 0.12)
-    readonly property color cSurface: Qt.rgba(0.086, 0.098, 0.145, 0.78)
-    readonly property color cMagenta: "#c50ed2"
-    readonly property color cViolet: "#7c3aed"
-    readonly property color cCyan: "#00c1e4"
-    readonly property color cAlert: "#ed254e"
+    // ── design tokens: every colour and duration from `tokens` (Launcher.qml passes Theme.launcherTokens; pulido: the
+    // old violet / magenta of the classic launcher are gone, it uses the identity's lavender and cyan) ──
+    required property var tokens
+    readonly property color cText: tokens.text
+    readonly property color cDim: tokens.dim
+    readonly property color cLine: tokens.line
+    readonly property color cSurface: tokens.surface
+    readonly property color cAccent: tokens.lavender
+    readonly property color cCyan: tokens.cyan
+    readonly property color cAlert: tokens.alert
     readonly property real s: Math.max(0.8, Math.min(1.6, height / 900))
 
     // ── state ──
@@ -92,14 +93,14 @@ Item {
         launchTimer.restart()
     }
     property string launchId: ""
-    Timer { id: launchTimer; interval: 420; onTriggered: { view.activated(view.launchId); view.launching = false } }
+    Timer { id: launchTimer; interval: view.tokens.durLaunch; onTriggered: { view.activated(view.launchId); view.launching = false } }
 
     function focusInput() { input.forceActiveFocus() }
     function reset() { input.text = ""; target = 0; pos = 0; launching = false }
     onOpenChanged: if (open) { reset(); focusInput() }
 
     // ── backdrop ──
-    Rectangle { anchors.fill: parent; color: "#05060c"; opacity: 0.88 * view.reveal; z: -10 }
+    Rectangle { anchors.fill: parent; color: view.tokens.backdrop; opacity: 0.88 * view.reveal; z: -10 }
     Shape {
         anchors.fill: parent; z: -9; opacity: view.reveal
         ShapePath {
@@ -109,7 +110,7 @@ Item {
                 focalX: centerX; focalY: centerY
                 centerRadius: Math.max(view.width, view.height) * 0.7
                 GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.7) }
+                GradientStop { position: 1.0; color: view.tokens.vignette }
             }
             PathRectangle { width: view.width; height: view.height }
         }
@@ -122,6 +123,7 @@ Item {
 
     NeuralCore {
         id: core
+        palette: view.tokens.core ?? null
         width: view.height * 0.72; height: width
         x: view.cx - width / 2; y: view.cy - height / 2
         z: 0
@@ -146,7 +148,7 @@ Item {
     Shape {
         z: -1; opacity: view.reveal
         ShapePath {
-            strokeColor: Qt.rgba(0.49, 0.23, 0.93, 0.28); strokeWidth: 1.2
+            strokeColor: view.tokens.ringBack; strokeWidth: 1.2
             fillColor: "transparent"; capStyle: ShapePath.RoundCap
             PathAngleArc { centerX: view.cx; centerY: view.cy; radiusX: view.ringRx * view.reveal; radiusY: view.ringRy * view.reveal; startAngle: 180; sweepAngle: 180 }
         }
@@ -154,7 +156,7 @@ Item {
     Shape {
         z: 4; opacity: view.reveal
         ShapePath {
-            strokeColor: Qt.rgba(0.0, 0.76, 0.89, 0.45); strokeWidth: 1.4
+            strokeColor: view.tokens.ringFront; strokeWidth: 1.4
             fillColor: "transparent"; capStyle: ShapePath.RoundCap
             PathAngleArc { centerX: view.cx; centerY: view.cy; radiusX: view.ringRx * view.reveal; radiusY: view.ringRy * view.reveal; startAngle: 0; sweepAngle: 180 }
         }
@@ -181,7 +183,7 @@ Item {
             y: view.cy + Math.sin(theta) * view.ringRy * view.reveal - height / 2
             z: depth >= 0 ? 5 + depth : -2 + depth
             opacity: (0.30 + 0.70 * (depth + 1) / 2) * edge * view.reveal * (view.launching && !current ? 0.25 : 1)
-            Behavior on opacity { enabled: view.launching; NumberAnimation { duration: 250 } }
+            Behavior on opacity { enabled: view.launching; NumberAnimation { duration: view.tokens.durFade } }
 
             // glow for the selected app
             Rectangle {
@@ -190,7 +192,7 @@ Item {
                 width: parent.width + 14; height: width; radius: width * 0.34
                 antialiasing: true
                 color: "transparent"; border.width: 6
-                border.color: Qt.rgba(0.0, 0.76, 0.89, 0.14)
+                border.color: view.tokens.cyanFaint
             }
             Rectangle {
                 id: tile
@@ -201,8 +203,8 @@ Item {
                 border.width: slot.current ? 2 : 1
                 border.color: slot.current ? view.cCyan : view.cLine
                 gradient: Gradient {
-                    GradientStop { position: 0; color: Qt.rgba(1, 1, 1, 0.07) }
-                    GradientStop { position: 1; color: Qt.rgba(1, 1, 1, 0.0) }
+                    GradientStop { position: 0; color: view.tokens.shine }
+                    GradientStop { position: 1; color: view.tokens.clear }
                 }
                 Text {
                     anchors.centerIn: parent
@@ -235,7 +237,7 @@ Item {
     Column {
         visible: view.filtered.length > 0
         opacity: view.reveal * (view.launching ? 0 : 1)
-        Behavior on opacity { NumberAnimation { duration: 200 } }
+        Behavior on opacity { NumberAnimation { duration: view.tokens.durFade } }
         x: view.cx - width / 2
         y: view.cy + view.ringRy + view.iconSize * 0.95
         z: 8
@@ -259,16 +261,16 @@ Item {
         width: 340 * view.s; height: 50 * view.s
         x: view.cx - width / 2; y: view.cy - height / 2 - 6 * view.s
         radius: height / 2
-        color: Qt.rgba(0.04, 0.05, 0.09, 0.82)
+        color: view.tokens.field
         border.width: 1
-        border.color: view.noMatch ? Qt.rgba(0.93, 0.15, 0.31, 0.8) : (input.activeFocus ? Qt.rgba(0, 0.76, 0.89, 0.6) : view.cLine)
-        Behavior on border.color { ColorAnimation { duration: 220 } }
+        border.color: view.noMatch ? view.tokens.alertEdge : (input.activeFocus ? view.tokens.cyanEdge : view.cLine)
+        Behavior on border.color { ColorAnimation { duration: view.tokens.durFade } }
         opacity: view.reveal
         scale: 0.9 + 0.1 * view.reveal
 
         Rectangle {
             anchors.fill: parent; anchors.margins: -4; radius: height / 2; color: "transparent"; border.width: 4
-            border.color: view.noMatch ? Qt.rgba(0.93, 0.15, 0.31, 0.16) : Qt.rgba(0, 0.76, 0.89, 0.12)
+            border.color: view.noMatch ? view.tokens.alertFaint : view.tokens.cyanFaint
             visible: input.activeFocus || view.noMatch
         }
         CoreIcon {
@@ -282,7 +284,7 @@ Item {
             anchors { left: lens.right; right: counter.left; verticalCenter: parent.verticalCenter; leftMargin: 12 * view.s; rightMargin: 8 * view.s }
             color: view.cText
             font.family: view.uiFont; font.pixelSize: 17 * view.s
-            selectionColor: view.cViolet
+            selectionColor: view.tokens.selection
             clip: true
             focus: true
             enabled: !view.launching
@@ -316,7 +318,7 @@ Item {
         anchors { horizontalCenter: parent.horizontalCenter; bottom: parent.bottom; bottomMargin: 26 * view.s }
         opacity: view.reveal * 0.85
         text: view.noMatch ? "Sin resultados" : "←  →  navegar      ⏎  abrir      esc  cerrar"
-        color: view.noMatch ? view.cAlert : Qt.rgba(0.54, 0.56, 0.64, 0.8)
+        color: view.noMatch ? view.cAlert : view.tokens.hint
         font.family: view.monoFont; font.pixelSize: 11 * view.s; font.letterSpacing: 1.5 * view.s
         font.capitalization: Font.AllUppercase
     }

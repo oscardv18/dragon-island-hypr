@@ -69,24 +69,26 @@ Rectangle {
     function focusInput() { pw.forceActiveFocus() }
     function setText(t) { if (pw.text !== t) pw.text = t }
 
-    // the new identity (Theme.qml): text / textSoft / textDim, lavender, cyan, warn, error, ok, islandInk, badge
-    readonly property color cInk: "#07060d"
-    readonly property color cText: "#edebf5"
-    readonly property color cSoft: "#c8c4d8"
-    readonly property color cDim: "#a29eb6"
-    property color cLavender: "#c8b6e6"         // Lock.qml passes Theme.lavender (it follows the wallpaper palette)
+    // every colour and duration comes from `tokens` (pulido): Lock.qml passes Theme.lockTokens, the offscreen test
+    // (tests/qml/lock_mock.qml) its own object with the same keys, so this file stays free of Quickshell imports
+    required property var tokens
+    readonly property color cInk: tokens.ink
+    readonly property color cText: tokens.text
+    readonly property color cSoft: tokens.soft
+    readonly property color cDim: tokens.dim
+    readonly property color cLavender: tokens.lavender
     property var coreIdentity: undefined        // Lock.qml passes Theme.coreIdentity; undefined = NeuralCore's Dragon default
-    readonly property color cCyan: "#67e8f9"
-    readonly property color cWarn: "#f5b04a"
-    readonly property color cAlert: "#ed254e"
-    readonly property color cOk: "#86efac"
-    readonly property color cBadge: "#8b6bb8"
-    readonly property color cLine: Qt.rgba(1, 1, 1, 0.10)
-    readonly property color cGlass: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.62)
+    readonly property color cCyan: tokens.cyan
+    readonly property color cWarn: tokens.warn
+    readonly property color cAlert: tokens.alert
+    readonly property color cOk: tokens.ok
+    readonly property color cBadge: tokens.badge
+    readonly property color cLine: tokens.line
+    readonly property color cGlass: tokens.glass
     readonly property real s: Math.max(0.75, Math.min(1.6, height / 900))
 
     property real nowMs: Date.now()
-    Timer { interval: 1000; running: true; repeat: true; onTriggered: view.nowMs = Date.now() }
+    Timer { interval: view.tokens.tick; running: true; repeat: true; onTriggered: view.nowMs = Date.now() }
     readonly property int lockedMinutes: Math.max(0, Math.floor((nowMs - lockedAt) / 60000))
 
     // ── background: a soft vignette over the ink ──
@@ -98,9 +100,9 @@ Rectangle {
                 centerX: view.width / 2; centerY: view.height * 0.38
                 focalX: centerX; focalY: centerY
                 centerRadius: Math.max(view.width, view.height) * 0.7
-                GradientStop { position: 0.0; color: Qt.rgba(0.20, 0.15, 0.30, 0.55) }
-                GradientStop { position: 0.55; color: Qt.rgba(0.05, 0.04, 0.09, 0.4) }
-                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.8) }
+                GradientStop { position: 0.0; color: view.tokens.vignetteIn }
+                GradientStop { position: 0.55; color: view.tokens.vignetteMid }
+                GradientStop { position: 1.0; color: view.tokens.vignetteOut }
             }
             PathRectangle { width: view.width; height: view.height }
         }
@@ -109,6 +111,7 @@ Rectangle {
     // ── the core behind the clock: HUD on, ~440 px, 0.72 ──
     NeuralCore {
         id: core
+        palette: view.tokens.core ?? null
         objectName: "core"
         width: 440 * view.s * 1.25; height: width       // the core draws the sphere at 0.25 of its side; the HUD needs room
         anchors.horizontalCenter: parent.horizontalCenter
@@ -153,7 +156,7 @@ Rectangle {
                 font.family: view.monoFont; font.pixelSize: 11 * view.s; font.letterSpacing: 3 * view.s
                 font.capitalization: Font.AllUppercase
                 text: view.stateText
-                Behavior on color { ColorAnimation { duration: 300 } }
+                Behavior on color { ColorAnimation { duration: view.tokens.durMood } }
             }
         }
 
@@ -177,10 +180,10 @@ Rectangle {
                     radius: width / 2
                     color: view.cGlass
                     border.width: 1
-                    border.color: Qt.rgba(1, 1, 1, 0.16)
+                    border.color: view.tokens.edge
                     gradient: Gradient {
-                        GradientStop { position: 0.0; color: Qt.rgba(1, 1, 1, 0.14) }
-                        GradientStop { position: 0.5; color: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.7) }
+                        GradientStop { position: 0.0; color: view.tokens.shine }
+                        GradientStop { position: 0.5; color: view.tokens.glassDeep }
                     }
                 }
                 Image {
@@ -200,7 +203,7 @@ Rectangle {
                     radius: height / 2
                     color: view.cBadge
                     border.width: 1
-                    border.color: Qt.rgba(1, 1, 1, 0.25)
+                    border.color: view.tokens.edgeStrong
                     Text { id: badgeText; anchors.centerIn: parent; text: sat.modelData.count > 99 ? "99+" : `${sat.modelData.count}`; color: view.cText; font.family: view.monoFont; font.pixelSize: 10 * view.s; font.weight: Font.Bold }
                 }
             }
@@ -250,13 +253,13 @@ Rectangle {
                         radius: width / 2
                         color: "transparent"
                         border.width: 2 * view.s
-                        border.color: Qt.rgba(0.40, 0.91, 0.98, 0.35)
+                        border.color: view.tokens.cyanEdge
                     }
                     Rectangle {
                         id: avatarDisc
                         anchors.fill: parent
                         radius: width / 2
-                        color: Qt.rgba(0.17, 0.13, 0.27, 1)
+                        color: view.tokens.avatarFill
                         clip: true
                         Image {
                             id: face
@@ -293,9 +296,9 @@ Rectangle {
                 radius: height / 2
                 color: view.cGlass
                 border.width: 1
-                border.color: view.mood === "alert" ? Qt.rgba(0.93, 0.15, 0.31, 0.75)
-                            : pw.activeFocus ? Qt.rgba(0.78, 0.71, 0.90, 0.45) : view.cLine
-                Behavior on border.color { ColorAnimation { duration: 250 } }
+                border.color: view.mood === "alert" ? view.tokens.alertEdge
+                            : pw.activeFocus ? view.tokens.focusEdge : view.cLine
+                Behavior on border.color { ColorAnimation { duration: view.tokens.durEdge } }
                 transform: Translate { id: shakeT }
 
                 CoreIcon {
@@ -330,7 +333,7 @@ Rectangle {
                     id: go
                     anchors { right: parent.right; verticalCenter: parent.verticalCenter; rightMargin: 6 * view.s }
                     width: 34 * view.s; height: width; radius: width / 2
-                    color: goMouse.containsMouse ? Qt.rgba(1, 1, 1, 0.16) : Qt.rgba(1, 1, 1, 0.09)
+                    color: goMouse.containsMouse ? view.tokens.edge : view.tokens.fill
                     opacity: view.busy ? 0.5 : 1
                     CoreIcon { anchors.centerIn: parent; name: "arrow"; size: 15 * view.s; stroke: 2.2; color: view.cText }
                     MouseArea { id: goMouse; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: pw.accepted() }
@@ -338,11 +341,11 @@ Rectangle {
             }
             SequentialAnimation {
                 id: shakeAnim
-                NumberAnimation { target: shakeT; property: "x"; to: -8; duration: 60 }
-                NumberAnimation { target: shakeT; property: "x"; to: 7; duration: 70 }
-                NumberAnimation { target: shakeT; property: "x"; to: -5; duration: 70 }
-                NumberAnimation { target: shakeT; property: "x"; to: 3; duration: 70 }
-                NumberAnimation { target: shakeT; property: "x"; to: 0; duration: 60 }
+                NumberAnimation { target: shakeT; property: "x"; to: -8; duration: view.tokens.durShake }
+                NumberAnimation { target: shakeT; property: "x"; to: 7; duration: view.tokens.durShake }
+                NumberAnimation { target: shakeT; property: "x"; to: -5; duration: view.tokens.durShake }
+                NumberAnimation { target: shakeT; property: "x"; to: 3; duration: view.tokens.durShake }
+                NumberAnimation { target: shakeT; property: "x"; to: 0; duration: view.tokens.durShake }
             }
 
             Text {
@@ -368,7 +371,7 @@ Rectangle {
                 id: art
                 x: 14 * view.s; anchors.verticalCenter: parent.verticalCenter
                 width: 46 * view.s; height: width; radius: 10 * view.s
-                color: Qt.rgba(1, 1, 1, 0.08)
+                color: view.tokens.fillSoft
                 clip: true
                 Image { anchors.fill: parent; source: view.mediaArt; fillMode: Image.PreserveAspectCrop; sourceSize: Qt.size(96, 96); visible: status === Image.Ready }
                 CoreIcon { visible: view.mediaArt === ""; anchors.centerIn: parent; name: "music"; size: 18 * view.s; color: view.cDim }
@@ -379,7 +382,7 @@ Rectangle {
                 Text { width: parent.width; elide: Text.ElideRight; text: view.mediaTitle; color: view.cText; font.family: view.uiFont; font.pixelSize: 14 * view.s; font.weight: Font.DemiBold }
                 Rectangle {
                     width: parent.width; height: 3 * view.s; radius: height / 2
-                    color: Qt.rgba(1, 1, 1, 0.15)
+                    color: view.tokens.track
                     Rectangle { width: parent.width * Math.max(0, Math.min(1, view.mediaProgress)); height: parent.height; radius: height / 2; color: view.cText }
                 }
             }
@@ -387,7 +390,7 @@ Rectangle {
                 id: playBtn
                 anchors { right: parent.right; rightMargin: 14 * view.s; verticalCenter: parent.verticalCenter }
                 width: 34 * view.s; height: width; radius: width / 2
-                color: Qt.rgba(1, 1, 1, 0.10)
+                color: view.tokens.line
                 CoreIcon { anchors.centerIn: parent; name: view.mediaPlaying ? "pause" : "play"; size: 14 * view.s; stroke: 2; color: view.cText }
                 MouseArea { anchors.fill: parent; cursorShape: Qt.PointingHandCursor; onClicked: view.mediaToggle() }
             }

@@ -60,6 +60,14 @@ Singleton {
     property color textOnAccent:     paletteOn ? wallPalette.onAccent : dragon.textOnAccent         // text on a solid accent fill
     property color accentShade:  paletteOn ? wallPalette.tint : dragon.accentShade          // very dark tone of the accent (glass backgrounds)
     readonly property var coreIdentity: [coreNode, lavender, cyan]                     // NeuralCore.identity
+    // NeuralCore's palette and timings (shared/neural-core: SDDM keeps its built-in defaults); alert / ok are the fixed
+    // semantic colours of the core, they never follow the wallpaper
+    readonly property var corePalette: ({
+        identity: coreIdentity,
+        alert: ["#ed254e", "#ff4d73", "#f9ae58"],
+        ok: ["#06c993", "#00c1e4", "#7cf5c9"],
+        blendMs: ms(420), energyMs: ms(500), expandMs: ms(750), moodMs: ms(300), calmFps: 12
+    })
     property color switchOn: paletteOn ? lavender : cyan                       // switches: cyan in the Dragon look (08-ajustes), the accent with a wallpaper palette (14-fondos)
     Behavior on accent       { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
     Behavior on lavender     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
@@ -353,6 +361,71 @@ Singleton {
             case "idle":    return "inactivo";
             default:        return "sin clasificar";
         }
+    }
+
+    // Lock screen (modules/lock/LockView.qml, pure QtQuick: it gets these through Lock.qml) and the classic orbital
+    // launcher (modules/launcher/LauncherView.qml, through Launcher.qml). Same keys in tests/qml/lock_mock.qml.
+    readonly property QtObject lockTokens: QtObject {
+        readonly property color ink: root.bg
+        readonly property color backdrop: "#05060c"
+        readonly property color text: root.text
+        readonly property color soft: root.textSoft
+        readonly property color dim: root.textDim
+        readonly property color lavender: root.lavender
+        readonly property color cyan: root.cyan
+        readonly property color warn: root.warn
+        readonly property color alert: root.error
+        readonly property color ok: root.ok
+        readonly property color badge: root.badge
+        readonly property color line: Qt.rgba(1, 1, 1, 0.10)
+        readonly property color glass: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.62)
+        readonly property color glassDeep: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.7)
+        readonly property color vignetteIn: Qt.rgba(0.20, 0.15, 0.30, 0.55)
+        readonly property color vignetteMid: Qt.rgba(0.05, 0.04, 0.09, 0.4)
+        readonly property color vignetteOut: Qt.rgba(0, 0, 0, 0.8)
+        readonly property color edge: Qt.rgba(1, 1, 1, 0.16)
+        readonly property color edgeStrong: Qt.rgba(1, 1, 1, 0.25)
+        readonly property color shine: Qt.rgba(1, 1, 1, 0.14)
+        readonly property color fill: Qt.rgba(1, 1, 1, 0.09)
+        readonly property color fillSoft: Qt.rgba(1, 1, 1, 0.08)
+        readonly property color track: Qt.rgba(1, 1, 1, 0.15)
+        readonly property color cyanEdge: root.alpha(root.cyan, 0.35)
+        readonly property color avatarFill: Qt.rgba(0.17, 0.13, 0.27, 1)
+        readonly property color alertEdge: root.alpha(root.error, 0.75)
+        readonly property color focusEdge: root.alpha(root.lavender, 0.45)
+        readonly property int tick: 1000                // the «locked N min» counter (a display time: not scaled)
+        readonly property int durMood: root.ms(300)
+        readonly property int durEdge: root.ms(250)
+        readonly property int durShake: root.ms(65)    // one step of the wrong-password shake
+        readonly property int durCalm: 1400             // the core stays "alert" / "ok" this long (display time)
+        readonly property int durHold: 650              // "ok": the view holds before fading out (display time)
+        readonly property int durPoll: 600              // Bloq Mayús / layout poll while locked
+        readonly property var core: root.corePalette
+    }
+    readonly property QtObject launcherTokens: QtObject {
+        readonly property color text: root.text
+        readonly property color dim: root.textDim
+        readonly property color line: Qt.rgba(1, 1, 1, 0.12)
+        readonly property color surface: root.alpha(root.surface0, 0.78)
+        readonly property color lavender: root.lavender
+        readonly property color cyan: root.cyan
+        readonly property color alert: root.error
+        readonly property color backdrop: "#05060c"
+        readonly property color vignette: Qt.rgba(0, 0, 0, 0.7)
+        readonly property color ringBack: root.alpha(root.lavender, 0.28)
+        readonly property color ringFront: root.alpha(root.cyan, 0.45)
+        readonly property color cyanFaint: root.alpha(root.cyan, 0.14)
+        readonly property color cyanEdge: root.alpha(root.cyan, 0.6)
+        readonly property color alertEdge: root.alpha(root.error, 0.8)
+        readonly property color alertFaint: root.alpha(root.error, 0.16)
+        readonly property color shine: Qt.rgba(1, 1, 1, 0.07)
+        readonly property color clear: Qt.rgba(1, 1, 1, 0)
+        readonly property color field: Qt.rgba(0.04, 0.05, 0.09, 0.82)
+        readonly property color hint: root.alpha(root.textDim, 0.8)
+        readonly property color selection: root.alpha(root.lavender, 0.45)
+        readonly property var core: root.corePalette
+        readonly property int durLaunch: root.ms(420)
+        readonly property int durFade: root.ms(220)
     }
 
     // Workspace hover preview

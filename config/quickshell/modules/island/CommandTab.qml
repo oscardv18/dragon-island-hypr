@@ -173,7 +173,7 @@ Item {
                 readonly property int working: Herdr.counts?.working ?? 0
                 readonly property int waiting: Herdr.counts?.blocked ?? 0
                 readonly property int total: Herdr.agents.length
-                NeuralCore {
+                Core {
                     id: core
                     Layout.alignment: Qt.AlignHCenter
                     Layout.preferredWidth: Theme.cmdCore

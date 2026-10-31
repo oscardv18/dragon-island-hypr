@@ -262,7 +262,7 @@ PanelWindow {
                 border.width: 1
                 border.color: Theme.dockNodeEdge
             }
-            NeuralCore {
+            Core {
                 identity: Theme.coreIdentity
                 anchors.fill: parent
                 anchors.margins: 2

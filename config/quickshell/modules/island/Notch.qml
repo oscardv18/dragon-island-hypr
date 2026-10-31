@@ -194,7 +194,7 @@ Item {
                     width: 6; height: 6; radius: 3
                     color: Theme.error
                 }
-                NeuralCore {
+                Core {
                     identity: Theme.coreIdentity
                     visible: (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
                     anchors.verticalCenter: parent.verticalCenter

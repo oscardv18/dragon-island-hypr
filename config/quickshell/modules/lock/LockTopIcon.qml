@@ -6,7 +6,7 @@ Item {
     id: ti
     property string glyph: ""
     property real scaleFactor: 1
-    property color color: "#edebf5"
+    required property color color      // LockView passes its token (cText / cDim / cAlert)
     property bool clickable: false
     signal activated()
     width: 28 * scaleFactor

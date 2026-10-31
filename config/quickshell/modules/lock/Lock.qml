@@ -18,6 +18,7 @@ import Quickshell.Hyprland
 import Quickshell.Services.Pam
 import Quickshell.Services.Mpris
 import Quickshell.Services.UPower
+import "../.."
 
 Scope {
     id: lockRoot
@@ -129,14 +130,14 @@ Scope {
     }
 
     Timer {
-        id: calmTimer; interval: 1400
+        id: calmTimer; interval: Theme.lockTokens.durCalm
         onTriggered: if (lockRoot.mood === "alert") { lockRoot.mood = "calm"; lockRoot.stateText = "bloqueado" }
     }
 
     SequentialAnimation {
         id: unlockAnim
-        PauseAnimation { duration: 650 }
-        NumberAnimation { target: lockRoot; property: "contentOpacity"; to: 0; duration: 300; easing.type: Easing.OutCubic }
+        PauseAnimation { duration: Theme.lockTokens.durHold }
+        NumberAnimation { target: lockRoot; property: "contentOpacity"; to: 0; duration: Theme.lockTokens.durMood; easing.type: Easing.OutCubic }
         ScriptAction { script: { lockRoot.locked = false; lockRoot.busy = false; lockRoot.buffer = "" } }
     }
 
@@ -161,7 +162,7 @@ Scope {
         }
     }
     Timer {   // caps lock has no event: poll only while locked
-        running: lockRoot.locked; interval: 600; repeat: true
+        running: lockRoot.locked; interval: Theme.lockTokens.durPoll; repeat: true
         onTriggered: layoutProc.running = true
     }
     Connections {
@@ -192,12 +193,12 @@ Scope {
 
         WlSessionLockSurface {
             id: surface
-            color: "#05060c"
+            color: Theme.lockTokens.backdrop
 
             LockView {
                 id: lv
                 anchors.fill: parent
-                cLavender: Theme.lavender
+                tokens: Theme.lockTokens
                 coreIdentity: Theme.coreIdentity
                 mood: lockRoot.mood
                 stateText: lockRoot.stateText

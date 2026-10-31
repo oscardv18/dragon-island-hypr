@@ -70,7 +70,7 @@ Rectangle {
             color: coreMouse.containsMouse || root.bar.isOpen("launcher") ? Theme.hoverOverlay : Theme.coreButtonFill
             Behavior on color { ColorAnimation { duration: Theme.durHover } }
 
-            NeuralCore {
+            Core {
                 identity: Theme.coreIdentity
                 anchors.fill: parent
                 anchors.margins: 1
