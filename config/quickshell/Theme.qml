@@ -532,7 +532,7 @@ Singleton {
     readonly property real gravityBackBlur:  0.55             // MultiEffect blur at the very back
     readonly property real gravityHoverScale: 1.22
     readonly property var  gravitySpinPeriod: [150000, 210000, 280000]   // ms per turn; alternate directions
-    readonly property int  gravityFps:       30               // the core and the ring turn tick together at this rate
+    readonly property int  gravityFps:       20               // the core and the ring turn tick together at this rate (pulido: 30 → 20)
     readonly property real gravityMoon:      5
     readonly property real gravityMoonOrbit: 16               // moon orbit diameter = planet + this
     readonly property int  gravityMaxMoons:  3
