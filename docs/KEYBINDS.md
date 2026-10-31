@@ -48,7 +48,6 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + ←↑→↓` · `SUPER + SHIFT + H/J/K/L` | Mover la ventana |
 | `SUPER + arrastrar con clic izquierdo` | Mover ventana |
 | `SUPER + arrastrar con clic derecho` | Redimensionar ventana |
-| Doble clic en la barra de título (hyprbars) | Maximizar / restaurar |
 
 > `SUPER + L` es bloquear, por eso la navegación Vim usa `SUPER + ALT`. La spec asigna L a las dos cosas; se priorizó el bloqueo.
 

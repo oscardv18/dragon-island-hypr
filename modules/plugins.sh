@@ -1,21 +1,21 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034
 # =============================================================================
-# module plugins — hyprbars + hyprfocus (hyprland-plugins) and hyprglass, via hyprpm.
+# module plugins — hyprfocus (hyprland-plugins) and hyprglass, via hyprpm. (hyprbars is gone: no title bars.)
 # hyprpm needs a running Hyprland and sudo (it installs headers in /var/cache/hyprpm): it runs in the FOREGROUND of a
 # terminal (never in autostart or under `gum spin`). Outside Hyprland the step is deferred to the first session.
 # Repeat `hyprpm update` after every Hyprland update (update.sh does it when the version changed).
 # =============================================================================
 PLUGINS_SCRIPT="$REPO_DIR/scripts/plugins-foreground.sh"
 
-plugins_desc() { echo "hyprbars, hyprfocus y hyprglass (efecto cristal) con hyprpm"; }
+plugins_desc() { echo "hyprfocus y hyprglass (efecto cristal) con hyprpm"; }
 plugins_sudo() { echo "hyprpm update (instala cabeceras en /var/cache/hyprpm; hyprpm pide la contraseña)"; }
 plugins_packages() { pkg_list "$REPO_DIR/packages/pacman-plugins.txt"; }
 
 plugins_check() {
     command -v hyprctl >/dev/null 2>&1 && in_hyprland || return 1
     local l; l="$(hyprctl plugin list 2>/dev/null)"
-    grep -qi hyprbars <<<"$l" && grep -qi hyprfocus <<<"$l" && grep -qi hyprglass <<<"$l"
+    grep -qi hyprfocus <<<"$l" && grep -qi hyprglass <<<"$l"
 }
 
 plugins_plan() {
@@ -35,7 +35,7 @@ plugins_apply() {
             "$PLUGINS_SCRIPT" || log_warn "Los plugins no se instalaron: se reintentarán en el próximo inicio de sesión en Hyprland."
         fi
     elif $DRY_RUN; then
-        echo "[dry-run] $PLUGINS_SCRIPT   (hyprpm update; add; enable hyprbars hyprfocus hyprglass; reload)"
+        echo "[dry-run] $PLUGINS_SCRIPT   (hyprpm update; add; enable hyprfocus hyprglass; reload)"
     else
         log_info "Fuera de Hyprland: los plugins se instalarán en tu primer inicio de sesión (se abre una terminal)."
     fi
@@ -47,7 +47,7 @@ plugins_revert() {
         local p; for p in hyprbars hyprfocus hyprglass; do hyprpm disable "$p" 2>/dev/null || true; done
         hyprpm reload -n 2>/dev/null || true
     else
-        log_info "Para desactivar: hyprpm disable hyprbars; hyprpm disable hyprfocus; hyprpm disable hyprglass"
+        log_info "Para desactivar: hyprpm disable hyprfocus; hyprpm disable hyprglass"
     fi
     undeploy "$STATE_DIR/plugins-foreground.sh"
     run rm -f "$STATE_DIR/plugins.pending"

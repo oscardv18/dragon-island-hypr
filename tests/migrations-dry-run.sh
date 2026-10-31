@@ -23,7 +23,7 @@ for c in sudo yay paru systemctl gsettings hyprctl hyprpm pkill setsid chsh loca
 done
 
 # read-only questions a migration may ask outside run() (calls.log keeps them out of the report)
-READ_ONLY='^(qs list|hyprctl (version|-j .*)|systemctl --user is-(active|enabled) .*|gsettings get .*)$'
+READ_ONLY='^(qs list|hyprctl (version|-j .*|getoption .*|plugin list)|hyprpm list|systemctl --user is-(active|enabled) .*|gsettings get .*)$'
 
 # ---- a copied install with something to do for each migration ----
 C="$H/.config"

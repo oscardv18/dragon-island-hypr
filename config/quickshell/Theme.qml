@@ -14,7 +14,7 @@ Singleton {
     // Palette (Sweet / Garuda Dragonized)
     // -------------------------------------------------------------------------
     readonly property color bg:         "#07060d" // wallpaper fallback / deepest background
-    readonly property color surface0:   "#161925" // islands (72-86 % opacity), hyprbars bar
+    readonly property color surface0:   "#161925" // islands (72-86 % opacity)
     readonly property color surface1:   "#12131e" // cards inside panels
     readonly property color surface2:   "#1d2031" // capsules, list rows, off toggles
     readonly property color surface3:   "#22243a" // inactive pills, progress tracks
@@ -111,9 +111,31 @@ Singleton {
     readonly property color popoverBg:   glassFill                                             // popovers, cards, panels
     readonly property color glassBorder: glassStyle === "ahumado" ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.09)
     readonly property bool  glassLight:  glassStyle === "ahumado"                              // components/GlassLight.qml
-    readonly property var   glassLightStops: [alpha(lavender, 0), lavender, cyan, alpha(cyan, 0)]   // at 0 · 0.2 · 0.8 · 1
-    readonly property real  glassLightWidth: 1
-    readonly property real  glassLightOpacity: 0.85
+    readonly property var   glassLightStops: frame.lineStops        // the light edge IS the frame's top line (Theme.frame)
+    readonly property real  glassLightWidth: frame.line
+    readonly property real  glassLightOpacity: frame.lineAlpha
+
+    // ---- Frame (components/FrameDecor.qml): the top line + four corner brackets of every HUD popover AND of the focused
+    // window (modules/frame/FrameWindow.qml). One set of tokens so the two can never diverge
+    // (docs/design/28-emergentes.png, 32-contorno-ventana.png).
+    readonly property QtObject frame: QtObject {
+        readonly property real line:          1                         // top line: thickness
+        readonly property real lineAlpha:     0.85                      // … and opacity
+        readonly property var  lineStops:     [root.alpha(root.lavender, 0), root.lavender, root.cyan, root.alpha(root.cyan, 0)]   // at 0 · 0.2 · 0.8 · 1
+        readonly property real lineInset:     0.6                       // the line starts this fraction of the radius in
+        readonly property real bracket:       12                        // corner brackets: arm length …
+        readonly property real bracketStroke: 1.5                       // … stroke …
+        readonly property real bracketRadius: 6                         // … corner radius …
+        readonly property real bracketInset:  4                         // … and inset from the shape's edge
+        readonly property real bracketGrow:   4                         // they slide in from this far out while they appear
+        readonly property color bracketColor: root.cyan
+        readonly property real bracketAlpha:  1
+        // windows: the native 1 px border under the drawn frame. config/hypr/look.lua mirrors these values (cyan never
+        // follows the wallpaper palette, so they are constant); tests/frame-tokens.sh keeps the two equal. Never a light edge.
+        readonly property real  border:         1
+        readonly property color borderActive:   root.alpha(root.cyan, 0.30)
+        readonly property color borderInactive: Qt.rgba(0, 0, 0, 0.30)
+    }
     readonly property color glassShadow: glassLiquid ? transparent : Qt.rgba(0, 0, 0, 0.28)   // below ignore_alpha: never blurred
     readonly property real  glassShadowBlur: 14
     readonly property real  glassShadowY:    3
@@ -264,8 +286,8 @@ Singleton {
     readonly property real notchPeekDy:        16     // hover / transient peek: grows down ...
     readonly property real notchPeekDx:        16      // ... and wider
     readonly property real notchPeekLine:      240 + notchTextExtra   // longest secondary line of a collapsed state
-    // the isla de mando (docs/design/31-isla-mando.png): 700 · 740 · 780 by bar size, 262 high
-    readonly property real notchExpandedWidth: 700 + 40 * barStep
+    // the isla de mando (docs/design/31-isla-mando.png): 600 – 740 wide, centred (cmdMinWidth / cmdMaxWidth), 262 high
+    readonly property real notchExpandedWidth: cmdMaxWidth
     readonly property real notchExpandedHeight: 262
     readonly property real notchWindowHeight:  notchExpandedHeight + 40 // room for spring overshoot
     readonly property real notchPad:           18     // padding inside the expanded body
@@ -279,7 +301,10 @@ Singleton {
     readonly property real artSmallRadius: 6
 
     // Isla de mando: command line · priority stack · core · music · time strip · toggles
-    readonly property real cmdMinWidth:    640    // narrowest isla de mando when the side islands leave less room
+    readonly property real cmdMinWidth:    600    // narrowest isla de mando (it stays centred even when the islands leave less)
+    readonly property real cmdMaxWidth:    740    // widest; between the two it is symmetric about the centre (BarMetrics)
+    readonly property real cmdCoreMin:     cmdCore + 16   // the core and the music never shrink below these …
+    readonly property real cmdMusicMin:    250            // … the priority stack gives way first
     readonly property real cmdField:       34
     readonly property real cmdChip:        20     // the = > ? @ IA chips inside the field
     readonly property real cmdTab:         26
@@ -524,10 +549,10 @@ Singleton {
     readonly property color hudRowFill:      Qt.rgba(1, 1, 1, 0.03)
     readonly property color hudRowHover:     Qt.rgba(1, 1, 1, 0.07)
     readonly property color hudLine:         Qt.rgba(1, 1, 1, 0.16)   // the header line, fades to the right
-    readonly property real hudBracket:       12     // corner brackets: length, stroke, radius, inset from the frame
-    readonly property real hudBracketStroke: 1.5
-    readonly property real hudBracketRadius: 6
-    readonly property real hudBracketInset:  4
+    readonly property real hudBracket:       frame.bracket        // corner brackets: Theme.frame (shared with windows)
+    readonly property real hudBracketStroke: frame.bracketStroke
+    readonly property real hudBracketRadius: frame.bracketRadius
+    readonly property real hudBracketInset:  frame.bracketInset
     readonly property real hudBeam:          1.5    // the beam from the capsule to the popover
     readonly property real hudBeamGlow:      8
     readonly property real hudRowShift:      8      // rows enter 8 px below their place
@@ -727,6 +752,7 @@ Singleton {
     readonly property int durOrbitReveal:  ms(420)  // the screen-sized thumbnail fades over the awww reveal
     readonly property QtObject motion: QtObject {
         readonly property int paleta: root.ms(600)   // the shell blending into a new wallpaper palette
+        readonly property int estandar: root.durStd   // a short state change on the estandar curve (the window frame following focus)
     }
 
     // display times (how long something stays on screen): NOT scaled by motionScale

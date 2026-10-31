@@ -13,7 +13,7 @@ Más capturas: [islas](docs/screenshots/islas) y [dock](docs/screenshots/dock). 
 | Pieza | Detalle |
 |---|---|
 | **Hyprland 0.56** | Configuración en **Lua** (`config/hypr/*.lua`), borde con degradado, blur, animaciones, reglas de capa para el shell |
-| **Plugins** | `hyprbars` (barra de título de 30 px, botones a la izquierda), `hyprfocus` y `hyprglass` (cristal líquido), instalados con `hyprpm` |
+| **Plugins** | `hyprfocus` y `hyprglass` (cristal líquido), instalados con `hyprpm`. Sin barras de título: la ventana enfocada lleva el contorno de los popovers (línea superior y escuadras cian) |
 | **Barra** | Isla izquierda (lanzador, escritorios 1–5, ventana activa) e isla derecha (CPU, RAM, Wi‑Fi, Bluetooth, volumen, batería, bandeja del sistema, notificaciones, reloj). Los huecos dejan pasar el clic |
 | **Notch** | Negro opaco pegado al borde superior, con orejas cóncavas; emerge del borde al arrancar y nunca se superpone a las islas de la barra. Al pasar el ratón se asoma (peek). Muestra OSD, notificación, cambio de escritorio, música o el reloj. Al pulsarlo (o SUPER+D) crece hasta ≈720×230 con las pestañas Nook y Tray |
 | **Notificaciones** | Popups (hasta 3, bajo la isla derecha), un peek del notch y el centro de notificaciones |
@@ -57,7 +57,7 @@ El instalador es **modular**; en el menú eliges qué instalar (`core` es obliga
 | `core` | Hyprland, Quickshell, servicios (NetworkManager, bluetooth, power-profiles-daemon, pipewire), configuraciones enlazadas con respaldo | sí |
 | `shell` | zsh + starship + eza/fzf/zoxide/fd/bat; añade UNA línea a tu `~/.zshrc`, no la reemplaza | sí |
 | `theme` | Fuentes (Outfit, JetBrains Mono Nerd), iconos Candy + Sweet Folders, tema Qt/GTK, fondos | sí |
-| `plugins` | hyprbars, hyprfocus y hyprglass con `hyprpm` (en primer plano, pide sudo) | sí |
+| `plugins` | hyprfocus y hyprglass con `hyprpm` (en primer plano, pide sudo) | sí |
 | `keyboard` | Distribuciones `us,latam` (us siempre primera) | sí |
 | `login` | Tema de login dragon-core para SDDM (opt-in; no toca Plasma Login Manager) | no |
 | `keyring` | gnome-keyring como único llavero, con el cambio de PAM mostrado como diff | no |
@@ -223,7 +223,7 @@ Dos capas, y la segunda es opcional. Ambas trabajan por **alfa**: el blur / cris
 3. **Cómo se dibuja en Quickshell.** Cada isla de la barra y cada tarjeta de notificación es su propia ventana, transparente (alfa 0) alrededor de un Rectangle redondeado con `Theme.glassBg` (`surface0` al 18 %: `Theme.glassAlpha`) y un borde de 1 px blanco al 8 %; popovers, notificaciones y paneles van al 30 % (`Theme.popoverAlpha`). Tan translúcidos para que el cristal se vea de verdad; ambos quedan por encima del `mask_threshold` de 0.1. Los textos e iconos de la barra llevan una sombra sutil (`MultiEffect`, solo dentro de las islas) para leerse sobre el cristal. Las ventanas de pantalla completa (popovers, lanzador, selector) están desmapeadas mientras no hay nada abierto: dejarlas dibujándose costaba GPU. Nada se sale de las formas (sin sombras ni halos).
 4. **Respaldo:** sin el plugin, o si una actualización de Hyprland lo rompe, todo se ve bien con el blur nativo y también respeta las esquinas. El gancho de capas de hyprglass usa una función privada de Hyprland, así que puede fallar tras actualizar.
 5. **Comprobación:** `hyprctl plugin list` · `hyprctl getoption plugin:hyprglass:layers:enabled` · `hyprctl hyprglass status` · `hyprctl hyprglass stats`. Con un fondo de vídeo el recálculo del cristal se limita a 8 fps (`live_resample_fps`). Quitarlo: `hyprpm disable hyprglass`.
-6. Ghostty (`config/ghostty/config`) y kitty (`background_opacity 0.65`; reinícialo para aplicarlo) son translúcidos sobre el cristal; su propio blur y su barra GTK están apagados (`window-decoration = none`, `gtk-titlebar = false`) y su barra de título es la de hyprbars como en el resto de ventanas (con `bar_blur = false`: con el blur de la barra aparecía una banda oscura de ~40 px sobre el cristal). Para opacidad por app hay reglas comentadas al final de `rules.lua`; las ventanas en pantalla completa y los reproductores de vídeo siempre quedan opacos.
+6. Ghostty (`config/ghostty/config`) y kitty (`background_opacity 0.65`; reinícialo para aplicarlo) son translúcidos sobre el cristal; su propio blur y su barra GTK están apagados (`window-decoration = none`, `gtk-titlebar = false`) y no hay barra de título en ninguna ventana: la enfocada lleva el contorno de los popovers (Ajustes › Apariencia › Contorno de ventanas). Para opacidad por app hay reglas comentadas al final de `rules.lua`; las ventanas en pantalla completa y los reproductores de vídeo siempre quedan opacos.
 
 ## Shell: zsh + starship
 

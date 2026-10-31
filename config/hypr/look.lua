@@ -8,12 +8,14 @@ hl.config({
 	general = {
 		gaps_in = 4,
 		gaps_out = 10,
-		border_size = 2,
+		-- 1 px, very discreet: the focused window's frame (top line + four cyan corner brackets) is drawn by Quickshell
+		-- (framewatch.lua → modules/frame/FrameWindow.qml); this border is what still reads if Quickshell restarts.
+		-- Mirrors Theme.frame.border / borderActive / borderInactive. Never a light edge.
+		border_size = 1,
 
 		col = {
-			-- new identity: lavender (#c8b6e6) → cyan (#67e8f9) at 45°; no magenta / pink / green any more
-			active_border = { colors = { "rgba(c8b6e6ff)", "rgba(67e8f9ff)" }, angle = 45 },
-			inactive_border = "rgba(ffffff14)", -- white 8 %: almost invisible
+			active_border = "rgba(67e8f94d)", -- cyan #67e8f9 at 30 % (Theme.frame.borderActive)
+			inactive_border = "rgba(0000004d)", -- black 30 %: a dark hairline, no white edge (Theme.frame.borderInactive)
 		},
 
 		resize_on_border = true,
@@ -39,7 +41,8 @@ hl.config({
 		-- It applies to translucent windows and, through the layer rules in rules.lua, to the Quickshell layers.
 		-- The glass style (glassstyle.lua) only changes the grain: «ahumado» = fine noise (the smoked material of
 		-- docs/design/28-emergentes.png), «clasico» = clean blur. With «liquido» hyprglass draws the layers and windows
-		-- instead (glass.lua) and this blur stays for anything hyprglass excludes.
+		-- instead (glass.lua) and this blur stays for anything hyprglass excludes. With the other two, glass.lua turns
+		-- hyprglass' manage_window_blur off: left on, it took this blur away from every translucent window.
 		blur = {
 			enabled = true,
 			size = 10, -- kernel radius per pass; bigger = softer, more GPU (the backdrop reads as shapes, not details)

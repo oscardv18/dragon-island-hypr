@@ -14,9 +14,14 @@
  *   - maxNotchWidth(screenName: string, screenWidth: real): real
  *   - notchX(screenName: string, screenWidth: real, w: real): real (x of a collapsed notch of width w)
  *   - reportNotch(screenName: string, x: real, w: real): void (Notch.qml: where the collapsed notch is drawn)
+ *   - commandWidth(screenName: string, screenWidth: real): real (width of the isla de mando, always centred:
+ *       min(Theme.cmdMaxWidth, 2 × (screenWidth / 2 − inner edge of the nearer side island − Theme.notchGap)),
+ *       at least Theme.cmdMinWidth and never wider than the screen minus its side margins)
+ *   - reportCommand(screenName: string, x: real, w: real): void (Notch.qml: where the expanded island is drawn)
  *
  * IPC (`qs ipc call barmetrics <fn>`): dump(): string (per monitor: left island end, notch x / width, right island
- *   start and the free room on each side of the notch; used to check that nothing overlaps)
+ *   start and the free room on each side of the notch; used to check that nothing overlaps; then the isla de mando:
+ *   x / width / centre and whether it fits between the islands)
  */
 pragma Singleton
 import Quickshell
@@ -29,6 +34,21 @@ Singleton {
 
     property var _edges: ({})   // screen name → { l, r }
     property var _notch: ({})   // screen name → { x, w }
+    property var _cmd: ({})     // screen name → { x, w } of the expanded isla de mando
+
+    function reportCommand(screenName: string, x: real, w: real): void {
+        const n = Object.assign({}, root._cmd);
+        n[screenName] = { x: Math.round(x), w: Math.round(w) };
+        root._cmd = n;
+    }
+
+    function commandWidth(screenName: string, screenWidth: real): real {
+        const room = Math.max(Theme.cmdMinWidth, screenWidth - Theme.barMarginSide * 2);
+        const e = root._edges[screenName];
+        if (!e) return Math.min(Theme.cmdMaxWidth, room);
+        const half = Math.min(screenWidth / 2 - e.l, e.r - screenWidth / 2) - Theme.notchGap;
+        return Math.min(room, Math.max(Theme.cmdMinWidth, Math.min(Theme.cmdMaxWidth, 2 * half)));
+    }
 
     function reportNotch(screenName: string, x: real, w: real): void {
         const n = Object.assign({}, root._notch);
@@ -43,6 +63,8 @@ Singleton {
             for (const name of Object.keys(root._edges)) {
                 const e = root._edges[name], n = root._notch[name] ?? { x: -1, w: -1 };
                 out.push(`${name} left=${Math.round(e.l)} notch=${n.x}+${n.w} right=${Math.round(e.r)} gapL=${n.x - Math.round(e.l)} gapR=${Math.round(e.r) - n.x - n.w}`);
+                const c = root._cmd[name];
+                if (c) out.push(`${name} mando=${c.x}+${c.w} centre=${c.x + c.w / 2} fits=${(c.x >= Math.round(e.l) + Theme.notchGap && c.x + c.w <= Math.round(e.r) - Theme.notchGap)}`);
             }
             return out.join("\n");
         }

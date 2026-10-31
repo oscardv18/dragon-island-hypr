@@ -501,7 +501,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `cava` | extras (paneles) | oficial |
 | `herdr` | extras | instalador oficial (sin root, ~/.local/bin) |
 | `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |
-| `hyprbars`, `hyprfocus`, `hyprglass` | plugins | hyprpm |
+| `hyprfocus`, `hyprglass` | plugins | hyprpm |
 | Mis apps: opencode eza zoxide bat btop nautilus telegram-desktop github-cli shellcheck thunar vlc obs-studio obsidian vlc-plugin-ffmpeg docker docker-compose nodejs-lts-krypton npm pnpm python-pip uv cloudflared rustup php-gd php-cgi php-fpm php-pgsql php-redis php-sqlite go dart docker-buildx nss memtest86+ smartmontools lazygit genoffice-bin lmbionic-bin otf-apple-sf-mono android-studio hermes-agent whitesur-icon-theme mactahoe-icon-theme-git  | extras (myapps) | lo que instalaste desde la Tienda |
 <!-- packages:end -->
 

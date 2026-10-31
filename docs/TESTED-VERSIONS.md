@@ -10,8 +10,7 @@ Si tu sistema trae versiones más nuevas y algo falla, es el primer sitio donde 
 | Hyprland | 0.56.2 (commit efb5099, config Lua) | `hyprctl version` |
 | hyprpm | 0.56.2-4 (paquete aparte en Arch) | `pacman -Q hyprpm` |
 | Quickshell | 0.3.1-1 | `qs --version` |
-| Plugin hyprbars | 1.0 (hyprland-plugins, commit fijado por hyprpm para 0.56.x: `7644cec`) | `hyprctl plugin list` |
-| Plugin hyprfocus | 1.0 (mismo repo y commit `7644cec`) | `hyprctl plugin list` |
+| Plugin hyprfocus | 1.0 (hyprland-plugins, commit fijado por hyprpm para 0.56.x: `7644cec`) | `hyprctl plugin list` |
 | Plugin hyprglass | 0.9.1 (hyprnux/hyprglass) | `hyprctl plugin list` |
 | SDDM | 0.21.0-7 (tema dragon-core) | `pacman -Q sddm` |
 | Qt (qt6-declarative, qt6-svg) | 6.12.0-1 | `pacman -Q qt6-declarative` |

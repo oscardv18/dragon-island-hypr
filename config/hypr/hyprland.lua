@@ -14,6 +14,7 @@ require("binds")
 require("tiling")   -- dwindle <-> scrolling per workspace: restores the saved modes (binds are in binds.lua)
 require("plugins")
 require("glass")   -- hyprglass (optional): a no-op when the plugin is not loaded
+require("framewatch")   -- the focused window's geometry for the frame Quickshell draws (no title bars)
 require("autostart")
 
 -- Per-machine overrides (monitors, scale, GPU variables, keyboard layouts), written by install.sh and never

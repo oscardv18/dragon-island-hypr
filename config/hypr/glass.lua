@@ -19,8 +19,16 @@
 local glass = require("glassstyle")
 
 if glass.hyprglass and not glass.liquid then
-    -- installed but inactive: one call turns windows and layers off (`hyprctl reload` re-reads this, so it is live)
-    hl.plugin.hyprglass.config({ enabled = false, layers = { enabled = false } })
+    -- installed but inactive: one call turns windows and layers off (`hyprctl reload` re-reads this, so it is live).
+    -- manage_window_blur / layers.manage_blur (both true by default) make hyprglass take the NATIVE blur away from the
+    -- windows and layers it would glass, so there is never a double blur. They keep doing that with `enabled = false`:
+    -- that is what left Ghostty / kitty with the wallpaper sharp behind them after the pulido (ahumado by default).
+    -- Off here, the native blur of look.lua is back on every translucent window.
+    hl.plugin.hyprglass.config({
+        enabled            = false,
+        manage_window_blur = false,
+        layers             = { enabled = false, manage_blur = false },
+    })
 end
 
 if glass.liquid then
@@ -28,11 +36,14 @@ if glass.liquid then
 
     hg.config({
         enabled        = true,   -- windows: every translucent one gets the glass; the exclusions are the tags below
+        -- hyprglass draws the windows and layers it glasses and takes the native blur off them (no double blur);
+        -- explicit because the other styles turn both off and a reload must bring them back
+        manage_window_blur = true,
         default_theme  = "dark",
         default_preset = "dragon-liquid",   -- one look for every window (skip_opaque_windows, on by default, ignores opaque ones)
         -- live_resample re-renders the glass when what is behind it changes (a video wallpaper): cap it at
         -- a low fps instead of the default 30 (see the measurements in HANDOFF.md)
-        layers        = { enabled = true, live_resample_fps = 8 },
+        layers        = { enabled = true, manage_blur = true, live_resample_fps = 8 },
     })
 
     -- ---- liquid glass for Ghostty: the look of hyprglass' README screenshot ----

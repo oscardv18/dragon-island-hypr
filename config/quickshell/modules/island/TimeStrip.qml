@@ -54,7 +54,8 @@ Rectangle {
             x: root.xOf(hourMs)
             visible: hourMs < root.to
             Rectangle { y: root.height - 14; width: 1; height: 4; color: Theme.alpha(Theme.text, 0.15) }
-            HudCaption { x: -width / 2; y: root.height - 11; size: Theme.sizeCaption - 2.5; text: `${String(new Date(parent.hourMs).getHours()).padStart(2, "0")}:00` }
+            // centred on its tick, but kept inside the strip (a narrow island would cut the first / last hour)
+            HudCaption { x: Math.max(-parent.x, Math.min(-width / 2, root.width - parent.x - width)); y: root.height - 11; size: Theme.sizeCaption - 2.5; text: `${String(new Date(parent.hourMs).getHours()).padStart(2, "0")}:00` }
         }
     }
 

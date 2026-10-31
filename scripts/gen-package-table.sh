@@ -24,7 +24,7 @@ table() {
     awk '/^[[:space:]]*(#|$)/ { next } /^@/ { sec = substr($1, 2); next } { split($1, a, ":"); printf "| `%s` | extras (%s) | %s |\n", a[2], sec, (a[1] == "aur" ? "AUR" : "oficial") }' "$REPO_DIR/packages/extras.txt"
     echo "| \`herdr\` | extras | instalador oficial (sin root, ~/.local/bin) |"
     echo "| \`zsh-autosuggestions\`, \`zsh-syntax-highlighting\`, \`fzf-tab\` | shell | git clone |"
-    echo "| \`hyprbars\`, \`hyprfocus\`, \`hyprglass\` | plugins | hyprpm |"
+    echo "| \`hyprfocus\`, \`hyprglass\` | plugins | hyprpm |"
     echo "| Mis apps: $(awk '/^[[:space:]]*(#|$)/ { next } { printf "%s ", $1 }' "$REPO_DIR/packages/user-pacman.txt" "$REPO_DIR/packages/user-aur.txt") | extras (myapps) | lo que instalaste desde la Tienda |"
 }
 

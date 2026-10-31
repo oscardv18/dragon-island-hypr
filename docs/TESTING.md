@@ -20,9 +20,8 @@ qs log -f                 # errores de Quickshell con archivo:línea
 ## 1. Primer inicio de sesión
 
 - [ ] SDDM muestra la sesión **Hyprland** y **Plasma sigue funcionando** (entra en Plasma una vez y vuelve).
-- [ ] En Hyprland se abre la ventana flotante "dragon-island: primer arranque". `hyprpm update` pide la contraseña y compila hyprbars y hyprfocus.
-- [ ] Tras cerrarla, las ventanas tienen barra de título: 30 px, botones a la **izquierda** en el orden cerrar (rojo), maximizar (ámbar), flotar (verde).
-  - Si el orden sale invertido, cambia el orden de `add_button` en `config/hypr/plugins.lua`.
+- [ ] En Hyprland se abre la ventana flotante "dragon-island: primer arranque". `hyprpm update` pide la contraseña y compila hyprfocus y hyprglass.
+- [ ] Tras cerrarla, ninguna ventana tiene barra de título; la enfocada lleva una línea superior fina (lavanda → cian) y cuatro escuadras cian, como los popovers.
 - [ ] Al cambiar de escritorio o de foco con el teclado, las ventanas no se encogen ni vuelven a crecer (hyprfocus sin animación de foco).
 - [ ] En el segundo inicio de sesión no vuelve a aparecer la ventana del primer arranque.
 
