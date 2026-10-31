@@ -172,4 +172,24 @@ hl.window_rule({
     name    = "opaque-video-players",
     match   = { class = "^(mpv|vlc|celluloid|io\\.github\\.celluloid_player\\.Celluloid|haruna|org\\.kde\\.haruna|smplayer|totem|org\\.gnome\\.Totem)$" },
     opacity = "1.0 override 1.0 override",
+    no_blur = true,
+})
+
+-- Opaque windows never pay for the native blur: Hyprland only blurs behind a surface that is not fully opaque, and
+-- these say so explicitly anyway — video players (above), games (Steam / gamescope) and whatever declares its
+-- content as video or game. A fullscreen window hides everything behind it, so nothing is blurred there either.
+hl.window_rule({
+    name    = "no-blur-games",
+    match   = { class = "^(steam_app_\\d+|gamescope|steam_proton|.*\\.exe)$" },
+    no_blur = true,
+})
+hl.window_rule({
+    name    = "no-blur-video-content",
+    match   = { content = "video" },
+    no_blur = true,
+})
+hl.window_rule({
+    name    = "no-blur-game-content",
+    match   = { content = "game" },
+    no_blur = true,
 })

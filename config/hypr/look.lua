@@ -39,7 +39,8 @@ hl.config({
 		-- It applies to translucent windows and, through the layer rules in rules.lua, to the Quickshell layers.
 		-- The glass style (glassstyle.lua) only changes the grain: «ahumado» = fine noise (the smoked material of
 		-- docs/design/28-emergentes.png), «clasico» = clean blur. With «liquido» hyprglass draws the layers and windows
-		-- instead (glass.lua) and this blur stays for anything hyprglass excludes.
+		-- instead (glass.lua) and this blur stays for anything hyprglass excludes. With the other two, glass.lua turns
+		-- hyprglass' manage_window_blur off: left on, it took this blur away from every translucent window.
 		blur = {
 			enabled = true,
 			size = 10, -- kernel radius per pass; bigger = softer, more GPU (the backdrop reads as shapes, not details)
