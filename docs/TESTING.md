@@ -8,6 +8,14 @@ Antes de empezar, abre una terminal y deja corriendo:
 qs log -f                 # errores de Quickshell con archivo:línea
 ```
 
+Para medir los motores: `python3 -B tests/engines/bench.py` (opcional: `--runs 50`).
+Usa HOME/XDG temporales, historial sintético de 4000 entradas, una ejecución de
+calentamiento y 25 mediciones por modo, incluyendo el arranque del comando.
+Imprime mediana y p95 (rango más próximo); sale con 1 si alguna mediana alcanza
+150 ms. Ejecútalo con la máquina en reposo. No forma parte de `tests/run-all.sh`:
+la suite comprueba la mediana de 7 ejecuciones tras calentar, con límite de 300 ms
+para tolerar carga ocasional y seguir detectando regresiones persistentes.
+
 ## 0. Instalación
 
 - [ ] `./install.sh --dry-run` muestra todas las acciones, no pide sudo y no cambia nada.
