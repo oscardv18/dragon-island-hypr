@@ -23,8 +23,8 @@ hl.on("hyprland.start", function()
     hl.exec_cmd("wl-paste --type text --watch $HOME/.local/bin/dragon-clip-store")
     hl.exec_cmd("wl-paste --type image --watch $HOME/.local/bin/dragon-clip-store")
 
-    -- Load enabled hyprpm plugins, then reload the config so plugin options and
-    -- hyprbars buttons (guarded in plugins.lua) are applied now that the plugins exist.
+    -- Load enabled hyprpm plugins, then reload the config so the plugin options (guarded in plugins.lua and
+    -- glass.lua) are applied now that the plugins exist.
     hl.exec_cmd("hyprpm reload -n && hyprctl reload")
 
     -- Plugins not installed yet (plugins.pending, written by install.sh outside Hyprland): build them with hyprpm in a

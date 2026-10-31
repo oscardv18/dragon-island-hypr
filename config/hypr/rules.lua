@@ -60,13 +60,6 @@ hl.on("window.title", clipPixelSkin)
 hl.on("config.reloaded", function()
     for _, w in ipairs(hl.get_windows()) do clipPixelSkin(w) end
 end)
-if hl.plugin and hl.plugin.hyprbars then
-    hl.window_rule({
-        name               = "android-emulator-no-titlebar",
-        match              = { class = "^Emulator$" },
-        ["hyprbars:no_bar"] = true,
-    })
-end
 
 -- Floating windows for dialogs, settings and utility apps
 hl.window_rule({
@@ -128,13 +121,6 @@ hl.window_rule({
     move      = { "monitor_w * 0.155", "36" },
     animation = "slidevert",
 })
-if hl.plugin and hl.plugin.hyprbars then
-    hl.window_rule({
-        name               = "dropdown-terminal-no-titlebar",
-        match              = { class = "^org\\.dragonisland\\.Dropdown$" },
-        ["hyprbars:no_bar"] = true,
-    })
-end
 
 -- First-run setup terminal: floating and centered
 hl.window_rule({

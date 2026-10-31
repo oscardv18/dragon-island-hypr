@@ -17,10 +17,9 @@ font-size = 10.5
 background-opacity = 0.79
 background-blur = false
 
-# Window decorations. Hyprland's hyprbars already draws a title bar with the close / fullscreen / float
-# buttons on every window; Ghostty's own GTK header bar would be a second one. `none` (client-side
-# decorations off) keeps one consistent bar and gives the terminal the whole window. (The alternative,
-# `hyprbars:no_bar` for Ghostty, would remove the bar and the window controls instead.)
+# Window decorations: none. No window has a title bar in dragon-island (the frame of the focused window — a top
+# line and four corner brackets — is drawn by Quickshell; close / maximize / float are SUPER + Q / F / SHIFT + Space),
+# so Ghostty's own GTK header bar stays off too and the terminal gets the whole window.
 window-decoration = none
 # GTK header bar / tab strip: off too, so no opaque strip across the top of the glass (tabs only appear with 2+)
 gtk-titlebar = false

@@ -19,7 +19,7 @@ Read this first on every task in this repo. Then load the specialised skills:
 | Hyprland | **0.56.x stable** (0.56.2) | **Lua config** `~/.config/hypr/hyprland.lua`. hyprlang `.conf` is deprecated since 0.55 — do not write `.conf` |
 | Quickshell | **0.3.1** (Arch `extra`) | |
 | hyprpm | separate Arch package `hyprpm` | must be in packages/pacman-plugins.txt |
-| hyprland-plugins | pinned commit for 0.56.x via hyprpm | only hyprbars, hyprfocus (and borders-plus-plus) |
+| hyprland-plugins | pinned commit for 0.56.x via hyprpm | only hyprfocus (and borders-plus-plus); hyprbars retired 2026-10-31: no title bars, Quickshell draws the window frame |
 | gum | 2.x (Arch `extra`) | |
 
 Baseline syntax: `resources/hyprland-0.56.2-example.lua` is the upstream example config **of the exact stable release**. When the `hyprland` skill (which tracks the wiki's *git* version) and this file disagree, the stable file wins.

@@ -329,11 +329,11 @@ step_plugins() {
     local now before=""
     now="$(installed_version hyprland)"
     [[ -f "$STATE_DIR/hyprland-version" ]] && before="$(< "$STATE_DIR/hyprland-version")"
-    if [[ "$now" == "$before" && ! -f "$STATE_DIR/plugins.pending" ]] && hyprctl plugin list 2>/dev/null | grep -qi hyprbars; then
+    if [[ "$now" == "$before" && ! -f "$STATE_DIR/plugins.pending" ]] && hyprctl plugin list 2>/dev/null | grep -qi hyprfocus; then
         log_info "Hyprland $now sin cambios y plugins cargados: nada que reconstruir."
         return 0
     fi
-    if [[ -z "$before" ]] && hyprctl plugin list 2>/dev/null | grep -qi hyprbars && [[ ! -f "$STATE_DIR/plugins.pending" ]]; then
+    if [[ -z "$before" ]] && hyprctl plugin list 2>/dev/null | grep -qi hyprfocus && [[ ! -f "$STATE_DIR/plugins.pending" ]]; then
         $DRY_RUN || printf '%s\n' "$now" > "$STATE_DIR/hyprland-version"
         log_info "Plugins ya cargados con Hyprland $now: se registra la versión, sin reconstruir."
         return 0

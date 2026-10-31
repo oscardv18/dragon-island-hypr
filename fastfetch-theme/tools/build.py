@@ -139,7 +139,7 @@ if __name__ == "__main__":
     open(f"{out}/dragon-logo.txt", "w").write(make_logo())
     json.dump(base("~/.config/fastfetch/dragon-logo.txt", modules()), open(f"{out}/config.jsonc", "w"), ensure_ascii=False, indent=2)
     sample = {"SO": "EndeavourOS", "Kernel": "6.17.4-arch1-1", "Activo": "2 h 14 min", "Paquetes": "1247 (pacman), 31 (aur)", "Shell": "zsh 5.9",
-              "Hyprland": "Hyprland 0.56.2", "Quickshell": "0.3.1", "Plugins": "hyprbars hyprfocus hyprglass", "Terminal": "Ghostty 1.2.0",
+              "Hyprland": "Hyprland 0.56.2", "Quickshell": "0.3.1", "Plugins": "hyprfocus hyprglass", "Terminal": "Ghostty 1.2.0",
               "Tema": "dragon-island", "Iconos": "Candy-icons + Sweet-Folders", "Fuente": "Outfit (11pt)", "Pantalla": "1366×768 @ 60Hz",
               "Teclado": "English (US)", "Login": "dragon-core", "CPU": "Intel i5-1135G7 (4c/8t)", "GPU": "Intel Iris Xe Graphics",
               "Memoria": "3.1 GiB / 15.4 GiB (20%)", "Disco": "112 GiB / 476 GiB (24%)", "Batería": "86% · Descargando", "Red": "wlan0 · 192.168.1.42"}

@@ -14,12 +14,12 @@ scripts/plugins-foreground.sh
 
 El instalador lo hace así (módulo `plugins`); `autostart.lua` solo ejecuta `hyprpm reload -n && hyprctl reload`. Tras **cada** actualización de Hyprland
 hay que repetir `hyprpm update` (`./update.sh` lo hace cuando cambia la versión). Si Hyprland falla justo después de actualizar:
-desde un TTY, `hyprpm disable hyprbars hyprfocus hyprglass`, y luego `hyprpm update`.
+desde un TTY, `hyprpm disable hyprfocus hyprglass`, y luego `hyprpm update`.
 
-## Plugins: «unknown config key plugin:hyprbars:…» en `hyprctl configerrors`
+## Plugins: «unknown config key plugin:hyprfocus:…» en `hyprctl configerrors`
 
 Hasta que `hyprpm reload` carga los plugins, todas las claves `plugin:*` son desconocidas. Por eso `config/hypr/plugins.lua` y `glass.lua` están
-**protegidos** (`if loaded("hyprbars") then …`), y tras cargar los plugins se hace `hyprctl reload`. Si ves el error: comprueba `hyprctl plugin list`;
+**protegidos** (`if hl.plugin and hl.plugin.hyprfocus then …`), y tras cargar los plugins se hace `hyprctl reload`. Si ves el error: comprueba `hyprctl plugin list`;
 si el plugin no aparece, `scripts/plugins-foreground.sh`; si aparece, `hyprctl reload`.
 
 ## `misc.vfr` o `decoration.blur.variant` dan error de configuración

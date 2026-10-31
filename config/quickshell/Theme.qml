@@ -14,7 +14,7 @@ Singleton {
     // Palette (Sweet / Garuda Dragonized)
     // -------------------------------------------------------------------------
     readonly property color bg:         "#07060d" // wallpaper fallback / deepest background
-    readonly property color surface0:   "#161925" // islands (72-86 % opacity), hyprbars bar
+    readonly property color surface0:   "#161925" // islands (72-86 % opacity)
     readonly property color surface1:   "#12131e" // cards inside panels
     readonly property color surface2:   "#1d2031" // capsules, list rows, off toggles
     readonly property color surface3:   "#22243a" // inactive pills, progress tracks

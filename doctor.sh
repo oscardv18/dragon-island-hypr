@@ -71,9 +71,10 @@ if in_hyprland && command -v hyprctl >/dev/null 2>&1; then
     layout="$(hyprctl getoption input:kb_layout 2>/dev/null | awk -F': ' '/str/ {print $2}')"
     ck "Teclado de Hyprland: ${layout:-?} (us primero)" "debe empezar por us: ./install.sh --modules keyboard" test "${layout#us}" != "${layout}"
     pl="$(hyprctl plugin list 2>/dev/null || true)"
-    for p in hyprbars hyprfocus hyprglass; do
+    for p in hyprfocus hyprglass; do
         ck "Plugin $p cargado" "ejecuta scripts/plugins-foreground.sh en una terminal dentro de Hyprland (docs/TROUBLESHOOTING.md)" has "$p" "$pl"
     done
+    ck "Sin barras de título (hyprbars no cargado)" "hyprpm disable hyprbars && hyprpm reload -n (o ./update.sh: migración 037)" test -z "$(grep -i 'hyprbars' <<<"$pl" || true)"
 else
     printf '  - fuera de Hyprland: se omiten configerrors, teclado y plugins\n'
 fi
