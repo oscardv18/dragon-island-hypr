@@ -28,6 +28,12 @@
  *   - idleDimSeconds / idleLockSeconds / idleScreenOffSeconds / idleSuspendSeconds: int [readonly] (the idle sequence:
  *       warn + dim, lock, screens off, suspend; defaults 240 / 300 / 330 / 1200; bin/dragon-idle reads them too)
  *   - idleInhibitAgents: bool [readonly] (a working herdr agent holds the idle sequence back; default true)
+ *   - launcherGravity: bool [readonly] (SUPER + Space opens the Gravity launcher, SUPER + V its clipboard ring; off = the
+ *       previous orbital launcher and clipboard panel, unchanged; default true)
+ *   - reduceMotion: bool [readonly] ("Reducir movimiento": no continuous motion — the Gravity rings stop turning; default false)
+ *   - switcherOrbital: bool [readonly] (Alt + Tab opens the orbital switcher; off = Hyprland does not bind Alt + Tab at all,
+ *       config/hypr/binds.lua reads this key, and the Switcher service reloads Hyprland when it changes; default true)
+ *   - calmMotion: bool [readonly] (reduceMotion or reducedMotion: what the views check before any continuous animation)
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -48,7 +54,7 @@
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
- *   paletteApplyExternal(on: bool),
+ *   paletteApplyExternal(on: bool), launcherGravity(on: bool), reduceMotion(on: bool), switcherOrbital(on: bool),
  *   current(): string (every setting, one per line)
  *
  * shell.qml binds Theme.motionScale, Theme.barStyle, Theme.barSize and Theme.accentIntensity to these.
@@ -109,6 +115,10 @@ Singleton {
     readonly property bool recordFrame: _flag("recordFrame", true)
     readonly property bool wallpaperPalette: typeof root._data.wallpaperPalette === "boolean" ? root._data.wallpaperPalette : true
     readonly property bool paletteApplyExternal: _flag("paletteApplyExternal", true)
+    readonly property bool launcherGravity: _flag("launcherGravity", true)
+    readonly property bool reduceMotion: _flag("reduceMotion", false)
+    readonly property bool switcherOrbital: _flag("switcherOrbital", true)
+    readonly property bool calmMotion: reduceMotion || reducedMotion
 
     FileView {
         id: settingsFile
@@ -210,10 +220,14 @@ Singleton {
         function autohide(on: bool): void { root.setBarAutohide(on); }
         function wallpaperPalette(on: bool): void { root.setWallpaperPalette(on); }
         function paletteApplyExternal(on: bool): void { root.setPaletteApplyExternal(on); }
+        function launcherGravity(on: bool): void { root.setFlag("launcherGravity", on); }
+        function reduceMotion(on: bool): void { root.setFlag("reduceMotion", on); }
+        function switcherOrbital(on: bool): void { root.setFlag("switcherOrbital", on); }
         function current(): string {
             return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
-                    `wallpaperPalette=${root.wallpaperPalette}`, `paletteApplyExternal=${root.paletteApplyExternal}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`].join("\n");
+                    `wallpaperPalette=${root.wallpaperPalette}`, `paletteApplyExternal=${root.paletteApplyExternal}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`,
+                    `launcherGravity=${root.launcherGravity}`, `reduceMotion=${root.reduceMotion}`, `switcherOrbital=${root.switcherOrbital}`].join("\n");
         }
     }
 }

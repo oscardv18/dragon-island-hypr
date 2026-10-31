@@ -1,15 +1,18 @@
 #!/usr/bin/env bash
 # dragon-sddm-sync — give the login screen (SDDM theme dragon-core) your current wallpaper and its accent.
 # SDDM runs before your session as the 'sddm' user and cannot read your home, so this COPIES, with sudo:
-#   ~/.cache/dragon-island/current-wallpaper → /usr/share/sddm/themes/dragon-core/background.jpg (resized, pre-blurred)
+#   ~/.cache/dragon-island/current-wallpaper → /usr/share/sddm/themes/dragon-core/background.png, blurred ONCE here
+#     (the greeter shows it as is: its MultiEffect blur left hard-edged blotches): 1920×1080 cover, halved, gaussian
+#     blur, back to 1920×1080 bicubic, fine grain against banding, 24-bit PNG. The radius is `background_blur` in the
+#     installed theme.conf (sigma in px at 1920×1080; 0 = sharp). Needs ImageMagick (magick) or ffmpeg
 #   ~/.local/state/dragon-island/palette.json → …/dragon-core/accent.conf ([General] accent / accentSoft / glow);
 #     without a palette (or with the wallpaper palette off) accent.conf is removed and the login uses the Dragon accent
 # It is never run from the shell: run it by hand after changing the wallpaper (migration 024 runs it once).
 #   dragon-sddm-sync [--dry-run] [--yes] [--reset]
 #     --dry-run  show what would change, change nothing
 #     --yes      do not ask before the sudo step
-#     --reset    put back the theme's default background and the Dragon accent
-# Each replaced file keeps a .bak-dragon copy next to it. Env: DRY_RUN=true, ASSUME_YES=true work too.
+#     --reset    the theme's default background (same treatment) and the Dragon accent
+# Each replaced file keeps a .bak-dragon copy next to it. Env: DRY_RUN=1 / true, ASSUME_YES=1 / true work too.
 set -Eeuo pipefail
 
 THEME="${DRAGON_SDDM_THEME:-/usr/share/sddm/themes/dragon-core}"
@@ -17,9 +20,12 @@ CACHE="${XDG_CACHE_HOME:-$HOME/.cache}/dragon-island"
 STATE="${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island"
 SETTINGS="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/settings.json"
 REPO_DEFAULT="$(cd -- "$(dirname -- "$(readlink -f "${BASH_SOURCE[0]}")")/.." && pwd)/sddm/dragon-core/background.jpg"
-DRY_RUN="${DRY_RUN:-false}"
-ASSUME_YES="${ASSUME_YES:-false}"
+# 1 / yes / on → true (as lib/common.sh: this script is installed on its own and cannot source it)
+bool_flag() { case "${1,,}" in 1|true|yes|y|on|s|si|sí) echo true ;; *) echo false ;; esac; }
+DRY_RUN="$(bool_flag "${DRY_RUN:-false}")"
+ASSUME_YES="$(bool_flag "${ASSUME_YES:-false}")"
 RESET=false
+BLUR_DEFAULT=12   # as theme.conf: soft
 
 for a in "$@"; do
     case "$a" in
@@ -33,9 +39,12 @@ done
 
 say()  { printf '\033[35m▸\033[0m %s\n' "$*"; }
 warn() { printf '\033[33m!\033[0m %s\n' "$*" >&2; }
+run()  { if $DRY_RUN; then printf '[dry-run]'; printf ' %q' "$@"; echo; else "$@"; fi; }
 
 [[ -d "$THEME" ]] || { warn "El tema dragon-core no está instalado en $THEME (sddm/install-theme.sh)."; exit 1; }
-command -v magick >/dev/null 2>&1 || { warn "Falta ImageMagick (magick)."; exit 1; }
+if command -v magick >/dev/null 2>&1; then RESIZER=magick
+elif command -v ffmpeg >/dev/null 2>&1; then RESIZER=ffmpeg
+else warn "Falta ImageMagick (magick) o ffmpeg para preparar el fondo: sudo pacman -S --needed imagemagick"; exit 1; fi
 
 WORK="$(mktemp -d)"
 trap 'rm -rf "$WORK"' EXIT
@@ -47,12 +56,25 @@ if ! $RESET; then
     else warn "No hay fondo actual ($CACHE/current-wallpaper): se usa el fondo por defecto."; fi
 fi
 [[ -r "$src" ]] || { warn "No se puede leer $src"; exit 1; }
-if [[ "$src" == "$REPO_DEFAULT" ]]; then
-    cp -- "$src" "$WORK/background.jpg"
+# theme.conf `background_blur`: whole px 0–100, anything else = the default
+blur="$(sed -n 's/^background_blur=[[:space:]]*\([0-9]\{1,3\}\)[[:space:]]*$/\1/p' "$THEME/theme.conf" 2>/dev/null || true)"
+blur="${blur##*$'\n'}"   # the last one wins
+[[ -n "$blur" ]] && (( blur <= 100 )) || blur="$BLUR_DEFAULT"
+half="$(( blur / 2 )).$(( blur % 2 * 5 ))"   # the blur runs at 960×540
+# 1920×1080 cover, first frame of a GIF / video; the grain goes on before the 8-bit rounding, so it dithers it
+if [[ "$RESIZER" == magick ]]; then
+    soften=()
+    (( blur > 0 )) && soften=(-resize 50% -blur "0x$half" -filter Catrom -resize '1920x1080!')
+    # the blur's OpenCL kernel cache goes to the temp dir, not ~/.cache (a dry run leaves no trace)
+    MAGICK_OPENCL_CACHE_DIR="$WORK" magick "${src}[0]" -auto-orient -resize 1920x1080^ -gravity center -extent 1920x1080 "${soften[@]}" \
+        -attenuate 0.1 +noise Gaussian -depth 8 "PNG24:$WORK/background.png"
 else
-    # a 1280 px pre-blurred copy: small for the greeter, which blurs it again under its veil
-    magick "${src}[0]" -resize 1280x720^ -gravity center -extent 1280x720 -blur 0x16 -quality 82 "$WORK/background.jpg"
+    vf_soften=''
+    (( blur > 0 )) && vf_soften=",scale=960:540:flags=area,gblur=sigma=$half,scale=1920:1080:flags=bicubic"
+    ffmpeg -v error -y -i "$src" -frames:v 1 -vf "scale=1920:1080:force_original_aspect_ratio=increase:flags=lanczos,crop=1920:1080$vf_soften,format=gbrp,noise=alls=3:allf=u,format=rgb24" \
+        -pix_fmt rgb24 "$WORK/background.png"
 fi
+[[ -s "$WORK/background.png" ]] || { warn "$RESIZER no pudo convertir $src"; exit 1; }
 
 # ---- accent ----
 accent_on=false
@@ -76,24 +98,26 @@ PY
 fi
 
 say "Tema: $THEME"
-say "Fondo: $src"
+if [[ "$src" == "$REPO_DEFAULT" ]]; then say "Fondo: el del tema"; else say "Fondo: $src"; fi
+say "Desenfoque: $blur px (theme.conf background_blur; 0 = nítido), 1920×1080 PNG con $RESIZER"
 if $accent_on; then say "Acento: $(grep '^accent=' "$WORK/accent.conf" | cut -d= -f2) (paleta del fondo)"
 else say "Acento: Dragon fijo (se quita accent.conf)"; fi
 
-if $DRY_RUN; then say "[dry-run] no se cambia nada."; exit 0; fi
-if ! $ASSUME_YES; then
+$DRY_RUN && say "[dry-run] no se cambia nada; estos serían los pasos:"
+if ! $DRY_RUN && ! $ASSUME_YES; then
     read -r -p "¿Copiar al tema con sudo? [s/N] " ans
     [[ "$ans" =~ ^[sSyY]$ ]] || { say "Cancelado."; exit 0; }
 fi
 
-backup() { [[ -f "$THEME/$1" ]] && sudo cp -a -- "$THEME/$1" "$THEME/$1.bak-dragon" || true; }
-backup background.jpg
-sudo install -m 644 "$WORK/background.jpg" "$THEME/background.jpg"
+backup() { if [[ -f "$THEME/$1" ]]; then run sudo cp -a -- "$THEME/$1" "$THEME/$1.bak-dragon"; fi; }
+backup background.png
+run sudo install -m 644 "$WORK/background.png" "$THEME/background.png"
 if $accent_on; then
     backup accent.conf
-    sudo install -m 644 "$WORK/accent.conf" "$THEME/accent.conf"
+    run sudo install -m 644 "$WORK/accent.conf" "$THEME/accent.conf"
 elif [[ -f "$THEME/accent.conf" ]]; then
     backup accent.conf
-    sudo rm -f -- "$THEME/accent.conf"
+    run sudo rm -f -- "$THEME/accent.conf"
 fi
+$DRY_RUN && exit 0
 say "Listo: se verá en el próximo inicio de sesión (prueba: sddm-greeter-qt6 --test-mode --theme $THEME)."

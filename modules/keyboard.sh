@@ -39,7 +39,7 @@ keyboard_apply() {
         marker_unset "$HYPR_LOCAL" keyboard "--"
     else
         local variants; variants="$(printf '%s' "$layouts" | tr -c ',' ' ' | tr ' ' '\n' | paste -sd, -)"
-        marker_set "$HYPR_LOCAL" keyboard "--" "hl.config({ input = { kb_layout = \"$layouts\", kb_variant = \"${variants//[^,]/}\", kb_options = \"grp:alt_shift_toggle\" } })"
+        marker_set "$HYPR_LOCAL" keyboard "--" "hl.config({ input = { kb_layout = \"$layouts\", kb_variant = \"${variants//[^,]/}\", kb_options = \"\" } })"
     fi
 
     # the login keymap is opt-in: never in unattended mode unless DRAGON_KB_LOGIN=1

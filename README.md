@@ -168,7 +168,7 @@ Los atajos y los controles con el ratón están en **[docs/KEYBINDS.md](docs/KEY
 | `SUPER + Space` | Lanzador |
 | `SUPER + D` | Notch expandido (Nook · Tray) |
 | `SUPER + W` · `SUPER + SHIFT + W` | Selector de fondos · fondo aleatorio |
-| `SUPER + ALT + Space` · `ALT + SHIFT` | Cambiar distribución de teclado (US / LA) |
+| `SUPER + ALT + Space` | Cambiar distribución de teclado (US / LA; también en el bloqueo) |
 | `SUPER + N` | Notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear |

@@ -410,6 +410,107 @@ Singleton {
     readonly property real keybindsChrome:  190   // title + search + footer + paddings of the panel
     readonly property real powerButton:     88
 
+    // Gravity launcher (docs/design/02-launcher.png, 03-busqueda.png). Sizes are design px on 1366 × 768; the view
+    // scales them by the screen (gravityScale). Rings: favourites (inner) · frequent · all.
+    readonly property real gravityDesignW:   1366
+    readonly property real gravityDesignH:   768
+    readonly property var  gravityRingRx:    [250, 410, 575]
+    readonly property var  gravityRingRy:    [82, 136, 192]
+    readonly property var  gravityRingNames: ["Favoritos", "Frecuentes", "Todas"]
+    readonly property var  gravityRingCap:   [8, 16, 36]      // planets per ring; 60 drawn at most, the rest scroll in «Todas»
+    readonly property int  gravityMaxPlanets: 60
+    readonly property var  gravityPlanet:    [50, 36, 30]     // base planet size per ring
+    readonly property real gravityUseMin:    0.85             // planet size by frecency: 0.85× … 1.25× of the base
+    readonly property real gravityUseMax:    1.25
+    readonly property real gravityBackScale: 0.68             // at the very back of the ring (sin = −1)
+    readonly property real gravityBackOpacity: 0.32
+    readonly property real gravityBackBlur:  0.55             // MultiEffect blur at the very back
+    readonly property real gravityHoverScale: 1.22
+    readonly property var  gravitySpinPeriod: [150000, 210000, 280000]   // ms per turn; alternate directions
+    readonly property int  gravityFps:       30               // the core and the ring turn tick together at this rate
+    readonly property real gravityMoon:      5
+    readonly property real gravityMoonOrbit: 16               // moon orbit diameter = planet + this
+    readonly property int  gravityMaxMoons:  3
+    readonly property int  gravityGhosts:    20               // non-matching planets while searching
+    readonly property real gravityGhost:     30
+    readonly property real gravityFieldWidth:  360
+    readonly property real gravityFieldHeight: 46
+    readonly property real gravityPanelWidth:  300            // results panel (right)
+    readonly property real gravityModesWidth:  250            // modes panel (left)
+    readonly property real gravityResultRow:   50
+    readonly property real gravityEdge:        40             // page margin of the corner labels
+    readonly property real gravityNameOffset:  132            // name + detail line, under the core's centre
+    readonly property real gravityLabelGap:    14             // ring label after the ring's right end
+    readonly property real gravityLegendBottom: 100           // «Luna = ventana abierta» legend, from the bottom
+    readonly property real gravityHintsBottom: 36             // key legend, from the bottom
+    readonly property real gravityDot:         8              // cyan dot of the title / the moon legend
+    readonly property real gravityFieldFont:   17
+    readonly property real gravityChip:        26             // counter chip / mode chip / key cap height
+    readonly property real gravityDockY:       86             // searching: the chosen match sits this far under the centre
+    readonly property real gravityDockPitch:   120            // … the other matches beside it, every this much
+    readonly property real gravityDockRise:    8              // … each step a little higher (a shallow arc)
+    readonly property real gravityDockMain:    72             // the chosen match, px
+    readonly property real gravityDockSide:    50             // the others (−4 per step out)
+    readonly property int  gravityDockMax:     7              // matches pulled next to the core
+    readonly property real gravityPanelTop:    170            // results / modes panels
+    readonly property real gravityPanelPad:    18
+    readonly property real gravityPanelRadius: 22
+    readonly property real gravityRowRadius:   12
+    readonly property real gravityModeRow:     44
+    readonly property real gravityHalo:        10             // hovered / selected ring around a planet (size + this)
+    readonly property real gravityRingLine:    1
+    readonly property color gravityRingStroke: Qt.rgba(1, 1, 1, 0.10)
+    readonly property color gravityTile:       alpha(islandInk, 0.78)     // planet base behind the icon, result rows
+    readonly property color gravityTileEdge:   Qt.rgba(1, 1, 1, 0.10)
+    readonly property color gravityPanel:      alpha(islandInk, 0.72)
+    readonly property color gravityGhostFill:  Qt.rgba(1, 1, 1, 0.07)
+    readonly property color gravityMatch:      cyan                        // matched letters in the results
+    readonly property color gravitySelection:  alpha(cyan, 0.10)
+    readonly property color gravitySelectionEdge: alpha(cyan, 0.55)
+    // search modes: prefix → chip colour (03-busqueda)
+    readonly property color pink:             "#f472b6"   // emoji mode chip, image clipboard entries
+    readonly property var  searchModeColors: ({ "=": warn, ">": cyan, "?": violetSoft, ":": pink, "@": ok, "/": warn })
+    readonly property int  searchDebounce:   80        // ms after the last key before dragon-search runs (not scaled)
+    readonly property color gravityBackdrop: alpha(bg, 0.55)                 // the view's own dim over the scrim
+
+    // Alt+Tab orbital switcher (docs/design/10-alttab.png), design px on 1366 × 768 like the Gravity launcher
+    readonly property real switcherRingRx:    470
+    readonly property real switcherRingRy:    110
+    readonly property real switcherCenterY:   0.42           // ring centre, fraction of the screen height
+    readonly property real switcherCard:      440            // the chosen card's width (front)
+    readonly property real switcherCardSide:  250            // the others at the sides; the back ones shrink with depth
+    readonly property real switcherAspect:    0.5625         // card height / width (16:9; the capture keeps its own ratio)
+    readonly property real switcherRadius:    16
+    readonly property int  switcherMax:       12             // cards on the ring; more turn with the wheel / Tab
+    readonly property int  switcherShowDelay: 150            // ms: Alt released before this = switch without showing anything
+    readonly property real switcherChipsTop:  34
+    readonly property real switcherTitleGap:  56             // big title under the chosen card
+    readonly property color switcherCardFill: alpha(islandInk, 0.86)
+
+    // Gravity clipboard ring (docs/design/12-portapapeles.png)
+    readonly property real clipFieldTop:    95             // the search field moves up here
+    readonly property real clipCenterY:     0.55           // ring centre, fraction of the screen height
+    readonly property real clipRingRx:      470
+    readonly property real clipRingRy:      125
+    readonly property real clipCard:        400            // the chosen card
+    readonly property real clipCardH:       170
+    readonly property real clipCardSide:    230            // the others (taller than their share: a few more lines show)
+    readonly property real clipCardSideExtra: 30
+    readonly property int  clipMax:         8              // cards on the ring at once; more turn with ← → / the wheel
+    readonly property real clipFieldWidth:  440
+    readonly property var  clipKindColors:  ({ text: textSoft, command: warn, link: cyan, path: violetSoft, color: violetBase, image: pink })
+
+    // Workspaces overview (docs/design/11-escritorios.png)
+    readonly property real overviewCardW:     220
+    readonly property real overviewCardH:     124
+    readonly property real overviewGap:       18
+    readonly property real overviewTop:       30
+    readonly property real overviewPreviewW:  840            // «VISTA PREVIA» panel under the cards
+    readonly property real overviewPreviewTop: 232
+    readonly property real overviewRadius:    14
+    readonly property color overviewWindow:   alpha(islandInk, 0.86)   // a window drawn as a rectangle
+    readonly property color overviewDrop:     cyan
+
     // -------------------------------------------------------------------------
     // Motion (spec "Motion" table). Every duration goes through motionScale.
     // -------------------------------------------------------------------------

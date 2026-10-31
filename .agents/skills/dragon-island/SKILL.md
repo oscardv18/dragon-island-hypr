@@ -80,7 +80,9 @@ OSD is triggered by services reacting to changes (Audio volume, Brightness), not
 | E | Dolphin |
 | Q | close window |
 | F | fullscreen (maximized toggle) |
-| V | toggle floating |
+| V | clipboard ring (launcher «/»; Enter pastes) — SHIFT+V alias |
+| SHIFT+Space | toggle floating |
+| Tab | workspaces overview · ALT+Tab = orbital switcher |
 | 1–5 / SHIFT+1–5 | focus / move to workspace |
 | arrows or H J K L | move focus |
 | SHIFT+arrows | move window |
@@ -90,7 +92,6 @@ OSD is triggered by services reacting to changes (Audio volume, Brightness), not
 | Escape | power menu |
 | L | lock |
 | Print / SHIFT+S | screenshot full / region |
-| SHIFT+V | clipboard history |
 | XF86 audio/brightness/media | wpctl / brightnessctl / playerctl (`locked = true, repeating = true`) |
 
 ## Visual spec

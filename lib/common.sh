@@ -9,6 +9,17 @@
 # -----------------------------------------------------------------------------
 # Helpers
 # -----------------------------------------------------------------------------
+# bool_flag <value> → true | false. DRY_RUN / ASSUME_YES / NO_SUDO may come from the environment as 1, yes, on…;
+# `if $DRY_RUN` needs exactly true or false (DRY_RUN=1 would run the command «1», fail and take the real branch).
+bool_flag() {
+    case "${1,,}" in
+        1|true|yes|y|on|s|si|sí) echo true ;;
+        *) echo false ;;
+    esac
+}
+DRY_RUN="$(bool_flag "${DRY_RUN:-false}")"
+ASSUME_YES="$(bool_flag "${ASSUME_YES:-false}")"
+
 run() {
     if $DRY_RUN; then
         printf '[dry-run]'; printf ' %q' "$@"
@@ -209,7 +220,7 @@ apply_icon_theme() {
 # =============================================================================
 # Added with the modular installer (modules/*.sh). Everything honours DRY_RUN / ASSUME_YES / NO_SUDO.
 # =============================================================================
-NO_SUDO="${NO_SUDO:-false}"
+NO_SUDO="$(bool_flag "${NO_SUDO:-false}")"
 AUR_HELPER="${AUR_HELPER:-}"
 PRE_DOC="pre-instalation.md"
 

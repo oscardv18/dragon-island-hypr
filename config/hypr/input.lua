@@ -6,12 +6,13 @@ hl.config({
     input = {
         -- Two layouts: English (US) first (shortcuts are resolved against the first one; put "latam,us"
         -- here instead if your physical keyboard is Latin American), Spanish (Latin American) second for
-        -- ñ and accents. kb_variant needs one (empty) entry per layout. Alt+Shift toggles the group
-        -- (grp:alt_shift_toggle); SUPER+ALT+Space switches too (binds.lua) and the bar capsule is a button.
+        -- ñ and accents. kb_variant needs one (empty) entry per layout. SUPER+ALT+Space switches (binds.lua,
+        -- also on the lock screen) and the bar capsule is a button. No xkb toggle in kb_options: Alt+Shift used to
+        -- switch (grp:alt_shift_toggle) and fired inside Alt+Shift+Tab (the orbital switcher, phase 4).
         kb_layout  = "us,latam",
         kb_variant = ",",
         kb_model   = "",
-        kb_options = "grp:alt_shift_toggle",
+        kb_options = "",
         kb_rules   = "",
 
         follow_mouse = 1,

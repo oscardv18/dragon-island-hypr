@@ -22,14 +22,15 @@ bind(mainMod .. " + E",      hl.dsp.exec_cmd("dolphin"),                        
 bind(mainMod .. " + grave",  hl.dsp.exec_cmd("$HOME/.local/bin/dragon-dropdown"),   "Aplicaciones · Terminal desplegable")
 bind(mainMod .. " + Space",  hl.dsp.exec_cmd("qs ipc call shell toggle launcher"),  "Aplicaciones · Lanzador")
 
--- Keyboard layout: next one in kb_layout (also Alt+Shift through kb_options, and the bar capsule)
-bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"), "Teclado · Cambiar distribución (US / LA)")
+-- Keyboard layout: next one in kb_layout (also the bar capsule). The only key for it since Alt+Shift left kb_options
+-- (it fired inside Alt+Shift+Tab), so it is `locked`: it also works on the lock screen, to type the password.
+bind(mainMod .. " + ALT + Space", hl.dsp.exec_cmd("hyprctl switchxkblayout all next"), "Teclado · Cambiar distribución (US / LA)", { locked = true })
 
 -- Window management
 bind(mainMod .. " + Q",         hl.dsp.window.close(),                                                "Ventanas · Cerrar")
 bind(mainMod .. " + F",         hl.dsp.window.fullscreen({ mode = "maximized", action = "toggle" }),  "Ventanas · Maximizar / restaurar")
 bind(mainMod .. " + SHIFT + F", hl.dsp.window.fullscreen({ mode = "fullscreen", action = "toggle" }), "Ventanas · Pantalla completa")
-bind(mainMod .. " + V",         hl.dsp.window.float({ action = "toggle" }),                           "Ventanas · Alternar flotante")
+bind(mainMod .. " + SHIFT + Space", hl.dsp.window.float({ action = "toggle" }),                       "Ventanas · Alternar flotante")
 
 -- Focus movement with arrow keys
 bind(mainMod .. " + left",  hl.dsp.focus({ direction = "left" }),  "Foco · Mover el foco")
@@ -87,6 +88,7 @@ bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), "Ratón · Redimensionar
 
 -- Quickshell interactive panels (via qs ipc)
 bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Notch (Nook / Tray)")
+bind(mainMod .. " + Tab",    hl.dsp.exec_cmd("qs ipc call overview toggle"),            "Escritorios · Vista general (arrastrar ventanas entre escritorios)")
 bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper orbital"), "Shell · Fondos de pantalla (orbital)")
 bind(mainMod .. " + SHIFT + W", hl.dsp.exec_cmd("qs ipc call wallpaper random"), "Shell · Fondo aleatorio")
 bind(mainMod .. " + X", hl.dsp.exec_cmd("qs ipc call dock toggle"), "Dock · Fijar / liberar el dock")
@@ -103,6 +105,29 @@ bind(mainMod .. " + F2",     hl.dsp.exec_cmd("qs ipc call shell toggle settings"
 bind(mainMod .. " + ALT + B", hl.dsp.exec_cmd("qs ipc call settings cycleBarStyle"),   "Shell · Cambiar el estilo de la barra")
 bind(mainMod .. " + ALT + F", hl.dsp.exec_cmd("qs ipc call focus toggle"),             "Shell · Modo enfoque (45 min)")
 
+-- A boolean of ~/.config/dragon-island/settings.json, read when this file loads (Quickshell reloads Hyprland when the
+-- ones used here change, services/Switcher.qml). Missing file / key: the default.
+local function dragon_setting(key, default)
+    local dir = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")
+    local f = io.open(dir .. "/dragon-island/settings.json", "r")
+    if not f then return default end
+    local text = f:read("*a")
+    f:close()
+    local v = text:match('"' .. key .. '"%s*:%s*(%a+)')
+    if v == "true" then return true elseif v == "false" then return false end
+    return default
+end
+
+-- Alt+Tab orbital (services/Switcher.qml, docs/design/10-alttab.png). Ajustes › Launcher › «Alt+Tab orbital» off:
+-- nothing is bound, apps get Alt+Tab. Releasing Alt confirms (release bind; transparent so no other bind shadows it);
+-- the switcher window also confirms on its own Alt release once it has the keyboard.
+if dragon_setting("switcherOrbital", true) then
+    bind("ALT + Tab",         hl.dsp.exec_cmd("qs ipc call switcher next"),    "Ventanas · Alt+Tab orbital: siguiente")
+    bind("ALT + SHIFT + Tab", hl.dsp.exec_cmd("qs ipc call switcher prev"),    "Ventanas · Alt+Tab orbital: anterior")
+    bind("ALT + Alt_L",       hl.dsp.exec_cmd("qs ipc call switcher confirm"), "Ventanas · Alt+Tab orbital: soltar Alt confirma",
+         { release = true, transparent = true })
+end
+
 -- Session lock & system
 bind(mainMod .. " + L", hl.dsp.exec_cmd("qs ipc call lock lock || hyprlock"), "Sistema · Bloquear la sesión")
 
@@ -111,8 +136,10 @@ bind("Print",                   hl.dsp.exec_cmd("qs ipc call capture screen"),  
 bind("SHIFT + Print",           hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
 bind(mainMod .. " + SHIFT + S", hl.dsp.exec_cmd("qs ipc call capture open region"), "Capturas · Barra de capturas (región, ventana, pantalla)")
 
--- Clipboard history (cliphist, shown by the Quickshell clipboard panel)
-bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call shell toggle clipboard"), "Shell · Historial del portapapeles")
+-- Clipboard history (cliphist): the Gravity launcher's clipboard ring (Enter pastes into the window that had the focus);
+-- with «Launcher Gravedad» off, the previous clipboard panel. SUPER + SHIFT + V stays as an alias (it used to be the key).
+bind(mainMod .. " + V",         hl.dsp.exec_cmd("qs ipc call launcher clipboard"), "Shell · Portapapeles (anillo; Enter pega)")
+bind(mainMod .. " + SHIFT + V", hl.dsp.exec_cmd("qs ipc call launcher clipboard"), "Shell · Portapapeles (anillo; Enter pega)")
 
 -- Hardware & Multimedia keys (audio, mic, brightness, player)
 bind("XF86AudioRaiseVolume",  hl.dsp.exec_cmd("wpctl set-volume -l 1.0 @DEFAULT_AUDIO_SINK@ 5%+"), "Multimedia · Subir volumen",       { locked = true, repeating = true })

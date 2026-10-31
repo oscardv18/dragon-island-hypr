@@ -1,6 +1,6 @@
 // =============================================================================
 // dragon-island — ScrimWindow.qml
-// Black 45 % scrim behind the modal panels (launcher, power menu, clipboard, shortcuts, wallpapers),
+// Black 45 % scrim behind the modal panels (launcher, power menu, clipboard, shortcuts, wallpapers, Alt+Tab, workspaces),
 // namespace "dragon-scrim", one per monitor. A window of its own because hyprglass / the native blur
 // work by alpha: a 45 % black fill in the panels' window would be glassed over the whole screen.
 // It takes no input (empty mask): the panel windows catch the clicks.
@@ -28,7 +28,7 @@ PanelWindow {
     WlrLayershell.keyboardFocus: WlrKeyboardFocus.None
 
     readonly property string panel: (ShellState.panelScreen === "" || ShellState.panelScreen === screenName) ? ShellState.openPanel : "none"
-    readonly property bool open: ["launcher", "power", "clipboard", "keybinds", "wallpapers", "store", "herdrhelp"].indexOf(panel) >= 0
+    readonly property bool open: ["launcher", "power", "clipboard", "keybinds", "wallpapers", "store", "herdrhelp", "switcher", "overview"].indexOf(panel) >= 0
 
     // fully hidden (surface unmapped) while nothing is open: a transparent full-screen layer costs nothing
     visible: open || scrim.opacity > 0

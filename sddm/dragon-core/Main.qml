@@ -1,13 +1,17 @@
 // dragon-core — SDDM greeter theme for dragon-island (Qt 6) · docs/design/07-login.png
 // Uses only the SDDM greeter API: sddm, userModel, sessionModel, keyboard, config.
 //
-//   background   theme.conf `background` (default background.jpg: a blurred copy of the wallpaper), blurred again
-//                and under a dark veil. bin/dragon-sddm-sync copies the user's current wallpaper here (by hand, sudo)
+//   background   theme.conf `background` (default background.png: bin/dragon-sddm-sync writes the user's wallpaper there,
+//                1920×1080, already blurred once with `background_blur` and grained; until it runs, the theme's
+//                background.jpg), shown AS IS: no effect here (MultiEffect's blur left hard-edged blotches on a real
+//                greeter), a veil darker towards the edges and a fine noise tile (noise.png, theme.conf `noise`) on top
+//                that dithers the 8-bit banding of the veil's dark gradient
 //   accent       accent.conf in this folder ([General] accent / accentSoft / glow, written by dragon-sddm-sync from
 //                the wallpaper palette); missing or invalid = the fixed Dragon lavender
 //   centre       greeting by the hour, the shared neural core (components/NeuralCore.qml, from shared/neural-core) with
 //                its HUD: calm at rest, listening while typing, verifying after Enter, alert on a wrong password;
-//                the avatar (photo or initials) in its middle, name and login under it
+//                the avatar in its middle (photo: ~/.face, ~/.face.icon, AccountsService, SDDM's icon; else a silhouette),
+//                name and login on a soft plate at least 28 px below the sphere's edge, so no node passes behind them
 //   orbit        the other users as satellites on the ellipse around the core, plus «Otro usuario» (type a login)
 //   below        password field, session pill (opens the list), hint line
 //   corners      date · time (top right), keyboard layout (bottom left), suspend / reboot / power off (bottom right),
@@ -15,7 +19,6 @@
 
 import QtQuick
 import QtQuick.Shapes
-import QtQuick.Effects
 import QtCore
 import "components"
 
@@ -136,50 +139,50 @@ Rectangle {
             required property string name
             required property string realName
             required property string icon
+            required property string homeDir
             readonly property string uname: name
             readonly property string displayName: realName !== "" ? realName : name
             readonly property string avatar: icon
+            readonly property string home: homeDir
         }
     }
 
-    // ── background: the wallpaper, blurred, under a dark veil ──
+    // ── background: the wallpaper (blurred by dragon-sddm-sync, not here), under a dark veil ──
+    property string bgSource: cfg("background", "background.png")
     Image {
-        id: bg
         anchors.fill: parent
-        source: root.cfg("background", "background.jpg")
+        source: root.bgSource
         fillMode: Image.PreserveAspectCrop
         asynchronous: true
-        sourceSize.width: 1280
-        visible: false
+        sourceSize: Qt.size(root.width, root.height)
+        // dragon-sddm-sync has not run yet (or the path is unreadable): the theme's own background
+        onStatusChanged: if (status === Image.Error && root.bgSource !== "background.jpg") root.bgSource = "background.jpg"
     }
-    MultiEffect {
-        anchors.fill: parent
-        source: bg
-        visible: bg.status === Image.Ready
-        blurEnabled: true
-        blur: 1.0
-        blurMax: 48
-        autoPaddingEnabled: false
-        saturation: 0.1
-    }
-    Rectangle {
-        anchors.fill: parent
-        color: root.cVeil
-        opacity: parseFloat(root.cfg("veil", "0.62"))
-    }
-    Shape {   // vignette
+    // veil: theme.conf `veil` in the middle, darker towards the edges
+    readonly property real veilMid: Math.max(0, Math.min(1, parseFloat(cfg("veil", "0.62")) || 0))
+    readonly property real veilEdge: veilMid + (1 - veilMid) * 0.65
+    Shape {
         anchors.fill: parent
         ShapePath {
             strokeColor: "transparent"
             fillGradient: RadialGradient {
-                centerX: root.width / 2; centerY: root.height * 0.55
+                centerX: root.width / 2; centerY: root.height / 2
                 focalX: centerX; focalY: centerY
-                centerRadius: Math.max(root.width, root.height) * 0.7
-                GradientStop { position: 0.0; color: "transparent" }
-                GradientStop { position: 1.0; color: Qt.rgba(0, 0, 0, 0.7) }
+                centerRadius: Math.hypot(root.width, root.height) / 2
+                GradientStop { position: 0.0; color: Qt.rgba(root.cVeil.r, root.cVeil.g, root.cVeil.b, root.veilMid) }
+                GradientStop { position: 0.45; color: Qt.rgba(root.cVeil.r, root.cVeil.g, root.cVeil.b, root.veilMid) }
+                GradientStop { position: 1.0; color: Qt.rgba(root.cVeil.r, root.cVeil.g, root.cVeil.b, root.veilEdge) }
             }
             PathRectangle { width: root.width; height: root.height }
         }
+    }
+    Image {   // grain over the veil: ±3 levels of 8 bits break the bands; 0 = off
+        anchors.fill: parent
+        source: "noise.png"
+        fillMode: Image.Tile
+        smooth: false
+        opacity: Math.max(0, Math.min(0.2, parseFloat(root.cfg("noise", "0.03")) || 0))
+        visible: opacity > 0
     }
 
     // ── top right: date · time ──
@@ -218,7 +221,7 @@ Rectangle {
 
     // ── the orbit and the users on it ──
     readonly property real ccx: width / 2
-    readonly property real ccy: height * 0.47
+    readonly property real ccy: height * 0.43
     readonly property real orbitRx: Math.min(width * 0.22, 440 * s)
     readonly property real orbitRy: orbitRx * 0.28
     Shape {
@@ -279,23 +282,54 @@ Rectangle {
             border.color: core.mood === "alert" ? root.cAlert : (core.mood === "verifying" ? root.cAccent : root.cCyan)
             Behavior on border.color { ColorAnimation { duration: 300 } }
         }
-        Text {
-            anchors.centerIn: parent
+        Shape {   // silhouette: only when there is no photo
+            anchors.fill: parent
             visible: !face.visible
-            text: root.initials(root.displayName)
-            color: root.cText
-            font.family: root.uiFont
-            font.pixelSize: 32 * root.s
-            font.weight: Font.Medium
+            preferredRendererType: Shape.CurveRenderer
+            ShapePath {
+                strokeColor: "transparent"
+                fillColor: Qt.rgba(root.cSoft.r, root.cSoft.g, root.cSoft.b, 0.55)
+                PathAngleArc { centerX: avatar.width / 2; centerY: avatar.height * 0.39; radiusX: avatar.width * 0.17; radiusY: radiusX; sweepAngle: 360 }
+            }
+            ShapePath {   // shoulders, cut flat inside the ring
+                strokeColor: "transparent"
+                fillColor: Qt.rgba(root.cSoft.r, root.cSoft.g, root.cSoft.b, 0.55)
+                startX: avatar.width * 0.19; startY: avatar.height * 0.82
+                PathArc { x: avatar.width * 0.81; y: avatar.height * 0.82; radiusX: avatar.width * 0.31; radiusY: avatar.height * 0.25 }
+                PathLine { x: avatar.width * 0.19; y: avatar.height * 0.82 }
+            }
+        }
+        // the user's photo: the first of these that loads (the greeter runs as `sddm`: a home it cannot read just fails
+        // and the next one is tried). SDDM's own generic face is skipped: the silhouette above stands for it
+        readonly property var candidates: {
+            const u = users.currentItem
+            if (root.manual || !u) return []
+            const icon = u.avatar.replace(/^file:\/\//, "")
+            const home = u.home.replace(/\/+$/, "")
+            return [home !== "" ? home + "/.face" : "", home !== "" ? home + "/.face.icon" : "",
+                    "/var/lib/AccountsService/icons/" + u.uname,
+                    /\/faces\/(default)?\.face\.icon$/.test(icon) ? "" : icon]
+                .filter((p, i, all) => p !== "" && all.indexOf(p) === i)
+        }
+        onCandidatesChanged: probe.idx = 0
+        Image {   // finds the first readable candidate; never shown (the Canvas draws it round)
+            id: probe
+            property int idx: 0
+            visible: false
+            asynchronous: true
+            source: idx < avatar.candidates.length ? "file://" + avatar.candidates[idx] : ""
+            onStatusChanged: if (status === Image.Error) idx++
         }
         Canvas {   // round photo drawn with a clip path (works on every scene-graph backend)
             id: face
             anchors.fill: parent
-            property string src: !root.manual && users.currentItem && users.currentItem.avatar ? "file://" + users.currentItem.avatar.replace(/^file:\/\//, "") : ""
+            property string src: probe.status === Image.Ready ? String(probe.source) : ""
             property bool ready: false
             visible: ready
-            onSrcChanged: { ready = false; if (src !== "") loadImage(src) }
-            Component.onCompleted: if (src !== "") loadImage(src)
+            // the probe already put the file in the pixmap cache: loadImage() may finish at once, without imageLoaded
+            function load() { if (src === "") return; loadImage(src); if (isImageLoaded(src)) { ready = true; requestPaint() } }
+            onSrcChanged: { ready = false; requestPaint(); load() }
+            Component.onCompleted: load()
             onImageLoaded: { ready = isImageLoaded(src); requestPaint() }
             onPaint: {
                 const ctx = getContext("2d")
@@ -305,7 +339,10 @@ Rectangle {
                 ctx.arc(width / 2, height / 2, width / 2 - 3 * root.s, 0, Math.PI * 2)
                 ctx.closePath()
                 ctx.clip()
-                ctx.drawImage(src, 0, 0, width, height)
+                // cover: the centred square of the photo
+                const iw = probe.implicitWidth, ih = probe.implicitHeight, side = Math.min(iw, ih)
+                if (side > 0) ctx.drawImage(src, (iw - side) / 2, (ih - side) / 2, side, side, 0, 0, width, height)
+                else ctx.drawImage(src, 0, 0, width, height)
             }
         }
     }
@@ -376,42 +413,59 @@ Rectangle {
         onPicked: { root.manual = false; pw.forceActiveFocus() }
     }
 
-    // ── who, password, session ──
+    // ── who: off the core, on a soft plate ──
+    // the sphere's edge at rest; «ok» swells it ×1.22 (≤ 0.22 r, under the 28 px gap) and listening breathes ±3.5 %
+    readonly property real sphereBottom: core.y + core.height / 2 + core.width * 0.25
+    Rectangle {
+        id: who
+        anchors.horizontalCenter: parent.horizontalCenter
+        y: root.sphereBottom + Math.max(28, 28 * root.s)
+        width: whoCol.implicitWidth + 40 * root.s
+        height: whoCol.implicitHeight + 14 * root.s
+        radius: 18 * root.s
+        // dense enough to dim the HUD dial that crosses here, the wallpaper still shows through
+        color: Qt.rgba(root.cInk.r, root.cInk.g, root.cInk.b, 0.62)
+        border.color: root.cLine
+        Column {
+            id: whoCol
+            anchors.centerIn: parent
+            spacing: 2 * root.s
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: !root.manual
+                text: root.displayName
+                color: root.cText
+                font.family: root.uiFont; font.pixelSize: 24 * root.s; font.weight: Font.Medium
+                style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.5)
+            }
+            TextInput {   // «Otro usuario» (or no listed users)
+                id: manualUser
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: root.manual
+                width: 220 * root.s
+                horizontalAlignment: TextInput.AlignHCenter
+                color: root.cText
+                font.family: root.uiFont; font.pixelSize: 22 * root.s
+                KeyNavigation.tab: pw
+                onAccepted: pw.forceActiveFocus()
+                Text { anchors.fill: parent; horizontalAlignment: Text.AlignHCenter; visible: !parent.text; text: "Usuario"; color: root.cDim; font: parent.font }
+            }
+            Text {
+                anchors.horizontalCenter: parent.horizontalCenter
+                visible: !root.manual
+                text: root.currentUser
+                color: root.cSoft
+                font.family: root.monoFont; font.pixelSize: 12 * root.s
+            }
+        }
+    }
+
+    // ── password, session ──
     Column {
         id: auth
         anchors.horizontalCenter: parent.horizontalCenter
-        y: avatar.y + avatar.height + 14 * root.s
+        y: who.y + who.height + 16 * root.s
         spacing: 2 * root.s
-
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: !root.manual
-            text: root.displayName
-            color: root.cText
-            font.family: root.uiFont; font.pixelSize: 24 * root.s; font.weight: Font.Medium
-            style: Text.Raised; styleColor: Qt.rgba(0, 0, 0, 0.4)
-        }
-        TextInput {   // «Otro usuario» (or no listed users)
-            id: manualUser
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: root.manual
-            width: 220 * root.s
-            horizontalAlignment: TextInput.AlignHCenter
-            color: root.cText
-            font.family: root.uiFont; font.pixelSize: 22 * root.s
-            KeyNavigation.tab: pw
-            onAccepted: pw.forceActiveFocus()
-            Text { anchors.fill: parent; horizontalAlignment: Text.AlignHCenter; visible: !parent.text; text: "Usuario"; color: root.cDim; font: parent.font }
-        }
-        Text {
-            anchors.horizontalCenter: parent.horizontalCenter
-            visible: !root.manual
-            text: root.currentUser
-            color: root.cDim
-            font.family: root.monoFont; font.pixelSize: 12 * root.s
-        }
-
-        Item { width: 1; height: 14 * root.s }
 
         // password field
         Rectangle {
@@ -530,7 +584,9 @@ Rectangle {
         width: Math.max(200 * root.s, sessionList.contentWidth + 16 * root.s)
         height: sessionList.contentHeight + 12 * root.s
         x: root.width / 2 - width / 2
-        y: auth.y + auth.height + 8 * root.s
+        // under the pill, or over it when the screen ends first
+        y: auth.y + auth.height + 8 * root.s + height <= root.height - 8 * root.s
+           ? auth.y + auth.height + 8 * root.s : auth.y + sessionPill.y - height - 8 * root.s
         radius: 14 * root.s
         color: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.92)
         border.color: root.cLine

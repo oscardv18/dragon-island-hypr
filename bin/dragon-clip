@@ -1,0 +1,9 @@
+#!/usr/bin/env bash
+# Clipboard descriptions, pins and metadata; no clipboard action is dispatched.
+set -Eeuo pipefail
+ENGINE_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+ENGINE_LIB="$(dirname -- "$(dirname -- "$ENGINE_BIN")")/dragon-core/dragon_clip.py"
+if [[ ! -f "$ENGINE_LIB" ]]; then
+    ENGINE_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_clip.py"
+fi
+exec python3 "$ENGINE_LIB" "$@"

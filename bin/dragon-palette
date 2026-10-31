@@ -7,4 +7,7 @@ PALETTE_LIB="$PALETTE_REPO/dragon-core/palette.py"
 if [[ ! -f "$PALETTE_LIB" ]]; then
     PALETTE_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/palette/palette.py"
 fi
+# DRY_RUN=1 / true in the environment = --dry-run (as lib/common.sh, which this installed copy cannot source)
+dry="${DRY_RUN:-}"
+case "${dry,,}" in 1|true|yes|y|on|s|si|sí) set -- --dry-run "$@" ;; esac
 exec python3 "$PALETTE_LIB" "$@"

@@ -6,8 +6,8 @@
 # Typography
 # font-family = JetBrains Mono Nerd Font
 # font-family = JetBrainsMono NF SemiBold
-font-family = Liga SFMonoNerdFont
-# font-family = CaskaydiaCove NF
+# font-family = Liga SFMonoNerdFont
+font-family = CaskaydiaCove NF SemiBold
 # font-family = Hack Nerd Font
 font-size = 10.5
 
