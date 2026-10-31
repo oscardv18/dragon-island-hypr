@@ -1,6 +1,6 @@
 // =============================================================================
 // dragon-island — Vpn.qml
-// Service: is a VPN up? Looks for Proton VPN's network interface (proton0, tun*, wg*, ipv6leakintrf0)
+// Service: is a VPN up? Looks for Proton VPN's network interface (proton0, tun*, wg*, ipv6leakintrf0) in /proc/net/dev
 // =============================================================================
 /**
  * Functions:
@@ -64,16 +64,18 @@ Singleton {
         Quickshell.execDetached(["sh", "-c", "command -v protonvpn-app >/dev/null && exec protonvpn-app"]);
     }
 
-    Process {
-        id: probe
-        command: ["sh", "-c", "ls /sys/class/net"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                const names = this.text.split(/\s+/).filter(n => n.length > 0);
-                // the tunnel first: ipv6leakintrf0 (the kill-switch dummy) only counts when nothing else is up
-                root.iface = names.find(n => /^(proton|tun\d|wg\d)/.test(n)) ?? names.find(n => /^ipv6leakintrf/.test(n)) ?? "";
-            }
-        }
+    // the interfaces, from /proc/net/dev (a FileView: no `ls` every 5 s; pulido, rendimiento)
+    FileView {
+        id: netDev
+        path: "/proc/net/dev"
+        printErrors: false
+        blockLoading: true
+    }
+    function _probe(): void {
+        netDev.reload();
+        const names = netDev.text().split("\n").slice(2).map(l => l.split(":")[0].trim()).filter(n => n.length > 0);
+        // the tunnel first: ipv6leakintrf0 (the kill-switch dummy) only counts when nothing else is up
+        root.iface = names.find(n => /^(proton|tun\d|wg\d)/.test(n)) ?? names.find(n => /^ipv6leakintrf/.test(n)) ?? "";
     }
 
     Timer {
@@ -81,6 +83,6 @@ Singleton {
         running: true
         repeat: true
         triggeredOnStart: true
-        onTriggered: { if (!probe.running) probe.running = true; if (!conns.running && !root.lastName) conns.running = true; }
+        onTriggered: { root._probe(); if (!conns.running && !root.lastName) conns.running = true; }
     }
 }
