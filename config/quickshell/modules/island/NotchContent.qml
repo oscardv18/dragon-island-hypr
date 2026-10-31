@@ -13,6 +13,8 @@ Item {
     id: root
 
     property bool peek: false
+    property bool paused: false          // the island is hidden (fullscreen) or expanded: nothing here may animate
+    readonly property bool animate: Theme.animationsEnabled && !paused
     property real maxWidth: 300
 
     readonly property string mode: IslandState.mode
@@ -104,7 +106,7 @@ Item {
                     color: Toggles.isRecording ? Theme.error
                          : (Notifs.dnd ? Theme.muted : (Notifs.hasUnread ? Theme.accent : Theme.ok))
                     SequentialAnimation on opacity {
-                        running: Toggles.isRecording && Theme.animationsEnabled
+                        running: Toggles.isRecording && root.animate
                         loops: Animation.Infinite
                         onStopped: dot.opacity = 1
                         NumberAnimation { to: 0.3; duration: Theme.ms(600) }
@@ -198,7 +200,7 @@ Item {
                 }
                 Equalizer {
                     anchors.verticalCenter: parent.verticalCenter
-                    playing: Media.isPlaying
+                    playing: Media.isPlaying && !root.paused
                     barHeight: Theme.iconSm
                 }
             }
@@ -373,7 +375,7 @@ Item {
                 // every frame repaints the whole 1366 × 270 island window (pulido: 12 → 6 fps, 8,0 → 6,3 % of CPU)
                 fps: 3
                 reducedMotion: !Theme.animationsEnabled
-                running: Theme.animationsEnabled && !Settings.calmMotion
+                running: root.animate && !Settings.calmMotion
             }
             UiText {
                 anchors.verticalCenter: parent.verticalCenter
@@ -404,7 +406,7 @@ Item {
                 radius: width / 2
                 color: Theme.warn
                 SequentialAnimation on opacity {
-                    running: Theme.animationsEnabled
+                    running: root.animate
                     loops: Animation.Infinite
                     onStopped: waitDot.opacity = 1
                     NumberAnimation { to: 0.35; duration: Theme.ms(800); easing.type: Easing.InOutSine }
@@ -492,7 +494,7 @@ Item {
                     mood: "listening"
                     fps: 6
                     reducedMotion: !Theme.animationsEnabled
-                    running: Theme.animationsEnabled
+                    running: root.animate
                 }
                 UiText { anchors.verticalCenter: parent.verticalCenter; text: "Terminal"; weight: Theme.weightSemiBold }
             }
@@ -519,7 +521,7 @@ Item {
                 radius: width / 2
                 color: Theme.error
                 SequentialAnimation on opacity {
-                    running: Theme.animationsEnabled
+                    running: root.animate
                     loops: Animation.Infinite
                     onStopped: recDot.opacity = 1
                     NumberAnimation { to: 0.3; duration: Theme.ms(700) }
@@ -537,7 +539,7 @@ Item {
             Equalizer {
                 visible: Media.isPlaying
                 anchors.verticalCenter: parent.verticalCenter
-                playing: Media.isPlaying
+                playing: Media.isPlaying && !root.paused
                 barHeight: Theme.iconSm - 2
                 color: Theme.ok
             }

@@ -113,7 +113,9 @@ PanelWindow {
         // hidden, only the thread's dots breathe: a slow tick is enough
         interval: Math.round(1000 / (win.shownT > 0.01 ? Theme.dockFps : Theme.dockFpsHidden))
         repeat: true
-        running: Theme.animationsEnabled && ((win.shownT > 0.01 && (win.anyMoons || win.anyAgent)) || (win.shownT < 0.99 && win.anyMoons))
+        // pulido, rendimiento: never under a fullscreen window (nobody sees the dock there) nor with reduced motion
+        running: Theme.animationsEnabled && !Settings.calmMotion && !Hypr.fullscreenOn(win.screen)
+                 && ((win.shownT > 0.01 && (win.anyMoons || win.anyAgent)) || (win.shownT < 0.99 && win.anyMoons))
         onTriggered: win.now += interval
     }
     // the nodes (moons, synapses, halo) follow the clock only while they are shown: hidden, `liveNow` stays put

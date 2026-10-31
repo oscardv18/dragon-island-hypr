@@ -173,9 +173,11 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: (parent.height - height) / 2
                 peek: root.peek
+                // pulido, rendimiento: covered by a fullscreen window or behind the expanded island, it stops animating
+                paused: root.hidden || root.expanded || root.micro
                 maxWidth: root.maxCollapsed - root.ear * 2 - Theme.notchPadH * 2
                 opacity: root.expanded || root.micro ? 0 : 1
-                visible: opacity > 0
+                visible: opacity > 0 && !root.hidden
                 Behavior on opacity { NumberAnimation { duration: Theme.durContentOut } }
             }
 

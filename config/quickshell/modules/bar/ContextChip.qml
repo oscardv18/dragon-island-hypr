@@ -1,6 +1,8 @@
 // One contextual capsule of the right island. A fixed slot per kind: it grows in (width + opacity) when its
 // entry appears and shrinks away when it goes, instead of popping in and out.
 import QtQuick
+import Quickshell
+import Quickshell.Hyprland
 import "../.."
 import "../../services"
 import "../../components"
@@ -12,6 +14,8 @@ Item {
     property bool wanted: true        // false when the bar has no room: the entry is grouped into "+N"
     property var last: null           // last non-null entry, kept while the chip fades out
     readonly property bool shown: entry !== null && wanted
+    // pulido, rendimiento: no pulsing under a fullscreen window (the bar is covered) nor with reduced motion
+    readonly property bool _pulse: shown && Theme.animationsEnabled && !Settings.calmMotion && !Hypr.fullscreenOn(Hyprland.focusedMonitor ? Quickshell.screens.find(s => s.name === Hyprland.focusedMonitor.name) : null)
     readonly property real fullWidth: row.implicitWidth + Theme.capsulePadH * 2 - 2
     readonly property bool hovered: mouse.containsMouse
 
@@ -49,7 +53,7 @@ Item {
             color: root.last?.color ?? Theme.text
             // recording: a steady pulse
             SequentialAnimation on opacity {
-                running: root.shown && (root.last?.pulse ?? false) && Theme.animationsEnabled
+                running: root._pulse && (root.last?.pulse ?? false)
                 loops: Animation.Infinite
                 onStopped: glyph.opacity = 1
                 NumberAnimation { to: 0.35; duration: Theme.ms(700); easing.type: Easing.InOutSine }
@@ -72,7 +76,7 @@ Item {
                     size: Theme.iconSm
                     color: part.modelData.color
                     SequentialAnimation on opacity {
-                        running: root.shown && (part.modelData.pulse === true || part.modelData.breathe === true) && Theme.animationsEnabled
+                        running: root._pulse && (part.modelData.pulse === true || part.modelData.breathe === true)
                         loops: Animation.Infinite
                         onStopped: partGlyph.opacity = 1
                         NumberAnimation { to: part.modelData.pulse ? 0.3 : 0.65; duration: Theme.ms(part.modelData.pulse ? 600 : 1400); easing.type: Easing.InOutSine }
