@@ -20,6 +20,7 @@ import Quickshell.Wayland
 import QtQuick
 import "../.."
 import "../../services"
+import "../../components"
 
 Scope {
     id: bar
@@ -96,6 +97,13 @@ Scope {
 
         EdgeStrip { id: leftEdge; source: "edge-left" }
 
+        GlassShadow {
+            x: leftIsland.x; y: leftIsland.y; width: leftIsland.width; height: leftIsland.height
+            radius: leftIsland.radius
+            blur: Theme.glassShadowBlurSm
+            opacity: leftIsland.opacity
+        }
+
         LeftIsland {
             id: leftIsland
             bar: bar
@@ -130,6 +138,13 @@ Scope {
         WlrLayershell.layer: WlrLayer.Top
 
         EdgeStrip { id: rightEdge; source: "edge-right" }
+
+        GlassShadow {
+            x: rightIsland.x; y: rightIsland.y; width: rightIsland.width; height: rightIsland.height
+            radius: rightIsland.radius
+            blur: Theme.glassShadowBlurSm
+            opacity: rightIsland.opacity
+        }
 
         RightIsland {
             id: rightIsland
@@ -173,13 +188,15 @@ Scope {
             Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
             HoverHandler { onHoveredChanged: BarState.hover("strip", hovered) }
 
-            // bottom line, white 7 %
+            // bottom line, white 7 % (clasico / liquido); the «ahumado» strip has the light edge on top instead
             Rectangle {
                 anchors.bottom: parent.bottom
                 width: parent.width
                 height: Theme.barStripLine
                 color: Theme.hairline
+                visible: !Theme.glassLight
             }
+            GlassLight { cornerRadius: 0 }
 
             LeftIsland {
                 id: stripLeft

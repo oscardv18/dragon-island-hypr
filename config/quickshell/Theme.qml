@@ -82,17 +82,36 @@ Singleton {
 
     // Derived colors
     readonly property real islandSurfaceAlpha: 0.82                        // spec 72-86 %
-    readonly property real popoverAlpha:       0.30                        // panels / cards: the glass shows through
     readonly property real scrimAlpha:         0.45                        // launcher / power menu only (not the notch)
-    readonly property real glassAlpha:         0.18                        // bar islands: the liquid glass shows through; above mask_threshold (0.1)
     readonly property color barIsland:     alpha(surface0, islandSurfaceAlpha)
-    readonly property color glassBg:       alpha(surface0, glassAlpha)     // acrylic island / popover / card background
     readonly property bool textShadows:    false                           // MultiEffect shadows on bar text: rendered through a texture, they made it look soft / pixelated
     readonly property color textShadow:    Qt.rgba(0, 0, 0, 0.55)         // text / icon shadow on glass (only inside the islands)
-    readonly property color glassBorder:   Qt.rgba(1, 1, 1, 0.09)          // 1 px, white 9 %
+
+    // ---- Glass material (Settings.glassStyle → services/Glass.qml → glassStyle, bound in shell.qml) ----
+    //   ahumado  native blur with grain (look.lua), fill rgba(14,12,24,.70), white 8 % border, a 1 px light edge on top
+    //            (lavender → cyan, transparent at both ends) and a soft shadow — docs/design/28-emergentes.png
+    //   clasico  native blur, fill rgba(13,11,22,.78), white 9 % border, no grain and no light edge
+    //   liquido  hyprglass: very translucent fills (islands 18 %, panels 30 %) so its refraction shows through
+    // The native layer rules ignore alpha < 0.3 (rules.lua): the fills are above it, the shadows below.
+    property string glassStyle: "ahumado"
+    readonly property bool glassLiquid: glassStyle === "liquido"
+    readonly property real glassAlpha:   glassLiquid ? 0.18 : (glassStyle === "clasico" ? 0.78 : 0.70)   // bar islands
+    readonly property real popoverAlpha: glassLiquid ? 0.30 : glassAlpha                               // panels / cards
+    readonly property color glassFill:   glassLiquid ? alpha(surface0, popoverAlpha)
+                                       : (glassStyle === "clasico" ? Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.78) : Qt.rgba(14 / 255, 12 / 255, 24 / 255, 0.70))
+    readonly property color glassBg:     glassLiquid ? alpha(surface0, glassAlpha) : glassFill   // islands
+    readonly property color popoverBg:   glassFill                                             // popovers, cards, panels
+    readonly property color glassBorder: glassStyle === "ahumado" ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.09)
+    readonly property bool  glassLight:  glassStyle === "ahumado"                              // components/GlassLight.qml
+    readonly property var   glassLightStops: [alpha(lavender, 0), lavender, cyan, alpha(cyan, 0)]   // at 0 · 0.2 · 0.8 · 1
+    readonly property real  glassLightWidth: 1
+    readonly property real  glassLightOpacity: 0.85
+    readonly property color glassShadow: glassLiquid ? transparent : Qt.rgba(0, 0, 0, 0.28)   // below ignore_alpha: never blurred
+    readonly property real  glassShadowBlur: 14
+    readonly property real  glassShadowY:    3
+    readonly property real  glassShadowBlurSm: 6                                          // bar islands: their window leaves ~8 px around them
     readonly property color pillBg:        alpha(surface2, 0.38)           // dock capsules / launcher pills: translucent, the liquid glass shows through
     readonly property color pillBgHi:      alpha(surfaceHi, 0.55)
-    readonly property color popoverBg:     alpha(surface0, popoverAlpha)
     readonly property color hairline:      Qt.rgba(1, 1, 1, 0.07)          // island border, white 7 %
     readonly property color divider:       Qt.rgba(1, 1, 1, 0.10)          // divider, white 10 %
     readonly property color glow:          alpha(accent, 0.18)             // ~18 %

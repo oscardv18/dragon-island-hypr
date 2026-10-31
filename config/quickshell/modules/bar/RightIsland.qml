@@ -52,17 +52,18 @@ Rectangle {
     Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
     Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
 
-    // inner top highlight, white 6 %
+    // inner top highlight, white 6 % (clasico / liquido); the «ahumado» glass has its light edge instead
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
         radius: Math.max(0, parent.radius - 1)
-        visible: !root.bare
+        visible: !root.bare && !Theme.glassLight
         gradient: Gradient {
             GradientStop { position: 0.0; color: Theme.glassHighlight }
             GradientStop { position: 0.5; color: Theme.transparent }
         }
     }
+    GlassLight { cornerRadius: root.radius; visible: Theme.glassLight && !root.bare }
 
     Row {
         id: row

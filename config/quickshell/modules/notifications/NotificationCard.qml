@@ -22,8 +22,10 @@ Rectangle {
     radius: Theme.rowRadius + Theme.spacingXs
     color: popup ? Theme.popoverBg : (hovered ? Theme.surfaceHi : Theme.surface2)
     border.width: popup || critical ? 1 : 0
-    border.color: critical ? Theme.alpha(Theme.error, 0.6) : Theme.hairline
+    border.color: critical ? Theme.alpha(Theme.error, 0.6) : Theme.glassBorder
     Behavior on color { ColorAnimation { duration: Theme.durHover } }
+
+    GlassLight { cornerRadius: root.radius; visible: root.popup && Theme.glassLight }
 
     HoverHandler { id: hover }
 

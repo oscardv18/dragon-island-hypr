@@ -2,6 +2,8 @@
 -- Appearance & Decoration (Sweet / Garuda Dragonized palette)
 -- =============================================================================
 
+local glass = require("glassstyle")
+
 hl.config({
 	general = {
 		gaps_in = 4,
@@ -34,15 +36,18 @@ hl.config({
 		},
 
 		-- Native blur (no plugin). Only 0.56.2 options: blur.variant / acrylic / glass are git-only.
-		-- It applies to layers through the layer rules in rules.lua (bar, popovers, notifications, launcher).
+		-- It applies to translucent windows and, through the layer rules in rules.lua, to the Quickshell layers.
+		-- The glass style (glassstyle.lua) only changes the grain: «ahumado» = fine noise (the smoked material of
+		-- docs/design/28-emergentes.png), «clasico» = clean blur. With «liquido» hyprglass draws the layers and windows
+		-- instead (glass.lua) and this blur stays for anything hyprglass excludes.
 		blur = {
 			enabled = true,
-			size = 8, -- kernel radius per pass; bigger = softer, more GPU
+			size = 10, -- kernel radius per pass; bigger = softer, more GPU (the backdrop reads as shapes, not details)
 			passes = 3, -- Kawase iterations; 3 is the quality / cost sweet spot
 			vibrancy = 0.17, -- boosts saturation of what shows through the blur
-			noise = 0.02, -- fine grain on top: the "frosted acrylic" feel, hides banding
+			noise = glass.style == "clasico" and 0.0 or 0.03, -- fine grain: the "smoked" feel, also hides banding
 			contrast = 0.9, -- <1 flattens the blurred background so text stays readable
-			brightness = 0.85, -- <1 darkens the blurred background (matches the dark palette)
+			brightness = 0.8, -- <1 darkens the blurred background (matches the dark palette)
 			popups = true, -- also blur xdg popups / context menus
 			new_optimizations = true, -- cache the blur of static windows (big GPU saving)
 		},

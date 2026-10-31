@@ -34,6 +34,8 @@
  *   - switcherOrbital: bool [readonly] (Alt + Tab opens the orbital switcher; off = Hyprland does not bind Alt + Tab at all,
  *       config/hypr/binds.lua reads this key, and the Switcher service reloads Hyprland when it changes; default true)
  *   - calmMotion: bool [readonly] (reduceMotion or reducedMotion: what the views check before any continuous animation)
+ *   - glassStyle: string [readonly] ("ahumado" · "clasico" · "liquido": the glass material, services/Glass.qml applies it;
+ *       default "ahumado")
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -51,11 +53,12 @@
  *   - setRecordingMode(mode: string): void ("auto" | "off")
  *   - setFlag(key: string, on: bool): void (any boolean key above, e.g. "recordFrame")
  *   - setSeconds(key: string, s: int): void (any idle*Seconds key)
+ *   - setGlassStyle(style: string): void ("ahumado" | "clasico" | "liquido"; use Glass.setStyle from the UI)
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
  *   paletteApplyExternal(on: bool), launcherGravity(on: bool), reduceMotion(on: bool), switcherOrbital(on: bool),
- *   current(): string (every setting, one per line)
+ *   glassStyle(s: string), current(): string (every setting, one per line)
  *
  * shell.qml binds Theme.motionScale, Theme.barStyle, Theme.barSize and Theme.accentIntensity to these.
  */
@@ -119,6 +122,8 @@ Singleton {
     readonly property bool reduceMotion: _flag("reduceMotion", false)
     readonly property bool switcherOrbital: _flag("switcherOrbital", true)
     readonly property bool calmMotion: reduceMotion || reducedMotion
+    readonly property var glassStyles: ["ahumado", "clasico", "liquido"]
+    readonly property string glassStyle: glassStyles.indexOf(root._data.glassStyle) >= 0 ? root._data.glassStyle : "ahumado"
 
     FileView {
         id: settingsFile
@@ -206,6 +211,11 @@ Singleton {
     function setRecordingMode(mode: string): void { if (["auto", "off"].indexOf(mode) >= 0) _set("recordingMode", mode); }
     function setFlag(key: string, on: bool): void { _set(key, on); }
     function setSeconds(key: string, s: int): void { _set(key, Math.max(10, Math.round(s))); }
+    function setGlassStyle(style: string): void {
+        const st = String(style).toLowerCase();
+        if (root.glassStyles.indexOf(st) < 0) { console.warn(`Settings: unknown glass style "${style}"`); return; }
+        _set("glassStyle", st);
+    }
 
     IpcHandler {
         target: "settings"
@@ -223,11 +233,12 @@ Singleton {
         function launcherGravity(on: bool): void { root.setFlag("launcherGravity", on); }
         function reduceMotion(on: bool): void { root.setFlag("reduceMotion", on); }
         function switcherOrbital(on: bool): void { root.setFlag("switcherOrbital", on); }
+        function glassStyle(s: string): void { root.setGlassStyle(s); }
         function current(): string {
             return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
                     `wallpaperPalette=${root.wallpaperPalette}`, `paletteApplyExternal=${root.paletteApplyExternal}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`,
-                    `launcherGravity=${root.launcherGravity}`, `reduceMotion=${root.reduceMotion}`, `switcherOrbital=${root.switcherOrbital}`].join("\n");
+                    `launcherGravity=${root.launcherGravity}`, `reduceMotion=${root.reduceMotion}`, `switcherOrbital=${root.switcherOrbital}`, `glassStyle=${root.glassStyle}`].join("\n");
         }
     }
 }

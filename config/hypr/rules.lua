@@ -78,13 +78,16 @@ hl.window_rule({
     center = true,
 })
 
--- Blur behind the Quickshell layers: native fallback, ONLY when hyprglass is not loaded (never two blurs
--- on one layer; with hyprglass, glass.lua does the layers). Every bar island, popover card and notification
--- card is drawn by a Quickshell window that is alpha 0 around its rounded rectangle, so the blur follows
--- the rounded shape (no BackgroundEffect region: Wayland regions are rectangles and left square tips).
--- ignore_alpha = 0.3: pixels with less alpha than that are not blurred. The notch (dragon-island) is
--- opaque black: no blur rule, ever. dragon-scrim (the 45 % black scrim) never gets blur either.
-if not (hl.plugin and hl.plugin.hyprglass) then
+-- Blur behind the Quickshell layers: the native blur of the «ahumado» and «clasico» glass styles (glassstyle.lua),
+-- and the fallback of «liquido» when hyprglass is not loaded. Never two blurs on one layer: with «liquido» and the
+-- plugin, glass.lua does the layers and these rules are not created. Every bar island, popover card and
+-- notification card is drawn by a Quickshell window that is alpha 0 around its rounded rectangle, so the blur
+-- follows the rounded shape (no BackgroundEffect region: Wayland regions are rectangles and left square tips).
+-- ignore_alpha = 0.3: pixels with less alpha than that are not blurred (the soft shadows under the islands stay
+-- clear). The notch (dragon-island) is opaque black: no blur rule, ever. dragon-scrim (the 45 % black scrim) never
+-- gets blur either.
+local glass = require("glassstyle")
+if not glass.liquid then
     for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher", "dragon-switcher", "dragon-overview", "dragon-wallpapers", "dragon-preview", "dragon-store", "dragon-herdr-help", "dragon-settings" }) do
         hl.layer_rule({
             name         = "blur-" .. ns,

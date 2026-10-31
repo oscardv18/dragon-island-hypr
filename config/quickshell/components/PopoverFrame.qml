@@ -50,6 +50,11 @@ Item {
         if (shown) root.opened(); else root.closed();
     }
 
+    GlassShadow {
+        anchors.fill: frame
+        radius: frame.radius
+    }
+
     Rectangle {
         id: frame
         width: parent.width
@@ -58,7 +63,9 @@ Item {
         radius: Theme.popoverRadius
         color: Theme.popoverBg
         border.width: 1
-        border.color: Theme.hairline
+        border.color: Theme.glassBorder
+
+        GlassLight { cornerRadius: frame.radius }
 
         // swallow clicks so they don't reach the click-outside catcher underneath
         MouseArea {
