@@ -3,6 +3,8 @@
 //   header     an uppercase monospaced caption, a line that fades out to the right, «● EN VIVO» when `live`, and
 //              `headerRight` (a switch, usually)
 //   brackets   four cyan corner brackets (12 px, 1.5 px stroke, radius 6) that appear when the opening ends
+//              — the top line and the brackets are FrameDecor, the same component (and Theme.frame tokens) as the
+//              frame of the focused window
 //   rows       every direct child of the body enters in cascade (opacity + 8 px, 40 ms apart)
 // Opening (≤ 600 ms, the four curves of Theme):
 //   1 the capsule that opened it glows cyan (Capsule.active)          2 beam: a 1.5 px cyan line with a glow runs
@@ -195,7 +197,6 @@ Item {
             border.width: 1
             border.color: Theme.glassBorder
 
-            GlassLight { cornerRadius: frame.radius }
 
             // swallow clicks so they don't reach the click-outside catcher underneath
             MouseArea {
@@ -253,10 +254,15 @@ Item {
         }
     }
 
-    HudBrackets {
+    // top line (ahumado) + corner brackets: revealed with the clip, the brackets once the unfold ends
+    FrameDecor {
         anchors.fill: clipper
-        visible: !root._calm && root._brackets > 0.001
-        opacity: root._brackets
+        visible: clipper.visible
+        opacity: clipper.opacity
+        radius: Theme.hudRadius
+        line: Theme.glassLight
+        brackets: !root._calm
+        bracketOpacity: root._brackets
         grow: 1 - root._brackets
     }
 }
