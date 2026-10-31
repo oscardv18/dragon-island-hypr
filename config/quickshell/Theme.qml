@@ -308,8 +308,11 @@ Singleton {
     readonly property real dockNode:        42
     readonly property real dockNodeFocus:   48     // the focused app = planet
     readonly property real dockNodeGrow:    6      // hovered node
-    readonly property real dockIconRatio:   0.56   // icon size inside the glass node (rounded-square themes: see HANDOFF 8b)
-    readonly property string dockNodeStyle: "icon"  // "icon": the icon itself is the node (rounded-square themes, HANDOFF 8b) · "glass": inside a glass disc
+    readonly property real dockIconRatio:   0.70   // «glass»: the square icon at 70 % inside the round node (pulido)
+    readonly property real dockCircleInset: 3      // «circle»: margin between the node's edge and the cropped icon
+    readonly property real dockCircleZoom:  1.18   // «circle»: the icon is enlarged so its rounded corners fall outside the crop
+    property string dockNodeStyle: "circle"         // "glass" · "circle" · "icon" (the icon itself is the node, HANDOFF 8b, 8h)
+    readonly property color dockThreadShade: Qt.rgba(0, 0, 0, 0.45)   // a dark hairline under the thread: readable on light wallpapers
     readonly property real dockCore:        64
     readonly property real dockLift:        16     // hovered node rises; neighbours follow a gaussian
     readonly property real dockSigma:       1.1    // in nodes

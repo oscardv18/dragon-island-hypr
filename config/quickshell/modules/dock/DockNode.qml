@@ -4,6 +4,7 @@
 // pinned app to reorder). Everything is placed in the dock frame's coordinates (bottom edge); the frame turns for
 // left / right and the icon, badge and label turn back (dock.back).
 import Quickshell
+import Quickshell.Widgets
 import QtQuick
 import QtQuick.Shapes
 import QtQuick.Effects
@@ -16,7 +17,8 @@ Item {
     required property var dock
     required property var item
     required property int k          // index on its side (0 = next to the core)
-    required property int side       // -1 pinned (left), +1 open (right)
+    required property int side       // -1 left of the core, +1 right (pinned apps are shared out on both sides)
+    property int pinIndex: -1        // index in Dock.pinnedItems (-1: an open app that is not pinned)
     readonly property int off: side < 0 ? dock.leftOff : dock.rightOff
     readonly property real rel: k - off                       // 0 .. cap-1 when on screen
     readonly property real fade: Math.max(0, Math.min(1, 1 - Math.max(-rel, rel - (dock.capOf(side) - 1)) / 0.8))
@@ -31,6 +33,7 @@ Item {
     property real size: (item.focused ? Theme.dockNodeFocus : Theme.dockNode) + (hovered ? Theme.dockNodeGrow : 0)
     Behavior on size { NumberAnimation { duration: Theme.ms(380); easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEmergente } }
     readonly property bool iconOnly: Theme.dockNodeStyle === "icon"
+    readonly property bool circle: Theme.dockNodeStyle === "circle"
 
     anchors.fill: parent
     opacity: dock.shownT * fade
@@ -189,8 +192,12 @@ Item {
             border.color: Theme.alpha(Theme.lavender, 0.7)
         }
 
+        // the icon: «glass» = the square icon at Theme.dockIconRatio (70 %) inside the round glass node; «circle» = the
+        // icon cropped to a circle with an inner margin (Theme.dockCircleInset), slightly enlarged so its rounded-square
+        // corners fall outside; «icon» = the icon itself is the node (the previous look)
         Image {
             id: icon
+            visible: !node.circle
             anchors.centerIn: parent
             rotation: dock.back
             readonly property real s: node.iconOnly ? node.size : Math.round(node.size * Theme.dockIconRatio)
@@ -204,6 +211,28 @@ Item {
             smooth: true
             layer.enabled: node.item.minimizedOnly
             layer.effect: MultiEffect { saturation: -0.7 }
+        }
+        ClippingRectangle {
+            visible: node.circle
+            anchors.centerIn: parent
+            width: node.size - Theme.dockCircleInset * 2
+            height: width
+            radius: width / 2
+            color: Theme.transparent
+            Image {
+                anchors.centerIn: parent
+                rotation: dock.back
+                width: parent.width * Theme.dockCircleZoom
+                height: width
+                source: node.item.icon
+                sourceSize: Qt.size(96, 96)
+                fillMode: Image.PreserveAspectFit
+                asynchronous: true
+                mipmap: true
+                smooth: true
+                layer.enabled: node.item.minimizedOnly
+                layer.effect: MultiEffect { saturation: -0.7 }
+            }
         }
     }
 
@@ -282,8 +311,9 @@ Item {
         onPressAndHold: m => { if (!dragging && node.item.count > 0) { held = true; dock.openThumbs(node.item, body); } }
         onReleased: m => {
             if (dragging) {
-                // pinned apps grow to the LEFT of the core: moving left = a higher index
-                Dock.reorder(node.k, node.k - Math.round(node.dragOffset / dock.pitch));
+                // left of the core the order grows to the left, right of it to the right
+                const steps = Math.round(node.dragOffset / dock.pitch);
+                if (node.pinIndex >= 0) Dock.reorder(node.pinIndex, Math.max(0, node.pinIndex + (node.side < 0 ? -steps : steps)));
                 node.dragOffset = 0;
                 dragging = false;
             }
