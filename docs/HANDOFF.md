@@ -1,6 +1,6 @@
 # dragon-island — HANDOFF
 
-> **Fecha:** 2026-10-06 · **Rama:** `main` · **Estado:** interfaz completa según la spec; llavero único (gnome-keyring) y bandeja listos, **pendiente de prueba en una sesión Hyprland**.
+> **Última fase:** pulido (2026-10-31, §8h) · **Fecha original:** 2026-10-06 · **Rama:** `main` · **Estado:** interfaz completa según la spec; llavero único (gnome-keyring) y bandeja listos, **pendiente de prueba en una sesión Hyprland**.
 > Todo se escribió y validó en Windows (sin Hyprland ni Quickshell). Lo que exige hardware real está en [docs/TESTING.md](docs/TESTING.md).
 
 ## 1. Resumen
@@ -800,3 +800,140 @@ Rama `feat/nueva-identidad` (sobre el PR #1 ya fusionado), prompt `docs/design/P
 - En `--test-mode` no salen las esquinas inferiores (teclado, apagar): ya pasaba antes de este cambio.
 
 **Revertir:** `git revert` de los commits de esta sección; `sudo cp -a /usr/share/sddm/themes/dragon-core.bak-dragon-<fecha>/. /usr/share/sddm/themes/dragon-core/`.
+
+## 8f. Fase 3 · paleta del fondo, selector orbital y login (2026-10-30)
+
+Resumen de `handoff-fase-3-claude.md` y `handoff-fase-3-codex.md` (borrados al unirlos aquí). Ramas `feat/nueva-identidad` (Claude) y `feat/fase-3-paleta` (Codex).
+
+**Claude (interfaz)**
+- `services/WallPalette.qml` lee `~/.local/state/dragon-island/palette.json` (FileView con `watchChanges`; sobrevive a renames atómicos, borrado y recreación) y valida cada color. `Theme` recibe `paletteOn` / `wallPalette` desde `shell.qml`: `accent`, `lavender`, `lavenderInk`, `lavenderDeep`, `violetBase`, `coreNode`, `threadPink`, `textOnAccent`, `accentShade` y `switchOn` siguen la paleta solo con `Settings.wallpaperPalette`, archivo válido y **sin** `fallback`; si no, los Dragon fijos (`Theme.dragon.*`), con `ColorAnimation` de 600 ms (`estandar`). ok / warn / error / cyan nunca cambian. `NeuralCore` gana `identity`.
+- Ajustes › Apariencia: «Paleta desde el fondo» (con los cinco `swatches`) y «Aplicar a las apps» (`Settings.paletteApplyExternal`). `Wallpaper.apply` pasa `DRAGON_PALETTE=generate|apply` a `scripts/wallpapers.sh`, que lanza `dragon-palette` desacoplado con `nice 10`; restaurar el fondo al iniciar sesión no regenera.
+- Selector orbital (`DesktopCatcher.qml` en la capa `Bottom`, `OrbitalPicker.qml` en `WallpaperWindow`): anillo elíptico 300 × 206 de hasta 12 miniaturas, disco central, rueda, vuelo de la elegida sobre el revelado `grow` de awww. IPC `wallpaper orbital` / `orbitalAt x y`; `SUPER + W`. Tira de colores (`PaletteStrip`, `ColorQuantizer` solo bajo el cursor; caché en `WallPalette.previews`).
+- Login SDDM rehecho (`07-login.png`): saludo, núcleo con HUD y avatar, satélites de usuarios, sesión, teclado, energía. `bin/dragon-sddm-sync` copia con sudo el fondo y el acento al tema (luego afinado en 8d / 8e). Migraciones 023 y 024.
+- Desvíos: `WallPalette` y no `Palette` (QtQuick ya tiene `Palette`); `Theme.textOnAccent` y no `onAccent` (`on…` es sintaxis de manejador); captador en `Bottom` y no `Background` (awww se reinicia al salir de un vídeo y lo taparía); «Aplicar a las apps» apagado no devuelve las apps a Dragon (el contrato no tiene un reset solo de apps).
+
+**Codex (motor de paleta)** — contrato
+- `bin/dragon-palette generate <imagen> | apply | reset | status`, con `--dry-run` y `--quiet`. Python 3.11+, Pillow solo en `generate`. Comando en `~/.local/bin` (el shell lo llama por ruta completa: el PATH de Quickshell no incluye `~/.local/bin`), librerías y plantillas en `$XDG_DATA_HOME/dragon-island/palette/`.
+- `palette.json` v1: `version, source, sourceHash, fallback, accent, accentSoft, accentDeep, glow, onAccent, tint, swatches` (`#RRGGBB`, 5 swatches, SHA1 de los píxeles reducidos). Fondo apagado → valores Dragon y `fallback: true`, código 0.
+- `apply` escribe en `$XDG_CONFIG_HOME/dragon-island/palette/` el tema de Ghostty (recarga SIGUSR2), la inclusión de kitty (SIGUSR1), el bloque `[palettes.dragon]` de Starship y los colores de fastfetch (se combinan por stdin: fastfetch solo admite un `--config`). Solo señala procesos del mismo UID con manejador. `reset` vuelve a los colores **anteriores a la fase 3** (decisión del usuario).
+- herdr (0.9.5) no admite un tema desde archivo externo: se deja sin tocar. `[theme]` admite `name`, `auto_switch`, `dark_name`, `light_name`; `[theme.custom]` (y sus subtablas `light` / `dark`) los tokens `accent, panel_bg, sidebar_bg, active_row_bg, selection_bg, surface0, surface1, surface_dim, overlay0, overlay1, text, subtext0, mauve, green, yellow, red, blue, teal, peach` (hex, nombres, `rgb()` o `reset/default/none/transparent`). Fuentes: herdr.dev/tui/docs/configuration, `src/config/io.rs` y `src/config/theme.rs` de herdrdev/herdr; recargas: ghostty.org/docs/linux/systemd y la documentación de kitty.
+- Migraciones 030 (plantillas, conserva paleta o reset previos) y 031 (Python / Pillow con confirmación). 34 pruebas en `tests/palette/`.
+
+**Trampas**
+- `Palette` es un tipo de QtQuick; `on<Mayúscula>` no vale como nombre de propiedad.
+- Un singleton nuevo en `services/qmldir` no aparece con la recarga en caliente: reiniciar Quickshell.
+- `QtCore.Settings` con propiedades declaradas **reescribe** el archivo al destruirse: en un tema SDDM leer con `value()`; QSettings trata `[General]` como raíz.
+- `hl.dsp.cursor.move` no dispara `containsMouse` en una capa (en esta fase; en la de pulido un ratón virtual por uinput sí lo hace).
+
+## 8g. Fase 4 · launcher Gravedad, Alt+Tab orbital, escritorios y portapapeles (2026-10-30)
+
+Resumen de `handoff-fase-4-claude.md` y `handoff-fase-4-codex.md` (borrados). Ramas `feat/nueva-identidad` (Claude) y `feat/fase-4-motores` (Codex).
+
+**Claude (interfaz)**
+- Launcher Gravedad (`GravityView`, `GravityPlanet`, `services/Usage.qml`, Ajustes › Launcher): tres anillos (favoritos · frecuentes · todas), tamaño por frecency, lunas en las apps abiertas. Búsqueda con atracción y fantasmas, paneles MODOS y RESULTADOS (`services/Search.qml`, también lo usa la isla de mando desde 8h). Prefijos `=` `>` `?` `:` `@` `/`.
+- Alt+Tab orbital (`modules/switcher/`, `services/Switcher.qml`, MRU en `Hypr`); toque rápido cambia sin mapear la ventana. `SUPER + Tab` (`modules/overview/`). Portapapeles orbital (`ClipOrbit`, `ClipCard`), `SUPER + V`; Enter pega de verdad (Ctrl+Shift+V en terminales).
+- Interruptores `launcherGravity` / `switcherOrbital` (binds.lua lee `settings.json` al cargar y el servicio recarga Hyprland al cambiar). Migraciones 025, 026 y 027 (Alt+Shift fuera de `kb_options`; `SUPER + ALT + Space` queda `locked`). Pruebas `tests/migrations-fase4.sh`.
+- Decisiones: flotante pasa a `SUPER + SHIFT + Space` (SUPER+V es el portapapeles); favoritos = los del launcher + los fijados del dock; solo cuentan coincidencias reales (las difusas de reserva); portapapeles con 8 tarjetas a la vez.
+
+**Codex (motores)** — contrato (todo por ruta completa en `~/.local/bin`, con `--json`; el servicio comprueba `[ -x ]` antes)
+- `dragon-search calc|cmd|web|emoji '<consulta>' [--limit N] [--lang es|en] --json` → `{mode, query, results:[{id,title,sub,icon,kind,action,score}]}`; sin resultados lista vacía y 0; uso incorrecto 2; fallo `{"error"}` y 1. Las acciones nunca se ejecutan en el motor. Motores web propios en `search-engines.json`. `emoji-use <id>` registra recientes.
+- `dragon-usage record <id> | stats --json | forget <id> | reset` (`usage.json` v1, frecency con vida media de 7 días, flock + escritura atómica).
+- `dragon-clip classify --json` (stdin array → array `{id,kind,label,preview[,secret]}`, enmascara antes de recortar), `pins list|add|remove`, `meta <id>`. `dragon-clip-store` conserva la pausa del modo grabación y omite contenido con `x-kde-passwordManagerHint` = secret.
+- Migración 032 despliega los cuatro comandos. 40 pruebas en `tests/engines/`; todas las consultas < 150 ms en esta máquina.
+
+**Medidas de la fase 4** (CPU de Quickshell): reposo 12,2 %; launcher abierto 78 % (antes 92 %), con núcleo y giro a 30 fps. En 8h se bajó a 20 fps.
+
+**Trampas**
+- Una propiedad del delegado con el mismo nombre que un `id` del padre (`view: view`) se resuelve a sí misma → `undefined` (volvió a pasar en 8h con `line: line`).
+- En `onShownChanged`, una propiedad enlazada a `shown` aún tiene el valor viejo: usar `Qt.callLater`.
+- `console` no vale como nombre de propiedad en un singleton.
+- `send_shortcut` no teclea `*` (`asterisk`) ni genera la liberación de un modificador; `@ ? : >` necesitan `SHIFT`.
+- Con `DRY_RUN=1`, `if $DRY_RUN` ejecutaba la orden `1`: `bool_flag` en `lib/common.sh` lo normaliza (todas las migraciones pasan por ahí); `tests/migrations-dry-run.sh` lo vigila.
+
+## 8h. Pulido (2026-10-31)
+
+Rama `feat/pulido`, prompt `docs/design/PROMPT-pulido-claude.md`, un commit por punto (más los de rendimiento, uno por cambio, y un arreglo). Probado en la sesión real: Hyprland **0.57.0** y Quickshell **0.3.2** (las versiones instaladas ya no son 0.56.2 / 0.3.1), 1366 × 768 escala 1, AMD Renoir.
+
+**Hecho**
+- **1 Cristal** (`baeb544`): `Settings.glassStyle` = `ahumado` (por defecto) · `clasico` · `liquido` en Ajustes › Apariencia. `services/Glass.qml` escribe `~/.config/dragon-island/glass-style` y hace `hyprctl reload`; `config/hypr/glassstyle.lua` lo lee y `look.lua` (grano `blur.noise` 0,03 / 0), `rules.lua` (reglas nativas de capa salvo con líquido) y `glass.lua` (hyprglass solo con líquido; si no, cargado pero con ventanas y capas apagadas) deciden. Comprobado que hyprglass se apaga y enciende en vivo (`hyprctl hyprglass stats`: 0 dibujos con ahumado / clásico) y que `configerrors` queda vacío. Tokens `glassFill`, `glassBorder`, `glassLight`, `glassShadow`; componentes `GlassLight` y `GlassShadow`. Migración **034**.
+- **2 Islas** (`ba2b757`): más aire y contenido algo mayor (tabla abajo), notch 220 en reposo y 140 mínimo, estados con texto +30 px. Anillos: extremos planos y marca de inicio a las 12, número dentro al pasar el cursor y siempre en `amplia`. Sin borde blanco en las islas ni en la franja C. IPC nuevo `barmetrics dump`.
+- **3 Emergentes HUD** (`5d04111`, arreglo `e3b5b70`): `PopoverFrame` nuevo (haz, despliegue recortado, escuadras, cabecera con «● EN VIVO», filas en cascada, `filled` para los indicadores; con `reduceMotion` solo un fundido de 120 ms) y vocabulario común (`SegmentBar`, `Segmented` con pastilla deslizante —también en Ajustes—, `HudChip`, `HudRow`, `HudCard`, `GaugeDial`, `AreaChart`, `SignalBars`, `RadioDot`, `Radar`, `HudCaption`, `HudBrackets`). Paneles de gestión completa: Rendimiento, Wi‑Fi (QR con qrencode, VPN con último servidor por `nmcli`, bandas de las redes cercanas, red oculta, punto de acceso), Sonido (refuerzo a 150 %, medidor en vivo con `PwNodePeakMonitor`, supresión de ruido si hay un nodo filtro), Bluetooth (visibilidad, perfil A2DP ↔ manos libres con `pactl`, «usar como salida», avisos en la isla al conectar y con batería < 15 %), Fecha y hora (relojes del mundo en Ajustes, puntos de khal, `khal new`, servicio nuevo `Timers.qml`), Batería (brillo por pantalla, también DDC). Notificaciones vuelve a ser su propio popover (`SUPER + N`).
+- **4 Notificaciones** (`3753bcc`): gota, trazo, relleno, cascada, barrido y línea de tiempo (se pausa con el cursor); salida con colapso, gota de vuelta y «Guardada en el centro». Máximo 3 + «+N»; críticas en ámbar sin cierre automático; con No molestar solo el contador en la isla. `services/NotifFx.qml`.
+- **4b Isla de mando** (`5eba4ca`): línea de mando (mismo `Search` que el launcher; chip IA → `dragon-dropdown --type 'claude "…"'`), pila de prioridad (`services/Priority.qml`), núcleo, música (`services/Cava.qml`), franja de 6 h y cinco interruptores. `services/Activity.qml` (cliente de `dragon-activity`); Herdr, Commands (≥ 30 s) y Focus (que gana pausa) registran actividad. `SUPER + /` y `qs ipc call shell ask "<texto>"`.
+- **5 Rendimiento** (`dd153c4`, `53604ad`, `4537be0`, `3e85e83`, `a9fa0bb`): ver tabla.
+- **6 Dock** (`de2ce2d`): fijadas repartidas a ambos lados del núcleo (primera mitad a la izquierda, segunda a la derecha, luego las abiertas no fijadas), trazo oscuro bajo el hilo y variantes de icono `glass` (70 % en el disco) y `circle` (recortado en círculo, 3 px de margen). Con los iconos reales se eligió **`circle`** (iconos más grandes y legibles; `Theme.dockNodeStyle`). Las capturas de comparación no se suben: se ve la terminal del usuario detrás.
+- **7 Identidad** (`5bd83f7`, `acd3435`, `0f451b2`): `Theme.lockTokens` / `launcherTokens` / `corePalette`; `LockView`, `LockTopIcon` y `LauncherView` siguen siendo QML puro y reciben `tokens` (el mock del bloqueo pasa los suyos); el launcher clásico pierde violeta y magenta. `NeuralCore` gana `palette` opcional (SDDM sigue con sus valores por defecto) y el shell usa `components/Core.qml`. `Lock.qml` ya no ejecuta nada: `Session.realName` / `hostName`, `Keyboard.code` / `capsLock` / `toPrimary()` / `next()`. Vista previa de SDDM regenerada con el mock y un usuario genérico.
+- **7.4 SDDM `--test-mode`:** es una limitación del modo de prueba. Un tema de sondeo en `sddm-greeter-qt6 --test-mode` registra en el journal `canSuspend=false canReboot=false canPowerOff=false layouts=0` y nombre de equipo vacío: sin demonio no llegan las capacidades ni el modelo de teclado, así que los botones de las esquinas (visibles solo si existen) no salen. No hay nada que arreglar en el tema.
+- **8 Migraciones** (`dc2472e`): **034** (estilo de cristal) y **035** (redespliega `dragon-dropdown` si es copia; avisa de qrencode / cava sin instalar nada). Sección opcional `paneles` en el módulo extras.
+
+**Anchos de las islas a 1366 px** (`qs ipc call barmetrics dump`, mismo contenido antes y después; izq./der. = ancho de cada isla, hueco = el menor entre el notch y una lateral)
+
+| Estilo · talla | Isla izq. | Notch | Isla der. | Hueco mínimo |
+|---|---|---|---|---|
+| A compacta | 140 → 150 | 201 → 220 | 373 → 405 | 195 → 154 |
+| A normal | 154 → 164 | 205 → 220 | 393 → 431 | 173 → 128 |
+| A amplia | 168 → 178 | 209 → 220 | 409 → 450 | 155 → 109 |
+| B compacta | 140 → 150 | 190 → 220 | 373 → 415 | 201 → 144 |
+| B normal | 154 → 164 | 190 → 220 | 393 → 431 | 181 → 128 |
+| B amplia | 168 → 178 | 193 → 220 | 409 → 450 | 163 → 109 |
+| C compacta | 146 → 156* | 199 → 220 | 377 → 409 | 192 → 150 |
+| C normal | 160 → 170* | 203 → 220 | 397 → 425 | 170 → 134 |
+| C amplia | 174 → 184* | 207 → 220 | 413 → 444 | 152 → 115 |
+| D compacta | 84 → 86 | 80 | 90 → 93 | 539 → 536 |
+| D normal | 94 → 96 | 80 | 95 → 95 | 534 → 533 |
+| D amplia | 104 → 106 | 80 | 97 → 100 | 525 → 523 |
+
+\* C: fin del contenido de la izquierda dentro de la franja. Nada se solapa; con más cápsulas contextuales el notch se estrecha o se desplaza (BarMetrics), nunca toca una isla.
+
+**Rendimiento** (CPU de Quickshell, tiempo de `/proc/<pid>/stat` como pidstat —no está instalado—; 100 % = un núcleo). Qt pinta por hardware (`QSG_INFO`: OpenGL 4.6, radeonsi). Hay ruido: el usuario usaba el escritorio y yo mismo era un agente trabajando (el núcleo «pensando» de la isla está activo mientras haya uno).
+
+| Situación | Antes | Después | Objetivo |
+|---|---|---|---|
+| Reposo, 1–2 agentes trabajando | 12,1 % | 5,9 – 6,3 % | < 3 % |
+| Reposo sin núcleo de agentes (medido apagándolo) | — | 3,4 % | < 3 % |
+| Reposo con movimiento 0 | 2,0 % | 1,4 – 2,7 % | — |
+| Launcher Gravedad abierto | 62,4 % (82,8 % en la medida repetida a 30 fps) | 23,1 % | < 35 % |
+| Un popover abierto (Rendimiento) | 9,6 % | 10,9 % | < 15 % |
+
+Cambios: núcleo de la isla izquierda quieto sin actividad (12,1 → 8,0); núcleo «pensando» del notch a 6 fps (8,0 → 6,3); métricas y VPN leídas con FileView de `/proc` y `/sys` en vez de ~7 procesos cada 2 s (su CPU contaba en los hijos, no en Quickshell: sin diferencia medible en el proceso); launcher a 20 fps (82,8 → 23,1); nada anima con la isla oculta por una pantalla completa (la ventana de la isla pasó de ~127 a 44 actualizaciones/s según el registro del render loop) ni el dock ni las cápsulas bajo una pantalla completa. `ScreencopyView` y `ColorQuantizer` ya solo vivían con su ventana abierta. **El objetivo de reposo < 3 % no se cumple mientras trabaja un agente**: lo que queda es el núcleo «pensando» repintando la ventana de la isla (1366 × 302) a 6 fps; sin agentes la medida es ~3,4 %. El paso del Canvas del núcleo a `Shape` / `ShaderEffect` no se hizo (es el código compartido con SDDM y el lanzador).
+
+**Desvíos del diseño**
+- La isla de mando mide 700 / 740 / 780 pero, a 1366 px, se estrecha al hueco libre entre islas (mín. 640) porque nuestra isla derecha (teclado, mosaico, Wi‑Fi, Bluetooth) es más ancha que la del tablero; la pila de prioridad absorbe la diferencia.
+- Sonido sin ecualizador: PipeWire no trae uno y las formas limpias (EasyEffects, filter-chain por perfil) necesitan otro servicio y su configuración.
+- El medidor de micrófono usa `PwNodePeakMonitor`, presente en Quickshell 0.3.2 (no comprobado en 0.3.1).
+- Notificaciones vuelve a tener su propio popover (el panel Fecha y hora de la referencia es solo calendario); la campana del panel Fecha y hora lo abre.
+- La gota de las notificaciones la dibuja la ventana de la isla (sin desenfoque y de ancho completo) en lugar de la de notificaciones: así cruza de verdad sin romper «una región de desenfoque por ventana».
+- El modo IA escribe `claude "…"` en la terminal desplegable pegándolo (wl-copy + Ctrl+Shift+V solo a esa ventana) y restaura el portapapeles; el historial de cliphist puede guardar esa línea.
+- Las alarmas avisan en la isla y con una notificación crítica; el temporizador igual.
+
+**Verificado en la sesión real** (sin teclear en las ventanas del usuario; las pruebas de teclado se hicieron solo con el foco en la isla y, tras un ESC que cayó en la terminal, por IPC)
+- Los tres estilos de cristal en vivo, sin doble desenfoque (hyprglass a 0 dibujos fuera de líquido) y `configerrors` vacío.
+- Las 12 combinaciones estilo × talla sin solapes (tabla); anillos con número.
+- Los nueve popovers abren con haz, despliegue y cascada (secuencia capturada) y se cierran en orden inverso; Rendimiento como en 28.1.
+- Una notificación real (`notify-send`) sale de la isla, se traza, se llena y vuelve al vencer con «Guardada en el centro»; una crítica queda en ámbar y se cerró con un clic real en su X.
+- La isla de mando con pila («4 actualizaciones pendientes»), núcleo, música (Brave), franja (datos del `dragon-activity` provisional) e interruptores; `shell ask brave` da los mismos resultados que el launcher más «Preguntar a Claude».
+- Dock centrado y equilibrado (4 + núcleo + 3) con las dos variantes de icono.
+- Mocks del bloqueo y de SDDM renderizados tras pasar a tokens; `tests/run-all.sh` TODO EN VERDE; `hyprctl configerrors` vacío.
+
+**No verificado (sin ratón o teclado reales, o porque tocaría el sistema)**
+- Arrastrar en las barras segmentadas (volumen, micrófono, apps, brillo) y la rueda sobre ellas; deslizar una notificación para cerrarla; pausar el tiempo con el cursor encima (el código pausa la animación).
+- El chip IA de verdad (pegar en la terminal desplegable) y `SUPER + /` con el teclado físico.
+- El QR del Wi‑Fi (clave guardada por NetworkManager), red oculta, punto de acceso, conectar / desconectar la VPN, olvidar una red.
+- Emparejar, conectar, olvidar y cambiar de perfil Bluetooth; el aviso de batería baja (no había dispositivo).
+- `khal new` (khal no está configurado en esta máquina), alarmas y temporizador hasta el aviso.
+- Supresión de ruido (no hay nodo filtro), la onda real con cava (no instalado), la batería (UPower no ve batería aquí).
+- Aprobar / Rechazar en la pila, Unirse a una reunión, la reordenación del dock arrastrando.
+- El bloqueo real (`Lock.qml` sin procesos): no se bloqueó la sesión.
+- La migración 034 en un sistema instalado por copia (probada en HOME temporal) y `glassStyle = liquido` en un sistema sin hyprglass (cae a ahumado por código).
+
+**Contrato con Codex**: `dragon-activity` en `~/.local/bin` es **provisional** (datos de prueba, fuera del repo). Sustituirlo por el de `feat/pulido-herramientas` al fusionar; el shell lo llama por ruta completa y es tolerante a que falte.
+
+**Trampas**
+- Archivos QML nuevos (componentes o singletons) con recarga en caliente dan «X is not a type»: reiniciar Quickshell.
+- Un `id` y una propiedad con el mismo nombre (`line: line`) se resuelven a sí mismos.
+- La ventana de popovers desmapeada: una animación arrancada en el mismo instante en que se mapea no avanzaba la primera vez (`e3b5b70`).
+- Pruebas con un ratón / teclado virtual por `/dev/uinput`: comprobar antes que el foco está en la superficie del shell; cerrar paneles por IPC, nunca con ESC (un segundo ESC cae en la terminal enfocada).
+- `qs log` es acumulativo: para ritmos de actualización, dos instantáneas con `QT_LOGGING_RULES=qt.scenegraph.renderloop.debug=true`.
+- `FileView` sobre `/proc`: `blockLoading: true` y `reload()` antes de `text()`.
+
+**Revertir**: no fusionar la rama o `git revert main..feat/pulido`. El cristal vuelve a líquido con `qs ipc call settings glassStyle liquido`; `glass-style` y `glassStyle` en `settings.json` son inocuos en versiones anteriores.
