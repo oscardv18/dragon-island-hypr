@@ -992,10 +992,34 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
 **Trampas**
 - Editar `shell.qml` con Quickshell en marcha puede tumbarlo en la recarga en caliente y dejar dos instancias (la que se reinicia y la nueva): `qs list` y matar todas antes de relanzar.
 - En `WindowFrame.qml` la geometría se asigna **antes** que `stamp`: la vista lee la geometría al cambiar `stamp` (al revés, el contorno quedaba un paso por detrás).
-- `hyprctl` de una terminal vieja puede apuntar a una firma de Hyprland que ya no existe: la buena es la carpeta más reciente de `/run/user/$UID/hypr/`.
+- `hyprctl` de una terminal vieja puede apuntar a una firma de Hyprland que ya no existe: consultar `hyprctl -j instances` y validar la instancia correspondiente a `WAYLAND_DISPLAY`; no elegir por la fecha de la carpeta (ver §8j).
 
 **Arreglo posterior (`fix/ghostty-blur`)**
 - **Ghostty seguía sin desenfoque** aunque kitty sí lo tenía: desde **Ghostty 1.4 + Hyprland 0.57** (actualizados hoy a las 12:09) Ghostty le pide al compositor el desenfoque de su fondo, y nuestro `background-blur = false` hacía que Hyprland dejara el wallpaper nítido detrás. Con `true` lo desenfoca (comprobado con un Ghostty nuevo). El repo ya decía `true` (con opacidad 0,89) por un cambio sin commitear que entró en `bf5274a` con `git add -A`; la copia instalada seguía en `false`. Migración **039**: pone `background-blur = true` en un `~/.config/ghostty/config` copiado (con respaldo, sin tocar la opacidad ni lo demás). Las terminales ya abiertas lo toman al recargar Ghostty (`Ctrl+Shift+,`) o en una ventana nueva; la migración no manda señales.
 - **El contorno desapareció tras fusionar**: `git switch main` borró un instante `modules/frame/` (el `main` local aún no lo tenía), Quickshell se recargó en caliente sin él («Ignoring unresolvable import …/modules/frame») y siguió así tras el `pull`. Reiniciar Quickshell lo devuelve. Trampa: tras cambiar de rama con archivos QML nuevos, reiniciar Quickshell.
 
 **Revertir**: `git revert main..feat/ajuste-ventanas`. Para volver a tener barras: `hyprpm enable hyprbars` (la configuración ya no las estiliza). El contorno se apaga en Ajustes (`qs ipc call settings windowFrame nada`).
+
+## 8j. Actualización desde una terminal con firma de sesión antigua (2026-10-31)
+
+- **Causa confirmada:** el entorno de la terminal conservaba la firma `efb509…` de Hyprland anterior;
+  `hyprctl -j instances` solo mostraba `0aa674…`, Hyprland **0.57.0**, en `wayland-1`.
+  Consultar esa instancia por `hyprctl -i` dio versión válida y `configerrors` vacío.
+  El error de `hyprpm update` y «couldn't parse plugin list output» eran consecuencia de la conexión fallida.
+- **Cambio:** `lib/hyprland-session.sh` valida la firma heredada; si falla, solo recupera una instancia
+  inequívoca del mismo `WAYLAND_DISPLAY`, verificando su conexión. `update.sh` lo hace antes de las
+  migraciones y antes de plugins / recarga; `plugins-foreground.sh`, antes de cualquier `hyprpm` / sudo.
+  Sin sesión, el actualizador termina con pendientes; si `hyprctl reload` falla, conserva Quickshell;
+  el fallo de `configerrors` tampoco aborta el resumen. El runner conserva `plugins.pending` hasta el éxito.
+- **Migración 041:** renueva el runner copiado y despliega su helper junto a él, con respaldo e
+  idempotencia y respetando `DRY_RUN` / `ASSUME_YES`. Las instalaciones nuevas despliegan ambos.
+- **Pruebas:** `tests/session/test_session.py` cubre recuperación, firma válida, firma ausente,
+  varias sesiones, JSON inválido, instancia muerta, actualización completa con comandos simulados,
+  recarga fallida, comprobación fallida y migración / runner instalados por copia. Añadido a `tests/run-all.sh`.
+- **Verificado:** 16 pruebas de sesión, `shellcheck -x` y sintaxis Bash de los scripts modificados,
+  `tests/migrations-dry-run.sh` (41 migraciones y actualizador sin escrituras),
+  `tests/migrations-ventanas.sh`, `tests/idempotency.sh` y `git diff --check`.
+  El helper nuevo recuperó la firma correcta en la sesión real y `configerrors` siguió vacío.
+- **Pendiente:** compilación real de plugins y ejecución completa de `update.sh` (pide sudo y reinicia
+  Quickshell). La validación de sesión es de solo lectura; no se cambió la UI. Al repetir la actualización
+  desde la terminal antigua debe aparecer «conexión recuperada» y desaparecer el fallo del socket antiguo.

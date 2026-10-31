@@ -17,12 +17,21 @@ PLUGINS_REPO="https://github.com/hyprwm/hyprland-plugins"
 GLASS_REPO="https://github.com/hyprnux/hyprglass"
 GLASS_EXPECTED="0.9.1"
 
+# In the repo the helper is in ../lib; installed copies have it beside this script.
+SCRIPT_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
+SESSION_HELPER="$SCRIPT_DIR/../lib/hyprland-session.sh"
+[[ -f "$SESSION_HELPER" ]] || SESSION_HELPER="$STATE_DIR/hyprland-session.sh"
+# shellcheck source=lib/hyprland-session.sh
+. "$SESSION_HELPER"
+
 mkdir -p "$STATE_DIR"
 exec > >(tee -a "$LOG") 2>&1
 
-if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
-    echo "No se detectó una sesión de Hyprland. Los plugins se instalarán en tu próximo inicio de sesión en Hyprland."
-    exit 0
+# Keep a failed rebuild pending, including when a stale terminal cannot reach Hyprland.
+touch "$PENDING"
+if ! hyprland_session; then
+    echo "ERROR: no se puede conectar con Hyprland. Abre una terminal nueva en Hyprland y ejecuta scripts/plugins-foreground.sh. Los plugins quedan pendientes." >&2
+    exit 1
 fi
 
 notify() { command -v notify-send >/dev/null 2>&1 && notify-send -a "dragon-island" "$@" || true; }

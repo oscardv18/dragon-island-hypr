@@ -69,6 +69,8 @@ trap 'echo "✗ Error en la línea $LINENO. Revisa el registro en: $LOG" >&2' ER
 . "$REPO_DIR/lib/common.sh"
 # shellcheck source=lib/detect.sh
 . "$REPO_DIR/lib/detect.sh"
+# shellcheck source=lib/hyprland-session.sh
+. "$REPO_DIR/lib/hyprland-session.sh"
 for m in "$REPO_DIR"/modules/*.sh; do
     # shellcheck source=/dev/null
     . "$m"
@@ -321,8 +323,10 @@ step_configs() {
 step_plugins() {
     log_info "5/6 · Plugins"
     has_component plugins || { log_info "Módulo plugins no instalado: se omite."; return 0; }
-    if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] || ! command -v hyprpm >/dev/null 2>&1; then
-        log_info "Fuera de Hyprland o sin hyprpm: se omiten los plugins."
+    if ! hyprland_session || ! command -v hyprpm >/dev/null 2>&1; then
+        log_warn "Sin conexión con Hyprland o sin hyprpm: plugins pendientes para el próximo inicio de sesión."
+        run touch "$STATE_DIR/plugins.pending"
+        NOTES+=("Plugins pendientes: ejecuta scripts/plugins-foreground.sh desde Hyprland.")
         return 0
     fi
     # hyprpm update again only when Hyprland itself changed (plugins are built per Hyprland version), or if some are pending
@@ -343,7 +347,7 @@ step_plugins() {
     if confirm "[sudo] hyprpm va a reinstalar las cabeceras (pide tu contraseña). ¿Reconstruir los plugins ahora, en primer plano?"; then
         run chmod +x "$REPO_DIR/scripts/plugins-foreground.sh"
         if "$REPO_DIR/scripts/plugins-foreground.sh"; then printf '%s\n' "$now" > "$STATE_DIR/hyprland-version"
-        else log_warn "Los plugins no se reconstruyeron (¿terminal sin sudo?). Ejecuta scripts/plugins-foreground.sh en una terminal."; fi
+        else log_warn "Los plugins no se reconstruyeron. Revisa $STATE_DIR/plugins.log y ejecuta scripts/plugins-foreground.sh en una terminal de Hyprland."; fi
     fi
 }
 
@@ -352,12 +356,17 @@ step_plugins() {
 # =============================================================================
 step_reload() {
     log_info "6/6 · Recarga en vivo"
-    if [[ -z "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]]; then
-        log_warn "No hay una sesión de Hyprland: la configuración se aplicará al iniciar sesión."
+    if ! hyprland_session; then
+        log_warn "Sin conexión con Hyprland: la configuración se aplicará al iniciar sesión."
+        NOTES+=("Recarga pendiente: abre una terminal nueva en Hyprland y repite ./update.sh.")
         return 0
     fi
     if command -v hyprpm >/dev/null 2>&1; then run hyprpm reload -n || log_warn "hyprpm reload -n falló."; fi
-    run hyprctl reload
+    if ! run hyprctl reload; then
+        log_warn "No se pudo recargar Hyprland. Se conserva el shell en ejecución."
+        NOTES+=("Falló hyprctl reload: repite ./update.sh desde una terminal nueva de Hyprland.")
+        return 0
+    fi
     if command -v qs >/dev/null 2>&1; then
         if $DRY_RUN; then
             echo "[dry-run] qs kill; qs -d"
@@ -374,6 +383,8 @@ step_pull
 # the neural core has one source (shared/neural-core); dry-run only checks it
 if $DRY_RUN; then "$REPO_DIR/scripts/sync-shared.sh" --check || log_warn "NeuralCore/CoreIcon: copias desincronizadas."
 else "$REPO_DIR/scripts/sync-shared.sh"; fi
+# Migrations inherit the repaired signature too; a missing session is not a failed update.
+hyprland_session || true
 step_migrations
 step_packages
 step_configs
@@ -386,8 +397,11 @@ save_state
 # =============================================================================
 ERRORS="(no se pudo comprobar)"
 if [[ -n "${HYPRLAND_INSTANCE_SIGNATURE:-}" ]] && ! $DRY_RUN; then
-    ERRORS="$(hyprctl configerrors 2>&1 | sed '/^[[:space:]]*$/d')"
-    [[ -n "$ERRORS" ]] || ERRORS="vacío ✔"
+    if ERRORS="$(hyprctl configerrors 2>&1 | sed '/^[[:space:]]*$/d')"; then
+        [[ -n "$ERRORS" ]] || ERRORS="vacío ✔"
+    else
+        ERRORS="(sin conexión con Hyprland; comprobación pendiente)"
+    fi
 elif $DRY_RUN; then
     ERRORS="(dry-run: no se comprobó)"
 fi

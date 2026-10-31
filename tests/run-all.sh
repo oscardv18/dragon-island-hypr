@@ -72,6 +72,9 @@ if bash tests/check-images.sh && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest d
 step "actividad: solapes, concurrencia, privacidad, retención y migración (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/activity -v; then pass "registro de actividad"; else fail "pruebas de actividad fallaron"; fi
 
+step "sesión Hyprland: terminal antigua, plugins y recarga (HOME temporal)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/session -v; then pass "sesión Hyprland y actualización"; else fail "sesión Hyprland y actualización"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 

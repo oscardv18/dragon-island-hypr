@@ -3,6 +3,22 @@
 Los fallos que ya tuvimos, con su causa y cómo resolverlos. Para saber en qué estado está todo: `./doctor.sh`
 (y `./doctor.sh --pre` para los requisitos previos de [`pre-instalation.md`](../pre-instalation.md)).
 
+## `update.sh`: «Couldn't connect … .socket.sock» / «couldn't parse plugin list output»
+
+Una terminal o un multiplexor que sobrevivió a un reinicio de Hyprland puede conservar una
+`HYPRLAND_INSTANCE_SIGNATURE` antigua. `hyprpm` no alcanza el compositor y la recarga falla también;
+el mensaje no implica que falte sudo ni que la configuración Lua esté rota.
+
+`update.sh` y `scripts/plugins-foreground.sh` comprueban la conexión antes de trabajar. Si la firma
+heredada falla, consultan `hyprctl -j instances`, buscan una única instancia con el mismo
+`wl_socket` que `WAYLAND_DISPLAY` y validan su conexión antes de exportar la firma al proceso.
+No eligen una carpeta por su fecha. Sin conexión, los plugins quedan pendientes y el actualizador
+termina con un aviso; una recarga fallida conserva Quickshell en ejecución.
+
+Para reintentarlo, abre una terminal nueva con `SUPER + Return` dentro de Hyprland y ejecuta
+`./update.sh`. La migración **041** actualiza el script de plugins instalado por copia y despliega
+su helper de sesión, con respaldo. No hace falta cerrar las ventanas existentes.
+
 ## hyprpm falla («no se puede escribir en /var/cache/hyprpm» o se queda esperando)
 
 `hyprpm update` instala las cabeceras de Hyprland en `/var/cache/hyprpm/<usuario>` con un ayudante de root y **pide la contraseña**:
