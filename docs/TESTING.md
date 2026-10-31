@@ -16,6 +16,12 @@ Imprime mediana y p95 (rango más próximo); sale con 1 si alguna mediana alcanz
 la suite comprueba la mediana de 7 ejecuciones tras calentar, con límite de 300 ms
 para tolerar carga ocasional y seguir detectando regresiones persistentes.
 
+Exporta las referencias de diseño a 1× (1366 px de ancho). Antes de subir PNG,
+ejecuta `scripts/optimize-images.sh --resize docs/design/*.png` y
+`scripts/optimize-images.sh docs/screenshots/` (este último conserva los píxeles).
+Necesita `oxipng` u `optipng`; `--resize` también usa ImageMagick. Admite
+`--dry-run`. `tests/check-images.sh` rechaza imágenes de docs mayores de 1,5 MB.
+
 ## 0. Instalación
 
 - [ ] `./install.sh --dry-run` muestra todas las acciones, no pide sudo y no cambia nada.
