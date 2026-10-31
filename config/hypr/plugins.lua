@@ -27,7 +27,9 @@ hl.config({
         },
 
         hyprfocus = {
-            keyboard_focus_animation = "shrink",
+            -- none: "shrink" also fired on every workspace switch (focus moves to that workspace's window), so the
+            -- windows shrank and grew back each time
+            keyboard_focus_animation = "none",
             mouse_focus_animation    = "none",
             shrink_percentage        = 0.97,
         },
