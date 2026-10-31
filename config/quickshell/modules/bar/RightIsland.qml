@@ -47,8 +47,8 @@ Rectangle {
     width: row.implicitWidth + (minimal ? Theme.spacingXs : Theme.barIslandPadH) * 2
     radius: Theme.barIslandRadius
     color: bare ? Theme.transparent : Theme.glassBg
-    border.width: bare ? 0 : 1
-    border.color: Theme.glassBorder
+    // no outline (pulido): the island is shaped by its fill, a soft shadow (Bar.qml) and, in the «ahumado» glass, the light edge
+    border.width: 0
     Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
     Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
 
@@ -87,16 +87,18 @@ Rectangle {
 
             // ---- meters: CPU ring · RAM ring · network line ----
             MeterCapsule {
+                id: cpuMeter
                 island: root
                 visible: root.metrics
                 tip: `CPU ${SysStats.cpuPct} %${SysStats.tempC >= 0 ? ` · ${SysStats.tempC} °` : ""}`
-                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.cpuPct / 100; color: Theme.cyan }
+                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.cpuPct / 100; color: Theme.cyan; showValue: cpuMeter.hovered || Theme.barSize === "amplia" }
             }
             MeterCapsule {
+                id: ramMeter
                 island: root
                 visible: root.metrics
                 tip: `RAM ${SysStats.memUsedGb.toFixed(1)} / ${Math.round(SysStats.memTotalGb)} G`
-                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.memPct / 100; color: Theme.lavender }
+                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.memPct / 100; color: Theme.lavender; showValue: ramMeter.hovered || Theme.barSize === "amplia" }
             }
             MeterCapsule {
                 island: root

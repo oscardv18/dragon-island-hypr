@@ -188,14 +188,7 @@ Scope {
             Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
             HoverHandler { onHoveredChanged: BarState.hover("strip", hovered) }
 
-            // bottom line, white 7 % (clasico / liquido); the «ahumado» strip has the light edge on top instead
-            Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
-                height: Theme.barStripLine
-                color: Theme.hairline
-                visible: !Theme.glassLight
-            }
+            // no bottom line (pulido: the bar has no white outline any more); «ahumado» keeps the light edge on top
             GlassLight { cornerRadius: 0 }
 
             LeftIsland {

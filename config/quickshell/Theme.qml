@@ -144,7 +144,7 @@ Singleton {
     readonly property string fontMono: "JetBrains Mono Nerd Font"
 
     readonly property real sizeCaption:  11
-    readonly property real sizeBar:      12.5 + 0.5 * barStep   // bar text: 12.5 · 13 · 13.5 (Settings.barSize)
+    readonly property real sizeBar:      13 + 0.5 * barStep     // bar text: 13 · 13.5 · 14 (Settings.barSize; pulido: +0.5)
     readonly property real sizeBody:     13
     readonly property real sizeBodyLg:   14
     readonly property real sizeTitle:    16
@@ -200,23 +200,26 @@ Singleton {
     readonly property real barMarginSide: 14
     readonly property real barIslandRadius: barLook === "A" ? 9 + 2 * barStep : (barLook === "C" ? 0 : barHeight / 2)
     readonly property real barCapsuleHeight: barHeight - (barLook === "D" ? 4 : 6)   // capsules inside the islands
-    // content of the islands, in proportion with the height (normal: core 26, planet 20, rings 18, spark 34×14 …)
+    // content of the islands, in proportion with the height (normal: core 26, planet 22, rings 20, spark 42×14 …;
+    // the pulido phase made rings, planet and nodes +2, the CPU line +8 and the volume bar +10 px)
     readonly property real barCoreButton:  barHeight - 4
-    readonly property real barPlanet:      (barLook === "D" ? 12 : 18) + 2 * barStep
+    readonly property real barPlanet:      (barLook === "D" ? 14 : 20) + 2 * barStep
     readonly property real barPlanetIcon:  (barLook === "D" ? 8 : 10) + barStep
-    readonly property real barNode:        5 + barStep
+    readonly property real barNode:        7 + barStep
     readonly property real barNodePitch:   (barLook === "D" ? 14 : 20) + 2 * barStep
-    readonly property real barRing:        15 + 3 * barStep
+    readonly property real barRing:        17 + 3 * barStep
     readonly property real barRingWidth:   2.5 + 0.5 * barStep
-    readonly property real barSparkWidth:  30 + 4 * barStep
+    readonly property real ringDimmed:     0.7     // the ring under its number (hover / «amplia»)
+    readonly property real ringValueScale: 0.62    // number size, fraction of the ring's inner diameter
+    readonly property real ringMinSweep:   3       // degrees: a 0 % gauge still shows where it starts
+    readonly property real barSparkWidth:  38 + 4 * barStep
     readonly property real barSparkHeight: 12 + 2 * barStep
-    readonly property real barVolumeWidth: 30 + 4 * barStep
+    readonly property real barVolumeWidth: 40 + 4 * barStep
     readonly property real barOrbit:       14 + 2 * barStep
-    readonly property real barStripLine: 1                         // C: bottom line of the strip, white 7 %
     readonly property real barDimOpacity: 0.35                     // barAutohide over a maximized window
     readonly property real barEdge: 3                              // D: hot zone at the top edge
-    readonly property real barIslandPadH:   6
-    readonly property real barIslandGap:    5
+    readonly property real barIslandPadH:   10     // pulido: 6 → 10, more air inside the side islands
+    readonly property real barIslandGap:    8      // pulido: 5 → 8
     readonly property real launcherButton:  30
     readonly property real dividerHeight:   18
 
@@ -243,14 +246,16 @@ Singleton {
     readonly property real notchFloatTopRadius: 22              // B: top corners of the expanded Nook (it grows from the floating pill)
     readonly property real notchExpandedRadius: 34    // expanded bottom corners
     readonly property real notchBaseWidth:     120    // width at first appearance
-    readonly property real notchMinWidth:      120
-    readonly property real notchRestWidth:     190    // narrowest collapsed width
+    readonly property real notchMinWidth:      140    // pulido: 120 → 140
+    readonly property real notchRestWidth:     220    // narrowest collapsed width (pulido: 190 → 220)
+    readonly property real notchTextExtra:     30     // states with text (notification, OSD, agents) may grow this much more
     readonly property real notchGap:           16     // free space kept on each side towards the bar islands
-    readonly property real notchSideReserve:   232    // free centre kept between the islands for the collapsed notch
-    readonly property real notchReserve:       300    // centre gap the left island leaves for the notch
+    readonly property real notchSideReserve:   262    // free centre kept between the islands for the collapsed notch (pulido: +30 for text states)
+    readonly property real notchReserve:       330    // centre gap the left island leaves for the notch (pulido: +30)
     readonly property real notchPadH:          16     // content padding inside the collapsed body
     readonly property real notchPeekDy:        16     // hover / transient peek: grows down ...
     readonly property real notchPeekDx:        16      // ... and wider
+    readonly property real notchPeekLine:      240 + notchTextExtra   // longest secondary line of a collapsed state
     readonly property real notchExpandedWidth: 720
     readonly property real notchExpandedHeight: 230
     readonly property real notchWindowHeight:  notchExpandedHeight + 40 // room for spring overshoot
@@ -403,8 +408,8 @@ Singleton {
 
     // Notch content
     readonly property real notchOsdBar:        110
-    readonly property real osdWidthVolume:     268    // content width: ~300 with the notch padding
-    readonly property real osdWidthBrightness: 228    // ~260
+    readonly property real osdWidthVolume:     298    // content width: ~330 with the notch padding (pulido: +30)
+    readonly property real osdWidthBrightness: 258    // ~290 (pulido: +30)
     readonly property real osdBar:             5
     readonly property real notchMediaTitleMax: 180
     readonly property real tempMaxC:       100

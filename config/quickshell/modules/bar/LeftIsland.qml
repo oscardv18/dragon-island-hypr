@@ -31,8 +31,8 @@ Rectangle {
     width: Math.min(row.implicitWidth + padH * 2, maxWidth)
     radius: Theme.barIslandRadius
     color: bare ? Theme.transparent : Theme.glassBg
-    border.width: bare ? 0 : 1
-    border.color: Theme.glassBorder
+    // no outline (pulido): the island is shaped by its fill, a soft shadow (Bar.qml) and, in the «ahumado» glass, the light edge
+    border.width: 0
     clip: true
     Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
     Behavior on opacity { NumberAnimation { duration: Theme.durStd } }

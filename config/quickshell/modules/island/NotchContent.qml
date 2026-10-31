@@ -23,7 +23,7 @@ Item {
 
     // secondary line: dim, 12 px, grows in only while peeking
     component PeekLine: UiText {
-        property real limit: 240
+        property real limit: Theme.notchPeekLine
         size: Theme.sizeCaption + 1
         color: Theme.textDim
         horizontalAlignment: Text.AlignHCenter

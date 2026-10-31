@@ -64,6 +64,9 @@ Item {
                                              : BarMetrics.notchX(screenName, root.width, targetWidth)
 
     property real animWidth: targetWidth
+    // where the collapsed notch settles (BarMetrics.dump checks the gaps to the islands)
+    onTargetXChanged: if (!expanded && !lid) BarMetrics.reportNotch(screenName, targetX, targetWidth)
+    onTargetWidthChanged: if (!expanded && !lid) BarMetrics.reportNotch(screenName, targetX, targetWidth)
     property real animHeight: targetHeight
     property real animX: targetX
 
