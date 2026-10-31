@@ -559,7 +559,7 @@ y **Conceptos y estados**. Solo el texto en español de cada atajo está escrito
 Nunca arranca ni para herdr ni escribe su config. Verificado con capturas de las tres pestañas. No verificado: el atajo `SUPER + SHIFT + A` con el teclado (bind recargado por Hyprland), pulsar Tab dentro del campo de búsqueda.
 
 ## 7ac. Modos de mosaico Dwindle ↔ Scrolling (2026-10-08)
-**Hecho.** Layout nativo `scrolling` (sin plugins) conmutable **por escritorio** con `hl.workspace_rule({ workspace = "name:N", layout = ... })`, aplicado con `hyprctl eval`
+**Hecho.** Layout nativo `scrolling` (sin plugins) conmutable **por escritorio** con `hl.workspace_rule({ workspace = "N", layout = ... })`, aplicado con `hyprctl eval`
 (`scripts/tiling.sh` → `~/.local/bin/dragon-tiling`: `get [--json] | set dwindle|scrolling | toggle | restore`, opción `--workspace NAME`). Estado en `~/.local/state/dragon-island/tiling.json`
 (dwindle = sin entrada; archivo ausente o corrupto = todo dwindle, sin error). `config/hypr/tiling.lua` restaura con `hyprland.start` y `config.reloaded` (una recarga borra las reglas en caliente).
 Atajo **`SUPER + T`** (libre; `SUPER+SHIFT+L` ya mueve la ventana a la derecha) → `qs ipc call tiling toggle || dragon-tiling toggle`. Binds solo-scrolling (función Lua que comprueba `tiled_layout`, no hacen nada en dwindle):
@@ -1023,3 +1023,22 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
 - **Pendiente:** compilación real de plugins y ejecución completa de `update.sh` (pide sudo y reinicia
   Quickshell). La validación de sesión es de solo lectura; no se cambió la UI. Al repetir la actualización
   desde la terminal antigua debe aparecer «conexión recuperada» y desaparecer el fallo del socket antiguo.
+
+## 8k. Cambio de mosaico con Hyprland 0.57 (2026-10-31)
+
+- **Causa reproducida:** `tiling.json` guardaba Scrolling para los escritorios 1, 2 y 3, pero el compositor
+  seguía usando Dwindle. `dragon-tiling` enviaba el selector `name:2` para el escritorio numérico 2;
+  Hyprland 0.57 distingue ese escritorio de uno con nombre. La regla devolvía `ok` sin afectarlo.
+  La misma regla con `workspace = "2"` cambió inmediatamente a Scrolling.
+- **Arreglo:** `scripts/tiling.sh` usa IDs numéricos sin prefijo, conserva `name:` para los nombres
+  y mantiene los selectores `special:`. Sirve tanto para SUPER + T y la barra (mismo servicio Tiling)
+  como para restaurar los modos al recargar. No cambia la UI ni el formato de `tiling.json`.
+- **Migración 042:** renueva `~/.local/bin/dragon-tiling` instalado por copia con respaldo;
+  deja intactos los enlaces al repo y las preferencias guardadas. Respeta `DRY_RUN` / `ASSUME_YES`.
+- **Pruebas:** siete casos en `tests/tiling/test_tiling.py` (selección numérica y aislamiento entre
+  escritorios, ida y vuelta, nombres, especiales, restauración y migración idempotente con respaldo
+  y simulación). Incorporados a `tests/run-all.sh`; sintaxis Bash y `shellcheck -x`.
+- **Verificado en vivo:** restaurados los modos guardados; los escritorios 1 y 2 reportan Scrolling.
+  `qs ipc call tiling toggle` cambió el escritorio 2 a Dwindle y de vuelta a Scrolling, confirmados
+  tanto por `hyprctl` como por `qs ipc call tiling get`; `configerrors` vacío. No se pulsaron las
+  teclas físicas ni se capturó la barra; al alternar debe cambiar el icono de cuadrícula / columnas.

@@ -6,7 +6,7 @@
 #   tiling.sh toggle            the other one
 #   tiling.sh restore           re-apply every saved mode (hyprland.start / config.reloaded call it)
 #   get / set / toggle accept `--workspace NAME` (any workspace, not only the focused one)
-# The mode is a Hyprland workspace rule (`hl.workspace_rule({ workspace = "name:N", layout = ... })`, applied with
+# The mode is a Hyprland workspace rule (`hl.workspace_rule({ workspace = "N", layout = ... })`, applied with
 # `hyprctl eval`); windows are never closed or moved between workspaces. It is saved in
 # ~/.local/state/dragon-island/tiling.json  {"workspaces": {"<workspace name>": "scrolling"}}  (dwindle = no entry);
 # a missing / corrupt file counts as "all dwindle". Afterwards it asks Quickshell to refresh (best effort).
@@ -37,12 +37,13 @@ state() {
     else echo '{"workspaces":{}}'; fi
 }
 
-# rule for one workspace; special workspaces are addressed by their own name, the others as "name:<name>"
+# Hyprland 0.57 distinguishes numbered IDs from named workspaces: "name:2" does not match numbered workspace 2.
+# Keep numeric selectors bare; only nonnumeric names need the name: prefix. Special selectors stay unchanged.
 apply() {
     local ws="$1" mode="$2" target
     valid_ws "$ws" || die "nombre de workspace no válido: $ws"
     valid_mode "$mode" || die "modo no válido: $mode (dwindle | scrolling)"
-    if [[ "$ws" == special:* ]]; then target="$ws"; else target="name:$ws"; fi
+    if [[ "$ws" =~ ^[0-9]+$ || "$ws" == special:* ]]; then target="$ws"; else target="name:$ws"; fi
     hyprctl eval "hl.workspace_rule({ workspace = \"$target\", layout = \"$mode\" })" >/dev/null
 }
 

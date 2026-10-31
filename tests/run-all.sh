@@ -75,6 +75,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/activity -v; 
 step "sesión Hyprland: terminal antigua, plugins y recarga (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/session -v; then pass "sesión Hyprland y actualización"; else fail "sesión Hyprland y actualización"; fi
 
+step "mosaico: selectores numéricos, con nombre y especiales (HOME temporal)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tiling -v; then pass "modos de mosaico"; else fail "modos de mosaico"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 

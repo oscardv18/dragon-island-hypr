@@ -32,6 +32,17 @@ El instalador lo hace así (módulo `plugins`); `autostart.lua` solo ejecuta `hy
 hay que repetir `hyprpm update` (`./update.sh` lo hace cuando cambia la versión). Si Hyprland falla justo después de actualizar:
 desde un TTY, `hyprpm disable hyprfocus hyprglass`, y luego `hyprpm update`.
 
+## SUPER + T / botón de mosaico no cambia a Scrolling en Hyprland 0.57
+
+Si `tiling.json` guarda Scrolling pero `hyprctl -j workspaces` sigue mostrando `tiledLayout: "dwindle"`,
+comprueba el selector: `workspace = "name:2"` no afecta al escritorio numérico `2` en 0.57 aunque
+`hyprctl eval` devuelva `ok`. `dragon-tiling` usa ahora `workspace = "2"` para números y conserva
+`name:` para escritorios con nombre. La migración **042** actualiza los scripts instalados por copia.
+`./update.sh` aplica la corrección; los modos guardados se restauran durante la recarga.
+
+Con una sola ventana, Dwindle y Scrolling pueden llenar la misma área: abre dos o más ventanas
+para ver la distribución; la cápsula de la barra debe indicar el modo correcto.
+
 ## Plugins: «unknown config key plugin:hyprfocus:…» en `hyprctl configerrors`
 
 Hasta que `hyprpm reload` carga los plugins, todas las claves `plugin:*` son desconocidas. Por eso `config/hypr/plugins.lua` y `glass.lua` están
