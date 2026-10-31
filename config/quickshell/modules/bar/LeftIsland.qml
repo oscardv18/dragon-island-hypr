@@ -76,7 +76,10 @@ Rectangle {
                 anchors.margins: 1
                 mood: coreMouse.containsMouse ? "listening" : "calm"
                 reducedMotion: !Theme.animationsEnabled
-                running: core.visible && root.live && Theme.animationsEnabled
+                // still at rest (pulido, rendimiento): it only moves while hovered or the launcher is open; with
+                // reduced motion never. A Canvas core repainted at 12 fps kept the whole bar window redrawing.
+                running: core.visible && root.live && Theme.animationsEnabled && !Settings.calmMotion
+                         && (coreMouse.containsMouse || root.bar.isOpen("launcher"))
             }
             MouseArea {
                 id: coreMouse
