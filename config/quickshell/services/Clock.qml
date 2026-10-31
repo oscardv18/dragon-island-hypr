@@ -23,9 +23,15 @@
  *   - monthName(month: int): string   (0-based, "octubre")
  *   - monthGrid(year: int, month: int): list<var>
  *       42 cells, Monday first: { day, month, year, inMonth, isToday, hasEvents }
- *   - eventsFor(date): list<var>      ({ title, time, location, calendar, allDay }, all-day first)
+ *   - eventsFor(date): list<var>      ({ title, time, start, end, location, description, calendar, allDay, startMs, endMs },
+ *                                       all-day first; start / end "HH:MM", ms are -1 for all-day events)
  *   - requestMonth(year: int, month: int): void (load khal events for that month's 6-week grid)
  *   - refreshEvents(): void
+ *   - createEvent(date, start: string, end: string, title: string): void (`khal new`; "" start = all day; reloads)
+ *   - eventsBetween(from: date, to: date): list<var> (timed events with startMs / endMs, for the island's time strip)
+ *   - worldClocks: list<var> [readonly] ({ name, tz, time: "21:42", dayShift: -1 | 0 | 1 }; Settings.worldClocks,
+ *       offsets from `TZ=… date +%z`, refreshed hourly; the times move with the minute)
+ *   - lastCreateError: string [readonly]
  *
  * Signals:
  *   - minuteTicked()
@@ -228,13 +234,27 @@ Singleton {
             }
             if (!day || line.trim().length === 0) continue;
             const f = line.split("\t");
+            // a description with line breaks continues on lines without the 5 tabs: append them to the last event
+            if (f.length < 6) {
+                const list = events[day];
+                if (list && list.length > 0) list[list.length - 1].description += "\n" + line;
+                continue;
+            }
             const start = (f[0] || "").trim();
             const end = (f[1] || "").trim();
+            const [y, mo, d] = day.split("-").map(Number);
+            const hm = t => { const m = /^(\d{1,2})[:.](\d{2})/.exec(t); return m ? [Number(m[1]), Number(m[2])] : null; };
+            const s0 = hm(start), e0 = hm(end);
             const ev = {
                 title: (f[2] || "").trim() || "(sin título)",
                 location: (f[3] || "").trim(),
                 calendar: (f[4] || "").trim(),
+                description: (f[5] || "").trim(),
                 allDay: start.length === 0,
+                start: start,
+                end: end,
+                startMs: s0 ? new Date(y, mo - 1, d, s0[0], s0[1]).getTime() : -1,
+                endMs: e0 ? new Date(y, mo - 1, d, e0[0], e0[1]).getTime() : (s0 ? new Date(y, mo - 1, d, s0[0], s0[1]).getTime() + 3600000 : -1),
                 time: start.length === 0 ? "Todo el día" : (end.length > 0 ? `${start}–${end}` : start)
             };
             (events[day] = events[day] || []).push(ev);
@@ -272,7 +292,7 @@ Singleton {
         root.eventsLoading = true;
         khalList.exec(["khal", "list",
                        "--day-format", "@@{date-long}",
-                       "--format", "{start-time}\t{end-time}\t{title}\t{location}\t{calendar}",
+                       "--format", "{start-time}\t{end-time}\t{title}\t{location}\t{calendar}\t{description}",
                        root._rangeStart, "42d"]);
     }
 
@@ -290,6 +310,66 @@ Singleton {
         if (!date) return [];
         return root._events[dayKey(date)] ?? [];
     }
+
+    function eventsBetween(from, to): var {
+        const out = [], a = from.getTime(), b = to.getTime();
+        for (const k in root._events)
+            for (const ev of root._events[k])
+                if (!ev.allDay && ev.endMs > a && ev.startMs < b) out.push(ev);
+        return out.sort((x, y) => x.startMs - y.startMs);
+    }
+
+    // ---- create an event (khal new) ----
+    property string lastCreateError: ""
+    Process {
+        id: khalNew
+        stderr: StdioCollector { onStreamFinished: if (this.text.trim().length > 0) root.lastCreateError = this.text.trim().split("\n").pop() }
+        onExited: (code, status) => { if (code === 0) { root.lastCreateError = ""; root._rangeStart = ""; root.requestMonth(sysClock.date.getFullYear(), sysClock.date.getMonth()); } }
+    }
+    function createEvent(date, start: string, end: string, title: string): void {
+        if (!root.hasEventSource || !title) return;
+        const args = ["khal", "new", root._toKhal(date)];
+        if (start) { args.push(start); if (end) args.push(end); }
+        args.push(title);
+        root.lastCreateError = "";
+        khalNew.exec(args);
+    }
+
+    // ---- world clocks (Settings.worldClocks) ----
+    property var _offsets: ({})      // tz → minutes east of UTC
+    readonly property var worldClocks: {
+        void root.minutes;
+        const now = new Date();
+        const utc = now.getTime() + now.getTimezoneOffset() * 60000;
+        const localDay = now.getDate();
+        return Settings.worldClocks.map(c => {
+            const off = root._offsets[c.tz];
+            if (off === undefined) return { name: c.name, tz: c.tz, time: "--:--", dayShift: 0 };
+            const t = new Date(utc + off * 60000);
+            const shift = t.getDate() === localDay ? 0 : (t.getTime() > now.getTime() ? 1 : -1);
+            return { name: c.name, tz: c.tz, time: `${String(t.getHours()).padStart(2, "0")}:${String(t.getMinutes()).padStart(2, "0")}`, dayShift: shift };
+        });
+    }
+    Process {
+        id: tzProc
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const o = {};
+                for (const raw of this.text.split("\n")) {
+                    const m = /^(\S+) ([+-])(\d{2})(\d{2})$/.exec(raw.trim());
+                    if (m) o[m[1]] = (m[2] === "-" ? -1 : 1) * (Number(m[3]) * 60 + Number(m[4]));
+                }
+                root._offsets = o;
+            }
+        }
+    }
+    function _refreshOffsets(): void {
+        const zones = Settings.worldClocks.map(c => c.tz).filter(z => /^[A-Za-z0-9_+\-\/]+$/.test(z));
+        if (zones.length === 0) return;
+        tzProc.exec(["sh", "-c", 'for z in "$@"; do printf "%s %s\n" "$z" "$(TZ="$z" date +%z)"; done', "sh"].concat(zones));
+    }
+    Connections { target: Settings; function onWorldClocksChanged() { root._refreshOffsets(); } }
+    Timer { interval: 3600000; running: true; repeat: true; triggeredOnStart: true; onTriggered: root._refreshOffsets() }
 
     signal minuteTicked()
 }

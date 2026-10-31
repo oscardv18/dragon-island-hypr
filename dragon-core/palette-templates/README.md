@@ -28,7 +28,7 @@ un ejemplo verificado en `tests/palette/golden/` y otro en `golden/legacy/`.
 herdr 0.9.5 solo permite temas incorporados y colores en `[theme.custom]` dentro
 de `config.toml`; no admite inclusión de un archivo de colores. No hay plantilla
 ficticia para herdr ni se modifica su configuración. Sus claves verificadas y
-las fuentes están en `docs/handoff-fase-3-codex.md`.
+las fuentes están en `docs/HANDOFF.md`, sección 8f.
 
 No hay procesos residentes ni dependencias de red. El comando copia las librerías
 y las plantillas a `~/.local/share/dragon-island/palette/` en modo copia y resuelve

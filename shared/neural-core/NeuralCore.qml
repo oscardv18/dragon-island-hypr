@@ -23,6 +23,9 @@
 //   identity: list<color>      the three node colours at rest [pink lavender, lavender, cyan]; the shell passes
 //                              Theme.coreIdentity (it follows the wallpaper palette), SDDM its accent.conf. alert / ok keep
 //                              their fixed semantic colours. A change blends like a mood change. Default: the Dragon palette
+//   palette: var               optional { identity, alert, ok, blendMs, energyMs, expandMs, moodMs, calmFps } from the host
+//                              (Quickshell passes Theme.corePalette through components/Core.qml); null = the built-in
+//                              Dragon defaults below (SDDM has no Theme)
 //   pulse(): void              call on every key press
 //   radius: real [readonly]    current sphere radius in px (for placing text inside)
 
@@ -40,6 +43,17 @@ Item {
     property int pointCount: 240
     property bool running: visible
     property var identity: ["#e896ec", "#c8b6e6", "#67e8f9"]
+    property var palette: null
+    // the defaults when no host palette is given (SDDM): the Dragon identity and the fixed semantic alert / ok colours
+    readonly property var _p: ({
+        alert: palette?.alert ?? ["#ed254e", "#ff4d73", "#f9ae58"],
+        ok: palette?.ok ?? ["#06c993", "#00c1e4", "#7cf5c9"],
+        blendMs: palette?.blendMs ?? 420,
+        energyMs: palette?.energyMs ?? 500,
+        expandMs: palette?.expandMs ?? 750,
+        moodMs: palette?.moodMs ?? 300,
+        calmFps: palette?.calmFps ?? 12
+    })
     readonly property bool compact: Math.min(width, height) < 64
     readonly property real radius: Math.min(width, height) * (compact ? 0.3 : 0.25) * _expand * _breath
 
@@ -47,31 +61,28 @@ Item {
 
     // ── internal state ───────────────────────────────────────────────
     // [node A (pink lavender), node B (lavender), node C / live accent (cyan)]
-    readonly property var _identity: identity && identity.length >= 3 ? identity : ["#e896ec", "#c8b6e6", "#67e8f9"]
-    readonly property var _palettes: ({
-        alert:     ["#ed254e", "#ff4d73", "#f9ae58"],
-        ok:        ["#06c993", "#00c1e4", "#7cf5c9"]
-    })
+    readonly property var _identity: identity && identity.length >= 3 ? identity : (palette?.identity ?? ["#e896ec", "#c8b6e6", "#67e8f9"])
+    readonly property var _palettes: ({ alert: _p.alert, ok: _p.ok })
     property color _a: _identity[0]
     property color _b: _identity[1]
     property color _c: _identity[2]
-    Behavior on _a { ColorAnimation { duration: 420 } }
-    Behavior on _b { ColorAnimation { duration: 420 } }
-    Behavior on _c { ColorAnimation { duration: 420 } }
+    Behavior on _a { ColorAnimation { duration: core._p.blendMs } }
+    Behavior on _b { ColorAnimation { duration: core._p.blendMs } }
+    Behavior on _c { ColorAnimation { duration: core._p.blendMs } }
 
     property real _energy: Math.max(0, Math.min(1, energy + (mood === "verifying" ? 0.45 : 0) + (mood === "alert" ? 0.35 : 0)))
-    Behavior on _energy { NumberAnimation { duration: 500; easing.type: Easing.OutCubic } }
+    Behavior on _energy { NumberAnimation { duration: core._p.energyMs; easing.type: Easing.OutCubic } }
 
     property real _expand: mood === "ok" ? 1.22 : 1.0
-    Behavior on _expand { NumberAnimation { duration: 750; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
+    Behavior on _expand { NumberAnimation { duration: core._p.expandMs; easing.type: Easing.OutBack; easing.overshoot: 1.4 } }
 
     // per-state blend factors (0..1), 0.3 s so states melt into each other
     property real _listen: mood === "listening" ? 1 : 0
     property real _think: mood === "thinking" ? 1 : 0
     property real _speak: mood === "speaking" ? 1 : 0
-    Behavior on _listen { NumberAnimation { duration: 300; easing.type: Easing.InOutSine } }
-    Behavior on _think { NumberAnimation { duration: 300; easing.type: Easing.InOutSine } }
-    Behavior on _speak { NumberAnimation { duration: 300; easing.type: Easing.InOutSine } }
+    Behavior on _listen { NumberAnimation { duration: core._p.moodMs; easing.type: Easing.InOutSine } }
+    Behavior on _think { NumberAnimation { duration: core._p.moodMs; easing.type: Easing.InOutSine } }
+    Behavior on _speak { NumberAnimation { duration: core._p.moodMs; easing.type: Easing.InOutSine } }
 
     // listening: ±3.5 % of the radius at ~0.5 Hz
     readonly property real _breath: 1 + 0.035 * _listen * Math.sin(_t * Math.PI)
@@ -173,15 +184,15 @@ Item {
     // 12 fps at rest (a slow spin), 24 fps while it reacts (listening / thinking / speaking): the Canvas is painted
     // in JS and costs CPU on every frame (measured: ~6 % of a core at 20 fps on an AMD Lucienne laptop)
     Timer {
-        readonly property int fps: (core.fps > 0 ? core.fps : 12) * (core.mood === "calm" ? 1 : 2)
+        readonly property int fps: (core.fps > 0 ? core.fps : core._p.calmFps) * (core.mood === "calm" ? 1 : 2)
         running: core.running && !core.reducedMotion && core._timed
         interval: Math.round(1000 / fps); repeat: true
         onTriggered: core._step(interval / 1000)
     }
     Timer {   // reduced motion: slow breathing at 12 fps
         running: core.running && core.reducedMotion
-        interval: 83; repeat: true
-        onTriggered: core._step(0.083)
+        interval: Math.round(1000 / core._p.calmFps); repeat: true
+        onTriggered: core._step(interval / 1000)
     }
 
     Canvas {

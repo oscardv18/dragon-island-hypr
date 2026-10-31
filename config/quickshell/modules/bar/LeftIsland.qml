@@ -31,8 +31,8 @@ Rectangle {
     width: Math.min(row.implicitWidth + padH * 2, maxWidth)
     radius: Theme.barIslandRadius
     color: bare ? Theme.transparent : Theme.glassBg
-    border.width: bare ? 0 : 1
-    border.color: Theme.glassBorder
+    // no outline (pulido): the island is shaped by its fill, a soft shadow (Bar.qml) and, in the «ahumado» glass, the light edge
+    border.width: 0
     clip: true
     Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
     Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
@@ -40,17 +40,18 @@ Rectangle {
     readonly property real padH: minimal ? Theme.spacingSm : Theme.barIslandPadH
     readonly property real fixedWidth: core.width + constellation.width + submapChip.width + divider.width + row.spacing * 4
 
-    // inner top highlight, white 6 %
+    // inner top highlight, white 6 % (clasico / liquido); the «ahumado» glass has its light edge instead
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
         radius: Math.max(0, parent.radius - 1)
-        visible: !root.bare
+        visible: !root.bare && !Theme.glassLight
         gradient: Gradient {
             GradientStop { position: 0.0; color: Theme.glassHighlight }
             GradientStop { position: 0.5; color: Theme.transparent }
         }
     }
+    GlassLight { cornerRadius: root.radius; visible: Theme.glassLight && !root.bare }
 
     Row {
         id: row
@@ -69,13 +70,16 @@ Rectangle {
             color: coreMouse.containsMouse || root.bar.isOpen("launcher") ? Theme.hoverOverlay : Theme.coreButtonFill
             Behavior on color { ColorAnimation { duration: Theme.durHover } }
 
-            NeuralCore {
+            Core {
                 identity: Theme.coreIdentity
                 anchors.fill: parent
                 anchors.margins: 1
                 mood: coreMouse.containsMouse ? "listening" : "calm"
                 reducedMotion: !Theme.animationsEnabled
-                running: core.visible && root.live && Theme.animationsEnabled
+                // still at rest (pulido, rendimiento): it only moves while hovered or the launcher is open; with
+                // reduced motion never. A Canvas core repainted at 12 fps kept the whole bar window redrawing.
+                running: core.visible && root.live && Theme.animationsEnabled && !Settings.calmMotion
+                         && (coreMouse.containsMouse || root.bar.isOpen("launcher"))
             }
             MouseArea {
                 id: coreMouse

@@ -9,6 +9,7 @@
  *   - hasPlayer: bool [readonly]
  *   - isPlaying: bool [readonly]
  *   - title / artist / album / artUrl / identity: string [readonly]
+ *   - lastIdentity: string [readonly] (the last player that existed, kept after it closes)
  *   - position: real [readonly] (seconds, refreshed every second while playing)
  *   - length: real [readonly] (seconds)
  *   - progress: real [readonly] (0.0 - 1.0)
@@ -48,6 +49,9 @@ Singleton {
     readonly property string album:    player?.trackAlbum || ""
     readonly property string artUrl:   player?.trackArtUrl || ""
     readonly property string identity: player?.identity || ""
+    // the last player seen (the isla de mando's music card says «Nada sonando · último: Spotify» without one)
+    property string lastIdentity: ""
+    onIdentityChanged: if (identity.length > 0) lastIdentity = identity
 
     // `position` is not reactive by itself; the timer below re-emits positionChanged (see MprisPlayer docs)
     readonly property real position: player?.position ?? 0

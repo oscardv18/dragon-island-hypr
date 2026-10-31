@@ -60,6 +60,14 @@ Singleton {
     property color textOnAccent:     paletteOn ? wallPalette.onAccent : dragon.textOnAccent         // text on a solid accent fill
     property color accentShade:  paletteOn ? wallPalette.tint : dragon.accentShade          // very dark tone of the accent (glass backgrounds)
     readonly property var coreIdentity: [coreNode, lavender, cyan]                     // NeuralCore.identity
+    // NeuralCore's palette and timings (shared/neural-core: SDDM keeps its built-in defaults); alert / ok are the fixed
+    // semantic colours of the core, they never follow the wallpaper
+    readonly property var corePalette: ({
+        identity: coreIdentity,
+        alert: ["#ed254e", "#ff4d73", "#f9ae58"],
+        ok: ["#06c993", "#00c1e4", "#7cf5c9"],
+        blendMs: ms(420), energyMs: ms(500), expandMs: ms(750), moodMs: ms(300), calmFps: 12
+    })
     property color switchOn: paletteOn ? lavender : cyan                       // switches: cyan in the Dragon look (08-ajustes), the accent with a wallpaper palette (14-fondos)
     Behavior on accent       { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
     Behavior on lavender     { ColorAnimation { duration: root.motion.paleta; easing.type: Easing.BezierSpline; easing.bezierCurve: root.curveEstandar } }
@@ -82,17 +90,36 @@ Singleton {
 
     // Derived colors
     readonly property real islandSurfaceAlpha: 0.82                        // spec 72-86 %
-    readonly property real popoverAlpha:       0.30                        // panels / cards: the glass shows through
     readonly property real scrimAlpha:         0.45                        // launcher / power menu only (not the notch)
-    readonly property real glassAlpha:         0.18                        // bar islands: the liquid glass shows through; above mask_threshold (0.1)
     readonly property color barIsland:     alpha(surface0, islandSurfaceAlpha)
-    readonly property color glassBg:       alpha(surface0, glassAlpha)     // acrylic island / popover / card background
     readonly property bool textShadows:    false                           // MultiEffect shadows on bar text: rendered through a texture, they made it look soft / pixelated
     readonly property color textShadow:    Qt.rgba(0, 0, 0, 0.55)         // text / icon shadow on glass (only inside the islands)
-    readonly property color glassBorder:   Qt.rgba(1, 1, 1, 0.09)          // 1 px, white 9 %
+
+    // ---- Glass material (Settings.glassStyle → services/Glass.qml → glassStyle, bound in shell.qml) ----
+    //   ahumado  native blur with grain (look.lua), fill rgba(14,12,24,.70), white 8 % border, a 1 px light edge on top
+    //            (lavender → cyan, transparent at both ends) and a soft shadow — docs/design/28-emergentes.png
+    //   clasico  native blur, fill rgba(13,11,22,.78), white 9 % border, no grain and no light edge
+    //   liquido  hyprglass: very translucent fills (islands 18 %, panels 30 %) so its refraction shows through
+    // The native layer rules ignore alpha < 0.3 (rules.lua): the fills are above it, the shadows below.
+    property string glassStyle: "ahumado"
+    readonly property bool glassLiquid: glassStyle === "liquido"
+    readonly property real glassAlpha:   glassLiquid ? 0.18 : (glassStyle === "clasico" ? 0.78 : 0.70)   // bar islands
+    readonly property real popoverAlpha: glassLiquid ? 0.30 : glassAlpha                               // panels / cards
+    readonly property color glassFill:   glassLiquid ? alpha(surface0, popoverAlpha)
+                                       : (glassStyle === "clasico" ? Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.78) : Qt.rgba(14 / 255, 12 / 255, 24 / 255, 0.70))
+    readonly property color glassBg:     glassLiquid ? alpha(surface0, glassAlpha) : glassFill   // islands
+    readonly property color popoverBg:   glassFill                                             // popovers, cards, panels
+    readonly property color glassBorder: glassStyle === "ahumado" ? Qt.rgba(1, 1, 1, 0.08) : Qt.rgba(1, 1, 1, 0.09)
+    readonly property bool  glassLight:  glassStyle === "ahumado"                              // components/GlassLight.qml
+    readonly property var   glassLightStops: [alpha(lavender, 0), lavender, cyan, alpha(cyan, 0)]   // at 0 · 0.2 · 0.8 · 1
+    readonly property real  glassLightWidth: 1
+    readonly property real  glassLightOpacity: 0.85
+    readonly property color glassShadow: glassLiquid ? transparent : Qt.rgba(0, 0, 0, 0.28)   // below ignore_alpha: never blurred
+    readonly property real  glassShadowBlur: 14
+    readonly property real  glassShadowY:    3
+    readonly property real  glassShadowBlurSm: 6                                          // bar islands: their window leaves ~8 px around them
     readonly property color pillBg:        alpha(surface2, 0.38)           // dock capsules / launcher pills: translucent, the liquid glass shows through
     readonly property color pillBgHi:      alpha(surfaceHi, 0.55)
-    readonly property color popoverBg:     alpha(surface0, popoverAlpha)
     readonly property color hairline:      Qt.rgba(1, 1, 1, 0.07)          // island border, white 7 %
     readonly property color divider:       Qt.rgba(1, 1, 1, 0.10)          // divider, white 10 %
     readonly property color glow:          alpha(accent, 0.18)             // ~18 %
@@ -125,7 +152,7 @@ Singleton {
     readonly property string fontMono: "JetBrains Mono Nerd Font"
 
     readonly property real sizeCaption:  11
-    readonly property real sizeBar:      12.5 + 0.5 * barStep   // bar text: 12.5 · 13 · 13.5 (Settings.barSize)
+    readonly property real sizeBar:      13 + 0.5 * barStep     // bar text: 13 · 13.5 · 14 (Settings.barSize; pulido: +0.5)
     readonly property real sizeBody:     13
     readonly property real sizeBodyLg:   14
     readonly property real sizeTitle:    16
@@ -181,23 +208,26 @@ Singleton {
     readonly property real barMarginSide: 14
     readonly property real barIslandRadius: barLook === "A" ? 9 + 2 * barStep : (barLook === "C" ? 0 : barHeight / 2)
     readonly property real barCapsuleHeight: barHeight - (barLook === "D" ? 4 : 6)   // capsules inside the islands
-    // content of the islands, in proportion with the height (normal: core 26, planet 20, rings 18, spark 34×14 …)
+    // content of the islands, in proportion with the height (normal: core 26, planet 22, rings 20, spark 42×14 …;
+    // the pulido phase made rings, planet and nodes +2, the CPU line +8 and the volume bar +10 px)
     readonly property real barCoreButton:  barHeight - 4
-    readonly property real barPlanet:      (barLook === "D" ? 12 : 18) + 2 * barStep
+    readonly property real barPlanet:      (barLook === "D" ? 14 : 20) + 2 * barStep
     readonly property real barPlanetIcon:  (barLook === "D" ? 8 : 10) + barStep
-    readonly property real barNode:        5 + barStep
+    readonly property real barNode:        7 + barStep
     readonly property real barNodePitch:   (barLook === "D" ? 14 : 20) + 2 * barStep
-    readonly property real barRing:        15 + 3 * barStep
+    readonly property real barRing:        17 + 3 * barStep
     readonly property real barRingWidth:   2.5 + 0.5 * barStep
-    readonly property real barSparkWidth:  30 + 4 * barStep
+    readonly property real ringDimmed:     0.7     // the ring under its number (hover / «amplia»)
+    readonly property real ringValueScale: 0.62    // number size, fraction of the ring's inner diameter
+    readonly property real ringMinSweep:   3       // degrees: a 0 % gauge still shows where it starts
+    readonly property real barSparkWidth:  38 + 4 * barStep
     readonly property real barSparkHeight: 12 + 2 * barStep
-    readonly property real barVolumeWidth: 30 + 4 * barStep
+    readonly property real barVolumeWidth: 40 + 4 * barStep
     readonly property real barOrbit:       14 + 2 * barStep
-    readonly property real barStripLine: 1                         // C: bottom line of the strip, white 7 %
     readonly property real barDimOpacity: 0.35                     // barAutohide over a maximized window
     readonly property real barEdge: 3                              // D: hot zone at the top edge
-    readonly property real barIslandPadH:   6
-    readonly property real barIslandGap:    5
+    readonly property real barIslandPadH:   10     // pulido: 6 → 10, more air inside the side islands
+    readonly property real barIslandGap:    8      // pulido: 5 → 8
     readonly property real launcherButton:  30
     readonly property real dividerHeight:   18
 
@@ -224,16 +254,19 @@ Singleton {
     readonly property real notchFloatTopRadius: 22              // B: top corners of the expanded Nook (it grows from the floating pill)
     readonly property real notchExpandedRadius: 34    // expanded bottom corners
     readonly property real notchBaseWidth:     120    // width at first appearance
-    readonly property real notchMinWidth:      120
-    readonly property real notchRestWidth:     190    // narrowest collapsed width
+    readonly property real notchMinWidth:      140    // pulido: 120 → 140
+    readonly property real notchRestWidth:     220    // narrowest collapsed width (pulido: 190 → 220)
+    readonly property real notchTextExtra:     30     // states with text (notification, OSD, agents) may grow this much more
     readonly property real notchGap:           16     // free space kept on each side towards the bar islands
-    readonly property real notchSideReserve:   232    // free centre kept between the islands for the collapsed notch
-    readonly property real notchReserve:       300    // centre gap the left island leaves for the notch
+    readonly property real notchSideReserve:   262    // free centre kept between the islands for the collapsed notch (pulido: +30 for text states)
+    readonly property real notchReserve:       330    // centre gap the left island leaves for the notch (pulido: +30)
     readonly property real notchPadH:          16     // content padding inside the collapsed body
     readonly property real notchPeekDy:        16     // hover / transient peek: grows down ...
     readonly property real notchPeekDx:        16      // ... and wider
-    readonly property real notchExpandedWidth: 720
-    readonly property real notchExpandedHeight: 230
+    readonly property real notchPeekLine:      240 + notchTextExtra   // longest secondary line of a collapsed state
+    // the isla de mando (docs/design/31-isla-mando.png): 700 · 740 · 780 by bar size, 262 high
+    readonly property real notchExpandedWidth: 700 + 40 * barStep
+    readonly property real notchExpandedHeight: 262
     readonly property real notchWindowHeight:  notchExpandedHeight + 40 // room for spring overshoot
     readonly property real notchPad:           18     // padding inside the expanded body
     readonly property real notchColGap:        16
@@ -244,6 +277,25 @@ Singleton {
     readonly property real notchTile:          40
     readonly property real artSmall:     18
     readonly property real artSmallRadius: 6
+
+    // Isla de mando: command line · priority stack · core · music · time strip · toggles
+    readonly property real cmdMinWidth:    640    // narrowest isla de mando when the side islands leave less room
+    readonly property real cmdField:       34
+    readonly property real cmdChip:        20     // the = > ? @ IA chips inside the field
+    readonly property real cmdTab:         26
+    readonly property real cmdStackWidth:  300
+    readonly property real cmdCore:        92
+    readonly property real cmdMusicWidth:  290
+    readonly property real cmdArt:         56
+    readonly property real cmdStrip:       40     // the 6 h time strip
+    readonly property real cmdStripHours:  6
+    readonly property real cmdToggle:      30
+    readonly property real cmdResult:      34
+    readonly property int  cmdResults:     4
+    readonly property int  waveBars:       24
+    readonly property int  cmdStagger:     ms(40)   // zones enter 40 ms apart
+    readonly property color cmdFill:       Qt.rgba(1, 1, 1, 0.035)
+    readonly property color cmdEdge:       Qt.rgba(1, 1, 1, 0.07)
 
     // Calendar popover (calendar | notifications + updates)
     readonly property real calendarPopoverWidth:  720
@@ -264,8 +316,11 @@ Singleton {
     readonly property real dockNode:        42
     readonly property real dockNodeFocus:   48     // the focused app = planet
     readonly property real dockNodeGrow:    6      // hovered node
-    readonly property real dockIconRatio:   0.56   // icon size inside the glass node (rounded-square themes: see HANDOFF 8b)
-    readonly property string dockNodeStyle: "icon"  // "icon": the icon itself is the node (rounded-square themes, HANDOFF 8b) · "glass": inside a glass disc
+    readonly property real dockIconRatio:   0.70   // «glass»: the square icon at 70 % inside the round node (pulido)
+    readonly property real dockCircleInset: 3      // «circle»: margin between the node's edge and the cropped icon
+    readonly property real dockCircleZoom:  1.18   // «circle»: the icon is enlarged so its rounded corners fall outside the crop
+    property string dockNodeStyle: "circle"         // "glass" · "circle" · "icon" (the icon itself is the node, HANDOFF 8b, 8h)
+    readonly property color dockThreadShade: Qt.rgba(0, 0, 0, 0.45)   // a dark hairline under the thread: readable on light wallpapers
     readonly property real dockCore:        64
     readonly property real dockLift:        16     // hovered node rises; neighbours follow a gaussian
     readonly property real dockSigma:       1.1    // in nodes
@@ -306,6 +361,71 @@ Singleton {
             case "idle":    return "inactivo";
             default:        return "sin clasificar";
         }
+    }
+
+    // Lock screen (modules/lock/LockView.qml, pure QtQuick: it gets these through Lock.qml) and the classic orbital
+    // launcher (modules/launcher/LauncherView.qml, through Launcher.qml). Same keys in tests/qml/lock_mock.qml.
+    readonly property QtObject lockTokens: QtObject {
+        readonly property color ink: root.bg
+        readonly property color backdrop: "#05060c"
+        readonly property color text: root.text
+        readonly property color soft: root.textSoft
+        readonly property color dim: root.textDim
+        readonly property color lavender: root.lavender
+        readonly property color cyan: root.cyan
+        readonly property color warn: root.warn
+        readonly property color alert: root.error
+        readonly property color ok: root.ok
+        readonly property color badge: root.badge
+        readonly property color line: Qt.rgba(1, 1, 1, 0.10)
+        readonly property color glass: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.62)
+        readonly property color glassDeep: Qt.rgba(13 / 255, 11 / 255, 22 / 255, 0.7)
+        readonly property color vignetteIn: Qt.rgba(0.20, 0.15, 0.30, 0.55)
+        readonly property color vignetteMid: Qt.rgba(0.05, 0.04, 0.09, 0.4)
+        readonly property color vignetteOut: Qt.rgba(0, 0, 0, 0.8)
+        readonly property color edge: Qt.rgba(1, 1, 1, 0.16)
+        readonly property color edgeStrong: Qt.rgba(1, 1, 1, 0.25)
+        readonly property color shine: Qt.rgba(1, 1, 1, 0.14)
+        readonly property color fill: Qt.rgba(1, 1, 1, 0.09)
+        readonly property color fillSoft: Qt.rgba(1, 1, 1, 0.08)
+        readonly property color track: Qt.rgba(1, 1, 1, 0.15)
+        readonly property color cyanEdge: root.alpha(root.cyan, 0.35)
+        readonly property color avatarFill: Qt.rgba(0.17, 0.13, 0.27, 1)
+        readonly property color alertEdge: root.alpha(root.error, 0.75)
+        readonly property color focusEdge: root.alpha(root.lavender, 0.45)
+        readonly property int tick: 1000                // the «locked N min» counter (a display time: not scaled)
+        readonly property int durMood: root.ms(300)
+        readonly property int durEdge: root.ms(250)
+        readonly property int durShake: root.ms(65)    // one step of the wrong-password shake
+        readonly property int durCalm: 1400             // the core stays "alert" / "ok" this long (display time)
+        readonly property int durHold: 650              // "ok": the view holds before fading out (display time)
+        readonly property int durPoll: 600              // Bloq Mayús / layout poll while locked
+        readonly property var core: root.corePalette
+    }
+    readonly property QtObject launcherTokens: QtObject {
+        readonly property color text: root.text
+        readonly property color dim: root.textDim
+        readonly property color line: Qt.rgba(1, 1, 1, 0.12)
+        readonly property color surface: root.alpha(root.surface0, 0.78)
+        readonly property color lavender: root.lavender
+        readonly property color cyan: root.cyan
+        readonly property color alert: root.error
+        readonly property color backdrop: "#05060c"
+        readonly property color vignette: Qt.rgba(0, 0, 0, 0.7)
+        readonly property color ringBack: root.alpha(root.lavender, 0.28)
+        readonly property color ringFront: root.alpha(root.cyan, 0.45)
+        readonly property color cyanFaint: root.alpha(root.cyan, 0.14)
+        readonly property color cyanEdge: root.alpha(root.cyan, 0.6)
+        readonly property color alertEdge: root.alpha(root.error, 0.8)
+        readonly property color alertFaint: root.alpha(root.error, 0.16)
+        readonly property color shine: Qt.rgba(1, 1, 1, 0.07)
+        readonly property color clear: Qt.rgba(1, 1, 1, 0)
+        readonly property color field: Qt.rgba(0.04, 0.05, 0.09, 0.82)
+        readonly property color hint: root.alpha(root.textDim, 0.8)
+        readonly property color selection: root.alpha(root.lavender, 0.45)
+        readonly property var core: root.corePalette
+        readonly property int durLaunch: root.ms(420)
+        readonly property int durFade: root.ms(220)
     }
 
     // Workspace hover preview
@@ -350,6 +470,7 @@ Singleton {
     readonly property real popoverRadius:  22
     readonly property real popoverPad:     18
     readonly property real popoverGap:     8
+    readonly property real hudGap:         14     // bar → HUD popover: the beam crosses it
     readonly property real popoverMaxListHeight: 420
     readonly property real cardRadius:     18
     readonly property real cardPad:        14
@@ -384,12 +505,72 @@ Singleton {
 
     // Notch content
     readonly property real notchOsdBar:        110
-    readonly property real osdWidthVolume:     268    // content width: ~300 with the notch padding
-    readonly property real osdWidthBrightness: 228    // ~260
+    readonly property real osdWidthVolume:     298    // content width: ~330 with the notch padding (pulido: +30)
+    readonly property real osdWidthBrightness: 258    // ~290 (pulido: +30)
     readonly property real osdBar:             5
     readonly property real notchMediaTitleMax: 180
     readonly property real tempMaxC:       100
     readonly property real tempHotC:       85
+
+    // HUD popovers (docs/design/28-emergentes.png, 29-paneles-*.png): one frame for every bar popover
+    readonly property real hudWidth:         380
+    readonly property real hudRadius:        14
+    readonly property real hudPad:           16
+    readonly property real hudRow:           34     // every list row has this height
+    readonly property real hudRowGap:        6
+    readonly property real hudCardRadius:    12
+    readonly property color hudCard:         Qt.rgba(1, 1, 1, 0.035)   // inner cards (current network, a device…)
+    readonly property color hudCardEdge:     Qt.rgba(1, 1, 1, 0.07)
+    readonly property color hudRowFill:      Qt.rgba(1, 1, 1, 0.03)
+    readonly property color hudRowHover:     Qt.rgba(1, 1, 1, 0.07)
+    readonly property color hudLine:         Qt.rgba(1, 1, 1, 0.16)   // the header line, fades to the right
+    readonly property real hudBracket:       12     // corner brackets: length, stroke, radius, inset from the frame
+    readonly property real hudBracketStroke: 1.5
+    readonly property real hudBracketRadius: 6
+    readonly property real hudBracketInset:  4
+    readonly property real hudBeam:          1.5    // the beam from the capsule to the popover
+    readonly property real hudBeamGlow:      8
+    readonly property real hudRowShift:      8      // rows enter 8 px below their place
+    readonly property int  hudSegments:      18     // segmented level bars
+    readonly property real hudSegGap:        2
+    readonly property real hudSegHeight:     8
+    readonly property real hudSegRadius:     1.5
+    readonly property color hudSegOff:       Qt.rgba(1, 1, 1, 0.08)
+    readonly property real hudChip:          28     // buttons / chips inside the panels
+    readonly property real hudGauge:         124    // Rendimiento: the 270° CPU dial
+    readonly property real hudChart:         46     // Rendimiento: the 60 s area chart
+    readonly property real hudCell:          26     // Rendimiento: one core heat cell
+    readonly property int  hudCellsPerRow:   6
+    readonly property color haloCyan:        alpha(cyan, 0.45)   // the capsule whose popover is open
+    // opening (≤ 600 ms): beam → clipped unfold (width, then down) → rows in cascade → brackets; meters fill after.
+    // closing (≤ 400 ms): rows out → the clip folds back to the beam → the beam retracts. reduceMotion: a 120 ms fade.
+    readonly property int durBeam:        ms(180)
+    readonly property int durUnfoldW:     ms(120)
+    readonly property int durUnfoldH:     ms(180)
+    readonly property int durRowIn:       ms(160)
+    readonly property int durRowStagger:  ms(40)
+    readonly property int durCascade:     ms(260)   // all rows, stagger included (long lists compress the stagger)
+    readonly property int durBrackets:    ms(120)
+    readonly property int durFill:        ms(320)
+    readonly property int durRowsOut:     ms(100)
+    readonly property int durFold:        ms(160)
+    readonly property int durBeamOut:     ms(120)
+    readonly property int durCalmFade:    ms(120)
+
+    // Notifications leaving the island (services/NotifFx.qml, docs/design/28-emergentes.png)
+    readonly property real notifDrop:      12
+    readonly property real notifDropArc:   10      // the drop's path dips this much below its lower end
+    readonly property real notifWiden:     25      // the island grows this much per side while a notification arrives
+    readonly property real notifTimeLine:  2
+    readonly property int  durDropOut:     ms(440)
+    readonly property int  durDropIn:      ms(320)
+    readonly property int  durTrace:       ms(320)
+    readonly property int  durFillCard:    ms(300)
+    readonly property int  durCardStagger: ms(45)
+    readonly property int  durSweep:       ms(700)
+    readonly property int  durCardFade:    ms(120)
+    readonly property int  durCollapse:    ms(200)
+    readonly property int  durPush:        ms(240)
 
     // Popover animation, calendar, notifications
     readonly property real popoverScaleFrom: 0.96
@@ -427,7 +608,7 @@ Singleton {
     readonly property real gravityBackBlur:  0.55             // MultiEffect blur at the very back
     readonly property real gravityHoverScale: 1.22
     readonly property var  gravitySpinPeriod: [150000, 210000, 280000]   // ms per turn; alternate directions
-    readonly property int  gravityFps:       30               // the core and the ring turn tick together at this rate
+    readonly property int  gravityFps:       20               // the core and the ring turn tick together at this rate (pulido: 30 → 20)
     readonly property real gravityMoon:      5
     readonly property real gravityMoonOrbit: 16               // moon orbit diameter = planet + this
     readonly property int  gravityMaxMoons:  3

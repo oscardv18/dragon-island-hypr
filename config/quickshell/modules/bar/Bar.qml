@@ -20,6 +20,7 @@ import Quickshell.Wayland
 import QtQuick
 import "../.."
 import "../../services"
+import "../../components"
 
 Scope {
     id: bar
@@ -35,7 +36,8 @@ Scope {
     // mapToItem(null, …) is relative to the capsule's own window, hence + windowX for screen coordinates.
     function openFrom(name: string, item, side: string, windowX: real): void {
         const x = side === "left" ? item.mapToItem(null, 0, 0).x : item.mapToItem(null, item.width, 0).x;
-        ShellState.toggleAt(name, bar.screenName, x + windowX, side);
+        const c = item.mapToItem(null, item.width / 2, 0).x;
+        ShellState.toggleAt(name, bar.screenName, x + windowX, side, c + windowX);
     }
 
     function isOpen(name: string): bool {
@@ -96,6 +98,13 @@ Scope {
 
         EdgeStrip { id: leftEdge; source: "edge-left" }
 
+        GlassShadow {
+            x: leftIsland.x; y: leftIsland.y; width: leftIsland.width; height: leftIsland.height
+            radius: leftIsland.radius
+            blur: Theme.glassShadowBlurSm
+            opacity: leftIsland.opacity
+        }
+
         LeftIsland {
             id: leftIsland
             bar: bar
@@ -130,6 +139,13 @@ Scope {
         WlrLayershell.layer: WlrLayer.Top
 
         EdgeStrip { id: rightEdge; source: "edge-right" }
+
+        GlassShadow {
+            x: rightIsland.x; y: rightIsland.y; width: rightIsland.width; height: rightIsland.height
+            radius: rightIsland.radius
+            blur: Theme.glassShadowBlurSm
+            opacity: rightIsland.opacity
+        }
 
         RightIsland {
             id: rightIsland
@@ -173,13 +189,8 @@ Scope {
             Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
             HoverHandler { onHoveredChanged: BarState.hover("strip", hovered) }
 
-            // bottom line, white 7 %
-            Rectangle {
-                anchors.bottom: parent.bottom
-                width: parent.width
-                height: Theme.barStripLine
-                color: Theme.hairline
-            }
+            // no bottom line (pulido: the bar has no white outline any more); «ahumado» keeps the light edge on top
+            GlassLight { cornerRadius: 0 }
 
             LeftIsland {
                 id: stripLeft

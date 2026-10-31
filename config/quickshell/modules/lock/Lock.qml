@@ -18,6 +18,8 @@ import Quickshell.Hyprland
 import Quickshell.Services.Pam
 import Quickshell.Services.Mpris
 import Quickshell.Services.UPower
+import "../.."
+import "../../services"
 
 Scope {
     id: lockRoot
@@ -30,8 +32,9 @@ Scope {
     property bool hintError: false
     property bool busy: false
     property string buffer: ""
-    property string layoutLabel: ""
-    property bool capsLock: false
+    // from the services (pulido: Lock.qml no longer runs getent / hyprctl devices / uname itself)
+    readonly property string layoutLabel: Keyboard.code === "LA" ? "LATAM" : Keyboard.code
+    readonly property bool capsLock: Keyboard.capsLock
     property real contentOpacity: 1
     property int notifCount: 0          // shell.qml: Notifs.unreadCount
     property var notifApps: []          // shell.qml: [{ name, icon, count }] of the apps with unread notifications
@@ -39,12 +42,12 @@ Scope {
     property bool wifiOn: true
     property bool muted: false
     property real lockedAt: Date.now()
-    property string realName: ""
+    readonly property string realName: Session.realName
     readonly property string avatar: `file://${Quickshell.env("HOME")}/.face`
     property string pamConfig: "hyprlock"   // /etc/pam.d/hyprlock ships with hyprlock ("auth include login")
 
     readonly property string userName: Quickshell.env("USER") || ""
-    property string hostName: ""
+    readonly property string hostName: Session.hostName
 
     readonly property var player: {
         const ps = Mpris.players.values
@@ -54,13 +57,6 @@ Scope {
     readonly property real batteryPct: UPower.displayDevice && UPower.displayDevice.isLaptopBattery
         ? UPower.displayDevice.percentage * 100 : -1
 
-    // the user's real name for the view (GECOS field of passwd), read once
-    Process {
-        running: true
-        command: ["sh", "-c", "getent passwd \"$USER\" | cut -d: -f5 | cut -d, -f1"]
-        stdout: StdioCollector { onStreamFinished: lockRoot.realName = this.text.trim() }
-    }
-
     signal failed()   // surfaces shake on this
 
     function lock() {
@@ -68,8 +64,7 @@ Scope {
         buffer = ""; hint = ""; hintError = false; busy = false
         mood = "calm"; stateText = "bloqueado"; contentOpacity = 1
         // always come back on the primary layout (us): the password was set with it
-        Quickshell.execDetached(["hyprctl", "switchxkblayout", "all", "0"])
-        layoutProc.running = true
+        Keyboard.toPrimary()
         lockedAt = Date.now()
         locked = true
     }
@@ -129,56 +124,18 @@ Scope {
     }
 
     Timer {
-        id: calmTimer; interval: 1400
+        id: calmTimer; interval: Theme.lockTokens.durCalm
         onTriggered: if (lockRoot.mood === "alert") { lockRoot.mood = "calm"; lockRoot.stateText = "bloqueado" }
     }
 
     SequentialAnimation {
         id: unlockAnim
-        PauseAnimation { duration: 650 }
-        NumberAnimation { target: lockRoot; property: "contentOpacity"; to: 0; duration: 300; easing.type: Easing.OutCubic }
+        PauseAnimation { duration: Theme.lockTokens.durHold }
+        NumberAnimation { target: lockRoot; property: "contentOpacity"; to: 0; duration: Theme.lockTokens.durMood; easing.type: Easing.OutCubic }
         ScriptAction { script: { lockRoot.locked = false; lockRoot.busy = false; lockRoot.buffer = "" } }
     }
 
     // ── keyboard layout + caps lock (Hyprland) ──
-    function _short(name) {
-        const n = (name || "").toLowerCase()
-        if (n.indexOf("latin") >= 0 || n.indexOf("latam") >= 0) return "LATAM"
-        if (n.indexOf("english") >= 0 || n === "us") return "US"
-        return (name || "").slice(0, 5).toUpperCase()
-    }
-    Process {
-        id: layoutProc
-        command: ["hyprctl", "devices", "-j"]
-        stdout: StdioCollector {
-            onStreamFinished: {
-                try {
-                    const kbs = JSON.parse(this.text).keyboards || []
-                    const main = kbs.find(k => k.main) || kbs[0]
-                    if (main) { lockRoot.layoutLabel = lockRoot._short(main.active_keymap); lockRoot.capsLock = !!main.capsLock }
-                } catch (e) {}
-            }
-        }
-    }
-    Timer {   // caps lock has no event: poll only while locked
-        running: lockRoot.locked; interval: 600; repeat: true
-        onTriggered: layoutProc.running = true
-    }
-    Connections {
-        target: Hyprland
-        function onRawEvent(event) {
-            if (event.name === "activelayout") {
-                const parts = event.data.split(",")
-                lockRoot.layoutLabel = lockRoot._short(parts[parts.length - 1])
-            }
-        }
-    }
-    Process {
-        running: true
-        command: ["uname", "-n"]
-        stdout: StdioCollector { onStreamFinished: lockRoot.hostName = this.text.trim() }
-    }
-
     IpcHandler {
         target: "lock"
         function lock(): void { lockRoot.lock() }
@@ -192,12 +149,12 @@ Scope {
 
         WlSessionLockSurface {
             id: surface
-            color: "#05060c"
+            color: Theme.lockTokens.backdrop
 
             LockView {
                 id: lv
                 anchors.fill: parent
-                cLavender: Theme.lavender
+                tokens: Theme.lockTokens
                 coreIdentity: Theme.coreIdentity
                 mood: lockRoot.mood
                 stateText: lockRoot.stateText
@@ -230,7 +187,7 @@ Scope {
 
                 onTyped: t => { lockRoot.buffer = t; if (lockRoot.mood === "alert") { lockRoot.mood = "calm"; lockRoot.stateText = "bloqueado"; lockRoot.hint = ""; lockRoot.hintError = false } }
                 onSubmitted: p => lockRoot.submit(p)
-                onLayoutClicked: Quickshell.execDetached(["hyprctl", "switchxkblayout", "all", "next"])
+                onLayoutClicked: Keyboard.next()
                 onMediaPrev: if (lockRoot.player && lockRoot.player.canGoPrevious) lockRoot.player.previous()
                 onMediaToggle: if (lockRoot.player && lockRoot.player.canTogglePlaying) lockRoot.player.togglePlaying()
                 onMediaNext: if (lockRoot.player && lockRoot.player.canGoNext) lockRoot.player.next()

@@ -14,6 +14,7 @@
  *
  * Functions:
  *   - next(): void   (hyprctl switchxkblayout all next)
+ *   - toPrimary(): void (back to the first layout, US: the lock screen does it, the password was set with it)
  *
  * Follows Hyprland's `activelayout` event (data: "<keyboard>,<layout name>"); the initial value
  * comes from the main keyboard in `hyprctl -j devices`.
@@ -75,6 +76,8 @@ Singleton {
         if (n.includes("(us)")) return "US";
         return root.layoutName.slice(0, 2).toUpperCase();
     }
+
+    function toPrimary(): void { Quickshell.execDetached(["hyprctl", "switchxkblayout", "all", "0"]); }
 
     function next(): void {
         Quickshell.execDetached(["hyprctl", "switchxkblayout", "all", "next"]);

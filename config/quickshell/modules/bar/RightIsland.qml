@@ -47,22 +47,23 @@ Rectangle {
     width: row.implicitWidth + (minimal ? Theme.spacingXs : Theme.barIslandPadH) * 2
     radius: Theme.barIslandRadius
     color: bare ? Theme.transparent : Theme.glassBg
-    border.width: bare ? 0 : 1
-    border.color: Theme.glassBorder
+    // no outline (pulido): the island is shaped by its fill, a soft shadow (Bar.qml) and, in the «ahumado» glass, the light edge
+    border.width: 0
     Behavior on height { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
     Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
 
-    // inner top highlight, white 6 %
+    // inner top highlight, white 6 % (clasico / liquido); the «ahumado» glass has its light edge instead
     Rectangle {
         anchors.fill: parent
         anchors.margins: 1
         radius: Math.max(0, parent.radius - 1)
-        visible: !root.bare
+        visible: !root.bare && !Theme.glassLight
         gradient: Gradient {
             GradientStop { position: 0.0; color: Theme.glassHighlight }
             GradientStop { position: 0.5; color: Theme.transparent }
         }
     }
+    GlassLight { cornerRadius: root.radius; visible: Theme.glassLight && !root.bare }
 
     Row {
         id: row
@@ -86,16 +87,18 @@ Rectangle {
 
             // ---- meters: CPU ring · RAM ring · network line ----
             MeterCapsule {
+                id: cpuMeter
                 island: root
                 visible: root.metrics
                 tip: `CPU ${SysStats.cpuPct} %${SysStats.tempC >= 0 ? ` · ${SysStats.tempC} °` : ""}`
-                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.cpuPct / 100; color: Theme.cyan }
+                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.cpuPct / 100; color: Theme.cyan; showValue: cpuMeter.hovered || Theme.barSize === "amplia" }
             }
             MeterCapsule {
+                id: ramMeter
                 island: root
                 visible: root.metrics
                 tip: `RAM ${SysStats.memUsedGb.toFixed(1)} / ${Math.round(SysStats.memTotalGb)} G`
-                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.memPct / 100; color: Theme.lavender }
+                RingMeter { anchors.verticalCenter: parent.verticalCenter; value: SysStats.memPct / 100; color: Theme.lavender; showValue: ramMeter.hovered || Theme.barSize === "amplia" }
             }
             MeterCapsule {
                 island: root

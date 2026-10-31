@@ -59,6 +59,7 @@ Item {
         anchors.fill: parent
         apps: root.entries
         open: root.shown
+        tokens: Theme.launcherTokens
         uiFont: Theme.fontUi
         monoFont: Theme.fontMono
         coreIdentity: Theme.coreIdentity

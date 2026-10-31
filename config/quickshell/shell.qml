@@ -65,6 +65,13 @@ ShellRoot {
         value: Settings.accentIntensity
     }
 
+    // Glass material (services/Glass.qml): ahumado · clasico · liquido; Theme derives the fills, border and light edge
+    Binding {
+        target: Theme
+        property: "glassStyle"
+        value: Glass.style
+    }
+
     // Wallpaper palette (services/WallPalette.qml): Theme's accent tokens follow it while it is active
     Binding {
         target: Theme

@@ -1,5 +1,5 @@
-// Right column of the calendar popover: notifications (No molestar, cards, "Borrar todo") and updates.
-// Scales from 0 to 100 tracked notifications (ListView: only the visible cards are created).
+// The notification centre's body (NotificationsPopover; HUD vocabulary): No molestar, the cards (ListView: only the
+// visible ones are created, 0 – 100 tracked), «Borrar todo» and the pending updates.
 import QtQuick
 import Quickshell
 import QtQuick.Layouts
@@ -9,24 +9,30 @@ import "../../components"
 
 ColumnLayout {
     id: root
+    property bool framed: false     // inside a PopoverFrame (its header holds the title)
     spacing: Theme.spacingMd
 
     RowLayout {
         Layout.fillWidth: true
+        Layout.preferredHeight: Theme.hudRow
         spacing: Theme.spacingSm
-        UiText { Layout.fillWidth: true; text: "Notificaciones"; size: Theme.sizeTitle; weight: Theme.weightSemiBold }
-        UiText { text: "No molestar"; size: Theme.sizeCaption + 1; color: Theme.textDim }
+        Glyph { icon: Notifs.dnd ? Icons.bellOff : Icons.bell; size: Theme.iconMd; color: Notifs.dnd ? Theme.warn : Theme.textSoft }
+        UiText { Layout.fillWidth: true; text: "No molestar"; weight: Theme.weightMedium }
+        HudCaption { visible: Notifs.dnd; text: "silencio"; color: Theme.warn }
         ToggleSwitch { checked: Notifs.dnd; onToggled: Notifs.toggleDnd() }
     }
 
-    ColumnLayout {
+    Item {
         visible: Notifs.count === 0
         Layout.fillWidth: true
-        Layout.topMargin: Theme.spacingMd
-        Layout.bottomMargin: Theme.spacingMd
-        spacing: Theme.spacingSm
-        Glyph { Layout.alignment: Qt.AlignHCenter; icon: Notifs.dnd ? Icons.bellOff : Icons.bell; size: Theme.sizeHero * 0.7; color: Theme.muted }
-        UiText { Layout.alignment: Qt.AlignHCenter; text: "Sin notificaciones"; color: Theme.textDim }
+        implicitHeight: emptyCol.implicitHeight + Theme.spacingMd * 2
+        Column {
+            id: emptyCol
+            anchors.centerIn: parent
+            spacing: Theme.spacingSm
+            Glyph { anchors.horizontalCenter: parent.horizontalCenter; icon: Notifs.dnd ? Icons.bellOff : Icons.bell; size: Theme.sizeHero * 0.7; color: Theme.muted }
+            UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Sin notificaciones"; color: Theme.textDim }
+        }
     }
 
     ListView {
@@ -50,25 +56,23 @@ ColumnLayout {
     RowLayout {
         visible: Notifs.count > 0
         Layout.fillWidth: true
-        UiText {
-            Layout.fillWidth: true
-            text: Notifs.count === 1 ? "1 notificación" : `${Notifs.count} notificaciones`
-            size: Theme.sizeCaption + 1
-            color: Theme.textDim
-        }
-        Capsule {
-            onClicked: Notifs.clearAll()
-            Glyph { icon: Icons.broom; size: Theme.iconSm; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
-            UiText { text: "Borrar todo"; size: Theme.sizeCaption + 1; weight: Theme.weightMedium; anchors.verticalCenter: parent.verticalCenter }
-        }
+        HudCaption { Layout.fillWidth: true; text: Notifs.count === 1 ? "1 notificación" : `${Notifs.count} notificaciones` }
+        HudChip { label: "Borrar todo"; icon: Icons.broom; onClicked: Notifs.clearAll() }
     }
 
     // ---- updates ----
-    UiText { caption: true; text: "Actualizaciones" }
-    Card {
+    HudCaption { text: "Actualizaciones" }
+    Rectangle {
         Layout.fillWidth: true
+        implicitHeight: updRow.implicitHeight + Theme.spacingMd * 2
+        radius: Theme.hudCardRadius
+        color: Theme.hudCard
+        border.width: 1
+        border.color: Theme.hudCardEdge
         RowLayout {
-            Layout.fillWidth: true
+            id: updRow
+            anchors.fill: parent
+            anchors.margins: Theme.spacingMd
             spacing: Theme.spacingSm
             Glyph { icon: Icons.update; size: Theme.iconLg; color: Updates.count > 0 ? Theme.cyan : Theme.ok }
             ColumnLayout {
@@ -79,20 +83,13 @@ ColumnLayout {
                     text: Updates.checking ? "Buscando…" : (Updates.count === 0 ? "Todo al día" : (Updates.count === 1 ? "1 actualización" : `${Updates.count} actualizaciones`))
                     weight: Theme.weightSemiBold
                 }
-                UiText {
+                HudCaption {
                     Layout.fillWidth: true
                     visible: Updates.count > 0
                     text: `${Updates.repoCount} repositorios · ${Updates.aurCount} AUR`
-                    size: Theme.sizeCaption + 1
-                    color: Theme.textDim
                 }
             }
-            Capsule {
-                visible: Updates.count > 0
-                brand: true
-                onClicked: Updates.run()
-                UiText { text: "Actualizar"; size: Theme.sizeCaption + 1; weight: Theme.weightMedium; color: Theme.onBrand; anchors.verticalCenter: parent.verticalCenter }
-            }
+            HudChip { visible: Updates.count > 0; label: "Actualizar"; active: true; onClicked: Updates.run() }
         }
     }
 }

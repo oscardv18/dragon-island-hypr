@@ -11,9 +11,19 @@
 --   (mask_mode = "alpha"): it appears where the layer has alpha above mask_threshold, i.e. the visible
 --   rounded island / card, so corners are clean (a "region" mask is a rectangle: square tips). The shapes
 --   are translucent (Theme.glassBg 30 %, panels 42 %) so the glass shows through; the threshold sits below.
+--
+-- Only with the «liquido» glass style (glassstyle.lua, Ajustes › Apariencia). With «ahumado» / «clasico» the plugin
+-- stays loaded but inactive (windows and layers off) and the native blur of look.lua / rules.lua does the work.
 -- =============================================================================
 
-if hl.plugin and hl.plugin.hyprglass then
+local glass = require("glassstyle")
+
+if glass.hyprglass and not glass.liquid then
+    -- installed but inactive: one call turns windows and layers off (`hyprctl reload` re-reads this, so it is live)
+    hl.plugin.hyprglass.config({ enabled = false, layers = { enabled = false } })
+end
+
+if glass.liquid then
     local hg = hl.plugin.hyprglass
 
     hg.config({

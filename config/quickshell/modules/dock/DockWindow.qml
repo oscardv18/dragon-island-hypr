@@ -1,8 +1,9 @@
 // =============================================================================
 // dragon-island — DockWindow.qml (namespace "dragon-dock") · docs/design/27-dock-constelacion.png
 // The dock is a CONSTELLATION: apps are round glass nodes on a thread of light, the neural core sits in the middle of
-// the screen edge (click = launcher, wheel = workspaces), pinned apps grow to its left (top), open ones to its right
-// (bottom). The windows of an app are moons orbiting it, a herdr agent working in an app sends synapses along the
+// the screen edge (click = launcher, wheel = workspaces). Pinned apps are shared out on BOTH sides (pulido: the first
+// half to its left / top, the second half to its right / bottom) and the open apps that are not pinned follow on the
+// right, so the core stays in the middle of the screen with a balanced constellation around it. The windows of an app are moons orbiting it, a herdr agent working in an app sends synapses along the
 // thread from the core, an agent waiting for an answer makes an amber halo pulse.
 //   thread  a continuous curve: a slight inverted smile (ends Theme.dockArc closer to the edge) plus a gaussian lift
 //           under the pointer, so it "tightens" towards the cursor and always passes through the node centres;
@@ -57,17 +58,21 @@ PanelWindow {
     // ------------------------------------------------------------ model and layout (frame coordinates: bottom edge)
     readonly property var pinned: Dock.pinnedItems
     readonly property var opened: Dock.openItems
+    // the two sides: half of the pinned apps to the left; the other half, then the open (unpinned) ones, to the right
+    readonly property int pinLeft: Math.ceil(pinned.length / 2)
+    readonly property var leftItems: pinned.slice(0, pinLeft)
+    readonly property var rightItems: pinned.slice(pinLeft).concat(opened)
     // Theme.dockCapacity nodes in all: half per side, but a side that needs fewer lends the rest to the other
     readonly property int half: Math.floor(Theme.dockCapacity / 2)
     // and never more than fit between the core and the end of the edge (left / right: under the top bar)
     readonly property int fitSide: Math.max(1, Math.floor((len / 2 - Theme.dockCore / 2 - Theme.dockNode / 2 - (horiz ? 16 : Theme.barZone + 16)) / Theme.dockPitch) + 1)
-    readonly property int leftCap: Math.min(pinned.length, fitSide, Theme.dockCapacity - Math.min(opened.length, half, fitSide))
-    readonly property int rightCap: Math.min(opened.length, fitSide, Theme.dockCapacity - leftCap)
+    readonly property int leftCap: Math.min(leftItems.length, fitSide, Theme.dockCapacity - Math.min(rightItems.length, half, fitSide))
+    readonly property int rightCap: Math.min(rightItems.length, fitSide, Theme.dockCapacity - leftCap)
     function capOf(side: int): int { return side < 0 ? leftCap : rightCap; }
     property int leftOff: 0
     property int rightOff: 0
-    onLeftCapChanged: leftOff = Math.min(leftOff, Math.max(0, pinned.length - leftCap))
-    onRightCapChanged: rightOff = Math.min(rightOff, Math.max(0, opened.length - rightCap))
+    onLeftCapChanged: leftOff = Math.min(leftOff, Math.max(0, leftItems.length - leftCap))
+    onRightCapChanged: rightOff = Math.min(rightOff, Math.max(0, rightItems.length - rightCap))
 
     readonly property real c: len / 2
     readonly property real pitch: Theme.dockPitch
@@ -113,7 +118,9 @@ PanelWindow {
         // hidden, only the thread's dots breathe: a slow tick is enough
         interval: Math.round(1000 / (win.shownT > 0.01 ? Theme.dockFps : Theme.dockFpsHidden))
         repeat: true
-        running: Theme.animationsEnabled && ((win.shownT > 0.01 && (win.anyMoons || win.anyAgent)) || (win.shownT < 0.99 && win.anyMoons))
+        // pulido, rendimiento: never under a fullscreen window (nobody sees the dock there) nor with reduced motion
+        running: Theme.animationsEnabled && !Settings.calmMotion && !Hypr.fullscreenOn(win.screen)
+                 && ((win.shownT > 0.01 && (win.anyMoons || win.anyAgent)) || (win.shownT < 0.99 && win.anyMoons))
         onTriggered: win.now += interval
     }
     // the nodes (moons, synapses, halo) follow the clock only while they are shown: hidden, `liveNow` stays put
@@ -158,8 +165,8 @@ PanelWindow {
             acceptedDevices: PointerDevice.Mouse | PointerDevice.TouchPad
             onWheel: e => {
                 const step = e.angleDelta.y > 0 ? -1 : 1;
-                if (win.hx < win.c - win.pitch / 2) win.leftOff = Math.max(0, Math.min(Math.max(0, win.pinned.length - win.leftCap), win.leftOff + step));
-                else if (win.hx > win.c + win.pitch / 2) win.rightOff = Math.max(0, Math.min(Math.max(0, win.opened.length - win.rightCap), win.rightOff + step));
+                if (win.hx < win.c - win.pitch / 2) win.leftOff = Math.max(0, Math.min(Math.max(0, win.leftItems.length - win.leftCap), win.leftOff + step));
+                else if (win.hx > win.c + win.pitch / 2) win.rightOff = Math.max(0, Math.min(Math.max(0, win.rightItems.length - win.rightCap), win.rightOff + step));
                 else Hypr.focusRelative(step);
             }
         }
@@ -193,8 +200,15 @@ PanelWindow {
                     const y = win.threadY(x);
                     if (x === a) ctx.moveTo(x, y); else ctx.lineTo(x, y);
                 }
-                ctx.strokeStyle = g;
                 ctx.lineCap = "round";
+                // contrast underneath (pulido): a dark hairline 1 px below, so the thread reads on light wallpapers
+                ctx.save();
+                ctx.translate(0, 1);
+                ctx.strokeStyle = rgba(Theme.dockThreadShade, Theme.dockThreadShade.a * (0.4 + 0.6 * win.shownT));
+                ctx.lineWidth = Theme.dockThread + 1.4;
+                ctx.stroke();
+                ctx.restore();
+                ctx.strokeStyle = g;
                 ctx.globalAlpha = 0.18;
                 ctx.lineWidth = Theme.dockThreadGlow;
                 ctx.stroke();
@@ -206,8 +220,8 @@ PanelWindow {
 
         // ---- hidden: a dot per open app on the thread, breathing ----
         Repeater {
-            model: win.pinned.map((it, k) => ({ it: it, slot: -(k + 1 - win.leftOff), k: k, side: -1 }))
-                      .concat(win.opened.map((it, k) => ({ it: it, slot: k + 1 - win.rightOff, k: k, side: 1 })))
+            model: win.leftItems.map((it, k) => ({ it: it, slot: -(k + 1 - win.leftOff), k: k, side: -1 }))
+                      .concat(win.rightItems.map((it, k) => ({ it: it, slot: k + 1 - win.rightOff, k: k, side: 1 })))
                       .filter(n => n.it.count > 0 && (n.side < 0 ? n.k - win.leftOff : n.k - win.rightOff) >= 0
                                    && (n.side < 0 ? n.k - win.leftOff : n.k - win.rightOff) < win.capOf(n.side))
             delegate: Rectangle {
@@ -248,7 +262,7 @@ PanelWindow {
                 border.width: 1
                 border.color: Theme.dockNodeEdge
             }
-            NeuralCore {
+            Core {
                 identity: Theme.coreIdentity
                 anchors.fill: parent
                 anchors.margins: 2
@@ -271,7 +285,7 @@ PanelWindow {
 
         // ---- the app nodes (DockNode.qml) ----
         Repeater {
-            model: win.pinned
+            model: win.leftItems
             delegate: DockNode {
                 required property var modelData
                 required property int index
@@ -279,10 +293,11 @@ PanelWindow {
                 item: modelData
                 k: index
                 side: -1
+                pinIndex: index
             }
         }
         Repeater {
-            model: win.opened
+            model: win.rightItems
             delegate: DockNode {
                 required property var modelData
                 required property int index
@@ -290,6 +305,7 @@ PanelWindow {
                 item: modelData
                 k: index
                 side: 1
+                pinIndex: index < win.pinned.length - win.pinLeft ? win.pinLeft + index : -1
             }
         }
     }

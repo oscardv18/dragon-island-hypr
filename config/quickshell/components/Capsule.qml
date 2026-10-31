@@ -1,5 +1,7 @@
-// Bar capsule: height 28, radius 9, padding 0 10, gap 6. Hover → white 8 %, open → accent tint (120 ms).
+// Bar capsule: height 28, radius 9, padding 0 10, gap 6. Hover → white 8 %, open → a cyan halo while its popover is
+// open (the HUD popovers start with a beam from here, docs/design/28-emergentes.png).
 import QtQuick
+import QtQuick.Effects
 import ".."
 
 Item {
@@ -33,9 +35,22 @@ Item {
         Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
     }
 
-    AccentFill {
+    // open: cyan halo + tint + 1 px cyan edge
+    RectangularShadow {
         anchors.fill: parent
         radius: root.radius
+        blur: Theme.hudBeamGlow
+        color: Theme.haloCyan
+        opacity: root.active ? 1 : 0
+        visible: opacity > 0.01
+        Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
+    }
+    Rectangle {
+        anchors.fill: parent
+        radius: root.radius
+        color: Theme.alpha(Theme.cyan, 0.14)
+        border.width: 1
+        border.color: Theme.alpha(Theme.cyan, 0.6)
         opacity: root.active ? 1 : 0
         Behavior on opacity { NumberAnimation { duration: Theme.durHover } }
     }

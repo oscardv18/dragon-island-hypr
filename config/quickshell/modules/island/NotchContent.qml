@@ -13,17 +13,21 @@ Item {
     id: root
 
     property bool peek: false
+    property bool paused: false          // the island is hidden (fullscreen) or expanded: nothing here may animate
+    readonly property bool animate: Theme.animationsEnabled && !paused
     property real maxWidth: 300
 
     readonly property string mode: IslandState.mode
-    implicitWidth: loader.item ? loader.item.implicitWidth : 0
+    // No molestar: no drop and no card (Notifs.popups stays empty), only this counter of what arrived meanwhile
+    readonly property real _badgeW: dndBadge.visible ? dndBadge.implicitWidth + Theme.spacingSm : 0
+    implicitWidth: (loader.item ? loader.item.implicitWidth : 0) + _badgeW
     implicitHeight: loader.item ? loader.item.implicitHeight : 0
     width: implicitWidth
     height: implicitHeight
 
     // secondary line: dim, 12 px, grows in only while peeking
     component PeekLine: UiText {
-        property real limit: 240
+        property real limit: Theme.notchPeekLine
         size: Theme.sizeCaption + 1
         color: Theme.textDim
         horizontalAlignment: Text.AlignHCenter
@@ -35,9 +39,20 @@ Item {
         Behavior on height { NumberAnimation { duration: Theme.durFade; easing.type: Easing.OutCubic } }
     }
 
+    Row {
+        id: dndBadge
+        visible: Notifs.dnd && Notifs.unreadCount > 0 && ["osd", "capture", "dropdown", "recording"].indexOf(root.mode) < 0
+        anchors.right: parent.right
+        anchors.verticalCenter: loader.verticalCenter
+        spacing: Theme.spacingXs
+        Glyph { icon: Icons.bellOff; size: Theme.iconSm; color: Theme.textDim; anchors.verticalCenter: parent.verticalCenter }
+        UiText { text: Notifs.unreadCount; mono: true; size: Theme.sizeCaption + 1; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
+    }
+
     Loader {
         id: loader
         anchors.centerIn: parent
+        anchors.horizontalCenterOffset: -root._badgeW / 2
         sourceComponent: {
             switch (root.mode) {
                 case "capture":      return captureView;
@@ -91,7 +106,7 @@ Item {
                     color: Toggles.isRecording ? Theme.error
                          : (Notifs.dnd ? Theme.muted : (Notifs.hasUnread ? Theme.accent : Theme.ok))
                     SequentialAnimation on opacity {
-                        running: Toggles.isRecording && Theme.animationsEnabled
+                        running: Toggles.isRecording && root.animate
                         loops: Animation.Infinite
                         onStopped: dot.opacity = 1
                         NumberAnimation { to: 0.3; duration: Theme.ms(600) }
@@ -185,7 +200,7 @@ Item {
                 }
                 Equalizer {
                     anchors.verticalCenter: parent.verticalCenter
-                    playing: Media.isPlaying
+                    playing: Media.isPlaying && !root.paused
                     barHeight: Theme.iconSm
                 }
             }
@@ -350,15 +365,17 @@ Item {
         Row {
             spacing: Theme.spacingSm
             readonly property var list: IslandState.workingAgents
-            NeuralCore {
+            Core {
                 identity: Theme.coreIdentity
                 anchors.verticalCenter: parent.verticalCenter
                 width: Theme.notchHeight - 8
                 height: width
                 mood: "thinking"
-                fps: 6          // 12 while thinking: it can stay on for hours while agents work (CPU, HANDOFF 8c)
+                // 6 fps while thinking (NeuralCore doubles `fps` off calm): it can stay on for hours while agents work and
+                // every frame repaints the whole 1366 × 270 island window (pulido: 12 → 6 fps, 8,0 → 6,3 % of CPU)
+                fps: 3
                 reducedMotion: !Theme.animationsEnabled
-                running: Theme.animationsEnabled
+                running: root.animate && !Settings.calmMotion
             }
             UiText {
                 anchors.verticalCenter: parent.verticalCenter
@@ -389,7 +406,7 @@ Item {
                 radius: width / 2
                 color: Theme.warn
                 SequentialAnimation on opacity {
-                    running: Theme.animationsEnabled
+                    running: root.animate
                     loops: Animation.Infinite
                     onStopped: waitDot.opacity = 1
                     NumberAnimation { to: 0.35; duration: Theme.ms(800); easing.type: Easing.InOutSine }
@@ -469,7 +486,7 @@ Item {
             Row {
                 anchors.verticalCenter: parent.verticalCenter
                 spacing: Theme.spacingSm
-                NeuralCore {
+                Core {
                     identity: Theme.coreIdentity
                     anchors.verticalCenter: parent.verticalCenter
                     width: Theme.notchHeight - 8
@@ -477,7 +494,7 @@ Item {
                     mood: "listening"
                     fps: 6
                     reducedMotion: !Theme.animationsEnabled
-                    running: Theme.animationsEnabled
+                    running: root.animate
                 }
                 UiText { anchors.verticalCenter: parent.verticalCenter; text: "Terminal"; weight: Theme.weightSemiBold }
             }
@@ -504,7 +521,7 @@ Item {
                 radius: width / 2
                 color: Theme.error
                 SequentialAnimation on opacity {
-                    running: Theme.animationsEnabled
+                    running: root.animate
                     loops: Animation.Infinite
                     onStopped: recDot.opacity = 1
                     NumberAnimation { to: 0.3; duration: Theme.ms(700) }
@@ -522,7 +539,7 @@ Item {
             Equalizer {
                 visible: Media.isPlaying
                 anchors.verticalCenter: parent.verticalCenter
-                playing: Media.isPlaying
+                playing: Media.isPlaying && !root.paused
                 barHeight: Theme.iconSm - 2
                 color: Theme.ok
             }
@@ -602,7 +619,8 @@ Item {
                 }
                 UiText {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: parent.parent.n?.summary ?? ""
+                    // the sender: «Aitana · Telegram» (summary · app), as the card it is about to drop
+                    text: [parent.parent.n?.summary ?? "", parent.parent.n?.appName ?? ""].filter(x => x.length > 0).join(" · ")
                     weight: Theme.weightMedium
                     width: Math.min(implicitWidth, Math.max(60, root.maxWidth - Theme.artSmall - Theme.spacingSm))
                 }

@@ -5,7 +5,7 @@
 //   Barra superior  four style cards (schematic thumbnail, cyan 1.5 px ring on the chosen one; the real bar changes
 //                   at once), "Contenido de la isla" (Música / Ventana / Fecha), "Mostrar CPU y RAM",
 //                   "Ocultar automáticamente"
-//   Apariencia      "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
+//   Apariencia      "Cristal" (ahumado · clásico · líquido, services/Glass.qml), "Relojes del mundo" (Fecha y hora), "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
 //   Launcher        "Launcher Gravedad" (off = the previous orbital launcher), "Alt+Tab orbital", "Reducir movimiento"
 // Every control writes through Settings (settings.json), so it persists and other monitors follow.
 // Keys: 1–4 pick the bar style A–D · Tab switches page · Esc closes.
@@ -305,6 +305,27 @@ Item {
 
                 SettingsGroup {
                     width: parent.width
+                    SettingsRow {
+                        title: "Cristal"
+                        subtitle: (Glass.styles.find(g => g.key === Glass.requested) ?? Glass.styles[0]).detail
+                        Segmented {
+                            implicitWidth: 280
+                            model: Glass.styles
+                            current: Glass.requested
+                            onSelected: k => Glass.setStyle(k)
+                        }
+                    }
+                    SettingsRow {
+                        title: "Relojes del mundo"
+                        subtitle: "En Fecha y hora. «Nombre=Zona», separados por comas (Enter guarda)"
+                        InputField {
+                            implicitWidth: 330
+                            fontSize: Theme.sizeBody
+                            text: Settings.worldClocksText()
+                            placeholder: "Madrid=Europe/Madrid, Tokio=Asia/Tokyo"
+                            onAccepted: Settings.setWorldClocks(text)
+                        }
+                    }
                     SettingsRow {
                         title: "Intensidad del acento"
                         subtitle: "Cuánto acento llevan los estados activos"

@@ -10,7 +10,7 @@
  *   - tempC: int [readonly] (CPU package temperature, -1 if unknown)
  *   - diskPct: int [readonly]  diskUsedGb / diskTotalGb: real [readonly] (root filesystem)
  *   - gpuPct: int [readonly] (-1 if unknown; AMD/Intel sysfs or nvidia-smi)
- *   - cpuHistory: list<int> [readonly] (last 15 samples, 2 s apart = 30 s, newest last)
+ *   - cpuHistory: list<int> [readonly] (last 30 samples, 2 s apart = 60 s, newest last)
  *   - rxRate / txRate: real [readonly] (bytes per second, all interfaces but lo)
  *   - rxHistory: list<real> [readonly] (last 12 download rates, 2 s apart, newest last: the bar's network line)
  *   - topProcs: list<var> [readonly] ({ name, cpu, memMb }, 4 entries, only while details are wanted)
@@ -56,32 +56,84 @@ Singleton {
     property var _prev: ({})   // cpu label → [total, idle]
     property int _detailRefs: 0
 
-    readonly property string script: `
-echo "#CPU"; grep '^cpu' /proc/stat
-echo "#NET"; awk 'NR>2 && $1 !~ /^lo:/ {rx+=$2; tx+=$10} END {print rx+0, tx+0}' /proc/net/dev
-echo "#MEM"; awk '/MemTotal:/ {t=$2} /MemAvailable:/ {a=$2} END {print t, a}' /proc/meminfo
-echo "#TEMP"
-t=""
+    // ---- sources: /proc and /sys through FileView (no process every 2 s; pulido, rendimiento) ----
+    // The temperature and GPU files are found once (one short `sh` at start); the disk (`df`) is read every minute.
+    property string _tempPath: ""
+    property string _gpuPath: ""
+    property bool _nvidia: false
+    Process {
+        id: probe
+        running: true
+        command: ["sh", "-c", `
 for h in /sys/class/hwmon/hwmon*; do
   case "$(cat "$h/name" 2>/dev/null)" in
-    coretemp|k10temp|zenpower|cpu_thermal|soc_thermal) t=$(cat "$h/temp1_input" 2>/dev/null); break ;;
+    coretemp|k10temp|zenpower|cpu_thermal|soc_thermal) echo "T $h/temp1_input"; break ;;
   esac
 done
-[ -z "$t" ] && t=$(cat /sys/class/thermal/thermal_zone0/temp 2>/dev/null)
-echo "\${t:--1}"
-echo "#DISK"; df -B1 --output=size,used / | tail -n1
-echo "#GPU"
-g=$(cat /sys/class/drm/card*/device/gpu_busy_percent 2>/dev/null | head -n1)
-[ -z "$g" ] && command -v nvidia-smi >/dev/null && g=$(nvidia-smi --query-gpu=utilization.gpu --format=csv,noheader,nounits 2>/dev/null | head -n1)
-echo "\${g:--1}"
-`
-
-    Process {
-        id: statsProc
-        command: ["sh", "-c", root.script]
+echo "Z /sys/class/thermal/thermal_zone0/temp"
+for g in /sys/class/drm/card*/device/gpu_busy_percent; do [ -r "$g" ] && { echo "G $g"; break; }; done
+command -v nvidia-smi >/dev/null && echo "N"
+`]
         stdout: StdioCollector {
-            onStreamFinished: root.parse(this.text)
+            onStreamFinished: {
+                let t = "", z = "";
+                for (const line of this.text.split("\n")) {
+                    if (line.startsWith("T ")) t = line.substring(2);
+                    else if (line.startsWith("Z ")) z = line.substring(2);
+                    else if (line.startsWith("G ")) root._gpuPath = line.substring(2);
+                    else if (line === "N") root._nvidia = true;
+                }
+                root._tempPath = t || z;
+            }
         }
+    }
+    FileView { id: statFile; path: "/proc/stat"; printErrors: false; blockLoading: true }
+    FileView { id: netFile; path: "/proc/net/dev"; printErrors: false; blockLoading: true }
+    FileView { id: memFile; path: "/proc/meminfo"; printErrors: false; blockLoading: true }
+    FileView { id: tempFile; path: root._tempPath; printErrors: false; blockLoading: true }
+    FileView { id: gpuFile; path: root._gpuPath; printErrors: false; blockLoading: true }
+    Process {
+        id: nvidiaProc
+        command: ["nvidia-smi", "--query-gpu=utilization.gpu", "--format=csv,noheader,nounits"]
+        stdout: StdioCollector { onStreamFinished: { const g = parseInt(this.text); root.gpuPct = isNaN(g) ? -1 : g; } }
+    }
+    Process {
+        id: diskProc
+        command: ["df", "-B1", "--output=size,used", "/"]
+        stdout: StdioCollector {
+            onStreamFinished: {
+                const f = (this.text.trim().split("\n").pop() ?? "").trim().split(/\s+/);
+                const size = Number(f[0]), used = Number(f[1]);
+                if (size > 0) {
+                    root.diskTotalGb = Math.round(size / 1e8) / 10;
+                    root.diskUsedGb = Math.round(used / 1e8) / 10;
+                    root.diskPct = Math.round(100 * used / size);
+                }
+            }
+        }
+    }
+    Timer { interval: 60000; running: true; repeat: true; triggeredOnStart: true; onTriggered: if (!diskProc.running) diskProc.running = true }
+
+    // the same text the old script printed, assembled from the files, so parse() did not change
+    function _sample(): void {
+        for (const f of [statFile, netFile, memFile]) f.reload();
+        if (root._tempPath) tempFile.reload();
+        if (root._gpuPath) gpuFile.reload();
+        else if (root._nvidia && !nvidiaProc.running) nvidiaProc.running = true;
+        const cpu = statFile.text().split("\n").filter(l => l.startsWith("cpu")).join("\n");
+        let rx = 0, tx = 0;
+        for (const line of netFile.text().split("\n").slice(2)) {
+            const i = line.indexOf(":");
+            if (i < 0 || line.substring(0, i).trim() === "lo") continue;
+            const f = line.substring(i + 1).trim().split(/\s+/);
+            rx += Number(f[0]) || 0;
+            tx += Number(f[8]) || 0;
+        }
+        const mem = memFile.text();
+        const kb = k => { const m = new RegExp(`^${k}:\\s+(\\d+)`, "m").exec(mem); return m ? m[1] : "0"; };
+        const temp = root._tempPath ? (tempFile.text().trim() || "-1") : "-1";
+        const gpu = root._gpuPath ? (gpuFile.text().trim() || "-1") : String(root._nvidia ? root.gpuPct : -1);
+        root.parse(`#CPU\n${cpu}\n#NET\n${rx} ${tx}\n#MEM\n${kb("MemTotal")} ${kb("MemAvailable")}\n#TEMP\n${temp}\n#GPU\n${gpu}\n`);
     }
 
     function parse(text: string): void {
@@ -142,7 +194,7 @@ echo "\${g:--1}"
         }
         root._prev = next;
         root.corePcts = cores;
-        root.cpuHistory = root.cpuHistory.concat([root.cpuPct]).slice(-15);
+        root.cpuHistory = root.cpuHistory.concat([root.cpuPct]).slice(-30);
         root.statsUpdated();
     }
 
@@ -168,14 +220,12 @@ echo "\${g:--1}"
         repeat: true
         triggeredOnStart: true
         onTriggered: {
-            if (!statsProc.running) statsProc.running = true;
+            root._sample();
             if (root._detailRefs > 0 && !procsProc.running) procsProc.running = true;
         }
     }
 
-    function refresh(): void {
-        if (!statsProc.running) statsProc.running = true;
-    }
+    function refresh(): void { root._sample(); }
 
     function wantDetails(on: bool): void {
         root._detailRefs = Math.max(0, root._detailRefs + (on ? 1 : -1));

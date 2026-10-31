@@ -323,7 +323,7 @@ Item {
     }
 
     // ---------------------------------------------------------------- the core
-    NeuralCore {
+    Core {
         id: core
         width: view.height * 0.72
         height: width

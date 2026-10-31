@@ -66,6 +66,25 @@ Singleton {
 
     signal attention(var agent, string kind)
 
+    // the island's time strip: an agent working is an open entry of dragon-activity (Activity), closed when it stops
+    property var _activityIds: ({})     // pane → activity id
+    function _logActivity(old: var, next: var): void {
+        const ids = root._activityIds;
+        for (const a of next) {
+            const was = old[a.pane];
+            if (a.state === "working" && was !== "working" && ids[a.pane] === undefined) {
+                ids[a.pane] = "";
+                const pane = a.pane;
+                Activity.add("agent", `${a.agent} · ${a.workspace}`, Activity.now(), 0, "", id => { if (root._activityIds[pane] === "") root._activityIds[pane] = id ?? ""; });
+            } else if (a.state !== "working" && ids[a.pane] !== undefined) {
+                Activity.end(ids[a.pane], "ok");
+                delete ids[a.pane];
+            }
+        }
+        for (const pane of Object.keys(ids))
+            if (!next.some(a => a.pane === pane)) { Activity.end(ids[pane], "ok"); delete ids[pane]; }
+    }
+
     function init(): void { probe.running = true; }
 
     function open(): void { launcher.command = [`${root.home}/.local/bin/dragon-herdr`]; launcher.running = true; }
@@ -177,6 +196,7 @@ Singleton {
         root._loaded = true;
         const prevPanes = root.agents.map(a => a.pane).join(",");
         root.agents = next;
+        root._logActivity(old, next);
         if (!first) {
             for (const a of next) {
                 const was = old[a.pane];

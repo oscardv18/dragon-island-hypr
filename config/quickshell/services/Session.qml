@@ -5,6 +5,7 @@
 /**
  * Properties:
  *   - userName: string [readonly] (first name from GECOS, else $USER)
+ *   - realName: string [readonly] (the whole GECOS name, "" if unset; the lock screen shows it)
  *   - login: string [readonly] ($USER)
  *   - hostName: string [readonly]
  *
@@ -28,6 +29,7 @@ Singleton {
 
     readonly property string login: Quickshell.env("USER") ?? ""
     property string userName: login
+    property string realName: ""
     property string hostName: ""
 
     Process {
@@ -36,6 +38,7 @@ Singleton {
         stdout: StdioCollector {
             onStreamFinished: {
                 const full = this.text.trim();
+                root.realName = full;
                 if (full.length > 0) root.userName = full.split(/\s+/)[0];
             }
         }

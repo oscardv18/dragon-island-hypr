@@ -12,11 +12,12 @@
  *                   for the right island, its left edge for the left one; -1 when opened by IPC →
  *                   the popover aligns to the bar's right edge)
  *   - anchorSide: string [readonly] ("right" | "left")
+ *   - anchorCenter: real [readonly] (screen x of the capsule's centre: where the HUD beam starts; -1 = none)
  *
  * Functions:
  *   - toggle(name: string, screenName: string = ""): void
  *   - open(name: string, screenName: string = ""): void
- *   - toggleAt(name: string, screenName: string, anchorX: real, side: string): void (bar capsules)
+ *   - toggleAt(name: string, screenName: string, anchorX: real, side: string, center: real): void (bar capsules)
  *   - close(): void
  *   - current(): string
  *   - isOpenOn(name: string, screenName: string): bool (true if `name` is open on that monitor)
@@ -42,7 +43,18 @@ Singleton {
     readonly property bool anyOpen: openPanel !== "none"
     property real anchorX: -1
     property string anchorSide: "right"
+    property real anchorCenter: -1
     property string nookTab: "nook"
+    property int commandFocus: 0        // bumped by openCommand(): the isla de mando focuses its command line
+    property string commandText: ""     // what openCommand() puts in the line (IPC `ask`)
+
+    // SUPER + /: the isla de mando with its command line focused
+    function openCommand(text): void {
+        root.commandText = text ?? "";
+        root.nookTab = "nook";
+        if (!(root.openPanel === "dashboard")) root.open("dashboard", "");
+        root.commandFocus++;
+    }
 
     function openNook(tab: string): void {
         root.nookTab = ["nook", "apps", "ia"].indexOf(tab) >= 0 ? tab : "nook";
@@ -55,13 +67,14 @@ Singleton {
         return false;
     }
 
-    // notifications live in the calendar popover now: the old panel name still works (SUPER+N, notch tiles)
-    function _alias(name: string): string { return name === "notifications" ? "calendar" : name; }
+    // notifications have their own HUD popover again (pulido): the «Fecha y hora» panel is the calendar only
+    function _alias(name: string): string { return name; }
 
     function open(name: string, screenName): void {
         name = root._alias(name);
         if (!_valid(name)) return;
         root.anchorX = -1;
+        root.anchorCenter = -1;
         root.anchorSide = "right";
         root.panelScreen = screenName || Hyprland.focusedMonitor?.name || "";
         root.openPanel = name;
@@ -74,12 +87,13 @@ Singleton {
         else root.open(name, scr);
     }
 
-    function toggleAt(name: string, screenName: string, anchorX: real, side: string): void {
+    function toggleAt(name: string, screenName: string, anchorX: real, side: string, center: real): void {
         name = root._alias(name);
         if (root.openPanel === name && root.panelScreen === screenName) { root.close(); return; }
         root.open(name, screenName);
         root.anchorX = anchorX;
         root.anchorSide = side;
+        root.anchorCenter = center ?? -1;
     }
 
     function close(): void {
@@ -103,5 +117,7 @@ Singleton {
         function close(): void { root.close(); }
         function current(): string { return root.current(); }
         function nook(tab: string): void { root.openNook(tab); }
+        function command(): void { root.openCommand(""); }
+        function ask(text: string): void { root.openCommand(text); }
     }
 }

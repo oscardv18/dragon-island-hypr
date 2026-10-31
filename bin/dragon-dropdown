@@ -3,14 +3,36 @@
 # special workspace "dropdown". Not running → start it (its window rules send it there, Quickshell's Dropdown service
 # places it right under the island); running → show / hide the special workspace. Hiding never closes it: the
 # processes keep running.
+# --type TEXT: show it and leave TEXT typed at the prompt, not run (the isla de mando's IA mode: claude "<query>").
+# Typing goes through the clipboard: the previous text clipboard is saved, TEXT is pasted with Ctrl+Shift+V into the
+# drop-down window only (send_shortcut to its class) and the old clipboard is put back.
 set -u
 cls="org.dragonisland.Dropdown"
+type_text=""
+if [[ ${1:-} == --type ]]; then type_text=${2:-}; fi
 conf="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/dropdown"
 
 running() { hyprctl clients -j 2>/dev/null | jq -e --arg c "$cls" 'any(.[]; .class == $c)' >/dev/null; }
 shown() { hyprctl monitors -j 2>/dev/null | jq -e 'any(.[]; .focused and .specialWorkspace.name == "special:dropdown")' >/dev/null; }
 
+paste_text() {
+    [[ -n $type_text ]] || return 0
+    command -v wl-copy >/dev/null || return 0
+    local old had=0
+    if old=$(wl-paste --no-newline --type text 2>/dev/null); then had=1; fi
+    printf '%s' "$type_text" | wl-copy
+    sleep 0.15
+    hyprctl dispatch "hl.dsp.send_shortcut({ mods = \"CTRL SHIFT\", key = \"V\", window = \"class:^org\\\\.dragonisland\\\\.Dropdown\$\" })" >/dev/null
+    sleep 0.3
+    if [[ $had -eq 1 ]]; then printf '%s' "$old" | wl-copy; else wl-copy --clear; fi
+}
+
 if running; then
+    if [[ -n $type_text ]]; then
+        shown || hyprctl dispatch 'hl.dsp.workspace.toggle_special("dropdown")' >/dev/null
+        paste_text
+        exit 0
+    fi
     exec hyprctl dispatch 'hl.dsp.workspace.toggle_special("dropdown")' >/dev/null
 fi
 
@@ -23,3 +45,5 @@ for _ in $(seq 30); do
     sleep 0.1
 done
 shown || hyprctl dispatch 'hl.dsp.workspace.toggle_special("dropdown")' >/dev/null
+# a fresh terminal: give zsh a moment to show its prompt before typing
+[[ -n $type_text ]] && { sleep 0.8; paste_text; }

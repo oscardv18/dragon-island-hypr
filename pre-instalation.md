@@ -497,6 +497,8 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `git` | plugins | oficial |
 | `brave-bin` | extras (brave) | AUR |
 | `proton-vpn-gtk-app` | extras (protonvpn) | oficial |
+| `qrencode` | extras (paneles) | oficial |
+| `cava` | extras (paneles) | oficial |
 | `herdr` | extras | instalador oficial (sin root, ~/.local/bin) |
 | `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |
 | `hyprbars`, `hyprfocus`, `hyprglass` | plugins | hyprpm |

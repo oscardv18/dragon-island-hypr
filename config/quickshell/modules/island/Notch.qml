@@ -49,21 +49,33 @@ Item {
     readonly property real maxCollapsed: BarMetrics.maxNotchWidth(screenName, root.width)
     readonly property real collapsedWidth: micro ? Theme.notchMicroWidth
                                                  : Math.min(maxCollapsed, Math.max(snug ? 0 : Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
+    // a notification is arriving: wider by notifWiden per side and a cyan halo (docs/design/28-emergentes.png)
+    readonly property bool notifying: IslandState.mode === "notification" && !expanded
+
     // short notices sized to their text (Bloq Mayús, keyboard layout)
     readonly property bool snug: IslandState.mode === "osd" && (Osd.kind === "capslock" || Osd.kind === "layout")
 
-    readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
-                                                 : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0))
+    // the isla de mando: 700 / 740 / 780 by bar size, but never over the side islands — on 1366 px our right island
+    // (keyboard, tiling, Wi‑Fi, Bluetooth…) leaves less room than the board's, so it narrows to the free gap
+    // (Theme.cmdMinWidth at least) and centres in it; the priority stack takes the difference (HANDOFF 8h)
+    readonly property real expandedWidth: BarMetrics.hasEdges(screenName)
+        ? Math.max(Theme.cmdMinWidth, Math.min(Theme.notchExpandedWidth, BarMetrics.maxX(screenName) - BarMetrics.minX(screenName)))
+        : Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
+    readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? expandedWidth
+                                                 : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0) + (notifying ? Theme.notifWiden * 2 : 0))
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
                                                   : (!appeared || (micro && !microActive) ? 0
                                                      : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8) + (peek ? Theme.notchPeekDy : 0))
 
     // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped
-    readonly property real targetX: expanded || lid ? (root.width - targetWidth) / 2
+    readonly property real targetX: expanded ? BarMetrics.notchX(screenName, root.width, targetWidth) : lid ? (root.width - targetWidth) / 2
                                              : BarMetrics.notchX(screenName, root.width, targetWidth)
 
     property real animWidth: targetWidth
+    // where the collapsed notch settles (BarMetrics.dump checks the gaps to the islands)
+    onTargetXChanged: if (!expanded && !lid) BarMetrics.reportNotch(screenName, targetX, targetWidth)
+    onTargetWidthChanged: if (!expanded && !lid) BarMetrics.reportNotch(screenName, targetX, targetWidth)
     property real animHeight: targetHeight
     property real animX: targetX
 
@@ -115,6 +127,20 @@ Item {
         visible: !root.attached && shape.height > 1
     }
 
+    // cyan halo while a notification leaves the island
+    RectangularShadow {
+        x: shape.x
+        y: shape.y
+        width: shape.width
+        height: shape.height
+        radius: Math.min(shape.bottomRadius, height / 2)
+        blur: Theme.hudBeamGlow * 2
+        color: Theme.haloCyan
+        opacity: root.notifying ? 1 : 0
+        visible: opacity > 0.01 && shape.height > 1
+        Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
+    }
+
     NotchShape {
         id: shape
         x: root.animX
@@ -147,9 +173,11 @@ Item {
                 anchors.horizontalCenter: parent.horizontalCenter
                 y: (parent.height - height) / 2
                 peek: root.peek
+                // pulido, rendimiento: covered by a fullscreen window or behind the expanded island, it stops animating
+                paused: root.hidden || root.expanded || root.micro
                 maxWidth: root.maxCollapsed - root.ear * 2 - Theme.notchPadH * 2
                 opacity: root.expanded || root.micro ? 0 : 1
-                visible: opacity > 0
+                visible: opacity > 0 && !root.hidden
                 Behavior on opacity { NumberAnimation { duration: Theme.durContentOut } }
             }
 
@@ -166,7 +194,7 @@ Item {
                     width: 6; height: 6; radius: 3
                     color: Theme.error
                 }
-                NeuralCore {
+                Core {
                     identity: Theme.coreIdentity
                     visible: (Herdr.counts?.working ?? 0) > 0 || IslandState.mode === "agentBlocked"
                     anchors.verticalCenter: parent.verticalCenter
@@ -195,7 +223,7 @@ Item {
                     NumberAnimation { duration: root.contentShown ? Theme.durContentIn : Theme.durContentOut; easing.type: Easing.OutCubic }
                 }
                 sourceComponent: NotchExpanded {
-                    width: Theme.notchExpandedWidth - root.ear * 2
+                    width: root.expandedWidth - root.ear * 2
                     screenName: root.screenName
                 }
             }
