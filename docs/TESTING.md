@@ -8,6 +8,37 @@ Antes de empezar, abre una terminal y deja corriendo:
 qs log -f                 # errores de Quickshell con archivo:línea
 ```
 
+Para medir los motores: `python3 -B tests/engines/bench.py` (opcional: `--runs 50`).
+Usa HOME/XDG temporales, historial sintético de 4000 entradas, una ejecución de
+calentamiento y 25 mediciones por modo, incluyendo el arranque del comando.
+Imprime mediana y p95 (rango más próximo); sale con 1 si alguna mediana alcanza
+150 ms. Ejecútalo con la máquina en reposo. No forma parte de `tests/run-all.sh`:
+la suite comprueba la mediana de 7 ejecuciones tras calentar, con límite de 300 ms
+para tolerar carga ocasional y seguir detectando regresiones persistentes.
+
+Exporta las referencias de diseño a 1× (1366 px de ancho). Antes de subir PNG,
+ejecuta `scripts/optimize-images.sh --resize docs/design/*.png` y
+`scripts/optimize-images.sh docs/screenshots/` (este último conserva los píxeles).
+Necesita `oxipng` u `optipng`; `--resize` también usa ImageMagick. Admite
+`--dry-run`. `tests/check-images.sh` rechaza imágenes de docs mayores de 1,5 MB.
+
+Validación del pulido (2026-10-31): cinco ejecuciones consecutivas completas de
+`bash tests/run-all.sh`, cada una con HOME y XDG temporales, todas en verde
+(ShellCheck en 87 scripts, Bash, Lua, qmllint y 91 pruebas Python, además de las
+pruebas shell). `update.sh --dry-run` conserva contenido, árbol, permisos y fechas
+con instalación existente, sin registro de migraciones y con HOME vacío.
+`dragon-activity range` dio medianas de 35,0 / 35,3 / 46,8 / 35,6 / 34,5 ms con
+6000 entradas de 30 días y el índice derivado actualizado. El benchmark separado
+de motores dio medianas de 66–119 ms, por debajo de su objetivo de 150 ms.
+
+Las imágenes se revisaron visualmente en tres pares antes/después; las 81 capturas
+conservan dimensiones y píxeles exactos. `docs/design` bajó de 92,34 a 24,01 MB y
+`docs/screenshots` de 14,40 a 13,48 MB; `docs` en conjunto, de 106,98 a 37,73 MB.
+Un clon temporal completo de esta rama conserva unos 146,73 MB en `.git` y ocupa
+unos 189 MB al añadir los archivos actuales; con `--depth 1`, unos 82 MB en total.
+Son MB decimales. El historial conserva las imágenes antiguas: reducirlo requeriría
+una operación aparte como `git filter-repo`, decisión del usuario que no se ejecutó.
+
 ## 0. Instalación
 
 - [ ] `./install.sh --dry-run` muestra todas las acciones, no pide sudo y no cambia nada.

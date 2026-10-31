@@ -146,6 +146,10 @@ step_pull() {
         log_warn "No es un clon de git: se omite el pull."
         return 0
     fi
+    if $DRY_RUN; then
+        run git -C "$REPO_DIR" pull --ff-only
+        return 0
+    fi
     # packages/user-*.txt ("Mis apps") change on their own whenever the Tienda installs something: not a local edit
     if [[ -n "$(git -C "$REPO_DIR" status --porcelain --untracked-files=no -- . ':!packages/user-pacman.txt' ':!packages/user-aur.txt')" ]]; then
         log_warn "Hay cambios locales sin commit en $REPO_DIR. Haz commit o stash y vuelve a ejecutar."
@@ -158,10 +162,6 @@ step_pull() {
     fi
     local before after
     before="$(git -C "$REPO_DIR" rev-parse HEAD)"
-    if $DRY_RUN; then
-        run git -C "$REPO_DIR" pull --ff-only
-        return 0
-    fi
     # offline or no SSH key available (no passphrase prompt in a script): keep going with the local copy
     if ! GIT_TERMINAL_PROMPT=0 GIT_SSH_COMMAND="ssh -o BatchMode=yes" git -C "$REPO_DIR" pull --ff-only; then
         log_warn "No se pudo hacer git pull (¿sin red o sin clave SSH?): se continúa con la copia local."
@@ -180,12 +180,12 @@ step_pull() {
 # =============================================================================
 step_migrations() {
     log_info "2/6 · Migraciones"
-    touch "$MIGRATIONS_DONE"
+    run touch "$MIGRATIONS_DONE"
     local f id rc pending=0
     export REPO_DIR STATE_DIR BACKUP_DIR MANIFEST DRY_RUN ASSUME_YES LINK_MODE LOG COMPONENTS_FILE RELOGIN_FILE
     for f in "$REPO_DIR"/migrations/[0-9]*.sh; do
         id="$(basename "$f")"
-        if grep -qxF "$id" "$MIGRATIONS_DONE"; then continue; fi
+        if [[ -f "$MIGRATIONS_DONE" ]] && grep -qxF "$id" "$MIGRATIONS_DONE"; then continue; fi
         pending=$((pending + 1))
         log_info "Migración $id"
         rc=0

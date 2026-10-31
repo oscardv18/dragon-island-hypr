@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Activity log CLI, resolved in the repo or the installed data directory.
+set -Eeuo pipefail
+ACTIVITY_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+ACTIVITY_ROOT="${ACTIVITY_BIN%/*}"
+ACTIVITY_LIB="${ACTIVITY_ROOT%/*}/dragon-core/dragon_activity.py"
+if [[ ! -f "$ACTIVITY_LIB" ]]; then
+    ACTIVITY_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_activity.py"
+fi
+exec python3 -S "$ACTIVITY_LIB" "$@"

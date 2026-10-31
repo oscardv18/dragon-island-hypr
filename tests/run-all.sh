@@ -66,6 +66,12 @@ if bash tests/sddm-sync.sh; then pass "fondo del login desenfocado una sola vez 
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 
+step "imágenes de docs: máximo 1,5 MB y herramientas (HOME/XDG temporales)"
+if bash tests/check-images.sh && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/images -v; then pass "imágenes y herramientas"; else fail "imágenes o herramientas fallaron"; fi
+
+step "actividad: solapes, concurrencia, privacidad, retención y migración (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/activity -v; then pass "registro de actividad"; else fail "pruebas de actividad fallaron"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 
