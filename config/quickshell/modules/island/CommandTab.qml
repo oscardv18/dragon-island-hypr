@@ -7,6 +7,8 @@
 //           else soft decorative bars only while playing (still with reduced motion); no player: «Nada sonando»
 //   bottom  the 6 h time strip (C, TimeStrip.qml) and five round toggles (A): Wi‑Fi, Bluetooth, No molestar, Cafeína,
 //           Enfoque — click toggles, right click opens their panel
+// Width 600 – 740 (always centred, BarMetrics.commandWidth): the stack takes what is left; the core and the music keep
+// their minimum (Theme.cmdCoreMin / cmdMusicMin); the 6 h strip fills the bottom row next to the toggles.
 // The zones enter in cascade (40 ms apart) when the island expands; nothing here animates while it is collapsed
 // (this whole tab only exists while expanded).
 import QtQuick
@@ -60,7 +62,7 @@ Item {
             // ======== priority stack ========
             ColumnLayout {
                 id: stack
-                Layout.fillWidth: true
+                Layout.fillWidth: true                     // takes what is left (600 – 740 wide island): gives way first
                 Layout.fillHeight: true
                 spacing: Theme.spacingXs
                 opacity: root.zone(0)
@@ -84,7 +86,14 @@ Item {
                         spacing: Theme.spacingXs
                         Glyph { anchors.horizontalCenter: parent.horizontalCenter; icon: Icons.check; size: Theme.iconLg; color: Theme.ok }
                         UiText { anchors.horizontalCenter: parent.horizontalCenter; text: "Todo en orden"; weight: Theme.weightMedium; color: Theme.textSoft }
-                        HudCaption { anchors.horizontalCenter: parent.horizontalCenter; text: "sin agentes, reuniones ni avisos" }
+                        HudCaption {
+                            anchors.horizontalCenter: parent.horizontalCenter
+                            width: Math.min(implicitWidth, bigCard.width - Theme.spacingMd * 2)   // narrow island: wraps inside the card
+                            horizontalAlignment: Text.AlignHCenter
+                            wrapMode: Text.WordWrap
+                            maximumLineCount: 3
+                            text: "sin agentes, reuniones ni avisos"
+                        }
                     }
 
                     ColumnLayout {
@@ -165,7 +174,8 @@ Item {
 
             // ======== neural core ========
             ColumnLayout {
-                Layout.preferredWidth: Theme.cmdCore + 16
+                Layout.preferredWidth: Theme.cmdCoreMin
+                Layout.minimumWidth: Theme.cmdCoreMin      // never squeezed: the stack gives way first
                 Layout.fillHeight: true
                 spacing: 0
                 opacity: root.zone(1)
@@ -194,6 +204,7 @@ Item {
             // ======== music ========
             MusicCard {
                 Layout.preferredWidth: Theme.cmdMusicWidth
+                Layout.minimumWidth: Theme.cmdMusicMin     // never squeezed below this: the stack gives way first
                 Layout.fillHeight: true
                 opacity: root.zone(2)
                 transform: Translate { y: Theme.hudRowShift * (1 - root.zone(2)) }

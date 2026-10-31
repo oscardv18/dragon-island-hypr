@@ -286,8 +286,8 @@ Singleton {
     readonly property real notchPeekDy:        16     // hover / transient peek: grows down ...
     readonly property real notchPeekDx:        16      // ... and wider
     readonly property real notchPeekLine:      240 + notchTextExtra   // longest secondary line of a collapsed state
-    // the isla de mando (docs/design/31-isla-mando.png): 700 · 740 · 780 by bar size, 262 high
-    readonly property real notchExpandedWidth: 700 + 40 * barStep
+    // the isla de mando (docs/design/31-isla-mando.png): 600 – 740 wide, centred (cmdMinWidth / cmdMaxWidth), 262 high
+    readonly property real notchExpandedWidth: cmdMaxWidth
     readonly property real notchExpandedHeight: 262
     readonly property real notchWindowHeight:  notchExpandedHeight + 40 // room for spring overshoot
     readonly property real notchPad:           18     // padding inside the expanded body
@@ -301,7 +301,10 @@ Singleton {
     readonly property real artSmallRadius: 6
 
     // Isla de mando: command line · priority stack · core · music · time strip · toggles
-    readonly property real cmdMinWidth:    640    // narrowest isla de mando when the side islands leave less room
+    readonly property real cmdMinWidth:    600    // narrowest isla de mando (it stays centred even when the islands leave less)
+    readonly property real cmdMaxWidth:    740    // widest; between the two it is symmetric about the centre (BarMetrics)
+    readonly property real cmdCoreMin:     cmdCore + 16   // the core and the music never shrink below these …
+    readonly property real cmdMusicMin:    250            // … the priority stack gives way first
     readonly property real cmdField:       34
     readonly property real cmdChip:        20     // the = > ? @ IA chips inside the field
     readonly property real cmdTab:         26

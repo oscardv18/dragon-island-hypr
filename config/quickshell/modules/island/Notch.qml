@@ -9,7 +9,10 @@
 //              centred on the screen, sliding aside only when an island would be overlapped
 //   appear     emerges from the edge: height 0 → collapsed, width 120 → collapsed (SpringAnimation)
 //   peek       hover or transient state (OSD / notification / workspace): grows down and wider
-//   expanded   ≈ 720 × 230 from the same top-centre anchor (B: from the floating pill, no ears), bottom radii 34
+//   expanded   the isla de mando, ALWAYS centred on the screen: x = (screen − width) / 2, never pushed aside by the side
+//              islands. Width symmetric about the centre: min(740, 2 × (screen/2 − inner edge of the nearer side island
+//              − notchGap)), at least 600 (BarMetrics.commandWidth); it grows from the notch's centre to both sides
+//              (the shape animates its centre and its width, x = centre − width / 2). B: from the floating pill, no ears.
 // Choreography: content fades in once the shape is ~40 % into the animation (Theme.durContentDelay);
 // on close the content fades out first (Theme.durContentOut), then the shape shrinks.
 // =============================================================================
@@ -55,12 +58,11 @@ Item {
     // short notices sized to their text (Bloq Mayús, keyboard layout)
     readonly property bool snug: IslandState.mode === "osd" && (Osd.kind === "capslock" || Osd.kind === "layout")
 
-    // the isla de mando: 700 / 740 / 780 by bar size, but never over the side islands — on 1366 px our right island
-    // (keyboard, tiling, Wi‑Fi, Bluetooth…) leaves less room than the board's, so it narrows to the free gap
-    // (Theme.cmdMinWidth at least) and centres in it; the priority stack takes the difference (HANDOFF 8h)
-    readonly property real expandedWidth: BarMetrics.hasEdges(screenName)
-        ? Math.max(Theme.cmdMinWidth, Math.min(Theme.notchExpandedWidth, BarMetrics.maxX(screenName) - BarMetrics.minX(screenName)))
-        : Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
+    // the isla de mando: symmetric about the screen centre (BarMetrics.commandWidth, from the real island edges, so it
+    // follows the bar style, size and visible widgets); when even 600 does not fit between the islands it stays centred
+    // and covers them while open (HANDOFF 8i). Inside, the command line and the time strip absorb the width; the core and
+    // the music keep their minimum and the priority stack gives way first (CommandTab).
+    readonly property real expandedWidth: BarMetrics.commandWidth(screenName, root.width)
     readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? expandedWidth
                                                  : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0) + (notifying ? Theme.notifWiden * 2 : 0))
                                                              : Theme.notchBaseWidth)
@@ -68,22 +70,27 @@ Item {
                                                   : (!appeared || (micro && !microActive) ? 0
                                                      : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8) + (peek ? Theme.notchPeekDy : 0))
 
-    // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped
-    readonly property real targetX: expanded ? BarMetrics.notchX(screenName, root.width, targetWidth) : lid ? (root.width - targetWidth) / 2
-                                             : BarMetrics.notchX(screenName, root.width, targetWidth)
+    // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped; expanded, never
+    readonly property real targetX: expanded || lid ? (root.width - targetWidth) / 2
+                                                    : BarMetrics.notchX(screenName, root.width, targetWidth)
+    onExpandedWidthChanged: if (expanded) BarMetrics.reportCommand(screenName, (root.width - expandedWidth) / 2, expandedWidth)
+    onExpandedChanged: if (expanded) BarMetrics.reportCommand(screenName, (root.width - expandedWidth) / 2, expandedWidth)
 
     property real animWidth: targetWidth
     // where the collapsed notch settles (BarMetrics.dump checks the gaps to the islands)
     onTargetXChanged: if (!expanded && !lid) BarMetrics.reportNotch(screenName, targetX, targetWidth)
     onTargetWidthChanged: if (!expanded && !lid) BarMetrics.reportNotch(screenName, targetX, targetWidth)
     property real animHeight: targetHeight
-    property real animX: targetX
+    // the shape animates its CENTRE and its width (x derives from both): opening from the notch, it grows to both sides
+    // symmetrically even if a hover or a peek left the width spring moving
+    property real animCentre: targetX + targetWidth / 2
+    readonly property real animX: animCentre - animWidth / 2
 
     Behavior on animWidth {
         enabled: Theme.animationsEnabled
         SpringAnimation { spring: root.appearing ? Theme.notchAppearSpring : Theme.notchSpring; damping: root.appearing ? Theme.notchAppearDamping : Theme.notchDamping; epsilon: 0.2 }
     }
-    Behavior on animX {
+    Behavior on animCentre {
         enabled: Theme.animationsEnabled
         SpringAnimation { spring: root.appearing ? Theme.notchAppearSpring : Theme.notchSpring; damping: root.appearing ? Theme.notchAppearDamping : Theme.notchDamping; epsilon: 0.2 }
     }
