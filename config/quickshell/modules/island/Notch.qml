@@ -49,11 +49,14 @@ Item {
     readonly property real maxCollapsed: BarMetrics.maxNotchWidth(screenName, root.width)
     readonly property real collapsedWidth: micro ? Theme.notchMicroWidth
                                                  : Math.min(maxCollapsed, Math.max(snug ? 0 : Theme.notchRestWidth, content.implicitWidth + Theme.notchPadH * 2 + ear * 2))
+    // a notification is arriving: wider by notifWiden per side and a cyan halo (docs/design/28-emergentes.png)
+    readonly property bool notifying: IslandState.mode === "notification" && !expanded
+
     // short notices sized to their text (Bloq Mayús, keyboard layout)
     readonly property bool snug: IslandState.mode === "osd" && (Osd.kind === "capslock" || Osd.kind === "layout")
 
     readonly property real targetWidth: lid ? Dropdown.width + ear * 2 : expanded ? Math.min(Theme.notchExpandedWidth, root.width - Theme.barMarginSide * 2)
-                                                 : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0))
+                                                 : (appeared ? Math.min(maxCollapsed, collapsedWidth + (peek ? Theme.notchPeekDx : 0) + (notifying ? Theme.notifWiden * 2 : 0))
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
                                                   : (!appeared || (micro && !microActive) ? 0
@@ -116,6 +119,20 @@ Item {
         color: Theme.alpha(Theme.islandInk, 0.55)
         opacity: shape.opacity
         visible: !root.attached && shape.height > 1
+    }
+
+    // cyan halo while a notification leaves the island
+    RectangularShadow {
+        x: shape.x
+        y: shape.y
+        width: shape.width
+        height: shape.height
+        radius: Math.min(shape.bottomRadius, height / 2)
+        blur: Theme.hudBeamGlow * 2
+        color: Theme.haloCyan
+        opacity: root.notifying ? 1 : 0
+        visible: opacity > 0.01 && shape.height > 1
+        Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
     }
 
     NotchShape {

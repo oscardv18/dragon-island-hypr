@@ -461,6 +461,21 @@ Singleton {
     readonly property int durBeamOut:     ms(120)
     readonly property int durCalmFade:    ms(120)
 
+    // Notifications leaving the island (services/NotifFx.qml, docs/design/28-emergentes.png)
+    readonly property real notifDrop:      12
+    readonly property real notifDropArc:   10      // the drop's path dips this much below its lower end
+    readonly property real notifWiden:     25      // the island grows this much per side while a notification arrives
+    readonly property real notifTimeLine:  2
+    readonly property int  durDropOut:     ms(440)
+    readonly property int  durDropIn:      ms(320)
+    readonly property int  durTrace:       ms(320)
+    readonly property int  durFillCard:    ms(300)
+    readonly property int  durCardStagger: ms(45)
+    readonly property int  durSweep:       ms(700)
+    readonly property int  durCardFade:    ms(120)
+    readonly property int  durCollapse:    ms(200)
+    readonly property int  durPush:        ms(240)
+
     // Popover animation, calendar, notifications
     readonly property real popoverScaleFrom: 0.96
     readonly property real popoverShift:     10

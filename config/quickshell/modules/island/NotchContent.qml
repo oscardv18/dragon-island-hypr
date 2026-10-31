@@ -16,7 +16,9 @@ Item {
     property real maxWidth: 300
 
     readonly property string mode: IslandState.mode
-    implicitWidth: loader.item ? loader.item.implicitWidth : 0
+    // No molestar: no drop and no card (Notifs.popups stays empty), only this counter of what arrived meanwhile
+    readonly property real _badgeW: dndBadge.visible ? dndBadge.implicitWidth + Theme.spacingSm : 0
+    implicitWidth: (loader.item ? loader.item.implicitWidth : 0) + _badgeW
     implicitHeight: loader.item ? loader.item.implicitHeight : 0
     width: implicitWidth
     height: implicitHeight
@@ -35,9 +37,20 @@ Item {
         Behavior on height { NumberAnimation { duration: Theme.durFade; easing.type: Easing.OutCubic } }
     }
 
+    Row {
+        id: dndBadge
+        visible: Notifs.dnd && Notifs.unreadCount > 0 && ["osd", "capture", "dropdown", "recording"].indexOf(root.mode) < 0
+        anchors.right: parent.right
+        anchors.verticalCenter: loader.verticalCenter
+        spacing: Theme.spacingXs
+        Glyph { icon: Icons.bellOff; size: Theme.iconSm; color: Theme.textDim; anchors.verticalCenter: parent.verticalCenter }
+        UiText { text: Notifs.unreadCount; mono: true; size: Theme.sizeCaption + 1; color: Theme.textSoft; anchors.verticalCenter: parent.verticalCenter }
+    }
+
     Loader {
         id: loader
         anchors.centerIn: parent
+        anchors.horizontalCenterOffset: -root._badgeW / 2
         sourceComponent: {
             switch (root.mode) {
                 case "capture":      return captureView;
@@ -602,7 +615,8 @@ Item {
                 }
                 UiText {
                     anchors.verticalCenter: parent.verticalCenter
-                    text: parent.parent.n?.summary ?? ""
+                    // the sender: «Aitana · Telegram» (summary · app), as the card it is about to drop
+                    text: [parent.parent.n?.summary ?? "", parent.parent.n?.appName ?? ""].filter(x => x.length > 0).join(" · ")
                     weight: Theme.weightMedium
                     width: Math.min(implicitWidth, Math.max(60, root.maxWidth - Theme.artSmall - Theme.spacingSm))
                 }

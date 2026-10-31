@@ -68,6 +68,16 @@ PanelWindow {
         Keys.onEscapePressed: ShellState.close()
     }
 
+    // notification drops (services/NotifFx.qml): this window is the only one spanning the notch and the cards
+    NotifDrops {
+        anchors.fill: parent
+        screenName: win.screenName
+        fromX: notch.shapeItem.x + notch.shapeItem.width / 2
+        fromY: notch.shapeItem.y + notch.shapeItem.height
+        visible: !win.hidden
+        z: 1
+    }
+
     Notch {
         id: notch
         anchors.fill: parent
