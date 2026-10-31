@@ -11,8 +11,10 @@ font-family = CaskaydiaCove NF SemiBold
 # font-family = Hack Nerd Font
 font-size = 10.5
 
-# Transparency (0.65 over the glass: the backdrop is still recognisable): Ghostty only makes its background see-through. The blur / liquid glass behind it is
-# done by hyprglass (config/hypr/glass.lua, window tag hyprglass_enabled), so Ghostty's own blur stays off.
+# Transparency: Ghostty makes its background see-through and the compositor blurs what is behind it (native blur with
+# the ahumado / clásico glass, hyprglass with líquido). background-blur MUST be true: since Ghostty 1.4 + Hyprland 0.57
+# Ghostty asks the compositor for its background blur, and `false` made Hyprland leave the wallpaper sharp behind it
+# (kitty never asks, so it was blurred). Migration 039 fixes copied configs.
 # background-opacity = 0.65
 background-opacity = 0.89
 background-blur = true

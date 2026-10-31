@@ -77,6 +77,22 @@ check "038 guardó copia" has_backup look.lua
 mig bash "$REPO_DIR/migrations/038-window-frame.sh"; code=$?
 check "038 es idempotente (código $code)" test "$code" -eq 10
 
+# ---- 039: Ghostty asks for its background blur ----
+rm -rf "$T/.local/state"; mkdir -p "$T/.config/ghostty"
+g="$T/.config/ghostty/config"
+printf '%s\n' 'font-family = Mine' 'background-opacity = 0.79' 'background-blur = false' > "$g"
+mig env DRY_RUN=true bash "$REPO_DIR/migrations/039-ghostty-blur.sh"
+check "039 en dry-run no escribe" grep -qx 'background-blur = false' "$g"
+mig bash "$REPO_DIR/migrations/039-ghostty-blur.sh"; code=$?
+check "039 aplica (código $code)" test "$code" -eq 0
+check "039 pone background-blur = true y respeta lo demás" test "$(tr '\n' '|' < "$g")" = 'font-family = Mine|background-opacity = 0.79|background-blur = true|'
+# shellcheck disable=SC2329  # called through check
+has_ghostty_backup() { compgen -G "$T/.local/state/dragon-island/backups/*/.config/ghostty/config" >/dev/null; }
+check "039 guardó copia" has_ghostty_backup
+mig bash "$REPO_DIR/migrations/039-ghostty-blur.sh"; code=$?
+check "039 es idempotente (código $code)" test "$code" -eq 10
+check "el config/ghostty/config del repo pide el desenfoque" grep -qx 'background-blur = true' "$REPO_DIR/config/ghostty/config"
+
 echo
 if ((fails == 0)); then echo "migraciones del ajuste de ventanas: OK"; else echo "$fails comprobación(es) fallan"; fi
 exit "$fails"
