@@ -55,6 +55,8 @@ snapshot() {
 dry() {  # dry <DRY_RUN value> <command>...
     local v="$1"; shift
     env -i HOME="$H" USER="${USER:-test}" LANG=C PATH="$SHIMS:/usr/bin:/bin" PYTHONDONTWRITEBYTECODE=1 \
+        XDG_CONFIG_HOME="$H/.config" XDG_STATE_HOME="$H/.local/state" XDG_DATA_HOME="$H/.local/share" \
+        XDG_CACHE_HOME="$H/.cache" XDG_RUNTIME_DIR="$H/.runtime" \
         REPO_DIR="$REPO_DIR" LINK_MODE=copy DRY_RUN="$v" ASSUME_YES=1 DRAGON_SDDM_THEME="$THEME" "$@"
 }
 # check_run <label> <log> <exit code> <allowed codes…>
@@ -86,6 +88,26 @@ for v in 1 true; do
     if [[ "$before" == "$after" ]]; then ok "DRY_RUN=$v: $n migraciones sin cambiar nada en el HOME ni en el tema"
     else bad "DRY_RUN=$v cambió archivos:"; diff <(echo "$before") <(echo "$after") | head -n 20; fi
 done
+
+# Exercise the entire updater, including absent and already populated migration ledgers.
+for fixture in installed missing-ledger empty; do
+    if [[ "$fixture" == installed ]]; then
+        printf '%s\n' '001-keyboard-layouts.sh' > "$H/.local/state/dragon-island/migrations.done"
+    elif [[ "$fixture" == missing-ledger ]]; then
+        rm "$H/.local/state/dragon-island/migrations.done"
+    else
+        H="$T/empty-home"
+        mkdir -p "$H"
+    fi
+    before_update="$(find "$H" -printf '%p %y %m %s %T@ %C@ %l\n' | sort; find "$H" -type f -exec sha256sum {} + | sort)"
+    dry true bash "$REPO_DIR/update.sh" --dry-run --yes > "$OUT/update-$fixture.log" 2>&1 < /dev/null; code=$?
+    check_run "update --dry-run ($fixture)" "$OUT/update-$fixture.log" "$code" 0
+    after_update="$(find "$H" -printf '%p %y %m %s %T@ %C@ %l\n' | sort; find "$H" -type f -exec sha256sum {} + | sort)"
+    if [[ "$before_update" == "$after_update" ]]; then ok "update --dry-run ($fixture): HOME idéntico"
+    else bad "update --dry-run ($fixture) dejó rastro"; diff <(echo "$before_update") <(echo "$after_update") | head -n 20; fi
+done
+H="$T/home"
+before="$(snapshot)"
 
 dry 1 "$REPO_DIR/bin/dragon-sddm-sync" > "$OUT/sync.log" 2>&1 < /dev/null; code=$?
 check_run "dragon-sddm-sync (DRY_RUN=1)" "$OUT/sync.log" "$code" 0
