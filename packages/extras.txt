@@ -6,3 +6,8 @@
 aur:brave-bin
 @protonvpn
 pacman:proton-vpn-gtk-app
+# tools the HUD panels use when present (pulido): the Wi‑Fi QR code and the real audio wave of the isla de mando.
+# Without them the panels hide the option / draw decorative bars.
+@paneles
+pacman:qrencode
+pacman:cava
