@@ -63,6 +63,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; t
 step "imágenes de docs: máximo 1,5 MB y herramientas (HOME/XDG temporales)"
 if bash tests/check-images.sh && PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/images -v; then pass "imágenes y herramientas"; else fail "imágenes o herramientas fallaron"; fi
 
+step "actividad: solapes, concurrencia, privacidad, retención y migración (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/activity -v; then pass "registro de actividad"; else fail "pruebas de actividad fallaron"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 
