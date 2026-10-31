@@ -37,6 +37,8 @@
  *   - worldClocks: list<var> [readonly] ([{ name, tz }], «Fecha y hora»; default Madrid · Nueva York · Tokio)
  *   - glassStyle: string [readonly] ("ahumado" · "clasico" · "liquido": the glass material, services/Glass.qml applies it;
  *       default "ahumado")
+ *   - windowFrame: string [readonly] ("escuadras" top line + four corner brackets on the focused window · "hilo" the top
+ *       line only · "nada" no frame; modules/frame/FrameWindow.qml; default "escuadras")
  *
  * Functions:
  *   - setMotionScale(scale: real): void (writes settings.json; negative = follow KDE again)
@@ -57,11 +59,14 @@
  *   - setWorldClocks(text: string): void ("Madrid=Europe/Madrid, Tokio=Asia/Tokyo"; an IANA zone alone uses its city)
  *   - worldClocksText(): string (the same text form, for the Ajustes field)
  *   - setGlassStyle(style: string): void ("ahumado" | "clasico" | "liquido"; use Glass.setStyle from the UI)
+ *   - setWindowFrame(mode: string): void ("escuadras" | "hilo" | "nada")
+ *   - page: string [readonly] (the Ajustes page to show next; set by the `page` IPC, read by SettingsPanel)
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
  *   paletteApplyExternal(on: bool), launcherGravity(on: bool), reduceMotion(on: bool), switcherOrbital(on: bool),
- *   glassStyle(s: string), current(): string (every setting, one per line)
+ *   glassStyle(s: string), windowFrame(s: string), page(p: string) (opens Ajustes on that page: appearance · bar ·
+ *   launcher · privacy · power), current(): string (every setting, one per line)
  *
  * shell.qml binds Theme.motionScale, Theme.barStyle, Theme.barSize and Theme.accentIntensity to these.
  */
@@ -69,6 +74,7 @@ pragma Singleton
 import Quickshell
 import Quickshell.Io
 import QtQuick
+import ".."
 
 Singleton {
     id: root
@@ -141,6 +147,10 @@ Singleton {
     function worldClocksText(): string { return root.worldClocks.map(c => `${c.name}=${c.tz}`).join(", "); }
     readonly property var glassStyles: ["ahumado", "clasico", "liquido"]
     readonly property string glassStyle: glassStyles.indexOf(root._data.glassStyle) >= 0 ? root._data.glassStyle : "ahumado"
+    readonly property var windowFrames: ["escuadras", "hilo", "nada"]
+    readonly property string windowFrame: windowFrames.indexOf(root._data.windowFrame) >= 0 ? root._data.windowFrame : "escuadras"
+    property string page: ""
+    function setWindowFrame(mode: string): void { if (root.windowFrames.indexOf(mode) >= 0) _set("windowFrame", mode); }
 
     FileView {
         id: settingsFile
@@ -251,11 +261,13 @@ Singleton {
         function reduceMotion(on: bool): void { root.setFlag("reduceMotion", on); }
         function switcherOrbital(on: bool): void { root.setFlag("switcherOrbital", on); }
         function glassStyle(s: string): void { root.setGlassStyle(s); }
+        function windowFrame(s: string): void { root.setWindowFrame(s); }
+        function page(p: string): void { root.page = ""; root.page = p; ShellState.open("settings"); }
         function current(): string {
             return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
                     `wallpaperPalette=${root.wallpaperPalette}`, `paletteApplyExternal=${root.paletteApplyExternal}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`,
-                    `launcherGravity=${root.launcherGravity}`, `reduceMotion=${root.reduceMotion}`, `switcherOrbital=${root.switcherOrbital}`, `glassStyle=${root.glassStyle}`].join("\n");
+                    `launcherGravity=${root.launcherGravity}`, `reduceMotion=${root.reduceMotion}`, `switcherOrbital=${root.switcherOrbital}`, `glassStyle=${root.glassStyle}`, `windowFrame=${root.windowFrame}`].join("\n");
         }
     }
 }

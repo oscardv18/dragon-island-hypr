@@ -1,4 +1,4 @@
-// The frame decoration shared by every HUD popover (PopoverFrame) and by the focused window (modules/frame/WindowFrame):
+// The frame decoration shared by every HUD popover (PopoverFrame) and by the focused window (modules/frame/FrameWindow):
 // a thin top line (lavender → cyan, transparent at both ends) and four cyan corner brackets, drawn over a rectangle
 // with corner radius `radius`. Same component, same tokens (Theme.frame), so popovers and windows can never diverge.
 //   line            draw the top line (popovers: only with the «ahumado» glass; windows: always unless «nada»)

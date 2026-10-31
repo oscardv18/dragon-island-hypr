@@ -54,6 +54,9 @@ if bash tests/migrations-fase4.sh; then pass "migraciones 025, 026, 027 y 028"; 
 step "migraciones del ajuste de ventanas (HOME temporal)"
 if bash tests/migrations-ventanas.sh; then pass "migraciones del ajuste de ventanas"; else fail "migraciones del ajuste de ventanas"; fi
 
+step "contorno de ventanas: framewatch.lua, borde nativo y tokens (sin sesión)"
+if bash tests/window-frame.sh; then pass "contorno de ventanas"; else fail "contorno de ventanas"; fi
+
 step "migraciones en simulación: DRY_RUN=1 y DRY_RUN=true no cambian nada (HOME temporal)"
 if bash tests/migrations-dry-run.sh; then pass "todas las migraciones, dragon-sddm-sync y dragon-palette"; else fail "alguna migración escribe en dry-run"; fi
 

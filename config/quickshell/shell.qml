@@ -28,6 +28,7 @@ import "modules/dock"
 import "modules/switcher"
 import "modules/overview"
 import "modules/lock"
+import "modules/frame"
 import "debug"
 
 ShellRoot {
@@ -156,6 +157,12 @@ ShellRoot {
     Variants {
         model: Quickshell.screens
         delegate: Component { CaptureWindow {} }
+    }
+
+    // the frame of the focused window (no title bars): top line + corner brackets, like the popovers (FrameDecor)
+    Variants {
+        model: Quickshell.screens
+        delegate: Component { FrameWindow { locked: lock.locked } }
     }
 
     // recording mode: a thin red frame around every screen (RecordingMode.showFrame)

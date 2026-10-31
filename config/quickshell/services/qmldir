@@ -53,3 +53,4 @@ singleton NotifFx 1.0 NotifFx.qml
 singleton Activity 1.0 Activity.qml
 singleton Cava 1.0 Cava.qml
 singleton Priority 1.0 Priority.qml
+singleton WindowFrame 1.0 WindowFrame.qml

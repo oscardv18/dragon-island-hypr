@@ -8,12 +8,14 @@ hl.config({
 	general = {
 		gaps_in = 4,
 		gaps_out = 10,
-		border_size = 2,
+		-- 1 px, very discreet: the focused window's frame (top line + four cyan corner brackets) is drawn by Quickshell
+		-- (framewatch.lua → modules/frame/FrameWindow.qml); this border is what still reads if Quickshell restarts.
+		-- Mirrors Theme.frame.border / borderActive / borderInactive. Never a light edge.
+		border_size = 1,
 
 		col = {
-			-- new identity: lavender (#c8b6e6) → cyan (#67e8f9) at 45°; no magenta / pink / green any more
-			active_border = { colors = { "rgba(c8b6e6ff)", "rgba(67e8f9ff)" }, angle = 45 },
-			inactive_border = "rgba(ffffff14)", -- white 8 %: almost invisible
+			active_border = "rgba(67e8f94d)", -- cyan #67e8f9 at 30 % (Theme.frame.borderActive)
+			inactive_border = "rgba(0000004d)", -- black 30 %: a dark hairline, no white edge (Theme.frame.borderInactive)
 		},
 
 		resize_on_border = true,

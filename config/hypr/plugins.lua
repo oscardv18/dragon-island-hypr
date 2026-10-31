@@ -3,7 +3,7 @@
 -- Pinned for Hyprland 0.56.x stable via hyprpm
 --
 -- No title bars: hyprbars is gone (ajuste de ventanas, migration 037). Windows get the frame of the popovers instead
--- — a thin top line and four cyan corner brackets drawn by Quickshell (modules/frame/WindowFrame.qml) — plus a 1 px
+-- — a thin top line and four cyan corner brackets drawn by Quickshell (modules/frame/FrameWindow.qml) — plus a 1 px
 -- native border (look.lua). Close / maximize / float / minimize are SUPER + Q / F / SHIFT + Space / M.
 -- =============================================================================
 

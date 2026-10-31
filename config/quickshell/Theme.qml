@@ -116,7 +116,7 @@ Singleton {
     readonly property real  glassLightOpacity: frame.lineAlpha
 
     // ---- Frame (components/FrameDecor.qml): the top line + four corner brackets of every HUD popover AND of the focused
-    // window (modules/frame/WindowFrame.qml). One set of tokens so the two can never diverge
+    // window (modules/frame/FrameWindow.qml). One set of tokens so the two can never diverge
     // (docs/design/28-emergentes.png, 32-contorno-ventana.png).
     readonly property QtObject frame: QtObject {
         readonly property real line:          1                         // top line: thickness
@@ -130,8 +130,8 @@ Singleton {
         readonly property real bracketGrow:   4                         // they slide in from this far out while they appear
         readonly property color bracketColor: root.cyan
         readonly property real bracketAlpha:  1
-        // windows: the native 1 px border under the drawn frame (look.lua mirrors these; services/WindowFrame.qml
-        // pushes them to Hyprland so they follow the wallpaper palette). Never a light edge.
+        // windows: the native 1 px border under the drawn frame. config/hypr/look.lua mirrors these values (cyan never
+        // follows the wallpaper palette, so they are constant); tests/frame-tokens.sh keeps the two equal. Never a light edge.
         readonly property real  border:         1
         readonly property color borderActive:   root.alpha(root.cyan, 0.30)
         readonly property color borderInactive: Qt.rgba(0, 0, 0, 0.30)

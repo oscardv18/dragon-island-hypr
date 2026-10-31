@@ -5,7 +5,7 @@
 //   Barra superior  four style cards (schematic thumbnail, cyan 1.5 px ring on the chosen one; the real bar changes
 //                   at once), "Contenido de la isla" (Música / Ventana / Fecha), "Mostrar CPU y RAM",
 //                   "Ocultar automáticamente"
-//   Apariencia      "Cristal" (ahumado · clásico · líquido, services/Glass.qml), "Relojes del mundo" (Fecha y hora), "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
+//   Apariencia      "Cristal" (ahumado · clásico · líquido, services/Glass.qml), "Contorno de ventanas" (escuadras · solo hilo · nada), "Relojes del mundo" (Fecha y hora), "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
 //   Launcher        "Launcher Gravedad" (off = the previous orbital launcher), "Alt+Tab orbital", "Reducir movimiento"
 // Every control writes through Settings (settings.json), so it persists and other monitors follow.
 // Keys: 1–4 pick the bar style A–D · Tab switches page · Esc closes.
@@ -21,6 +21,11 @@ Item {
 
     property bool shown: false
     property string page: "bar"            // "appearance" | "bar" | "launcher" | "privacy" | "power"
+    // `qs ipc call settings page <key>` opens Ajustes on that page
+    Connections {
+        target: Settings
+        function onPageChanged() { if (root.pages.some(p => p.key === Settings.page)) root.page = Settings.page; }
+    }
     property real t: 0
 
     readonly property var pages: [
@@ -313,6 +318,18 @@ Item {
                             model: Glass.styles
                             current: Glass.requested
                             onSelected: k => Glass.setStyle(k)
+                        }
+                    }
+                    SettingsRow {
+                        title: "Contorno de ventanas"
+                        subtitle: Settings.windowFrame === "escuadras" ? "Línea superior y cuatro escuadras cian en la ventana enfocada, como los paneles"
+                                : Settings.windowFrame === "hilo" ? "Solo la línea superior en la ventana enfocada"
+                                : "Sin contorno: solo el borde nativo de 1 px"
+                        Segmented {
+                            implicitWidth: 280
+                            model: [{ key: "escuadras", label: "Escuadras" }, { key: "hilo", label: "Solo hilo" }, { key: "nada", label: "Nada" }]
+                            current: Settings.windowFrame
+                            onSelected: k => Settings.setWindowFrame(k)
                         }
                     }
                     SettingsRow {
