@@ -164,6 +164,22 @@ Rectangle {
     }
     // later points (archives, sharing) extend this
     function extraAction(action, entry, paths): void {}
+    // ---- devices (d3) ----
+    function deviceAction(d, action): void {
+        if (!devices || !d) return;
+        if (action === "eject") {
+            // leave the device first so its folder is not kept busy by this window
+            for (const t of state.tabs) if (d.mountpoint && (t.path === d.mountpoint || t.path.indexOf(d.mountpoint + "/") === 0)) t.go(files?.home ?? "/");
+            if (d.removable || d.kind === "mtp") devices.eject(d.id); else devices.unmount(d.id);
+        } else if (action === "unlock") {
+            prompt.purpose = "unlock"; prompt.target = d.id;
+            const err = devices.errors?.[d.id] ?? "";
+            prompt.ask({ title: "Abrir volumen cifrado", password: true, placeholder: "Contraseña", danger: !!err,
+                         message: err ? err + ". Vuelve a intentarlo." : "«" + d.label + "» está cifrado. La contraseña se pasa por la entrada estándar y no se guarda.",
+                         buttons: [{ label: "Cancelar", action: "cancel" }, { label: "Abrir", action: "ok", primary: true }] });
+        } else if (d.mounted && d.mountpoint) tab?.go(d.mountpoint);
+        else devices.mount(d.id, r => { if (r.ok) tab?.go(r.mountpoint ?? devices.deviceById(d.id)?.mountpoint ?? ""); });
+    }
     function editPath(): void { editingPath = true; Qt.callLater(() => pathInput.focusInput()); }
     function focusSearch(): void { searchInput.focusInput(); }
     function focusContent(): void { root.forceActiveFocus(); }
@@ -219,6 +235,8 @@ Rectangle {
         devices: root.devices
         currentPath: root.tab?.path ?? ""
         onNavigate: p => root.tab?.go(p)
+        onDropOn: (path, paths, mods) => root.dropInto(path, paths, mods)
+        onDeviceAction: (d, a) => root.deviceAction(d, a)
     }
 
     ColumnLayout {
@@ -484,6 +502,13 @@ Rectangle {
             else if (purpose === "mkdir" && action === "ok" && name && name.indexOf("/") < 0) root.ops?.mkdir(target, name);
             else if (purpose === "delete" && action === "ok") root.ops?.remove(targets);
             else if (purpose === "conflict" && action !== "cancel") root.ops?.answer(opId, action, checked);
+            else if (purpose === "unlock" && action === "ok" && value) {
+                const id = target;
+                root.devices?.unlock(id, value, r => {
+                    if (r.ok) { const d = root.devices.deviceById(id); if (r.mountpoint || d?.mountpoint) root.tab?.go(r.mountpoint ?? d.mountpoint); }
+                    else root.deviceAction(root.devices.deviceById(id) ?? { id: id, label: id }, "unlock");
+                });
+            }
             root.focusContent();
         }
     }

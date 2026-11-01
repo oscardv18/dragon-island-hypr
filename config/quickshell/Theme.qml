@@ -934,6 +934,9 @@ Singleton {
         readonly property int searchDebounce: 120
         readonly property int thumbConcurrency: 2      // thumbnail processes at once
         readonly property int dragThreshold: 8
+        readonly property int watchRetry: 10000        // a dead device/network watcher is restarted after this
+        readonly property real usageWarn: 0.5          // device space bar: cyan below, amber from here …
+        readonly property real usageHigh: 0.85         // … red from here
     }
     // /fase5d: Files
 

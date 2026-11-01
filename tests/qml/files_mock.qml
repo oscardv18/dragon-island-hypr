@@ -90,6 +90,22 @@ Window {
             if (ev.t === "conflict") queue = [Object.assign({}, base, { state: "conflict", conflict: { file: ev.file, dest: ev.dest } })];
         }
     }
+    // ---- simulated Devices ----
+    QtObject {
+        id: devs
+        property var devices: win.fixture("files-devices.json").devices.filter(d => !d.hidden)
+        property var busy: ({})
+        property var errors: ({})
+        property var calls: []
+        function deviceById(id) { return devices.find(d => d.id === id) ?? null; }
+        function mount(id, cb) { calls = calls.concat([["mount", id]]); }
+        function unmount(id) { calls = calls.concat([["unmount", id]]); }
+        function eject(id) { calls = calls.concat([["eject", id]]); }
+        function unlock(id, pass, cb) {
+            calls = calls.concat([["unlock", id, pass.length]]);
+            if (pass !== "correcta") { errors = { [id]: "Contraseña incorrecta" }; cb({ ok: false, error: { code: "bad_passphrase", message: "Contraseña incorrecta" } }); }
+        }
+    }
     function opEvents() {
         const xhr = new XMLHttpRequest();
         xhr.open("GET", Qt.resolvedUrl("fixtures/files-op-progress.jsonl"), false); xhr.send();
@@ -104,6 +120,7 @@ Window {
         height: Theme.files.height
         files: files
         ops: ops
+        devices: devs
         initialPath: win.docs
         now: win.fixedNow
     }
@@ -219,8 +236,20 @@ Window {
             if (step === 14) {
                 prompt().checked = true; prompt().reply("rename");
                 eq(JSON.stringify(ops.calls[ops.calls.length - 1]), JSON.stringify(["answer", "rename", true]), "conflict answer");
-                Qt.quit();
+                // devices: eject leaves the folder first, encrypted asks for the password (stdin in the service)
+                t.go("/run/media/oddv/KINGSTON/fotos");
+                panel.deviceAction(devs.deviceById("sda1"), "eject");
+                eq(JSON.stringify(devs.calls[0]), JSON.stringify(["eject", "sda1"]), "eject");
+                eq(t.path, win.home, "eject leaves the device folder");
+                panel.deviceAction(devs.deviceById("sdb1"), "unlock");
             }
+            if (step === 15) { prompt().value = "mala"; prompt().reply("ok"); }
+            if (step === 16) {
+                check(prompt().visible, "wrong password asks again");
+                shot("files-cifrado.png");
+            }
+            if (step === 17) { prompt().reply("cancel"); t.go(win.docs); t.selectNames(["backup-2026-10.zip"]); }
+            if (step === 18) { shot("files-lista.png"); Qt.quit(); }
             step++;
         }
     }

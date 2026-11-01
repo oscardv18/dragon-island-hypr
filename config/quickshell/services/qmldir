@@ -64,4 +64,5 @@ singleton Taller 1.0 Taller.qml
 singleton Files 1.0 Files.qml
 FilesRequest 1.0 FilesRequest.qml
 singleton FileOps 1.0 FileOps.qml
+singleton Devices 1.0 Devices.qml
 # /fase5d: Files

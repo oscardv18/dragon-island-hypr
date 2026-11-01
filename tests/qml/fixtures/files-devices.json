@@ -1,0 +1,71 @@
+{
+ "ok": true,
+ "devices": [
+  {
+   "id": "nvme0n1p2",
+   "label": "SSD",
+   "kind": "disk",
+   "size": 1000204886016,
+   "used": 500914937856,
+   "free": 499289948160,
+   "fstype": "btrfs",
+   "mounted": true,
+   "mountpoint": "/",
+   "removable": false,
+   "locked": false
+  },
+  {
+   "id": "sda1",
+   "label": "KINGSTON",
+   "kind": "usb",
+   "size": 32015679488,
+   "used": 6403135897,
+   "free": 25612543591,
+   "fstype": "exfat",
+   "mounted": true,
+   "mountpoint": "/run/media/oddv/KINGSTON",
+   "removable": true,
+   "locked": false
+  },
+  {
+   "id": "mtp:Google_Pixel_8",
+   "label": "Pixel 8",
+   "kind": "mtp",
+   "size": null,
+   "used": null,
+   "free": null,
+   "fstype": "mtp",
+   "mounted": true,
+   "mountpoint": "/run/user/1000/gvfs/mtp:host=Google_Pixel_8",
+   "removable": true,
+   "locked": false
+  },
+  {
+   "id": "sdb1",
+   "label": "Respaldo cifrado",
+   "kind": "luks",
+   "size": 2000398934016,
+   "used": null,
+   "free": null,
+   "fstype": "crypto_LUKS",
+   "mounted": false,
+   "mountpoint": null,
+   "removable": true,
+   "locked": true
+  },
+  {
+   "id": "nvme0n1p1",
+   "label": "EFI",
+   "kind": "disk",
+   "size": 536870912,
+   "used": null,
+   "free": null,
+   "fstype": "vfat",
+   "mounted": true,
+   "mountpoint": "/boot",
+   "removable": false,
+   "locked": false,
+   "hidden": true
+  }
+ ]
+}

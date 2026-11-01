@@ -10,6 +10,7 @@ Item {
     id: root
     property var spec: ({})
     property bool checked: false
+    property alias value: field.text
     signal answered(string action, string value, bool checked)
     visible: false
     anchors.fill: parent

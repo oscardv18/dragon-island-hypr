@@ -191,6 +191,35 @@ class Services(unittest.TestCase):
     }''', FAKE_FAIL='copy')
         self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
 
+    def test_devices_watch_only_with_windows_and_passphrase_by_stdin(self):
+        r, calls = self.run_shell('''
+    property int phase: 0
+    Component.onCompleted: { if (Devices.watching) throw new Error("watching without windows"); Files.windowShown(true); }
+    Connections {
+        target: Devices
+        function onDevicesChanged() {
+            if (phase !== 0 || Devices.devices.length !== 4) return;
+            if (Devices.devices.some(d => d.hidden)) throw new Error("hidden device shown");
+            if (!Devices.watching) throw new Error("not watching with a window");
+            phase = 1;
+            Devices.unlock("sdb1", "mala", res => {
+                if (res.ok || Devices.errors.sdb1 !== "Contraseña incorrecta") throw new Error("bad unlock not reported");
+                Devices.unlock("sdb1", "correcta", ok => {
+                    if (!ok.ok || Devices.errors.sdb1 !== undefined) throw new Error("unlock");
+                    Files.windowShown(false);
+                    if (Devices.watching) throw new Error("still watching without windows");
+                    console.log("SVC_OK"); Qt.quit();
+                });
+            });
+        }
+    }''')
+        self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
+        unlocks = [c for c in calls if c[0] == 'unlock']
+        self.assertEqual(unlocks, [['unlock', 'sdb1', '--passphrase-stdin', '--json']] * 2)
+        self.assertNotIn('correcta', json.dumps(calls).replace('"stdin"', ''))
+        self.assertIn(['stdin', 8], calls)
+        self.assertEqual(sum(1 for c in calls if c[:2] == ['devices', '--watch']), 1)
+
     def test_tool_errors_reach_the_callback(self):
         r, _ = self.run_shell('''
     Component.onCompleted: {

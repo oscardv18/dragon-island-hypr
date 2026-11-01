@@ -27,6 +27,19 @@ elif cmd == 'watch':
     # one change after a moment, then stay alive until SIGTERM
     time.sleep(0.3); out({'t': 'changed', 'path': args[1]})
     while True: time.sleep(1)
+elif cmd == 'devices' and '--watch' in args:
+    time.sleep(0.3); out({'t': 'changed', 'id': 'sda1'})
+    while True: time.sleep(1)
+elif cmd == 'devices':
+    out(fixture('files-devices.json'))
+elif cmd in ('mount', 'unmount', 'eject'):
+    out({'ok': True, 'mountpoint': '/run/media/test/' + args[1]} if cmd == 'mount' else {'ok': True})
+elif cmd == 'unlock':
+    secret = sys.stdin.readline().rstrip('\n')
+    with open(os.environ['FAKE_FILES_LOG'], 'a') as log:
+        log.write(json.dumps(['stdin', len(secret)]) + '\n')
+    if secret == 'correcta': out({'ok': True, 'mountpoint': '/run/media/test/cifrado'})
+    else: out({'ok': False, 'error': {'code': 'bad_passphrase', 'message': 'Contraseña incorrecta', 'hint': ''}}); sys.exit(1)
 elif cmd == 'thumb':
     out({'ok': True, 'thumb': None})
 elif cmd in ('open', 'terminal-here'):
