@@ -63,6 +63,26 @@ if bash tests/migrations-dry-run.sh; then pass "todas las migraciones, dragon-sd
 step "dragon-sddm-sync: fondo 1920×1080 desenfocado una vez con magick o ffmpeg (tema temporal)"
 if bash tests/sddm-sync.sh; then pass "fondo del login desenfocado una sola vez y sin MultiEffect"; else fail "dragon-sddm-sync prepara mal el fondo"; fi
 
+# fase5a: shared secrets
+step "secretos compartidos"
+if python3 -m unittest discover -s tests/secrets -v; then pass "filtro compartido"; else fail "filtro compartido"; fi
+# /fase5a: shared secrets
+
+# fase5a: memory
+step "memoria SQLite del Taller (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/mem -v; then pass "dragon-mem"; else fail "dragon-mem"; fi
+# /fase5a: memory
+
+# fase5a: herdr
+step "puente de herdr con socket falso (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/herdr -v; then pass "dragon-herdr"; else fail "dragon-herdr"; fi
+# /fase5a: herdr
+
+# fase5a: services and UI
+step "servicios del Taller con Quickshell real y HOME temporal"
+if python3 -m unittest discover -s tests/taller -v; then pass "servicios del Taller"; else fail "servicios del Taller"; fi
+# /fase5a: services and UI
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 

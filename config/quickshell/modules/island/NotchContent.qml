@@ -395,30 +395,12 @@ Item {
     // ---- an agent waits for an answer: warn dot pulsing (1.6 s) · "<workspace> espera tu respuesta" ----
     Component {
         id: agentBlockedView
-        Row {
-            spacing: Theme.spacingSm
-            readonly property var a: IslandState.blockedAgent
-            Rectangle {
-                id: waitDot
-                anchors.verticalCenter: parent.verticalCenter
-                width: Theme.statusDot
-                height: width
-                radius: width / 2
-                color: Theme.warn
-                SequentialAnimation on opacity {
-                    running: root.animate
-                    loops: Animation.Infinite
-                    onStopped: waitDot.opacity = 1
-                    NumberAnimation { to: 0.35; duration: Theme.ms(800); easing.type: Easing.InOutSine }
-                    NumberAnimation { to: 1; duration: Theme.ms(800); easing.type: Easing.InOutSine }
-                }
-            }
-            UiText {
-                anchors.verticalCenter: parent.verticalCenter
-                text: `${parent.a?.workspace || parent.a?.name || "Un agente"} espera tu respuesta`
-                weight: Theme.weightMedium
-                width: Math.min(implicitWidth, Math.max(80, root.maxWidth - Theme.statusDot - Theme.spacingSm))
-            }
+        AttentionCard {
+            agent: IslandState.attentionAgent
+            now: Herdr._now
+            maxWidth: Math.min(root.maxWidth, Theme.taller.attentionWidth - Theme.notchPadH * 2 - (Theme.notchAttached ? Theme.notchEarRadius * 2 : 0))
+            onFocusRequested: Herdr.focusAgent(agent)
+            onIgnoreRequested: Herdr.snooze(agent, 10)
         }
     }
 

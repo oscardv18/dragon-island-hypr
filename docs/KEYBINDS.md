@@ -17,7 +17,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
 | `SUPER + SHIFT + A` | Referencia de herdr: atajos (los de fábrica y los que cambiaste), comandos de la CLI y estados de los agentes. Solo lectura |
-| `SUPER + A` | Agentes: abre herdr en el escritorio 5 («agentes») o, si ya hay una ventana, la enfoca. Las sesiones sobreviven al cerrar la ventana |
+| `SUPER + A` | Agentes: va al siguiente bloqueado; si no hay, al siguiente listo sin ver |
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
@@ -30,6 +30,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + V` (o `SUPER + SHIFT + V`) | Portapapeles: el anillo del launcher Gravedad (Enter pega en la ventana que tenía el foco). Con «Launcher Gravedad» apagado, el panel de antes |
 | `SUPER + Tab` | Vista general de escritorios: cinco tarjetas, arrastra una ventana a otra para moverla |
 | `SUPER + F1` | Ayuda: panel con todos los atajos de Hyprland |
+| `SUPER + T` | Taller de ingeniería (Agentes · Kanban · Contenedores · Git · Revisión) |
 | `SUPER + F2` | Ajustes (estilo de la barra, contenido de la isla, métricas, intensidad del acento) |
 | `SUPER + ALT + B` | Cambiar el estilo de la barra (A notch · B isla · C unida · D mínima) |
 
@@ -42,7 +43,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + F` | Pantalla completa real |
 | `SUPER + SHIFT + Space` | Alternar flotante (antes `SUPER + V`) |
 | `ALT + Tab` / `ALT + SHIFT + Tab` | Alt+Tab orbital: siguiente / anterior; al soltar Alt se enfoca la elegida. Un toque rápido cambia a la anterior sin mostrar nada. Se apaga en Ajustes › Launcher (entonces Alt+Tab queda para las apps) |
-| `SUPER + T` | Alternar el modo de mosaico del escritorio: **Dwindle** (árbol, por defecto) ↔ **Scrolling** (columnas en una cinta horizontal, layout nativo de Hyprland 0.56). Cada escritorio recuerda el suyo (`~/.local/state/dragon-island/tiling.json`); también la cápsula `DWINDLE` / `SCROLL` de la barra y `qs ipc call tiling toggle\|set dwindle\|set scrolling\|get` |
+| `SUPER + CTRL + T` | Alternar el modo de mosaico del escritorio: **Dwindle** (árbol, por defecto) ↔ **Scrolling** (columnas en una cinta horizontal, layout nativo de Hyprland 0.56). Cada escritorio recuerda el suyo (`~/.local/state/dragon-island/tiling.json`); también la cápsula `DWINDLE` / `SCROLL` de la barra y `qs ipc call tiling toggle\|set dwindle\|set scrolling\|get` |
 | `SUPER + ←↑→↓` | Mover el foco |
 | `SUPER + ALT + H/J/K/L` | Mover el foco (estilo Vim) |
 | `SUPER + SHIFT + ←↑→↓` · `SUPER + SHIFT + H/J/K/L` | Mover la ventana |
@@ -71,7 +72,9 @@ Dos distribuciones: **English (US)** (la primera, la que resuelve los atajos) y 
 
 El bloqueo usa las mismas dos distribuciones: `SUPER + ALT + Space` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa. `ALT + SHIFT` ya no cambia de distribución (chocaba con `ALT + SHIFT + Tab`, el Alt+Tab orbital hacia atrás).
 
-## herdr (SUPER + A)
+## herdr (SUPER + A = atención)
+
+`SUPER + A` enfoca al siguiente agente que necesita atención. La pastilla de la isla ofrece «Ir ↵»; clic derecho la ignora 10 minutos (solo en memoria). La pila de Mando también ofrece «Ignorar 10 min». Para abrir el cliente sin agentes pendientes, ejecuta `dragon-herdr` sin argumentos. Las decisiones de permisos se responden dentro de herdr.
 
 Primero `Ctrl+B` (el prefijo) y luego:
 
@@ -232,6 +235,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Capturas (`SUPER + SHIFT + S`) | `1–3` Región / Ventana / Pantalla · arrastrar dibuja (los tiradores ajustan) · `Espacio` + arrastrar mueve · `Enter` copia · `Esc` cierra |
 | Portapapeles anterior (Gravedad apagado) | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
+| Taller (`SUPER + T`) | `Ctrl+Tab` / `Ctrl+Shift+Tab` cambia de pestaña · `↑ ↓` elige agente · `Tab` recorre controles · `Enter` enfoca al agente o activa un control · `Esc` cierra |
 | Cualquier panel | `Esc` cierra |
 
 ## IPC (para scripts y atajos propios)
@@ -239,6 +243,8 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 ```sh
 qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery, notifications, calendar,
 qs ipc call shell open launcher      # launcher, power, clipboard, keybinds, wallpapers, store, settings
+qs ipc call herdr attention          # siguiente bloqueado o listo sin ver
+qs ipc call taller toggle            # open agentes|kanban|contenedores|git|revision · close · current
 qs ipc call shell close
 qs ipc call launcher clipboard       # el anillo del portapapeles (SUPER + V)
 qs ipc call switcher next            # Alt+Tab orbital: next, prev, confirm, cancel
@@ -267,8 +273,8 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 
 | Atajo | Acción |
 |---|---|
-| `SUPER + A` | Abrir o enfocar herdr (escritorio 5) |
 | `SUPER + SHIFT + A` | Atajos y funciones de herdr (referencia) |
+| `SUPER + A` | Ir al siguiente bloqueado o listo sin ver |
 | `SUPER + ALT + A` | Ver agentes y comandos en la isla |
 
 ### Aplicaciones
@@ -358,6 +364,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + D` | Notch (Nook / Tray) |
 | `SUPER + N` | Notificaciones |
 | `SUPER + SHIFT + V` · `SUPER + V` | Portapapeles (anillo; Enter pega) |
+| `SUPER + T` | Taller de ingeniería |
 | `SUPER + I` | Tienda de apps (pacman + AUR) |
 
 ### Sistema
@@ -380,7 +387,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `ALT + Tab` | Alt+Tab orbital: siguiente |
 | `ALT + Alt_L` | Alt+Tab orbital: soltar Alt confirma |
 | `SUPER + SHIFT + Space` | Alternar flotante |
-| `SUPER + T` | Alternar modo Dwindle / Scrolling |
+| `SUPER + CTRL + T` | Alternar modo Dwindle / Scrolling |
 | `SUPER + Q` | Cerrar |
 | `SUPER + F` | Maximizar / restaurar |
 | `SUPER + SHIFT + down` · `SUPER + SHIFT + left` · `SUPER + SHIFT + right` · `SUPER + SHIFT + up` | Mover la ventana |

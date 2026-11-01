@@ -99,6 +99,11 @@ Singleton {
     // Keys that work INSIDE the panels (no Hyprland bind): listed here so everything is in one place. Keep in step with
     // docs/KEYBINDS.md ("Teclado dentro de los paneles").
     readonly property var panelGroups: [
+        { name: "Taller (dentro)", rows: [
+            { text: "Elegir agente · ir al panel", combos: [["↑"], ["↓"], ["Enter"]] },
+            { text: "Cambiar de pestaña", combos: [["Ctrl", "Tab"], ["Ctrl", "Shift", "Tab"]] },
+            { text: "Cerrar el Taller", combos: [["Esc"]] }
+        ] },
         { name: "Capturas (dentro)", rows: [
             { text: "Región · Ventana · Pantalla", combos: [["1", "2", "3"]] },
             { text: "Mover la selección", combos: [["Espacio", "arrastrar"]] },

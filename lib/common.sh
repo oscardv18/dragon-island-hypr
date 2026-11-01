@@ -154,7 +154,9 @@ ensure_herdr_integrations() {
 # deploy_herdr: config + launcher + zsh completion + native session integrations
 deploy_herdr() {
     deploy_item "$REPO_DIR/config/herdr/config.toml" "$HOME/.config/herdr/config.toml"
-    deploy_item "$REPO_DIR/bin/dragon-herdr" "$HOME/.local/bin/dragon-herdr"
+    # shellcheck source=lib/herdr.sh
+    . "$REPO_DIR/lib/herdr.sh"
+    herdr_bridge_setup
     if [[ -x "$HOME/.local/bin/herdr" ]]; then
         run mkdir -p "$HOME/.zfunc"
         [[ "${DRY_RUN:-false}" == "true" ]] || "$HOME/.local/bin/herdr" completion zsh >| "$HOME/.zfunc/_herdr" 2>/dev/null || true

@@ -58,7 +58,7 @@ bind(mainMod .. " + SHIFT + L", hl.dsp.window.move({ direction = "right" }), "Ve
 
 -- Tiling modes: dwindle (default) <-> scrolling (native columns on a horizontal tape), per workspace.
 -- scripts/tiling.sh does the work (Quickshell's `tiling` IPC first: chip + notch notice; the script if it does not answer).
-bind(mainMod .. " + T", hl.dsp.exec_cmd("qs ipc call tiling toggle || $HOME/.local/bin/dragon-tiling toggle"), "Ventanas · Alternar modo Dwindle / Scrolling")
+bind(mainMod .. " + CTRL + T", hl.dsp.exec_cmd("qs ipc call tiling toggle || $HOME/.local/bin/dragon-tiling toggle"), "Ventanas · Alternar modo Dwindle / Scrolling")
 
 -- Scrolling-only binds (layout messages, hl.dsp.layout): they do nothing on a dwindle workspace.
 -- Left / right (and SUPER + SHIFT + arrows) already change column / move the window in both modes.
@@ -87,6 +87,7 @@ bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   "Ratón · Arrastrar ven
 bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), "Ratón · Redimensionar ventana", { mouse = true })
 
 -- Quickshell interactive panels (via qs ipc)
+bind(mainMod .. " + T", hl.dsp.exec_cmd("qs ipc call taller toggle"), "Shell · Taller de ingeniería")
 bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Notch (Nook / Tray)")
 bind(mainMod .. " + Tab",    hl.dsp.exec_cmd("qs ipc call overview toggle"),            "Escritorios · Vista general (arrastrar ventanas entre escritorios)")
 bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper orbital"), "Shell · Fondos de pantalla (orbital)")
@@ -96,7 +97,7 @@ bind(mainMod .. " + M", hl.dsp.exec_cmd("qs ipc call dock minimize"), "Dock · M
 bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("qs ipc call toggles record"), "Shell · Grabar pantalla (iniciar / parar)")
 bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd("qs ipc call shell toggle herdrhelp"), "Agentes · Atajos y funciones de herdr (referencia)")
 bind(mainMod .. " + I",         hl.dsp.exec_cmd("qs ipc call shell toggle store"), "Shell · Tienda de apps (pacman + AUR)")
-bind(mainMod .. " + A",         hl.dsp.exec_cmd("$HOME/.local/bin/dragon-herdr"), "Agentes · Abrir o enfocar herdr (escritorio 5)")
+bind(mainMod .. " + A",         hl.dsp.exec_cmd("qs ipc call herdr attention"), "Agentes · Ir al siguiente bloqueado o listo sin ver")
 bind(mainMod .. " + ALT + A",   hl.dsp.exec_cmd("qs ipc call shell nook ia"), "Agentes · Ver agentes y comandos en la isla")
 bind(mainMod .. " + slash",   hl.dsp.exec_cmd("qs ipc call shell command"),  "Shell · Línea de mando de la isla")
 bind(mainMod .. " + N",      hl.dsp.exec_cmd("qs ipc call shell toggle notifications"), "Shell · Notificaciones")
