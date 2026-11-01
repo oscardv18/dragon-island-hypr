@@ -13,7 +13,8 @@ trap 'rm -rf "$WORK"' EXIT
 mkdir -p "$WORK/config" "$WORK/tests/qml"
 cp -r "$REPO_DIR/config/quickshell" "$WORK/config/quickshell"
 cp -r "$REPO_DIR/sddm" "$WORK/sddm"
-cp "$REPO_DIR"/tests/qml/*_mock.qml "$WORK/tests/qml/"
+cp "$REPO_DIR"/tests/qml/*.qml "$WORK/tests/qml/"
+if [[ -d "$REPO_DIR/tests/qml/fixtures" ]]; then cp -r "$REPO_DIR/tests/qml/fixtures" "$WORK/tests/qml/"; fi
 for f in Theme Icons; do
     sed -i -e '/^import Quickshell$/d' -e 's/^Singleton {/QtObject {/' "$WORK/config/quickshell/$f.qml"
 done

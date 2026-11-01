@@ -6,6 +6,7 @@ import "../../components"
 Item {
     id: root
     property var service: null
+    signal promptRequested(var opts)
     property bool inspecting: false
     readonly property var selected: service?.selected ?? null
     readonly property var metrics: service?.metrics?.[selected?.id ?? ""] ?? ({})
@@ -109,7 +110,7 @@ Item {
                     spacing: Theme.taller.rowGap
                     UiText { text: "⚠"; color: Theme.danger; size: Theme.taller.heading }
                     UiText { Layout.fillWidth: true; text: root.issues.map(i => i.detail).join(" · "); wrapMode: Text.Wrap; maximumLineCount: 3; size: Theme.taller.body }
-                    TallerButton { label: "Preparar prompt"; enabled: false }
+                    TallerButton { label: "Preparar prompt"; enabled: !!root.service?.selected; onClicked: root.promptRequested({ template: "error-de-contenedor", blocks: ["log:" + root.service.selected.id] }) }
                 }
             }
             RowLayout {

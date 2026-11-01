@@ -9,6 +9,7 @@ Item {
     property var service: null
     property bool shown: false
     property string selectedId: ""
+    signal promptRequested(var opts)
     property real now: Date.now()
     readonly property var agents: service?.agents ?? []
     readonly property var selected: agents.find(a => a.pane === selectedId) ?? agents[0] ?? null
@@ -165,7 +166,7 @@ Item {
                     RowLayout {
                         spacing: Theme.taller.smallGap
                         TallerButton { label: "Ir al panel ↵"; primary: true; enabled: !!root.selected; onClicked: root.service?.focusAgent(root.selected) }
-                        TallerButton { label: "Preparar prompt"; enabled: false }
+                        TallerButton { label: "Preparar prompt"; enabled: !!root.selected && root.selected.state !== "blocked"; onClicked: root.promptRequested({ template: "libre", card: root.selected.card ?? "", target: "herdr:" + (root.selected.id || root.selected.pane) }) }
                         TallerButton { label: "Ver cambios"; enabled: false }
                         TallerButton { label: "Marcar como visto"; enabled: root.selected?.state === "done"; onClicked: root.service?.markSeen(root.selected) }
                     }

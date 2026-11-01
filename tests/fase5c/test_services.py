@@ -76,5 +76,44 @@ class PromptAndGate(unittest.TestCase):
         self.assertNotIn('## Comandos', sent[0]['text'])
 
 
+
+WIRING = '''import Quickshell
+import QtQuick
+import "services"
+import "modules/taller"
+ShellRoot {
+    property int phase: 0
+    function fail(msg) { console.error("FAIL", phase, msg); Qt.quit(); }
+    FloatingWindow {
+        implicitWidth: 1226; implicitHeight: 612
+        TallerPanel { id: panel; anchors.fill: parent; shown: true; agentService: Herdr; memService: Mem; dockerService: Docker; gitService: Git; promptService: Prompts; tab: Taller.tab }
+    }
+    Timer { interval: 80; running: true; repeat: true
+        onTriggered: {
+            if (phase === 0) { Taller.openComposer({ template: "libre" }); phase = 1; }
+            else if (phase === 1) {
+                if (!Prompts.composerOpen || !panel.composerOpen || ShellState.openPanel !== "taller") return fail("composer did not open");
+                ShellState.close(); phase = 2;
+            } else if (phase === 2) {
+                if (Prompts.composerOpen) return fail("closing the Taller must close the composer");
+                console.log("FASE5C_WIRING_OK"); Qt.quit();
+            }
+        }
+    }
+    Timer { interval: 15000; running: true; onTriggered: fail("timeout") }
+}
+'''
+WIRING_QMLDIR = 'singleton Taller 1.0 Taller.qml\nsingleton Docker 1.0 Docker.qml\nsingleton Git 1.0 Git.qml\n'
+
+
+@unittest.skipUnless(shutil.which('qs'), 'Quickshell required')
+class Wiring(unittest.TestCase):
+    def test_panel_with_real_services(self):
+        out, data = run_shell(WIRING, extra_qmldir=WIRING_QMLDIR)
+        self.assertIn('FASE5C_WIRING_OK', out, out)
+        for bad in BAD: self.assertNotIn(bad, out, out)
+        self.assertEqual(data['sent'], '')
+
+
 if __name__ == '__main__':
     unittest.main()

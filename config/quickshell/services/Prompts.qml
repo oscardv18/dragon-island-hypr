@@ -18,6 +18,7 @@
  *   - send() (to `target`) · copy() (clipboard) · saveTemplate(name, callback) — `dragon-mem template save`
  *   - estimate(opts, callback(result)) — one-off build for counters outside the composer (Revisión)
  *   - levelFor(tokens) · colorLevel(tokens): "ok"|"warn"|"high"
+ * IPC (target "prompt"): open(template) — opens the Taller with the composer · close() · state(): JSON
  * Signals: sent(target, card, result) — delivered; started(card, result) — «Iniciar» finished (see startCard)
  */
 pragma Singleton
@@ -167,4 +168,10 @@ Singleton {
     // «Iniciar con prompt…» (tramo 5c, punto 6) is implemented by startCard below; until then it reports itself.
     function startCard(kind): void { actionError = "Iniciar con prompt todavía no está disponible"; }
     Timer { id: debounce; interval: 150; onTriggered: root.rebuild() }
+    IpcHandler {
+        target: "prompt"
+        function open(template: string): void { Taller.openComposer({ template: template }); }
+        function close(): void { root.close(); }
+        function state(): string { return JSON.stringify({ open: root.composerOpen, template: root.template, card: root.card, tokens: root.result.tokens ?? 0, target: root.target, status: root.status }); }
+    }
 }

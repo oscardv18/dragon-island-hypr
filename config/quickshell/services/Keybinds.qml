@@ -104,7 +104,8 @@ Singleton {
             { text: "Cambiar de pestaña", combos: [["Ctrl", "Tab"], ["Ctrl", "Shift", "Tab"]] },
             { text: "Git: preparar o quitar del índice (casilla)", combos: [["Espacio"]] },
             { text: "Git: elegir tipo de commit (chip)", combos: [["Enter"]] },
-            { text: "Cerrar el Taller", combos: [["Esc"]] }
+            { text: "Abrir el compositor de prompts", combos: [["P"]] },
+            { text: "Cerrar el compositor · cerrar el Taller", combos: [["Esc"]] }
         ] },
         { name: "Capturas (dentro)", rows: [
             { text: "Región · Ventana · Pantalla", combos: [["1", "2", "3"]] },

@@ -10,6 +10,7 @@ Rectangle {
     property var memService: null
     property var dockerService: null
     property var gitService: null
+    property var promptService: null
     property string tab: "agentes"
     property bool shown: false
     property string notice: ""
@@ -17,6 +18,8 @@ Rectangle {
     signal tabRequested(string name)
     signal closeRequested()
     signal projectRequested()
+    readonly property bool composerOpen: promptService?.composerOpen ?? false
+    function openComposer(opts): void { projectsOpen = false; promptService?.open(opts ?? {}); }
     readonly property var tabNames: ["agentes", "kanban", "contenedores", "git", "revision"]
     readonly property var labels: ["Agentes", "Kanban", "Contenedores", "Git", "Revisión"]
     readonly property string projectBranch: {
@@ -32,10 +35,13 @@ Rectangle {
     border.width: Theme.taller.buttonBorder
     border.color: Theme.taller.border
     focus: shown
-    Keys.forwardTo: root.tab === "agentes" && !root.projectsOpen ? [agentsView] : []
-    Keys.onEscapePressed: { if (projectsOpen) projectsOpen = false; else closeRequested(); }
+    Keys.forwardTo: root.tab === "agentes" && !root.projectsOpen && !root.composerOpen ? [agentsView] : []
+    Keys.onEscapePressed: { if (composerOpen) { promptService.close(); forceActiveFocus(); } else if (projectsOpen) projectsOpen = false; else closeRequested(); }
     Keys.onPressed: e => {
         if (root.projectsOpen) return;
+        if (e.key === Qt.Key_P && !(e.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) && !root.composerOpen) {
+            root.openComposer({}); e.accepted = true; return;
+        }
         if (e.key === Qt.Key_Tab && (e.modifiers & Qt.ControlModifier)) {
             const i = tabNames.indexOf(tab);
             tabRequested(tabNames[(i + (e.modifiers & Qt.ShiftModifier ? 4 : 1)) % tabNames.length]);
@@ -62,7 +68,7 @@ Rectangle {
             Rectangle { Layout.fillWidth: true; implicitHeight: Theme.taller.buttonBorder; color: Theme.taller.border }
             UiText { text: root.agentService?.running ? `● HERDR ${root.agentService?.version ?? ""} · SOCKET` : "HERDR · SIN CONEXIÓN"; color: root.agentService?.running ? Theme.ok : Theme.textDim; mono: true; size: Theme.taller.caption }
             UiText { text: `DB · ${root.memService?.projects?.length ?? 0} PROYECTOS`; mono: true; size: Theme.taller.caption; color: root.memService?.status === "error" ? Theme.danger : Theme.textDim }
-            TallerButton { label: "Prompt ✎ [P]"; enabled: false }
+            TallerButton { label: "Prompt ✎ [P]"; primary: root.composerOpen; enabled: !!root.promptService; onClicked: root.composerOpen ? root.promptService.close() : root.openComposer({}) }
             UiText { text: "SUPER + T"; mono: true; size: Theme.taller.caption; color: Theme.textDim }
         }
         Row {
@@ -87,11 +93,13 @@ Rectangle {
                 visible: root.tab === "agentes"
                 service: root.agentService
                 shown: root.shown && visible
+                onPromptRequested: opts => root.openComposer(opts)
             }
             ContainersTab {
                 anchors.fill: parent
                 visible: root.tab === "contenedores"
                 service: root.dockerService
+                onPromptRequested: opts => root.openComposer(opts)
             }
             GitTab {
                 anchors.fill: parent
@@ -131,4 +139,20 @@ Rectangle {
         }
     }
 
+    Item {
+        anchors.fill: parent
+        visible: root.composerOpen
+        Rectangle { anchors.fill: parent; radius: root.radius; color: Theme.taller.scrim }
+        MouseArea { anchors.fill: parent; onClicked: { root.promptService.close(); root.forceActiveFocus(); } }
+        PromptComposer {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.margins: Theme.taller.thinGap
+            anchors.topMargin: Theme.taller.composerTop
+            width: Math.min(Theme.taller.composerWidth, parent.width - Theme.taller.padding * 2)
+            service: root.promptService
+            onCloseRequested: { root.promptService.close(); root.forceActiveFocus(); }
+        }
+    }
 }

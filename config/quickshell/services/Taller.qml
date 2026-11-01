@@ -1,5 +1,5 @@
 // Taller navigation only. tab: agentes|kanban|contenedores|git|revision; open/tab/close keep ShellState as authority.
-// The future prompt composer is deliberately not sent anything by navigation.
+// openComposer(opts) opens the Taller (keeping its tab) with the prompt composer; nothing is sent by navigation.
 pragma Singleton
 import Quickshell
 import Quickshell.Io
@@ -22,6 +22,10 @@ Singleton {
         ShellState.open("taller", "");
         Mem.refresh();
     }
+    function openComposer(opts): void {
+        if (ShellState.openPanel !== "taller") open(tab);
+        Prompts.open(opts ?? {});
+    }
     function toggle(): void {
         if (ShellState.openPanel === "taller") ShellState.close(); else open(tab);
     }
@@ -29,7 +33,7 @@ Singleton {
         target: ShellState
         function onOpenPanelChanged() {
             if (ShellState.openPanel === "taller") Mem.refresh();
-            else Herdr.clearRead();
+            else { Herdr.clearRead(); Prompts.close(); }
         }
     }
     IpcHandler {

@@ -235,7 +235,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Capturas (`SUPER + SHIFT + S`) | `1–3` Región / Ventana / Pantalla · arrastrar dibuja (los tiradores ajustan) · `Espacio` + arrastrar mueve · `Enter` copia · `Esc` cierra |
 | Portapapeles anterior (Gravedad apagado) | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
-| Taller (`SUPER + T`) | `Ctrl+Tab` / `Ctrl+Shift+Tab` cambia de pestaña · `↑ ↓` elige agente · `Tab` recorre controles · `Enter` enfoca al agente o activa un control · Git: `Espacio` sobre una casilla prepara/quita del índice; `Enter` en un chip elige el tipo de commit · `Esc` cierra |
+| Taller (`SUPER + T`) | `Ctrl+Tab` / `Ctrl+Shift+Tab` cambia de pestaña · `↑ ↓` elige agente · `Tab` recorre controles · `Enter` enfoca al agente o activa un control · Git: `Espacio` sobre una casilla prepara/quita del índice; `Enter` en un chip elige el tipo de commit · `P` abre el compositor de prompts (`Enter`/`Espacio` en un bloque lo quita o lo pone) · `Esc` cierra el compositor y, si no está abierto, el Taller |
 | Cualquier panel | `Esc` cierra |
 
 ## IPC (para scripts y atajos propios)
@@ -245,6 +245,7 @@ qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery
 qs ipc call shell open launcher      # launcher, power, clipboard, keybinds, wallpapers, store, settings
 qs ipc call herdr attention          # siguiente bloqueado o listo sin ver
 qs ipc call taller toggle            # open agentes|kanban|contenedores|git|revision · close · current
+qs ipc call prompt open <plantilla>  # abre el Taller con el compositor (plantilla opcional) · close · state
 qs ipc call shell close
 qs ipc call launcher clipboard       # el anillo del portapapeles (SUPER + V)
 qs ipc call switcher next            # Alt+Tab orbital: next, prev, confirm, cancel

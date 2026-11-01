@@ -858,6 +858,24 @@ Singleton {
         readonly property real bannerHeight: 52
         readonly property real inspectHeight: 200
         // /fase5b
+        // fase5c: compositor, Kanban y Revisión (maquetas 32-taller-compositor/kanban/revision)
+        readonly property real composerWidth: 456
+        readonly property real composerTop: 72          // the drawer starts under the header, over the tabs row
+        readonly property real chipHeight: 28
+        readonly property real chipPad: 10
+        readonly property real chipRadius: 14
+        readonly property real segmentBar: 2            // left rule of each preview segment
+        readonly property real counterSize: 22
+        readonly property int  tokenSegments: 30
+        readonly property real tokenSegmentHeight: 6
+        readonly property real tokenSegmentGap: 2
+        readonly property int  tokenScaleMax: 3000      // the bar fills at 3 000 tokens (scale 0 / 1 000 / 2 000 / 3 000+)
+        readonly property real targetListHeight: 132
+        readonly property color chipOn: root.alpha(root.cyan, 0.10)
+        readonly property color chipOnBorder: root.alpha(root.cyan, 0.45)
+        readonly property color segmentEmpty: root.alpha(root.text, 0.08)
+        readonly property color scrim: root.alpha(root.bg, 0.55)
+        // /fase5c
     }
     // /fase5a: Taller
 
