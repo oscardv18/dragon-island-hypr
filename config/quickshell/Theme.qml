@@ -879,6 +879,9 @@ Singleton {
         readonly property real thumbIcon: 26
         readonly property real thumbPx: 256            // requested thumbnail size (normal cache = 128, large = 256)
         readonly property real statusHeight: 26
+        readonly property real previewWidth: 268
+        readonly property real previewImageMax: 150
+        readonly property real previewMinWindow: 940     // narrower windows hide the preview panel
         readonly property real buttonHeight: 30
         readonly property real buttonRadius: 9
         readonly property real buttonPad: 12

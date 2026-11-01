@@ -32,9 +32,26 @@ elif cmd == 'thumb':
 elif cmd in ('open', 'terminal-here'):
     out({'ok': True})
 elif cmd == 'op':
-    for pct in (10, 60, 100):
-        out({'t': 'progress', 'pct': pct, 'file': 'a.txt', 'bps': 1000, 'index': 1, 'count': 1}); time.sleep(0.05)
-    out({'t': 'done', 'moved': []})
+    kind = args[1]
+    srcs = [a for a in args[2:] if not a.startswith('--')]
+    if '--dest' in args:
+        dest = args[args.index('--dest') + 1]; srcs = [a for a in srcs if a != dest and a not in ('ask',)]
+    if os.environ.get('FAKE_SLOW') and kind == 'copy':
+        out({'t': 'progress', 'pct': 5, 'file': 'big.iso', 'bps': 1, 'index': 1, 'count': 1})
+        time.sleep(30)
+    if kind in ('copy', 'move') and os.environ.get('FAKE_CONFLICT'):
+        out({'t': 'conflict', 'file': srcs[0], 'dest': dest + '/' + os.path.basename(srcs[0])})
+        answer = sys.stdin.readline().strip()
+        with open(os.environ['FAKE_FILES_LOG'], 'a') as log:
+            log.write(json.dumps(['answer', json.loads(answer)]) + '\n')
+    for i, pct in enumerate((10, 60, 100)):
+        out({'t': 'progress', 'pct': pct, 'file': os.path.basename(srcs[0]) if srcs else '', 'bps': 1000, 'index': 1, 'count': len(srcs)}); time.sleep(0.05)
+    moved = []
+    if kind == 'move': moved = [{'from': s, 'to': dest + '/' + os.path.basename(s)} for s in srcs]
+    if kind == 'rename': moved = [{'from': srcs[0], 'to': os.path.dirname(srcs[0]) + '/' + args[args.index('--name') + 1]}]
+    if os.environ.get('FAKE_FAIL') == kind:
+        out({'t': 'error', 'error': {'code': 'no_space', 'message': 'No queda espacio en el destino', 'hint': 'Libera espacio'}}); sys.exit(1)
+    out({'t': 'done', 'moved': moved})
 else:
     key = 'files-' + '-'.join(a for a in args if not a.startswith('-'))[:40] + '.json'
     if (FIX / key).exists(): out(fixture(key))

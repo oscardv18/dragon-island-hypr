@@ -1,0 +1,21 @@
+{
+ "ok": true,
+ "path": "/home/oddv/Proyectos/arxnet-erp/docs/foto-evento.jpg",
+ "name": "foto-evento.jpg",
+ "kind": "file",
+ "mime": "image/jpeg",
+ "size": 3565158,
+ "mode": "0644",
+ "perms": "rw-r--r--",
+ "owner": "oddv",
+ "group": "oddv",
+ "mtime": 1792777920,
+ "image": {
+  "width": 4032,
+  "height": 3024,
+  "camera": "Pixel 8",
+  "taken": 1792691520,
+  "exposure": "1/250 s · f/1.7 · ISO 64",
+  "lens": "6,9 mm"
+ }
+}

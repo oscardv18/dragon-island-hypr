@@ -64,7 +64,7 @@ class Views(unittest.TestCase):
 class Services(unittest.TestCase):
     """Real services/Files*.qml in Quickshell, talking to tests/files_ui/fake_dragon_files.py."""
 
-    def run_shell(self, body, timeout=12):
+    def run_shell(self, body, timeout=12, **extra_env):
         tmp = tempfile.mkdtemp(prefix='files-svc-')
         self.addCleanup(shutil.rmtree, tmp, True)
         home = Path(tmp)
@@ -76,7 +76,7 @@ class Services(unittest.TestCase):
         log = home / 'calls.log'
         log.touch()
         env = isolated_env(tmp)
-        env.update(FAKE_FILES_FIXTURES=str(FIX), FAKE_FILES_LOG=str(log))
+        env.update(FAKE_FILES_FIXTURES=str(FIX), FAKE_FILES_LOG=str(log), **extra_env)
         (cfg / 'shell.qml').write_text('import Quickshell\nimport QtQuick\nimport "services"\nimport "modules/files"\n'
                                        'ShellRoot {\n' + body + '\n'
                                        '    Timer { interval: %d; running: true; onTriggered: { console.error("SVC_TIMEOUT"); Qt.quit(); } }\n}\n'
@@ -130,6 +130,66 @@ class Services(unittest.TestCase):
     }''')
         self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
         self.assertIn('places', [c[0] for c in calls])
+
+    def test_queue_conflict_answer_and_undo(self):
+        r, calls = self.run_shell('''
+    property int step: 0
+    Component.onCompleted: FileOps.move(["/h/a.txt", "/h/b.txt"], "/h/Docs")
+    Connections {
+        target: FileOps
+        function onActiveChanged() {
+            if (FileOps.active?.state === "conflict") FileOps.answer(FileOps.active.id, "rename", true);
+        }
+        function onFinished(op) {
+            if (op.state !== "done") throw new Error("op failed " + JSON.stringify(op.error));
+            step++;
+            if (step === 1) {
+                if (!FileOps.canUndo || FileOps.undoLabel !== "Deshacer mover a.txt y 1 más") throw new Error("undo label " + FileOps.undoLabel);
+                FileOps.undo();
+            } else if (step === 2) { console.log("SVC_OK"); Qt.quit(); }
+        }
+    }''', FAKE_CONFLICT='1')
+        self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
+        ops = [c for c in calls if c[0] == 'op']
+        self.assertEqual(ops[0], ['op', 'move', '/h/a.txt', '/h/b.txt', '--dest', '/h/Docs', '--conflict', 'ask', '--json-progress'])
+        self.assertIn(['answer', {'answer': 'rename', 'all': True}], calls)
+        self.assertEqual(ops[1][:5], ['op', 'move', '/h/Docs/a.txt', '/h/Docs/b.txt', '--dest'], 'undo moves back')
+        self.assertEqual(ops[1][5], '/h')
+
+    def test_cancel_terminates_and_quick_ops_do_not_wait(self):
+        r, calls = self.run_shell('''
+    property int copyId: 0
+    Component.onCompleted: { copyId = FileOps.copy(["/h/big.iso"], "/media/usb") || 1; }
+    Connections {
+        target: FileOps
+        function onFinished(op) {
+            if (op.kind === "mkdir") {
+                if (FileOps.active?.kind !== "copy" || FileOps.active.state !== "running") throw new Error("copy should still run");
+                FileOps.cancel(FileOps.active.id);
+            } else if (op.kind === "copy") {
+                if (op.state !== "cancelled") throw new Error("expected cancelled, got " + op.state);
+                console.log("SVC_OK"); Qt.quit();
+            }
+        }
+        function onActiveChanged() { if (FileOps.active?.pct === 5 && !mk.done) { mk.done = true; FileOps.mkdir("/h", "nueva"); } }
+    }
+    QtObject { id: mk; property bool done: false }''', FAKE_SLOW='1')
+        self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
+        self.assertIn(['op', 'mkdir', '/h', '--name', 'nueva', '--json-progress'], calls)
+
+    def test_failed_operation_stays_visible(self):
+        r, _ = self.run_shell('''
+    Component.onCompleted: FileOps.copy(["/h/a"], "/full")
+    Connections {
+        target: FileOps
+        function onFinished(op) {
+            if (op.state !== "error" || FileOps.lastError?.error?.code !== "no_space") throw new Error("error lost");
+            FileOps.dismissError();
+            if (FileOps.lastError !== null || FileOps.queue.length !== 0) throw new Error("dismiss");
+            console.log("SVC_OK"); Qt.quit();
+        }
+    }''', FAKE_FAIL='copy')
+        self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
 
     def test_tool_errors_reach_the_callback(self):
         r, _ = self.run_shell('''

@@ -35,7 +35,7 @@ Process {
     function finish(): void {
         if (!ended || !collected) return;
         let r = result;
-        if (!r || (stream && r.ok === undefined && r.t !== "error")) {
+        if (!r || (stream && r.ok === undefined && r.t !== "error" && r.t !== "done")) {
             if (exitCode === 127) r = { ok: false, error: { code: "missing_tool", message: "dragon-files no está instalado", hint: "Ejecuta ./update.sh" } };
             else if (stream && exitCode === 0) r = { ok: true };
             else if (exitCode === 143 || exitCode === -1 || exitCode === 15) r = { ok: false, error: { code: "cancelled", message: "Cancelado" } };

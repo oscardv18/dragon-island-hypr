@@ -46,6 +46,14 @@ Window {
             else if (path === win.home + "/privado") cb({ ok: false, error: { code: "permission_denied", message: "No tienes permiso para abrir «privado»", hint: "Pide acceso al propietario o ábrela como administrador" } });
             else cb({ ok: true, path: path, entries: [], free: 499289948160, total: 1000204886016, fs: "btrfs" });
         }
+        function properties(path, cb) {
+            if (path.endsWith("foto-evento.jpg")) cb(win.fixture("files-props-foto.json"));
+            else if (path === win.docs) cb(win.fixture("files-props-docs.json"));
+            else cb({ ok: true, path: path, perms: "rw-r--r--", owner: "oddv" });
+        }
+        function openWithList(path, cb) { cb({ ok: true, apps: [{ id: "org.gnome.Loupe.desktop", name: "Imágenes", default: true }, { id: "gimp.desktop", name: "GIMP" }] }); }
+        function openWith(path, app) { opened = opened.concat([app + ":" + path]); }
+        function terminalHere(path) { opened = opened.concat(["term:" + path]); }
         function thumb(path, mtime, cb) { cb(path.endsWith(".jpg") || path.endsWith(".svg") ? Qt.resolvedUrl("../../sddm/dragon-core/background.jpg").toString().replace("file://", "") : null); }
         function open(path) { opened = opened.concat([path]); }
         function acquireWatch(p) { const w = Object.assign({}, watched); w[p] = (w[p] ?? 0) + 1; watched = w; }
@@ -55,6 +63,39 @@ Window {
         function sendToAgent(p) {}
     }
 
+    // ---- simulated FileOps: records calls, shows the fixture's progress / conflict events ----
+    QtObject {
+        id: ops
+        property var queue: []
+        property var calls: []
+        property var lastError: null
+        property bool canUndo: false
+        property string undoLabel: ""
+        readonly property var active: queue[0] ?? null
+        readonly property int pending: queue.length
+        function _rec(kind, a, b) { calls = calls.concat([[kind, a, b]]); }
+        function copy(p, d) { _rec("copy", p, d); }
+        function move(p, d) { _rec("move", p, d); }
+        function trash(p) { _rec("trash", p); }
+        function remove(p) { _rec("delete", p); }
+        function rename(p, n) { _rec("rename", p, n); }
+        function mkdir(d, n) { _rec("mkdir", d, n); }
+        function answer(id, c, all) { _rec("answer", c, all); queue = queue.map(o => Object.assign({}, o, { state: "running", conflict: null })); }
+        function cancel(id) { _rec("cancel", id); queue = []; }
+        function dismissError() { lastError = null; }
+        function undo() { _rec("undo"); }
+        function feed(ev) {
+            const base = queue[0] ?? { id: 1, kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", count: 5, state: "running" };
+            if (ev.t === "progress") queue = [Object.assign({}, base, { pct: ev.pct, file: ev.file, index: ev.index, count: ev.count, state: "running" })];
+            if (ev.t === "conflict") queue = [Object.assign({}, base, { state: "conflict", conflict: { file: ev.file, dest: ev.dest } })];
+        }
+    }
+    function opEvents() {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", Qt.resolvedUrl("fixtures/files-op-progress.jsonl"), false); xhr.send();
+        return xhr.responseText.trim().split("\n").map(l => JSON.parse(l));
+    }
+
     FilesPanel {
         id: panel
         x: 71
@@ -62,6 +103,7 @@ Window {
         width: Theme.files.width
         height: Theme.files.height
         files: files
+        ops: ops
         initialPath: win.docs
         now: win.fixedNow
     }
@@ -101,6 +143,7 @@ Window {
         eq(F.opLabel({ kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", index: 2, count: 5 }, devs), "COPIANDO A KINGSTON · 2/5", "opLabel");
     }
 
+    function prompt() { for (const c of panel.children) if (c.purpose !== undefined) return c; throw new Error("no prompt"); }
     function shot(name) { panel.grabToImage(r => r.saveToFile(win.outDir + "/" + name)); }
 
     Timer {
@@ -123,6 +166,7 @@ Window {
                 panel.state.newTab(win.home + "/Descargas");
                 panel.state.setCurrent(0);
                 check(!files.watched[win.home + "/Descargas"], "background tab does not watch");
+                ops.feed(win.opEvents()[0]);
             }
             if (step === 1) shot("files-lista.png");
             if (step === 2) panel.state.viewMode = "cuadricula";
@@ -142,7 +186,41 @@ Window {
                 t.go(win.home + "/privado");
             }
             if (step === 5) { eq(t.status, "error", "permission error state"); shot("files-error.png"); }
-            if (step === 6) { t.back(); panel.state.closeTab(1); check(!files.watched[win.home + "/privado"], "watch released"); Qt.quit(); }
+            if (step === 6) {
+                t.back(); panel.state.closeTab(1); check(!files.watched[win.home + "/privado"], "watch released");
+                t.selectNames(["foto-evento.jpg"]);
+            }
+            if (step === 7) shot("files-imagen.png");
+            if (step === 8) {
+                // drop rules: same device → move, Ctrl → copy, onto trash → trash, onto its own folder → nothing
+                ops.calls = [];
+                panel.dropInto(win.home + "/Documentos", [win.docs + "/dump.sql"], 0);
+                panel.dropInto(win.home + "/Documentos", [win.docs + "/dump.sql"], Qt.ControlModifier);
+                panel.dropInto("trash:///", [win.docs + "/dump.sql"], 0);
+                panel.dropInto(win.docs, [win.docs + "/dump.sql"], 0);
+                panel.dropInto(win.docs + "/capturas", [win.docs + "/capturas"], 0);
+                eq(JSON.stringify(ops.calls.map(c => c[0])), JSON.stringify(["move", "copy", "trash"]), "drop rules");
+                // keyboard: copy + paste, rename prompt
+                t.selectNames(["dump.sql"]);
+                panel.runAction("copy", t.focusEntry);
+                eq(files.clipboard.paths[0], win.docs + "/dump.sql", "Ctrl+C");
+                panel.pasteInto(win.home);
+                eq(ops.calls[ops.calls.length - 1][0], "copy", "Ctrl+V copies");
+                panel.contextMenuFor(t.focusEntry, 420, 300);
+            }
+            if (step === 9) shot("files-menu.png");
+            if (step === 10) { panel.runAction("rename", t.focusEntry); }
+            if (step === 11) shot("files-renombrar.png");
+            if (step === 12) {
+                prompt().reply("cancel");
+                ops.feed(win.opEvents()[1]);
+            }
+            if (step === 13) { check(prompt().visible, "conflict asks by itself"); shot("files-conflicto.png"); }
+            if (step === 14) {
+                prompt().checked = true; prompt().reply("rename");
+                eq(JSON.stringify(ops.calls[ops.calls.length - 1]), JSON.stringify(["answer", "rename", true]), "conflict answer");
+                Qt.quit();
+            }
             step++;
         }
     }

@@ -26,6 +26,7 @@ FloatingWindow {
         id: panel
         anchors.fill: parent
         files: Files
+        ops: FileOps
         initialPath: win.modelData.path
         active: win.visible
         drawFrame: WindowFrame.mode === "nada"

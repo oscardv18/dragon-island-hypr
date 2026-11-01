@@ -1,0 +1,16 @@
+{
+ "ok": true,
+ "path": "/home/oddv/Proyectos/arxnet-erp/docs",
+ "name": "docs",
+ "kind": "dir",
+ "mime": "inode/directory",
+ "size": 4096,
+ "mode": "0755",
+ "perms": "rwxr-xr-x",
+ "owner": "oddv",
+ "group": "oddv",
+ "mtime": 1793465520,
+ "dir_size": 512000000,
+ "dir_count": 214,
+ "truncated": false
+}

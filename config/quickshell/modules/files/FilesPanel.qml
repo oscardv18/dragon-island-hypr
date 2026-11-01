@@ -42,6 +42,128 @@ Rectangle {
         if (sel.length === 1) activate(sel[0]);
         else for (const e of sel) if (e.kind !== "dir") files?.open(tab.pathOf(e));
     }
+    // ---- operations (d2): the view only asks; FileOps runs ----
+    function pasteInto(dir): void {
+        const cb = files?.clipboard;
+        if (!ops || !cb?.paths?.length || !dir) return;
+        if (cb.mode === "cut") { ops.move(cb.paths, dir); files.setClipboard("", []); }
+        else ops.copy(cb.paths, dir);
+    }
+    // Drop rule: Ctrl copies, Shift moves; otherwise move on the same device and copy across devices (like most
+    // file managers). Dropping on the trash trashes. Dropping where the files already are does nothing.
+    function dropInto(dir, paths, mods): void {
+        if (!ops || !paths?.length || !dir) return;
+        if (dir.indexOf("trash:") === 0) { ops.trash(paths); return; }
+        const moving = paths.filter(p => F.parent(p) !== dir && p !== dir && dir.indexOf(p + "/") !== 0);
+        if (!moving.length) return;
+        if (moving.length === 1 && archives && F.isArchive({ name: F.basename(moving[0]), kind: "file" }) && !(mods & (Qt.ControlModifier | Qt.ShiftModifier))) {
+            dropMenu.dir = dir; dropMenu.paths = moving;
+            menu.popup(lastPointer.x, lastPointer.y, [
+                { label: "Mover aquí", action: "drop:move", icon: Icons.arrowRight },
+                { label: "Copiar aquí", action: "drop:copy", icon: Icons.copy },
+                { label: "Extraer aquí", action: "drop:extract", icon: Icons.fileArchive }]);
+            return;
+        }
+        const copy = (mods & Qt.ControlModifier) || (!(mods & Qt.ShiftModifier) && !F.sameDevice(devices?.devices ?? [], moving[0], dir));
+        if (copy) ops.copy(moving, dir); else ops.move(moving, dir);
+    }
+    QtObject { id: dropMenu; property string dir: ""; property var paths: [] }
+    property point lastPointer: Qt.point(width / 2, height / 2)
+    function askRename(): void {
+        const e = tab?.focusEntry;
+        if (!e) return;
+        prompt.purpose = "rename"; prompt.target = tab.pathOf(e);
+        prompt.ask({ title: "Renombrar", value: e.name, selectStem: e.kind !== "dir", buttons: [{ label: "Cancelar", action: "cancel" }, { label: "Renombrar", action: "ok", primary: true }] });
+    }
+    function askMkdir(): void {
+        if (!tab || tab.special) return;
+        prompt.purpose = "mkdir"; prompt.target = tab.path;
+        prompt.ask({ title: "Nueva carpeta", value: "", placeholder: "Nombre de la carpeta", buttons: [{ label: "Cancelar", action: "cancel" }, { label: "Crear", action: "ok", primary: true }] });
+    }
+    function askDelete(): void {
+        const paths = tab?.selectedPaths() ?? [];
+        if (!paths.length) return;
+        prompt.purpose = "delete"; prompt.targets = paths;
+        prompt.ask({ title: "Eliminar para siempre", input: false, danger: true,
+                     message: (paths.length === 1 ? "«" + F.basename(paths[0]) + "»" : paths.length + " elementos") + " se borrarán sin pasar por la papelera. No se puede deshacer.",
+                     buttons: [{ label: "Cancelar", action: "cancel" }, { label: "Eliminar", action: "ok", danger: true, primary: true }] });
+    }
+    function askConflict(op): void {
+        if (!op?.conflict) return;
+        prompt.purpose = "conflict"; prompt.opId = op.id;
+        prompt.ask({ title: "Ya existe un archivo", input: false, check: "Hacer lo mismo con los demás",
+                     message: "«" + F.basename(op.conflict.file) + "» ya está en " + F.displayPath(F.parent(op.conflict.dest || op.dest), files?.home ?? "") + ".",
+                     buttons: [{ label: "Omitir", action: "skip" }, { label: "Renombrar", action: "rename" }, { label: "Reemplazar", action: "overwrite", primary: true }] });
+    }
+    function trashSelection(): void { const p = tab?.selectedPaths() ?? []; if (p.length && ops) ops.trash(p); }
+    function contextMenuFor(entry, x, y): void {
+        lastPointer = Qt.point(x, y);
+        const sel = tab?.selectedPaths() ?? [];
+        const one = entry && sel.length <= 1;
+        const isArch = one && F.isArchive(entry);
+        const items = [];
+        if (entry) {
+            items.push({ label: "Abrir", action: "open", hint: "↵", icon: Icons.folderOutline });
+            if (one && entry.kind !== "dir") items.push({ label: "Abrir con…", action: "openWith", icon: Icons.apps });
+            if (isArch && archives) { items.push({ separator: true }); items.push({ label: "Extraer aquí", action: "extractHere", icon: Icons.fileArchive }); items.push({ label: "Extraer en…", action: "extractTo" }); }
+            if (archives) items.push({ label: "Comprimir…", action: "compress", icon: Icons.fileArchive });
+            items.push({ separator: true });
+            items.push({ label: "Copiar", action: "copy", hint: "Ctrl+C", icon: Icons.copy });
+            items.push({ label: "Cortar", action: "cut", hint: "Ctrl+X" });
+            items.push({ label: "Renombrar…", action: "rename", hint: "F2", icon: Icons.pencil, enabled: one });
+            items.push({ separator: true });
+            items.push({ label: "Mover a la papelera", action: "trash", hint: "Supr", icon: Icons.trash });
+            items.push({ label: "Eliminar…", action: "delete", hint: "Mayús+Supr", danger: true });
+            items.push({ separator: true });
+            if (one && entry.kind === "dir") items.push({ label: "Compartir en la red…", action: "share", icon: Icons.share, enabled: !!shareEnabled });
+            items.push({ label: "Enviar al agente", action: "agent", icon: Icons.robot, enabled: files?.composerAvailable ?? false });
+        } else {
+            items.push({ label: "Nueva carpeta…", action: "mkdir", hint: "Ctrl+Mayús+N", icon: Icons.plus, enabled: !tab?.special });
+            items.push({ label: "Pegar", action: "paste", hint: "Ctrl+V", enabled: (files?.clipboard?.paths?.length ?? 0) > 0 });
+            if (ops?.canUndo) items.push({ label: ops.undoLabel, action: "undo", hint: "Ctrl+Z" });
+            items.push({ separator: true });
+            items.push({ label: "Terminal aquí", action: "terminal", icon: Icons.terminal, enabled: !tab?.special });
+            items.push({ label: "Compartir esta carpeta…", action: "shareHere", icon: Icons.share, enabled: !!shareEnabled && !tab?.special });
+            items.push({ label: state.showHidden ? "Ocultar archivos ocultos" : "Mostrar archivos ocultos", action: "hidden", hint: "Ctrl+H" });
+        }
+        menu.popup(x, y, items);
+    }
+    property bool shareEnabled: false
+    function openWithMenu(entry): void {
+        const p = tab.pathOf(entry);
+        files?.openWithList(p, r => {
+            const apps = r.ok ? (r.apps ?? []) : [];
+            openWithTarget = p;
+            menu.popup(lastPointer.x, lastPointer.y, apps.length ? apps.map(a => ({ label: a.name, action: "with:" + a.id, hint: a.default ? "predet." : "" }))
+                                                               : [{ label: "No hay aplicaciones para este tipo", action: "", enabled: false }]);
+        });
+    }
+    property string openWithTarget: ""
+    function runAction(action, entry): void {
+        const paths = tab?.selectedPaths() ?? [];
+        switch (action) {
+        case "open": if (entry) { if (paths.length > 1) activateSelection(); else activate(entry); } break;
+        case "openWith": if (entry) openWithMenu(entry); break;
+        case "copy": files?.setClipboard("copy", paths); break;
+        case "cut": files?.setClipboard("cut", paths); break;
+        case "paste": pasteInto(tab?.path); break;
+        case "rename": askRename(); break;
+        case "mkdir": askMkdir(); break;
+        case "trash": trashSelection(); break;
+        case "delete": askDelete(); break;
+        case "undo": ops?.undo(); break;
+        case "terminal": files?.terminalHere(entry && entry.kind === "dir" ? tab.pathOf(entry) : tab.path); break;
+        case "agent": files?.sendToAgent(paths.length ? paths : [tab.path]); break;
+        case "hidden": state.showHidden = !state.showHidden; break;
+        case "drop:move": ops?.move(dropMenu.paths, dropMenu.dir); break;
+        case "drop:copy": ops?.copy(dropMenu.paths, dropMenu.dir); break;
+        default:
+            if (action.indexOf("with:") === 0) files?.openWith(openWithTarget, action.slice(5));
+            else extraAction(action, entry, paths);
+        }
+    }
+    // later points (archives, sharing) extend this
+    function extraAction(action, entry, paths): void {}
     function editPath(): void { editingPath = true; Qt.callLater(() => pathInput.focusInput()); }
     function focusSearch(): void { searchInput.focusInput(); }
     function focusContent(): void { root.forceActiveFocus(); }
@@ -65,6 +187,15 @@ Rectangle {
         else if (e.key === Qt.Key_Slash || (ctrl && e.key === Qt.Key_F)) focusSearch();
         else if (ctrl && e.key === Qt.Key_H) state.showHidden = !state.showHidden;
         else if (ctrl && e.key === Qt.Key_A) tab?.selectAll();
+        else if (ctrl && shift && e.key === Qt.Key_N) askMkdir();
+        else if (ctrl && e.key === Qt.Key_C) runAction("copy", tab?.focusEntry);
+        else if (ctrl && e.key === Qt.Key_X) runAction("cut", tab?.focusEntry);
+        else if (ctrl && e.key === Qt.Key_V) pasteInto(tab?.path);
+        else if (ctrl && e.key === Qt.Key_Z) ops?.undo();
+        else if (e.key === Qt.Key_F2) askRename();
+        else if (e.key === Qt.Key_Delete && shift) askDelete();
+        else if (e.key === Qt.Key_Delete) trashSelection();
+        else if (e.key === Qt.Key_Menu || (shift && e.key === Qt.Key_F10)) contextMenuFor(tab?.focusEntry, content.x + main.x + content.width / 3, content.y + main.y + content.height / 3);
         else if (ctrl && e.key === Qt.Key_T) state.newTab(tab?.path);
         else if (ctrl && e.key === Qt.Key_W) { if (state.tabs.length > 1) state.closeTab(state.currentIndex); else closeRequested(); }
         else if (ctrl && (e.key === Qt.Key_Tab || e.key === Qt.Key_Backtab)) state.cycleTab(shift || e.key === Qt.Key_Backtab ? -1 : 1);
@@ -244,6 +375,8 @@ Rectangle {
                     view: root.state
                     now: root.now
                     onActivated: e => root.activate(e)
+                    onContextMenu: (e, x, y) => { const p = mapToItem(root, x, y); root.contextMenuFor(e, p.x, p.y); }
+                    onDropOn: (path, paths, mods) => root.dropInto(path, paths, mods)
                 }
                 FileGrid {
                     id: grid
@@ -252,6 +385,8 @@ Rectangle {
                     tab: root.tab
                     files: root.files
                     onActivated: e => root.activate(e)
+                    onContextMenu: (e, x, y) => { const p = mapToItem(root, x, y); root.contextMenuFor(e, p.x, p.y); }
+                    onDropOn: (path, paths, mods) => root.dropInto(path, paths, mods)
                 }
                 Column {
                     anchors.centerIn: parent
@@ -281,6 +416,24 @@ Rectangle {
                         text: root.tab?.status === "error" ? (root.tab.errorHint || "") : ""
                     }
                 }
+                // drop on the empty part of the folder = into the folder itself
+                DropArea {
+                    anchors.fill: parent
+                    z: -1
+                    keys: ["dragon-files"]
+                    onDropped: d => { root.lastPointer = mapToItem(root, d.x, d.y); root.dropInto(root.tab?.path, d.source?.dragPaths ?? [], d.source?.dragModifiers ?? 0); d.accept(); }
+                }
+            }
+            Preview {
+                id: preview
+                Layout.preferredWidth: Theme.files.previewWidth
+                Layout.fillHeight: true
+                visible: !(root.tab?.isNet ?? false) && root.width >= Theme.files.previewMinWindow
+                tab: root.tab
+                files: root.files
+                archives: root.archives
+                now: root.now
+                onAction: (name, entry) => root.runAction(name, entry)
             }
         }
 
@@ -296,6 +449,11 @@ Rectangle {
                 color: Theme.textSoft
                 text: root.tab ? F.selectionSummary(root.tab.selection, root.tab.shown.length) : ""
             }
+            OpsBar {
+                ops: root.ops
+                devices: root.devices
+                onConflictRequested: op => root.askConflict(op)
+            }
             UiText {
                 visible: (root.tab?.total ?? -1) > 0
                 mono: true
@@ -303,6 +461,41 @@ Rectangle {
                 color: Theme.textSoft
                 text: visible ? (F.formatSize(root.tab.free) + " libres de " + F.formatSize(root.tab.total)).toUpperCase() : ""
             }
+        }
+    }
+
+    FilesMenu {
+        id: menu
+        z: 20
+        onPicked: a => root.runAction(a, root.tab?.focusEntry)
+        onVisibleChanged: if (!visible) root.focusContent()
+    }
+    FilesPrompt {
+        id: prompt
+        z: 30
+        onVisibleChanged: if (visible) menu.close()
+        property string purpose: ""
+        property string target: ""
+        property var targets: []
+        property int opId: -1
+        onAnswered: (action, value, checked) => {
+            const name = value.trim();
+            if (purpose === "rename" && action === "ok" && name && name !== F.basename(target) && name.indexOf("/") < 0) root.ops?.rename(target, name);
+            else if (purpose === "mkdir" && action === "ok" && name && name.indexOf("/") < 0) root.ops?.mkdir(target, name);
+            else if (purpose === "delete" && action === "ok") root.ops?.remove(targets);
+            else if (purpose === "conflict" && action !== "cancel") root.ops?.answer(opId, action, checked);
+            root.focusContent();
+        }
+    }
+    // a conflict question pops up by itself for the window that is in front
+    Connections {
+        target: root.ops
+        ignoreUnknownSignals: true
+        function onActiveChanged() { if (root.active && root.ops.active?.state === "conflict" && !prompt.visible) root.askConflict(root.ops.active); }
+        // reload at once the folders an operation touched (the watcher may be polling once a second)
+        function onFinished(op) {
+            const dirs = [op.dest, F.parent(op.dest ?? "")].concat((op.sources ?? []).map(p => F.parent(p)));
+            for (const t of root.state.tabs) if (dirs.indexOf(t.path) >= 0) t.reload();
         }
     }
 }
