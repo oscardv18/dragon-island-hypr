@@ -9,6 +9,7 @@ Rectangle {
     property var agentService: null
     property var memService: null
     property var dockerService: null
+    property var gitService: null
     property string tab: "agentes"
     property bool shown: false
     property string notice: ""
@@ -71,7 +72,7 @@ Rectangle {
                 delegate: TallerButton {
                     required property string modelData
                     required property int index
-                    label: root.labels[index] + (index === 0 && (root.agentService?.counts?.blocked ?? 0) > 0 ? "  " + root.agentService.counts.blocked : index === 2 && (root.dockerService?.errorCount ?? 0) > 0 ? "  " + root.dockerService.errorCount : "")
+                    label: root.labels[index] + (index === 0 && (root.agentService?.counts?.blocked ?? 0) > 0 ? "  " + root.agentService.counts.blocked : index === 2 && (root.dockerService?.errorCount ?? 0) > 0 ? "  " + root.dockerService.errorCount : index === 3 && (root.gitService?.changeCount ?? 0) > 0 ? "  " + root.gitService.changeCount : "")
                     primary: root.tab === modelData
                     onClicked: root.tabRequested(modelData)
                 }
@@ -92,8 +93,13 @@ Rectangle {
                 visible: root.tab === "contenedores"
                 service: root.dockerService
             }
+            GitTab {
+                anchors.fill: parent
+                visible: root.tab === "git"
+                service: root.gitService
+            }
             UiText {
-                visible: root.tab !== "agentes" && root.tab !== "contenedores"
+                visible: root.tab !== "agentes" && root.tab !== "contenedores" && root.tab !== "git"
                 anchors.centerIn: parent
                 width: parent.width - Theme.taller.padding * 2
                 horizontalAlignment: Text.AlignHCenter

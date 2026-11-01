@@ -29,3 +29,11 @@ class Views(unittest.TestCase):
             for bad in ('Error:','ReferenceError','TypeError','Cannot assign','Unable to assign'): self.assertNotIn(bad,r.stderr,r.stderr)
             for name in ('taller-contenedores.png','taller-docker-sin-permiso.png'):
                 self.assertEqual(struct.unpack('>II',(Path(tmp)/name).read_bytes()[16:24]),(1226,612))
+
+    def test_git_diff_secret_failure_and_no_project(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = render('taller_git_mock.qml',tmp)
+            self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+            for bad in ('Error:','ReferenceError','TypeError','Cannot assign','Unable to assign'): self.assertNotIn(bad,r.stderr,r.stderr)
+            for name in ('taller-git.png','taller-git-secretos.png','taller-git-vacio.png'):
+                self.assertEqual(struct.unpack('>II',(Path(tmp)/name).read_bytes()[16:24]),(1226,612))

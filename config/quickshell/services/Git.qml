@@ -28,6 +28,7 @@ Singleton {
     property bool _refreshing: false
     property bool _pending: false
     readonly property int changeCount: (snapshot.staged?.length ?? 0) + (snapshot.changes?.length ?? 0) + (snapshot.untracked?.length ?? 0)
+    signal committed()
     Component { id: request; ToolRequest {} }
     function argv(args, path): var { return ["sh", "-c", 'if [ -x "$0" ]; then exec "$0" "$@"; else exit 127; fi', tool].concat(args).concat(["--repo",path || repo,"--json"]); }
     function call(args, callback): void {
@@ -72,7 +73,7 @@ Singleton {
     }
     function mutate(args, callback): void {
         if (busy || !active || !repo) return;
-        busy = true; actionError = "";
+        busy = true; actionError = ""; secretsChecked = false;
         call(args, r => {
             busy = false;
             actionError = !r.ok ? (r.error?.message ?? "Error de Git") + (r.error?.files ? " · " + r.error.files.map(f => `${f.path}:${f.line} (${f.type})`).join(", ") : "") : (r.warnings ?? []).join(" · ");
@@ -81,7 +82,7 @@ Singleton {
         });
     }
     function stage(path, value): void { mutate([value ? "stage" : "unstage", "--paths", path]); }
-    function commit(message, push): void { if (message.trim()) mutate(["commit","-m",message].concat(push ? ["--push"] : [])); }
+    function commit(message, push): void { if (message.trim()) mutate(["commit","-m",message].concat(push ? ["--push"] : []), r => { if (r.ok || r.committed) committed(); }); }
     function pull(): void { mutate(["pull","--ff-only"]); }
     function push(): void { mutate(["push"]); }
     function checkout(branch): void { mutate(["checkout",branch]); }

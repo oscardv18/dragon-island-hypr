@@ -20,10 +20,14 @@ class ServiceTests(unittest.TestCase):
             (cfg/'services/qmldir').write_text('ToolRequest 1.0 ToolRequest.qml\nsingleton Docker 1.0 Docker.qml\nsingleton Git 1.0 Git.qml\n')
             bindir = home/'.local/bin'; bindir.mkdir(parents=True)
             for name in ('dragon-docker', 'dragon-git'): (bindir/name).symlink_to(ROOT/'bin'/name)
+            commands = home/'commands'; commands.mkdir()
+            for name in ('sh','bash','readlink','dirname','python3','git'):
+                (commands/name).symlink_to(shutil.which(name))
             repo = home/'repo'; repo.mkdir()
             env = dict(os.environ, HOME=tmp, XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORM='offscreen',
                        DRAGON_DOCKER_SOCKET=str(home/'d.sock'), GIT_AUTHOR_NAME='Test', GIT_AUTHOR_EMAIL='test@example.org',
                        GIT_COMMITTER_NAME='Test', GIT_COMMITTER_EMAIL='test@example.org')
+            env['PATH'] = str(commands)
             for key in ('CONFIG','DATA','CACHE','STATE'): env[f'XDG_{key}_HOME'] = str(home/key.lower())
             subprocess.run(['git','init','-b','main',str(repo)],env=env,capture_output=True,check=True)
             (repo/'.env').write_text('FOO=only-local-test\n')
@@ -54,6 +58,8 @@ ShellRoot {
             } else if (phase === 4 && !Git.busy && Git.snapshot.staged?.length === 1) {
                 Git.commit("feat(test): safe",false); phase = 5;
             } else if (phase === 5 && !Git.busy && Git.history.length === 1) {
+                Git.lazygit(); Docker.shell(); phase = 7;
+            } else if (phase === 7 && Git.actionError.includes("lazygit no disponible") && Docker.actionError.includes("Shell requiere")) {
                 Docker.activate(false); Git.activate(false,path); phase = 6; tick = 0;
                 console.log("SERVICES_INACTIVE");
             } else if (phase === 6 && tick === 15) { console.log("FASE5B_SERVICES_OK"); Qt.quit(); }
@@ -63,7 +69,7 @@ ShellRoot {
 }
 ''')
             try:
-                p = subprocess.Popen(['qs','-p',str(cfg)],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
+                p = subprocess.Popen([shutil.which('qs'),'-p',str(cfg)],env=env,stdout=subprocess.PIPE,stderr=subprocess.STDOUT,text=True)
                 output = ''
                 for line in p.stdout:
                     output += line

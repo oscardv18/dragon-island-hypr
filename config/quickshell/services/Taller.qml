@@ -12,6 +12,10 @@ Singleton {
     property string tab: "agentes"
     readonly property bool dockerActive: ShellState.openPanel === "taller" && tab === "contenedores"
     onDockerActiveChanged: Docker.activate(dockerActive)
+    readonly property bool gitActive: ShellState.openPanel === "taller" && tab === "git"
+    readonly property string gitRepo: Mem.project?.path ?? ""
+    onGitActiveChanged: Git.activate(gitActive,gitRepo)
+    onGitRepoChanged: Git.activate(gitActive,gitRepo)
     function init(): void {}
     function open(name): void {
         tab = tabs.indexOf(name) >= 0 ? name : "agentes";
