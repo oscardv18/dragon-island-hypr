@@ -226,6 +226,19 @@ Rectangle {
             TallerButton { label: "Copiar"; enabled: root.tokens > 0 && !root.service?.sending; onClicked: root.service?.copy() }
             TallerButton { label: "Guardar plantilla"; enabled: (root.result.blocks ?? []).length > 0; onClicked: { root.saving = !root.saving; if (root.saving) Qt.callLater(() => nameInput.focusInput()); } }
         }
+        RowLayout {
+            Layout.fillWidth: true
+            visible: (root.service?.startWarning ?? "").length > 0
+            spacing: Theme.taller.smallGap
+            UiText { Layout.fillWidth: true; text: root.service?.startWarning ?? ""; color: Theme.warn; size: Theme.taller.body; wrapMode: Text.Wrap; maximumLineCount: 2 }
+            TallerButton { label: "Iniciar igualmente"; primary: true; tone: Theme.warn; onClicked: root.service?.startCard(root.service.startKind, true) }
+        }
+        UiText {
+            Layout.fillWidth: true
+            visible: (root.service?.startStep ?? "").length > 0
+            text: root.service?.startStep ?? ""
+            color: Theme.cyan; size: Theme.taller.body
+        }
         UiText {
             Layout.fillWidth: true
             visible: (root.service?.actionError ?? "").length > 0

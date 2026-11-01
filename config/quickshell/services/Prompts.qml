@@ -11,11 +11,12 @@
  *   - segments: [{id, label, tokens, text}] — the preview split by the `## Etiqueta` headers of result.text
  *   - redactions: int — secrets struck out in the enabled blocks · building, sending: bool
  *   - target: "herdr:<id>" | "clipboard" | "start:claude" | "start:codex" · targets: [{id, label, enabled}]
+ *   - startWarning / startKind / startStep — «Iniciar»: WIP warning waiting for confirmation, chosen agent, step on screen
  *   - warnAt / highAt: token thresholds (green < warnAt ≤ amber < highAt ≤ red); level: ligero|medio|pesado
  * Functions:
  *   - open(opts {template, card, blocks, target, mode, selection}) · close() · refreshTemplates()
  *   - setTemplate(id) · toggleBlock(id) · addBlock("tipo:arg") · removeBlock(index) · rebuild()
- *   - send() (to `target`) · copy() (clipboard) · saveTemplate(name, callback) — `dragon-mem template save`
+ *   - send() (to `target`; "start:<kind>" runs startCard) · startCard(kind, confirmed) · copy() (clipboard) · saveTemplate(name, callback) — `dragon-mem template save`
  *   - estimate(opts, callback(result)) — one-off build for counters outside the composer (Revisión)
  *   - levelFor(tokens) · colorLevel(tokens): "ok"|"warn"|"high"
  * IPC (target "prompt"): open(template) — opens the Taller with the composer · close() · state(): JSON
@@ -46,6 +47,9 @@ Singleton {
     property bool building: false
     property bool sending: false
     property string target: "clipboard"
+    property string startWarning: ""
+    property string startKind: "claude"
+    property string startStep: ""
     property int warnAt: 1500
     property int highAt: 3000
     property int _generation: 0
@@ -93,7 +97,7 @@ Singleton {
         extraBlocks = (o.blocks ?? []).slice();
         selectionText = o.selection ?? "";
         off = [];
-        actionError = "";
+        actionError = ""; startWarning = ""; startStep = "";
         result = { text: "", tokens: 0, blocks: [], warnings: [] };
         const agent = card ? (Herdr.agents ?? []).find(a => a.card === card && a.state !== "blocked") : null;
         target = o.target || (mode === "start" ? "start:claude" : agent ? "herdr:" + (agent.id || agent.pane) : "clipboard");
@@ -165,8 +169,52 @@ Singleton {
             if (callback) callback(r);
         });
     }
-    // «Iniciar con prompt…» (tramo 5c, punto 6) is implemented by startCard below; until then it reports itself.
-    function startCard(kind): void { actionError = "Iniciar con prompt todavía no está disponible"; }
+    // «Iniciar con prompt…»: only after «Enviar e iniciar». worktree add → herdr start → send (records prompt_run) →
+    // card set branch/worktree/agent_ref → move to «En curso». A full WIP asks first (startWarning + startCard(kind, true)).
+    function branchFor(c): string {
+        const words = (c.title ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
+        return `${c.kind || "feat"}/${c.key.toLowerCase()}${words ? "-" + words.slice(0, 32).replace(/-$/, "") : ""}`;
+    }
+    function worktreeFor(p, c): string { return `${p.path}-${c.key.toLowerCase().replace(/-/g, "")}`; }
+    function _tool(name, args, callback, input): void {
+        const component = input === undefined ? request : stdinRequest;
+        const p = component.createObject(root, { callback: callback, input: input ?? "" });
+        p.exec(["sh", "-c", 'if [ -x "$0" ]; then exec "$0" "$@"; else exit 127; fi', `${home}/.local/bin/${name}`].concat(args).concat(["--json"]));
+    }
+    function _stop(step, r): void {
+        sending = false; startStep = "";
+        actionError = `${step}: ` + (r.error?.code === "missing_tool" ? "herramienta no instalada (ejecuta ./update.sh)" : (r.error?.message ?? "error"));
+    }
+    function startCard(kind, confirmed): void {
+        const c = Mem.cardByKey(card), p = Mem.project;
+        if (!c || !p) { actionError = "Selecciona una tarjeta del proyecto"; return; }
+        if (sending || !result.text) return;
+        const doing = (Mem.cards ?? []).filter(x => x.col === "doing").length;
+        if (!confirmed && doing >= (p.wip_limit ?? 3)) { startWarning = `«En curso» está lleno (${doing} / ${p.wip_limit ?? 3}). Iniciar otro agente supera el WIP.`; startKind = kind; return; }
+        startWarning = ""; actionError = ""; sending = true;
+        const text = result.text, snapshot = result, key = c.key;
+        const branch = c.branch || branchFor(c), worktree = c.worktree || worktreeFor(p, c);
+        const afterWorktree = () => {
+            startStep = "Arrancando el agente…";
+            _tool("dragon-herdr", ["start", "--cwd", worktree, "--kind", kind, "--name", key], h => {
+                if (!h.ok) return _stop("Agente", h);
+                startStep = "Enviando el prompt…";
+                _tool("dragon-prompt", ["send", "--target", "herdr:" + h.id, "--stdin"], s => {
+                    Mem.setCard(key, { branch: branch, worktree: worktree, agent_ref: h.id }, () => Mem.moveCard(key, "doing", true, () => {
+                        sending = false; startStep = "";
+                        if (!s.ok) { actionError = "El agente arrancó, pero el prompt no se pudo enviar: " + (s.error?.message ?? "error") + ". Usa «Copiar»."; return; }
+                        sent("herdr:" + h.id, key, snapshot); started(key, snapshot); Herdr.refresh(); close();
+                    }));
+                }, text);
+            });
+        };
+        if (c.worktree) { afterWorktree(); return; }
+        startStep = "Creando el worktree…";
+        _tool("dragon-git", ["worktree", "add", "--repo", p.path, "--branch", branch, "--path", worktree], w => {
+            if (!w.ok) return _stop("Worktree", w);
+            Mem.setCard(key, { branch: branch, worktree: worktree }, afterWorktree);
+        });
+    }
     Timer { id: debounce; interval: 150; onTriggered: root.rebuild() }
     IpcHandler {
         target: "prompt"

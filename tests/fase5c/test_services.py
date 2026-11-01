@@ -160,5 +160,62 @@ class KanbanMemory(unittest.TestCase):
         for bad in BAD: self.assertNotIn(bad, out, out)
 
 
+START = """import Quickshell
+import QtQuick
+import "services"
+ShellRoot {
+    property int phase: 0
+    property var keys: []
+    function fail(msg) { console.error("FAIL", phase, msg); Qt.quit(); }
+    Component.onCompleted: Mem.addProject(Quickshell.env("HOME") + "/repo", "Proyecto", "AX", r => {
+        if (!r.ok) return fail("project");
+        Mem.call(["project", "set", r.project.slug, "--wip-limit", "1"], () => { Mem.refresh(); phase = 1; });
+    })
+    Timer { interval: 60; running: true; repeat: true
+        onTriggered: {
+            if (phase === 1 && Mem.project?.wip_limit === 1) {
+                Mem.addCard("Filtros de facturas", "feat", a => Mem.addCard("Otra", "fix", b => {
+                    keys = [a.card.key, b.card.key];
+                    Mem.moveCard(b.card.key, "doing", false, () => phase = 2);
+                }));
+                phase = 99;
+            } else if (phase === 2 && Mem.cards.some(c => c.col === "doing")) {
+                Prompts.open({ mode: "start", card: keys[0] }); phase = 3;
+            } else if (phase === 3 && !Prompts.building && Prompts.result.tokens > 0) {
+                if (Prompts.target !== "start:claude") return fail("start target");
+                if (Mem.cardByKey(keys[0]).worktree) return fail("worktree before send");
+                Prompts.send(); phase = 4;
+            } else if (phase === 4) {
+                if (!Prompts.startWarning.includes("lleno")) return fail("WIP warning");
+                if (Prompts.sending) return fail("started despite WIP");
+                Prompts.startCard(Prompts.startKind, true); phase = 5;
+            } else if (phase === 5 && !Prompts.composerOpen) {
+                const c = Mem.cardByKey(keys[0]);
+                if (!c || c.col !== "doing" || c.agent_ref !== "pane-9" || !c.worktree.endsWith("repo-ax1") || c.branch !== "feat/ax-1-filtros-de-facturas") return;
+                console.log("FASE5C_START_OK"); Qt.quit();
+            }
+        }
+    }
+    Timer { interval: 25000; running: true; onTriggered: fail("timeout " + Prompts.actionError + " " + Prompts.startStep + " " + JSON.stringify(Mem.cardByKey(keys[0]))) }
+}
+"""
+
+
+@unittest.skipUnless(shutil.which('qs'), 'Quickshell required')
+class StartFlow(unittest.TestCase):
+    def test_worktree_agent_prompt_and_card(self):
+        def setup(home, env):
+            git_repo(home, env)
+        out, data = run_shell(START, setup=setup, fakes=('dragon-prompt', 'dragon-gate', 'dragon-herdr'))
+        self.assertIn('FASE5C_START_OK', out, out)
+        for bad in BAD: self.assertNotIn(bad, out, out)
+        sent = [json.loads(l) for l in data['sent'].splitlines()]
+        self.assertEqual([s['target'] for s in sent], ['herdr:pane-9'])
+        self.assertIn('## Tarjeta', sent[0]['text'])
+        self.assertEqual(len(data['herdr']), 1, data['herdr'])
+        self.assertTrue(data['herdr'][0]['cwd_exists'])
+        self.assertEqual(data['herdr'][0]['args'][data['herdr'][0]['args'].index('--kind') + 1], 'claude')
+
+
 if __name__ == '__main__':
     unittest.main()

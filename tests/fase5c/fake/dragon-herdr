@@ -1,0 +1,12 @@
+#!/usr/bin/env python3
+"""Fake dragon-herdr: `start` records the call in $HOME/herdr-calls.jsonl and returns a pane id; snapshot is empty."""
+import json, os, sys
+args = [a for a in sys.argv[1:] if a != '--json']
+log = os.path.join(os.environ['HOME'], 'herdr-calls.jsonl')
+if args and args[0] == 'start':
+    with open(log, 'a') as f: f.write(json.dumps({'args': args, 'cwd_exists': os.path.isdir(args[args.index('--cwd') + 1])}) + '\n')
+    print(json.dumps({'ok': True, 'id': 'pane-9', 'space': 'w1', 'tab': 't1', 'pane': 'pane-9'}))
+elif args and args[0] == 'snapshot':
+    print(json.dumps({'ok': True, 'source': 'none', 'version': '', 'agents': [], 'spaces': []}))
+else:
+    print(json.dumps({'ok': False, 'error': {'code': 'invalid_usage', 'message': 'uso', 'hint': ''}})); sys.exit(2)

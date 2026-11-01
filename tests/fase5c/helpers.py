@@ -37,7 +37,9 @@ def run_shell(body, extra_qmldir='', fakes=('dragon-prompt', 'dragon-gate', 'dra
         (cfg / 'shell.qml').write_text(body)
         p = subprocess.run([shutil.which('qs'), '-p', str(cfg)], env=env, capture_output=True, text=True, timeout=timeout)
         sent = (home / 'prompt-sent.jsonl').read_text() if (home / 'prompt-sent.jsonl').exists() else ''
-        return p.stdout + p.stderr, {'sent': sent, 'home': tmp}
+        herdr = (home / 'herdr-calls.jsonl').read_text() if (home / 'herdr-calls.jsonl').exists() else ''
+        import json
+        return p.stdout + p.stderr, {'sent': sent, 'herdr': [json.loads(l) for l in herdr.splitlines()], 'home': tmp}
 
 
 def git_repo(home, env, name='repo'):
