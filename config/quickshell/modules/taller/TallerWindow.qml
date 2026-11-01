@@ -32,6 +32,7 @@ PanelWindow {
             shown: win.open
             agentService: Herdr
             memService: Mem
+            dockerService: Docker
             tab: Taller.tab
             onTabRequested: name => Taller.tab = name
             onCloseRequested: ShellState.close()

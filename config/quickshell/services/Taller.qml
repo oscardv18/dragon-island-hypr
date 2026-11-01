@@ -10,6 +10,8 @@ Singleton {
     id: root
     readonly property var tabs: ["agentes", "kanban", "contenedores", "git", "revision"]
     property string tab: "agentes"
+    readonly property bool dockerActive: ShellState.openPanel === "taller" && tab === "contenedores"
+    onDockerActiveChanged: Docker.activate(dockerActive)
     function init(): void {}
     function open(name): void {
         tab = tabs.indexOf(name) >= 0 ? name : "agentes";
