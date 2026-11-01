@@ -57,4 +57,5 @@ singleton WindowFrame 1.0 WindowFrame.qml
 
 # fase5a: Taller
 singleton Mem 1.0 Mem.qml
+singleton Taller 1.0 Taller.qml
 # /fase5a: Taller

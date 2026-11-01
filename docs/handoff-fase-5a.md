@@ -72,3 +72,16 @@ Comprobación con Quickshell real offscreen, servidor herdr falso y HOME/XDG
 temporales: servicios cargan, SQLite responde y agentes normalizados llegan con
 las unidades de tiempo esperadas. Se corrigió `Object.fromEntries`, ausente en
 el motor JS de Qt de esta máquina; se usa una iteración simple.
+
+## 6. Estructura del Taller
+
+Panel de 1226×612, cabecera, cinco pestañas, estados vacíos, FrameDecor y tokens
+propios en Theme; ventana Overlay desmapeada y contenido descargado al cerrarse.
+IPC `taller toggle|open <pestaña>|close|current`, SUPER+T; mosaico ahora
+SUPER+CTRL+T como confirmó el usuario. El compositor es del tramo 5c (botón
+visible y deshabilitado). Migración 047 incluye reglas de blur por alfa y binds.
+
+Mock puro renderizado offscreen; reiniciado solo Quickshell (las ventanas del
+usuario siguen abiertas) para registrar los tipos nuevos; el panel abre y cierra
+por IPC. `hyprctl reload` y `configerrors` vacíos. Las migraciones 043–047 se
+aplicaron a esta instalación enlazada, sin paquetes ni sudo.

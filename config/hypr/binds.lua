@@ -58,7 +58,7 @@ bind(mainMod .. " + SHIFT + L", hl.dsp.window.move({ direction = "right" }), "Ve
 
 -- Tiling modes: dwindle (default) <-> scrolling (native columns on a horizontal tape), per workspace.
 -- scripts/tiling.sh does the work (Quickshell's `tiling` IPC first: chip + notch notice; the script if it does not answer).
-bind(mainMod .. " + T", hl.dsp.exec_cmd("qs ipc call tiling toggle || $HOME/.local/bin/dragon-tiling toggle"), "Ventanas · Alternar modo Dwindle / Scrolling")
+bind(mainMod .. " + CTRL + T", hl.dsp.exec_cmd("qs ipc call tiling toggle || $HOME/.local/bin/dragon-tiling toggle"), "Ventanas · Alternar modo Dwindle / Scrolling")
 
 -- Scrolling-only binds (layout messages, hl.dsp.layout): they do nothing on a dwindle workspace.
 -- Left / right (and SUPER + SHIFT + arrows) already change column / move the window in both modes.
@@ -87,6 +87,7 @@ bind(mainMod .. " + mouse:272", hl.dsp.window.drag(),   "Ratón · Arrastrar ven
 bind(mainMod .. " + mouse:273", hl.dsp.window.resize(), "Ratón · Redimensionar ventana", { mouse = true })
 
 -- Quickshell interactive panels (via qs ipc)
+bind(mainMod .. " + T", hl.dsp.exec_cmd("qs ipc call taller toggle"), "Shell · Taller de ingeniería")
 bind(mainMod .. " + D",      hl.dsp.exec_cmd("qs ipc call shell toggle dashboard"),     "Shell · Notch (Nook / Tray)")
 bind(mainMod .. " + Tab",    hl.dsp.exec_cmd("qs ipc call overview toggle"),            "Escritorios · Vista general (arrastrar ventanas entre escritorios)")
 bind(mainMod .. " + W",         hl.dsp.exec_cmd("qs ipc call wallpaper orbital"), "Shell · Fondos de pantalla (orbital)")

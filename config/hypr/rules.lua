@@ -81,7 +81,7 @@ hl.window_rule({
 -- gets blur either.
 local glass = require("glassstyle")
 if not glass.liquid then
-    for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher", "dragon-switcher", "dragon-overview", "dragon-wallpapers", "dragon-preview", "dragon-store", "dragon-herdr-help", "dragon-settings" }) do
+    for _, ns in ipairs({ "dragon-bar", "dragon-popover", "dragon-notifications", "dragon-launcher", "dragon-switcher", "dragon-overview", "dragon-wallpapers", "dragon-preview", "dragon-store", "dragon-herdr-help", "dragon-settings", "dragon-taller" }) do
         hl.layer_rule({
             name         = "blur-" .. ns,
             match        = { namespace = "^" .. ns .. "$" },

@@ -773,4 +773,71 @@ Singleton {
     readonly property real radiusCard: cardRadius
     readonly property int durationToast: durTransient
     readonly property int durationNotif: durNotif
+    // fase5a: Taller (32-taller-*). This block is shared with 5b/5c; Files owns its own tokens.
+    readonly property color danger: "#FB7185"
+    readonly property color diffAdd: alpha(ok, 0.10)
+    readonly property color diffDel: alpha(danger, 0.10)
+    readonly property color tokenOk: ok
+    readonly property color tokenWarn: warn
+    readonly property color tokenHigh: danger
+    readonly property QtObject taller: QtObject {
+        readonly property real width: 1226
+        readonly property real height: 612
+        readonly property real radius: 22
+        readonly property real padding: 24
+        readonly property real gap: 16
+        readonly property real rowGap: 8
+        readonly property real smallGap: 6
+        readonly property real thinGap: 3
+        readonly property real inset: 12
+        readonly property real header: 28
+        readonly property real tabsHeight: 34
+        readonly property real buttonHeight: 30
+        readonly property real buttonRadius: 9
+        readonly property real buttonPad: 14
+        readonly property real buttonBorder: 1
+        readonly property real selectorWidth: 248
+        readonly property real rowHeight: 50
+        readonly property real helperHeight: 38
+        readonly property real badge: 26
+        readonly property real badgeRadius: 6
+        readonly property real dot: 9
+        readonly property real dotHalo: 16
+        readonly property real countSize: 17
+        readonly property real caption: 10
+        readonly property real body: 12
+        readonly property real heading: 14
+        readonly property real mono: 11
+        readonly property real groupHeight: 26
+        readonly property real detailPadding: 16
+        readonly property real outputHeight: 100
+        readonly property real detailsHeight: 216
+        readonly property real lineHeight: 1.4
+        readonly property real leftFraction: 0.48
+        readonly property real attentionWidth: 440
+        readonly property real attentionHeight: 30
+        readonly property real attentionButtonWidth: 48
+        readonly property real projectDialogWidth: 460
+        readonly property real inputHeight: 36
+        readonly property real rowIndent: 28
+        readonly property real projectListHeight: 180
+        readonly property real stateWidth: 110
+        readonly property color panel: root.alpha(root.bg, 0.94)
+        readonly property color card: root.alpha(root.text, 0.045)
+        readonly property color output: root.alpha(root.bg, 0.85)
+        readonly property color selected: root.alpha(root.cyan, 0.06)
+        readonly property color selectedBorder: root.alpha(root.cyan, 0.4)
+        readonly property color disabled: root.textDim
+        readonly property color button: root.alpha(root.text, 0.07)
+        readonly property color hover: root.alpha(root.text, 0.11)
+        readonly property color border: root.alpha(root.text, 0.09)
+        readonly property color blockedTint: root.alpha(root.warn, 0.12)
+        readonly property color workingTint: root.alpha(root.cyan, 0.12)
+        readonly property color doneTint: root.alpha(root.ok, 0.12)
+        readonly property color idleTint: root.alpha(root.lavender, 0.12)
+        readonly property real captionTracking: 2
+        readonly property real disabledOpacity: 0.45
+    }
+    // /fase5a: Taller
+
 }
