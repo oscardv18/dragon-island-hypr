@@ -111,3 +111,12 @@ La pila conserva reuniones, enfoque, comandos y actualizaciones.
 Prueba con servicios QML reales: prioridad bloqueado > listo, ignorar, marcar
 visto y vencimiento del silencio. Mock de la pastilla renderiza a 440×30.
 Migración 049 despliega el atajo y la interfaz también en instalaciones copiadas.
+
+## 9. Proyectos
+
+Selector en la cabecera y alta explícita (carpeta, nombre y prefijo opcionales).
+Registrar llama a `dragon-mem project add`, refresca el selector y cruza de nuevo
+los agentes con la memoria; escribir en los campos no produce efectos.
+La selección carga las tarjetas de ese proyecto. Errores de ruta/duplicados se
+muestran en el formulario. Prueba con servicios reales en HOME temporal: crea
+el proyecto, refresca SQLite y conserva la selección. Migración 050.

@@ -19,6 +19,6 @@ Rectangle {
     activeFocusOnTab: true
     Keys.onReturnPressed: if (enabled) clicked()
     Keys.onSpacePressed: if (enabled) clicked()
-    UiText { id: labelText; anchors.centerIn: parent; text: root.label; size: Theme.taller.body; color: root.primary ? Theme.islandInk : Theme.text }
+    UiText { id: labelText; anchors.centerIn: parent; width: Math.min(implicitWidth, root.width - Theme.taller.buttonPad * 2); horizontalAlignment: Text.AlignHCenter; text: root.label; size: Theme.taller.body; color: root.primary ? Theme.islandInk : Theme.text }
     MouseArea { id: hit; anchors.fill: parent; hoverEnabled: true; cursorShape: Qt.PointingHandCursor; onClicked: root.clicked() }
 }

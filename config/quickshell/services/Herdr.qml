@@ -45,6 +45,17 @@ Singleton {
 
     function init(): void { if (!_started) { _started = true; watch.running = true; } }
     function open(): void { Quickshell.execDetached([root.tool]); }
+    function refresh(): void {
+        Mem.callHerdr(["snapshot"], r => {
+            if (!r.ok) return;
+            const rows = (r.agents ?? []).map(a => {
+                const old = _raw.find(x => x.id === a.id && x.state === a.state);
+                return old ? Object.assign({}, a, {since: old.since}) : a;
+            });
+            _event(JSON.stringify(Object.assign({}, r, {t:"snapshot", agents:rows})));
+        });
+    }
+    Connections { target: Mem; function onChanged() { root.refresh(); } }
     function focusAgent(a): void {
         if (!a) return;
         root.actionError = "";

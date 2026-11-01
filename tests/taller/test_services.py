@@ -26,10 +26,17 @@ class Services(unittest.TestCase):
 import QtQuick
 import "services"
 ShellRoot {
-    Component.onCompleted: { Mem.refresh(); Herdr.init(); }
+    property bool created: false
+    Component.onCompleted: {
+        Mem.addProject(Quickshell.env("HOME"), "Proyecto de prueba", "TX", r => {
+            if (!r.ok) throw new Error("project registration failed");
+            Herdr.init(); created = true;
+        });
+    }
     Timer { interval: 100; running: true; repeat: true
         onTriggered: {
-            if (Mem.status !== "ok" || Herdr.agents.length !== 1) return;
+            if (!created || Mem.status !== "ok" || Herdr.agents.length !== 1) return;
+            if (Mem.project?.name !== "Proyecto de prueba") throw new Error("project selection failed");
             const a = Herdr.agents[0];
             if (a.agent !== "claude" || a.workspace !== "demo" || a.since < 1000000000000) throw new Error("normalization failed");
             const since = Math.floor(Date.now()/1000);

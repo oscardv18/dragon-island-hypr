@@ -11,6 +11,7 @@ Rectangle {
     property string tab: "agentes"
     property bool shown: false
     property string notice: ""
+    property bool projectsOpen: false
     signal tabRequested(string name)
     signal closeRequested()
     signal projectRequested()
@@ -18,7 +19,8 @@ Rectangle {
     readonly property var labels: ["Agentes", "Kanban", "Contenedores", "Git", "Revisión"]
     readonly property string projectBranch: {
         const slug = memService?.selectedSlug ?? "";
-        return agentService?.agents?.find(a => a.project === slug)?.branch ?? "";
+        const path = memService?.project?.path ?? "";
+        return agentService?.agents?.find(a => a.project === slug || (path && (a.cwd === path || a.cwd?.startsWith(path + "/"))))?.branch ?? "";
     }
     implicitWidth: Theme.taller.width
     implicitHeight: Theme.taller.height
@@ -28,7 +30,7 @@ Rectangle {
     border.color: Theme.taller.border
     focus: shown
     Keys.forwardTo: root.tab === "agentes" ? [agentsView] : []
-    Keys.onEscapePressed: closeRequested()
+    Keys.onEscapePressed: { if (projectsOpen) projectsOpen = false; else closeRequested(); }
     Keys.onPressed: e => {
         if (e.key === Qt.Key_Tab && (e.modifiers & Qt.ControlModifier)) {
             const i = tabNames.indexOf(tab);
@@ -51,7 +53,7 @@ Rectangle {
             TallerButton {
                 Layout.preferredWidth: Theme.taller.selectorWidth
                 label: (root.memService?.project?.name ?? "Selecciona un proyecto") + (root.projectBranch ? " · " + root.projectBranch : "") + " ⌄"
-                onClicked: root.projectRequested()
+                onClicked: { root.projectsOpen = !root.projectsOpen; root.projectRequested(); }
             }
             Rectangle { Layout.fillWidth: true; implicitHeight: Theme.taller.buttonBorder; color: Theme.taller.border }
             UiText { text: root.agentService?.running ? `● HERDR ${root.agentService?.version ?? ""} · SOCKET` : "HERDR · SIN CONEXIÓN"; color: root.agentService?.running ? Theme.ok : Theme.textDim; mono: true; size: Theme.taller.caption }
@@ -101,4 +103,18 @@ Rectangle {
             size: Theme.taller.body
         }
     }
+    Item {
+        anchors.fill: parent
+        visible: root.projectsOpen
+        MouseArea { anchors.fill: parent; onClicked: root.projectsOpen = false }
+        ProjectPicker {
+            x: Theme.taller.padding
+            y: Theme.taller.padding + Theme.taller.header + Theme.taller.rowGap
+            width: Math.min(Theme.taller.projectDialogWidth, root.width - Theme.taller.padding * 2)
+            height: implicitHeight
+            memory: root.memService
+            onCloseRequested: { root.projectsOpen = false; root.forceActiveFocus(); }
+        }
+    }
+
 }

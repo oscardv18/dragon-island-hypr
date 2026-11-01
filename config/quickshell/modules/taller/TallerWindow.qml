@@ -35,7 +35,6 @@ PanelWindow {
             tab: Taller.tab
             onTabRequested: name => Taller.tab = name
             onCloseRequested: ShellState.close()
-            onProjectRequested: notice = "El alta y selector de proyectos se habilita en el punto 9 de este tramo"
         }
     }
 }
