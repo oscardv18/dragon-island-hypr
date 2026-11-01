@@ -15,6 +15,9 @@ CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
 # shellcheck source=lib/mem.sh
 . "$REPO_DIR/lib/mem.sh"
 
+# shellcheck source=lib/herdr.sh
+. "$REPO_DIR/lib/herdr.sh"
+
 core_desc() { echo "Hyprland, Quickshell, servicios y configuración base (obligatorio)"; }
 core_sudo() { echo "pacman -S (paquetes), systemctl enable (NetworkManager, bluetooth, power-profiles-daemon)"; }
 core_packages() { pkg_list "$REPO_DIR/packages/pacman-core.txt" "$REPO_DIR/packages/aur-core.txt"; }
@@ -65,6 +68,7 @@ core_apply() {
     engines_setup
     activity_setup
     mem_setup
+    herdr_bridge_setup
     core_gpu_env
 
     # the neural core has one source (shared/neural-core): re-sync both copies

@@ -73,6 +73,11 @@ step "memoria SQLite del Taller (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/mem -v; then pass "dragon-mem"; else fail "dragon-mem"; fi
 # /fase5a: memory
 
+# fase5a: herdr
+step "puente de herdr con socket falso (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/herdr -v; then pass "dragon-herdr"; else fail "dragon-herdr"; fi
+# /fase5a: herdr
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 

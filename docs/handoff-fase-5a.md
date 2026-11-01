@@ -42,3 +42,19 @@ métricas, exportación <4 KB, registro del sistema y 7 respaldos SQLite coheren
 Migración 044 e instalación nueva comparten `lib/mem.sh`; una base previa se
 respalda antes de ampliar el esquema. 13 pruebas con HOME/XDG temporales y
 shellcheck en verde. Lectura fría (mediana de 7): 87,7 ms (<150 ms).
+
+## 4. Puente de herdr
+
+`docs/HERDR-API.md` se escribió a partir de las ayudas, el esquema incorporado y
+el socket real antes de implementar el adaptador. `dragon-herdr` ofrece probe,
+snapshot, watch --record, focus, read, prompt por stdin y start; conserva su
+lanzador sin argumentos. Migración 045, instalación base y extra herdr incluyen
+las librerías necesarias también en modo copia.
+
+7 pruebas con servidor falso: eventos <2 s, desconexión y reconexión, SIGTERM,
+esperas sin duplicados, foco con hyprctl simulado, tachado antes de recortar,
+prompts bloqueados rechazados y cruce con worktrees. Snapshot y probe reales
+responden; no se enviaron prompts ni se arrancaron agentes reales.
+
+Límites: herdr 0.9.5 no publica relaciones de ayudantes ni timestamps;
+`helper_of=null`, `features.helpers=false`, `since` es tiempo observado.
