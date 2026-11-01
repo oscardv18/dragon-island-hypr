@@ -3,7 +3,7 @@
 // agents retain the old pane/agent/workspace/since(ms) API and add id/kind/space/card/project/helper_of.
 // focusAgent(a), open(), readAgent(a), markSeen(a), snooze(a,minutes), focusNext(), attentionAgents/attentionAgent.
 // readText/readId are memory-only; clearRead() drops terminal output on panel close. details contains branches only.
-// attention(agent,kind): state became blocked or done. No approval or rejection API exists in this service.
+// navigatingToAgent(): shell.qml closes overlays before focus; attention(agent,kind): became blocked or done. No approval or rejection API exists in this service.
 pragma Singleton
 import Quickshell
 import Quickshell.Io
@@ -42,6 +42,7 @@ Singleton {
         .slice().sort((a,b) => (a.state === "blocked" ? 0 : 1)-(b.state === "blocked" ? 0 : 1) || a.since-b.since);
     readonly property var attentionAgent: attentionAgents[0] ?? null
     signal attention(var agent, string kind)
+    signal navigatingToAgent()
 
     function init(): void { if (!_started) { _started = true; watch.running = true; } }
     function open(): void { Quickshell.execDetached([root.tool]); }
@@ -58,6 +59,7 @@ Singleton {
     Connections { target: Mem; function onChanged() { root.refresh(); } }
     function focusAgent(a): void {
         if (!a) return;
+        navigatingToAgent();
         root.actionError = "";
         Mem.callHerdr(["focus", a.pane || a.id], r => { if (!r.ok) root.actionError = r.error?.message ?? "No se pudo enfocar el agente"; });
     }

@@ -177,3 +177,8 @@ La cabecera también muestra la rama de proyectos sin agentes: Mem y Herdr
 comparten la lectura local de HEAD (sin procesos git adicionales). La vista
 vacía borra cualquier salida del panel anterior al desaparecer el agente.
 Pruebas de ambas condiciones y migración 053 para instalaciones por copia.
+
+Navegar con Ir ↵ o SUPER+A cierra los paneles antes de enfocar herdr, para soltar
+el foco exclusivo del Taller. Si el foco falla, vuelve a Agentes con el error
+visible. El formulario de proyecto bloquea los atajos de la lista que queda
+por debajo. Prueba de navegación y de error con compositor simulado; migración 054.

@@ -30,9 +30,10 @@ Rectangle {
     border.width: Theme.taller.buttonBorder
     border.color: Theme.taller.border
     focus: shown
-    Keys.forwardTo: root.tab === "agentes" ? [agentsView] : []
+    Keys.forwardTo: root.tab === "agentes" && !root.projectsOpen ? [agentsView] : []
     Keys.onEscapePressed: { if (projectsOpen) projectsOpen = false; else closeRequested(); }
     Keys.onPressed: e => {
+        if (root.projectsOpen) return;
         if (e.key === Qt.Key_Tab && (e.modifiers & Qt.ControlModifier)) {
             const i = tabNames.indexOf(tab);
             tabRequested(tabNames[(i + (e.modifiers & Qt.ShiftModifier ? 4 : 1)) % tabNames.length]);

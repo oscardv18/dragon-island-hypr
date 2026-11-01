@@ -49,4 +49,3 @@ def git_branch(path):
                 return head.removeprefix('ref: refs/heads/') if head.startswith('ref: refs/heads/') else head[:8]
     except OSError:pass
     return ''
-

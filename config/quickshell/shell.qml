@@ -90,6 +90,12 @@ ShellRoot {
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
     Component.onCompleted: { Wallpaper.init(); Store.init(); Herdr.init(); Taller.init(); Tiling.refresh(); Tray.init(); }
 
+    Connections {
+        target: Herdr
+        function onNavigatingToAgent() { ShellState.close(); }
+        function onActionErrorChanged() { if (Herdr.actionError) Taller.open("agentes"); }
+    }
+
     Variants {
         model: Quickshell.screens
         delegate: Component { Bar {} }

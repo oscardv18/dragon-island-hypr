@@ -15,32 +15,60 @@ spec=importlib.util.spec_from_file_location('fake_herdr',ROOT/'tests/herdr/fake_
 @unittest.skipUnless(shutil.which('qs'),'Quickshell required')
 class Events(unittest.TestCase):
     def test_blocked_event_reaches_view_within_two_seconds(self):
+        self.run_navigation(False)
+
+    def test_failed_focus_reopens_error_view(self):
+        self.run_navigation(True)
+
+    def run_navigation(self,fail):
         with tempfile.TemporaryDirectory(prefix='te-') as tmp:
             home=Path(tmp);(home/'runtime').mkdir(mode=0o700);cfg=home/'shell';shutil.copytree(ROOT/'config/quickshell',cfg)
             (cfg/'services/qmldir').write_text('singleton Mem 1.0 Mem.qml\nsingleton Herdr 1.0 Herdr.qml\nsingleton Activity 1.0 Activity.qml\n')
             bindir=home/'.local/bin';bindir.mkdir(parents=True)
             for name in ('dragon-mem','dragon-herdr'):(bindir/name).symlink_to(ROOT/'bin'/name)
             env=dict(os.environ,HOME=tmp,XDG_RUNTIME_DIR=str(home/'runtime'),HERDR_SOCKET_PATH=str(home/'h.sock'),QT_QPA_PLATFORM='offscreen',PYTHONDONTWRITEBYTECODE='1')
+            if fail:env['TALLER_TEST_FOCUS_FAIL']='1'
             for n in ('CONFIG','DATA','STATE','CACHE'):env[f'XDG_{n}_HOME']=str(home/n.lower())
+            shim=home/'bin';shim.mkdir()
+            (shim/'hyprctl').write_text('#!/bin/sh\nif [ "$1" = clients ]; then\n    if [ "${TALLER_TEST_FOCUS_FAIL:-0}" = 1 ]; then echo \'[]\'; else echo \'[{"class":"org.dragonisland.Herdr","address":"0x123","title":"demo"}]\'; fi\nelse\n    echo ok\nfi\n')
+            (shim/'hyprctl').chmod(0o755);env['PATH']=str(shim)+':'+env['PATH']
             server=module.FakeHerdr(env['HERDR_SOCKET_PATH'],tmp).start()
             (cfg/'shell.qml').write_text('''import Quickshell
 import QtQuick
 import "services"
 import "modules/taller"
 ShellRoot {
+    property bool showing: true
+    property bool requested: false
+    property bool sawError: false
+    property real elapsed: 0
+    readonly property bool failureExpected: Quickshell.env("TALLER_TEST_FOCUS_FAIL") === "1"
     Component.onCompleted: Herdr.init()
+    Connections {
+        target: Herdr
+        function onNavigatingToAgent() { showing=false; }
+        function onActionErrorChanged() { if (Herdr.actionError) { showing=true; sawError=true; } }
+    }
     FloatingWindow {
-        implicitWidth: 1226; implicitHeight: 612; visible: true
+        implicitWidth: 1226; implicitHeight: 612; visible: showing
         TallerPanel { id: panel; anchors.fill: parent; shown: true; agentService: Herdr; memService: Mem }
     }
     Timer { interval: 25; running: true; repeat: true
         onTriggered: {
             const a=Herdr.agents[0];
             if (a?.state !== "blocked") return;
-            const elapsed=Date.now()-Number(a.title);
-            if (panel.agentService.counts.blocked !== 1 || Herdr.attentionAgent?.pane !== a.pane) throw new Error("view/attention missing");
-            if (Herdr.readText.indexOf("neverexpose") >= 0) throw new Error("unmasked read");
-            console.log("E2E_MS="+elapsed);Qt.quit();
+            if (!requested) {
+                elapsed=Date.now()-Number(a.title);
+                if (panel.agentService.counts.blocked !== 1 || Herdr.attentionAgent?.pane !== a.pane) throw new Error("view/attention missing");
+                if (Herdr.readText.indexOf("neverexpose") >= 0) throw new Error("unmasked read");
+                requested=true;Herdr.focusAgent(a);
+                if (showing) throw new Error("overlay retained keyboard focus");
+                if (!failureExpected) { console.log("E2E_MS="+elapsed);Qt.quit(); }
+            }
+            if (failureExpected && sawError) {
+                if (!showing) throw new Error("focus error hidden");
+                console.log("E2E_MS="+elapsed);Qt.quit();
+            }
         }
     }
     Timer { interval: 6000; running: true; onTriggered: { console.error("EVENT_TIMEOUT");Qt.quit(); } }
