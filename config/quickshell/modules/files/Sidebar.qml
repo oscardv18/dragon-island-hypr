@@ -22,6 +22,13 @@ Rectangle {
                                          bookmark: Icons.folderOutline })
     readonly property var placeList: (files?.places ?? []).filter(p => p.kind !== "trash")
     readonly property var deviceList: root.devices?.devices ?? []
+    // mounted network places first, then saved servers that are not mounted
+    readonly property var netPlaces: {
+        const mounts = (root.devices?.netMounts ?? []).map(m => ({ uri: m.uri, name: m.name || m.host, protocol: m.protocol, path: m.path }));
+        const saved = (root.devices?.servers ?? []).filter(s => !mounts.some(m => m.uri === s.uri || (s.uri ?? "").indexOf(m.uri) === 0))
+            .map(s => ({ uri: s.uri, name: (s.name || s.uri).split(/ [·\/] /)[0], protocol: s.protocol || (s.uri ?? "").split(":")[0], path: "" }));
+        return mounts.concat(saved);
+    }
     readonly property var trashPlace: (files?.places ?? []).find(p => p.kind === "trash") ?? { path: F.TRASH, badge: null }
 
     Rectangle { anchors.right: parent.right; width: Theme.files.border; height: parent.height; color: Theme.files.divider }
@@ -82,6 +89,34 @@ Rectangle {
                             MouseArea { id: ejectHit; anchors.fill: parent; anchors.margins: -Theme.files.thinGap; hoverEnabled: true; cursorShape: Qt.PointingHandCursor
                                 onClicked: root.deviceAction(devRow.modelData, "eject") }
                         }
+                    ]
+                }
+            }
+            SectionTitle { text: "Red"; visible: !!root.devices }
+            SidebarRow {
+                Layout.fillWidth: true
+                visible: !!root.devices
+                icon: Icons.lan
+                label: "Red local"
+                badge: (root.devices?.hosts?.length ?? 0) > 0 ? String(root.devices.hosts.length) : ""
+                active: root.currentPath === F.NET
+                onClicked: root.navigate(F.NET)
+            }
+            Repeater {
+                model: root.netPlaces
+                delegate: SidebarRow {
+                    id: netRow
+                    required property var modelData
+                    Layout.fillWidth: true
+                    icon: Icons.server
+                    label: modelData.name + " · " + (modelData.protocol ?? "")
+                    active: !!modelData.path && (root.currentPath === modelData.path || root.currentPath.indexOf(modelData.path + "/") === 0)
+                    dropEnabled: !!modelData.path
+                    badge: root.devices?.netBusy?.[modelData.uri] === "connect" ? "conectando…" : ""
+                    onClicked: { if (modelData.path) root.navigate(modelData.path); else root.netAction(modelData, "connect"); }
+                    onDropped: (paths, mods) => root.dropOn(modelData.path, paths, mods)
+                    trailing: [
+                        Rectangle { visible: !!netRow.modelData.path && !netRow.badge; width: Theme.files.dot; height: width; radius: width / 2; color: Theme.ok; anchors.verticalCenter: parent?.verticalCenter }
                     ]
                 }
             }

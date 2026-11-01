@@ -98,6 +98,30 @@ Window {
         property var errors: ({})
         property var calls: []
         function deviceById(id) { return devices.find(d => d.id === id) ?? null; }
+        property var hosts: []
+        property var netMounts: win.fixture("files-net-mounts.json").mounts
+        property var servers: win.fixture("files-net-saved.json").servers
+        property bool discovering: true
+        property string netStatus: "ok"
+        property string netMessage: ""
+        property var netBusy: ({})
+        property var netErrors: ({})
+        function discover() { hosts = win.fixture("files-net-discover.json").hosts; }
+        function mountFor(h) { return netMounts.find(m => m.host === h.name || m.address === h.address) ?? null; }
+        function hostState(h) {
+            if (h.protocol === "ipp") return "printer";
+            if (mountFor(h)) return "connected";
+            if (servers.some(s => s.uri.indexOf("//" + h.address) >= 0 && h.name === "vps-prod")) return "saved";
+            return "available";
+        }
+        function shares(host, cb) { cb(win.fixture("files-net-shares-" + host + ".json")); }
+        function connect(uri, user, pass, save, cb) {
+            calls = calls.concat([["connect", uri, user ?? "", (pass ?? "").length, !!save]]);
+            if (!pass) { netErrors = { [uri]: { code: "auth_required", message: "El servidor pide usuario y contraseña" } }; cb({ ok: false, error: netErrors[uri] }); }
+            else { netErrors = ({}); cb({ ok: true, mountpoint: "/run/user/1000/gvfs/x" }); }
+        }
+        function unmountNet(uri) { calls = calls.concat([["unmountNet", uri]]); }
+        function saveServer(uri, name) { calls = calls.concat([["save", uri, name]]); }
         function mount(id, cb) { calls = calls.concat([["mount", id]]); }
         function unmount(id) { calls = calls.concat([["unmount", id]]); }
         function eject(id) { calls = calls.concat([["eject", id]]); }
@@ -182,7 +206,15 @@ Window {
         eq(F.opLabel({ kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", index: 2, count: 5 }, devs), "COPIANDO A KINGSTON · 2/5", "opLabel");
     }
 
-    function dialog(type) { for (const c of panel.children) if (String(c).indexOf(type) === 0) return c; throw new Error("no " + type); }
+    function dialog(type, from) {
+        // depth-first search: dialogs are direct children, NetView sits inside the content area
+        const stack = [from ?? panel];
+        while (stack.length) {
+            const it = stack.shift();
+            for (const c of it.children ?? []) { if (String(c).indexOf(type) === 0) return c; stack.push(c); }
+        }
+        throw new Error("no " + type);
+    }
     function prompt() { for (const c of panel.children) if (c.purpose !== undefined) return c; throw new Error("no prompt"); }
     function shot(name) { panel.grabToImage(r => r.saveToFile(win.outDir + "/" + name)); }
 
@@ -300,7 +332,30 @@ Window {
                 ops.queue = [{ id: 1, kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", count: 5, index: 2, state: "running", pct: 38 }];
                 t.selectNames(["backup-2026-10.zip"]);
             }
-            if (step === 26) { Qt.quit(); }
+            if (step === 26) {
+                t.go("net:///");
+                check(t.isNet, "net tab");
+            }
+            if (step === 27) {
+                const nv = dialog("NetView", panel);
+                nv.selected = devs.hosts[0];
+                eq(nv.shareList.length, 3, "shares of the selected host");
+                eq(nv.connectedCount, 1, "connected hosts");
+            }
+            if (step === 28) shot("files-red.png");
+            if (step === 29) {
+                const nv = dialog("NetView", panel);
+                nv.connectTo("sftp://192.168.1.44");
+                check(nv.needsAuth, "auth asked");
+            }
+            if (step === 30) shot("files-red-credenciales.png");
+            if (step === 31) {
+                const nv = dialog("NetView", panel);
+                nv.connectTo(nv.pendingUri, "pi", "secreto", true);
+                eq(JSON.stringify(devs.calls[devs.calls.length - 1]), JSON.stringify(["connect", "sftp://192.168.1.44", "pi", 7, true]), "connect with credentials");
+                eq(t.path, "/run/user/1000/gvfs/x", "opens the mount");
+                Qt.quit();
+            }
             step++;
         }
     }

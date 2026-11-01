@@ -262,6 +262,7 @@ Rectangle {
         onNavigate: p => root.tab?.go(p)
         onDropOn: (path, paths, mods) => root.dropInto(path, paths, mods)
         onDeviceAction: (d, a) => root.deviceAction(d, a)
+        onNetAction: (item, a) => { if (a === "connect") netView.connectTo(item.uri); }
     }
 
     ColumnLayout {
@@ -459,6 +460,15 @@ Rectangle {
                         text: root.tab?.status === "error" ? (root.tab.errorHint || "") : ""
                     }
                 }
+                NetView {
+                    id: netView
+                    anchors.fill: parent
+                    visible: root.tab?.isNet ?? false
+                    active: visible && root.active
+                    devices: root.devices
+                    files: root.files
+                    onNavigate: p => root.tab?.go(p)
+                }
                 // drop on the empty part of the folder = into the folder itself
                 DropArea {
                     anchors.fill: parent
@@ -490,7 +500,8 @@ Rectangle {
                 mono: true
                 size: Theme.files.mono
                 color: Theme.textSoft
-                text: root.tab ? F.selectionSummary(root.tab.selection, root.tab.shown.length) : ""
+                text: root.tab?.isNet ? netView.hosts.length + (netView.hosts.length === 1 ? " equipo · " : " equipos · ") + netView.connectedCount + (netView.connectedCount === 1 ? " conectado" : " conectados")
+                    : root.tab ? F.selectionSummary(root.tab.selection, root.tab.shown.length) : ""
             }
             OpsBar {
                 ops: root.ops

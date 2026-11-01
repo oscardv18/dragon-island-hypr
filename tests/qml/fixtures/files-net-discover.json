@@ -1,0 +1,41 @@
+{
+ "ok": true,
+ "hosts": [
+  {
+   "name": "nas-casa",
+   "address": "192.168.1.20",
+   "protocol": "smb",
+   "uri": "smb://192.168.1.20",
+   "port": 445
+  },
+  {
+   "name": "pc-oficina",
+   "address": "192.168.1.31",
+   "protocol": "smb",
+   "uri": "smb://192.168.1.31",
+   "port": 445,
+   "kind": "pc"
+  },
+  {
+   "name": "pi-lab",
+   "address": "192.168.1.44",
+   "protocol": "sftp",
+   "uri": "sftp://192.168.1.44",
+   "port": 22
+  },
+  {
+   "name": "hp-laserjet",
+   "address": "192.168.1.60",
+   "protocol": "ipp",
+   "uri": "ipp://192.168.1.60",
+   "port": 631
+  },
+  {
+   "name": "vps-prod",
+   "address": "203.0.113.9",
+   "protocol": "sftp",
+   "uri": "sftp://203.0.113.9",
+   "port": 22
+  }
+ ]
+}

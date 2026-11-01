@@ -54,6 +54,20 @@ elif cmd == 'archive' and args[1] == 'extract':
     out({'t': 'progress', 'pct': 50, 'file': 'src/a.ts', 'bps': 10}); out({'t': 'done'})
 elif cmd == 'archive' and args[1] in ('create', 'test'):
     out({'t': 'done'} if args[1] == 'create' else {'ok': True})
+elif cmd == 'net':
+    sub = args[1]
+    if sub == 'discover': out(fixture('files-net-discover.json'))
+    elif sub == 'mounts': out(fixture('files-net-mounts.json'))
+    elif sub == 'saved': out(fixture('files-net-saved.json'))
+    elif sub == 'shares': out(fixture('files-net-shares-' + args[2] + '.json'))
+    elif sub == 'connect':
+        if '--password-stdin' not in args:
+            out({'ok': False, 'error': {'code': 'auth_required', 'message': 'El servidor pide usuario y contraseña'}}); sys.exit(1)
+        secret = sys.stdin.readline().rstrip('\n')
+        with open(os.environ['FAKE_FILES_LOG'], 'a') as log:
+            log.write(json.dumps(['stdin', len(secret)]) + '\n')
+        out({'ok': True, 'mountpoint': '/run/user/1000/gvfs/sftp:host=x'})
+    else: out({'ok': True})
 elif cmd == 'thumb':
     out({'ok': True, 'thumb': None})
 elif cmd in ('open', 'terminal-here'):

@@ -1,0 +1,21 @@
+{
+ "ok": true,
+ "host": "192.168.1.20",
+ "shares": [
+  {
+   "name": "backups",
+   "comment": "",
+   "size": 1979120929996
+  },
+  {
+   "name": "media",
+   "comment": "",
+   "size": 3518437208883
+  },
+  {
+   "name": "docs",
+   "comment": "",
+   "size": 257698037760
+  }
+ ]
+}

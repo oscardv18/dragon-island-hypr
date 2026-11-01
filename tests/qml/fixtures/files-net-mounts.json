@@ -1,0 +1,17 @@
+{
+ "ok": true,
+ "mounts": [
+  {
+   "uri": "smb://192.168.1.20/media",
+   "name": "nas-casa",
+   "protocol": "smb",
+   "host": "nas-casa",
+   "address": "192.168.1.20",
+   "path": "/run/user/1000/gvfs/smb-share:server=192.168.1.20,share=media",
+   "user": "oddv",
+   "free": 4507997673881,
+   "total": 8796093022208,
+   "version": "3.1"
+  }
+ ]
+}

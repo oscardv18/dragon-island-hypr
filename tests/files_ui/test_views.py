@@ -243,6 +243,36 @@ class Services(unittest.TestCase):
         self.assertIn(['op', 'trash', '/h/p.7z', '--json-progress'], calls, 'trash after extracting')
         self.assertIn(['archive', 'create', '--format', 'tar.zst', '--out', '/h/out.tar.zst', '--paths', '/h/a', '/h/b', '--json-progress'], calls)
 
+    def test_network_discover_connect_and_state(self):
+        r, calls = self.run_shell('''
+    Component.onCompleted: Devices.discover()
+    property bool started: false
+    Connections {
+        target: Devices
+        function onHostsChanged() {
+            if (started || Devices.hosts.length !== 5) return;
+            started = true;
+            Qt.callLater(() => {
+                const nas = Devices.hosts[0], printer = Devices.hosts[3];
+                if (Devices.hostState(nas) !== "connected" || Devices.hostState(printer) !== "printer") throw new Error("states " + Devices.hostState(nas));
+                Devices.shares("192.168.1.20", sh => {
+                    if (sh.shares.length !== 3) throw new Error("shares");
+                    Devices.connect("sftp://192.168.1.44", "", "", false, r1 => {
+                        if (r1.error?.code !== "auth_required" || Devices.netErrors["sftp://192.168.1.44"].code !== "auth_required") throw new Error("auth");
+                        Devices.connect("sftp://192.168.1.44", "pi", "secreto", true, r2 => {
+                            if (!r2.ok || Devices.netErrors["sftp://192.168.1.44"]) throw new Error("connect");
+                            console.log("SVC_OK"); Qt.quit();
+                        });
+                    });
+                });
+            });
+        }
+    }''')
+        self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
+        self.assertIn(['net', 'connect', 'sftp://192.168.1.44', '--user', 'pi', '--password-stdin', '--save', '--json'], calls)
+        self.assertIn(['stdin', 7], calls)
+        self.assertNotIn('secreto', json.dumps(calls))
+
     def test_tool_errors_reach_the_callback(self):
         r, _ = self.run_shell('''
     Component.onCompleted: {

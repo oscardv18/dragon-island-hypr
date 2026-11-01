@@ -1,5 +1,5 @@
 // =============================================================================
-// dragon-island — Devices.qml (disks, USB, phones, encrypted volumes; network places are added in d5). Data only.
+// dragon-island — Devices.qml (disks, USB, phones, encrypted volumes and network places). Data only.
 // `dragon-files devices --json` once, then `devices --watch` (udev/udisks events) ONLY while an explorer window is
 // on screen; every event re-reads the list. Passwords go through stdin, never through arguments.
 // =============================================================================
@@ -11,10 +11,21 @@
  *   - busy: var ({id: "mount"|"unmount"|"eject"|"unlock"}) — actions in flight
  *   - errors: var ({id: message}) — the last failure of each device, cleared on the next success
  *   - watching: bool [readonly] — the event watcher runs
+ *   - hosts: var ([{name, address, protocol: smb|sftp|ssh|nfs|ftp|webdav|ipp, uri, port?}]) — `net discover --json`
+ *   - netMounts: var ([{uri, name, protocol, host, address?, path, user?, free?, total?, version?}]) — `net mounts`
+ *   - servers: var ([{uri, name, protocol, user?}]) — saved servers / bookmarks (`net saved`)
+ *   - discovering: bool — a discovery is running · netStatus/netMessage: avahi missing etc.
+ *   - netBusy: var ({uri: "connect"|"unmount"}) · netErrors: var ({uri: {code, message}})
  *
  * Functions:
  *   - refresh() · mount(id, callback) · unmount(id) · eject(id) · unlock(id, passphrase, callback)
  *   - deviceById(id): var
+ *   - discover() — one `net discover` (NetView repeats it every Theme.files.discoverEvery while it is visible)
+ *   - refreshNet() — mounts + saved servers
+ *   - connect(uri, user, password, save, callback) — `net connect <uri> [--user] [--password-stdin] [--save]`; the
+ *       password goes to the system keyring (the tool uses secret-tool), never to a file; error auth_required asks
+ *   - unmountNet(uri) · shares(host, callback) — `net shares <host>` · saveServer(uri, name) · forgetServer(uri)
+ *   - hostState(host): "connected"|"saved"|"printer"|"available" · mountFor(host): var
  * =============================================================================
  */
 pragma Singleton
@@ -32,6 +43,14 @@ Singleton {
     readonly property bool wanted: Files.visibleWindows > 0
     readonly property bool watching: _watcher !== null
     property var _watcher: null
+    property var hosts: []
+    property var netMounts: []
+    property var servers: []
+    property bool discovering: false
+    property string netStatus: "ok"
+    property string netMessage: ""
+    property var netBusy: ({})
+    property var netErrors: ({})
 
     Component { id: requestComponent; FilesRequest {} }
     function call(args, callback, extra): var {
@@ -76,6 +95,7 @@ Singleton {
     function _syncWatch(): void {
         if (wanted && !_watcher) {
             refresh();
+            refreshNet();
             const p = requestComponent.createObject(root, { args: ["devices", "--watch"], stream: true, persistent: true });
             p.event.connect(() => debounce.restart());
             p.done.connect(r => { if (root._watcher === p) { root._watcher = null; p.destroy(); if (root.wanted) retry.start(); } });
@@ -92,4 +112,50 @@ Singleton {
     Timer { id: debounce; interval: Theme.files.watchDebounce; onTriggered: root.refresh() }
     // the watcher died (tool missing, udisks restarted): try again later, never in a tight loop
     Timer { id: retry; interval: Theme.files.watchRetry; onTriggered: root._syncWatch() }
+
+    // ---- network (d5) ----
+    function discover(): void {
+        if (discovering) return;
+        discovering = true;
+        call(["net", "discover"], r => {
+            discovering = false;
+            if (r.ok) { hosts = r.hosts ?? []; netStatus = "ok"; netMessage = ""; }
+            else { netStatus = r.error?.code === "missing_tool" ? "unavailable" : "error"; netMessage = r.error?.message ?? "No se pudo buscar en la red"; if (r.error?.hint) netMessage += ". " + r.error.hint; }
+        });
+        refreshNet();
+    }
+    function refreshNet(): void {
+        call(["net", "mounts"], r => { if (r.ok) netMounts = r.mounts ?? []; });
+        call(["net", "saved"], r => { if (r.ok) servers = r.servers ?? []; });
+    }
+    function _hostMatches(h, m): bool { return !!m && (m.host === h.name || m.host === h.address || (m.address && m.address === h.address)); }
+    function mountFor(host): var { return netMounts.find(m => _hostMatches(host, m)) ?? null; }
+    function hostState(host): string {
+        if (host.protocol === "ipp") return "printer";
+        if (mountFor(host)) return "connected";
+        if (servers.some(s => s.uri && (s.uri.indexOf("//" + host.name) >= 0 || s.uri.indexOf("//" + host.address) >= 0))) return "saved";
+        return "available";
+    }
+    function _netAct(uri, action, args, callback, extra): void {
+        const b = Object.assign({}, netBusy); b[uri] = action; netBusy = b;
+        call(args, r => {
+            const nb = Object.assign({}, netBusy); delete nb[uri]; netBusy = nb;
+            const e = Object.assign({}, netErrors);
+            if (r.ok) delete e[uri]; else e[uri] = r.error ?? { code: "error", message: "No se pudo conectar" };
+            netErrors = e;
+            refreshNet();
+            if (callback) callback(r);
+        }, extra);
+    }
+    function connect(uri, user, password, save, callback): void {
+        const args = ["net", "connect", uri];
+        if (user) args.push("--user", user);
+        if (password) args.push("--password-stdin");
+        if (save) args.push("--save");
+        _netAct(uri, "connect", args, callback, { input: password ?? "" });
+    }
+    function unmountNet(uri): void { _netAct(uri, "unmount", ["net", "unmount", uri]); }
+    function shares(host, callback): void { call(["net", "shares", host], callback); }
+    function saveServer(uri, name): void { call(["net", "save", uri].concat(name ? ["--name", name] : []), r => refreshNet()); }
+    function forgetServer(uri): void { call(["net", "forget", uri], r => refreshNet()); }
 }

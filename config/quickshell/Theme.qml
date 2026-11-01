@@ -885,6 +885,8 @@ Singleton {
         readonly property real treeRow: 16
         readonly property real dialogWidth: 540        // ExtractDialog / ShareDialog (33-archivos-extraer.png)
         readonly property real segmentHeight: 34
+        readonly property real hostCard: 52
+        readonly property real dot: 6
         readonly property real progressHeight: 4
         readonly property real previewMinWindow: 940     // narrower windows hide the preview panel
         readonly property real buttonHeight: 30
@@ -940,6 +942,7 @@ Singleton {
         readonly property int thumbConcurrency: 2      // thumbnail processes at once
         readonly property int dragThreshold: 8
         readonly property int watchRetry: 10000        // a dead device/network watcher is restarted after this
+        readonly property int discoverEvery: 30000     // NetView repeats the avahi discovery while it is visible
         readonly property real usageWarn: 0.5          // device space bar: cyan below, amber from here …
         readonly property real usageHigh: 0.85         // … red from here
     }
