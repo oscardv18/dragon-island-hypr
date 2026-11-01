@@ -54,3 +54,7 @@ singleton Activity 1.0 Activity.qml
 singleton Cava 1.0 Cava.qml
 singleton Priority 1.0 Priority.qml
 singleton WindowFrame 1.0 WindowFrame.qml
+
+# fase5a: Taller
+singleton Mem 1.0 Mem.qml
+# /fase5a: Taller

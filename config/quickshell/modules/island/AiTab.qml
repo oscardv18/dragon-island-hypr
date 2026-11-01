@@ -94,11 +94,8 @@ Item {
                         agent: modelData
                         detail: Herdr.details[modelData.pane] ?? null
                         elapsed: root.ago(modelData.since)
-                        canAnswer: Herdr.canAnswer(modelData)
                         onClicked: Herdr.focusAgent(modelData)
                         onViewTerminal: Herdr.focusAgent(modelData)
-                        onApprove: Herdr.approve(modelData)
-                        onReject: Herdr.reject(modelData)
                     }
                 }
 

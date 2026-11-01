@@ -58,3 +58,17 @@ responden; no se enviaron prompts ni se arrancaron agentes reales.
 
 Límites: herdr 0.9.5 no publica relaciones de ayudantes ni timestamps;
 `helper_of=null`, `features.helpers=false`, `since` es tiempo observado.
+
+## 5. Servicios QML
+
+`Herdr` consume un único `dragon-herdr watch --record`, mantiene compatibilidad
+con las propiedades que usa la barra y registra actividad sin salida de terminal.
+Lecturas de paneles solo a demanda y solo en memoria; `Mem` ejecuta consultas y
+cambios puntuales. Ambos exponen estado y errores legibles. Se retiraron los
+botones antiguos de aprobación/rechazo de IA y Mando, según el contrato de fase 5.
+Migración 046 despliega la configuración copiada con respaldo.
+
+Comprobación con Quickshell real offscreen, servidor herdr falso y HOME/XDG
+temporales: servicios cargan, SQLite responde y agentes normalizados llegan con
+las unidades de tiempo esperadas. Se corrigió `Object.fromEntries`, ausente en
+el motor JS de Qt de esta máquina; se usa una iteración simple.

@@ -78,6 +78,11 @@ step "puente de herdr con socket falso (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/herdr -v; then pass "dragon-herdr"; else fail "dragon-herdr"; fi
 # /fase5a: herdr
 
+# fase5a: services and UI
+step "servicios del Taller con Quickshell real y HOME temporal"
+if python3 -m unittest discover -s tests/taller -v; then pass "servicios del Taller"; else fail "servicios del Taller"; fi
+# /fase5a: services and UI
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 
