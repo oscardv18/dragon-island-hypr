@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# File explorer adapter CLI, resolved in the repo or installed engine directory.
+set -Eeuo pipefail
+FILES_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+FILES_ROOT="${FILES_BIN%/*}"
+FILES_LIB="${FILES_ROOT%/*}/dragon-core/dragon_files.py"
+if [[ ! -f "$FILES_LIB" ]]; then
+    FILES_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_files.py"
+fi
+exec python3 -S "$FILES_LIB" "$@"

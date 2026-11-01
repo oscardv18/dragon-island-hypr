@@ -63,6 +63,12 @@ if bash tests/migrations-dry-run.sh; then pass "todas las migraciones, dragon-sd
 step "dragon-sddm-sync: fondo 1920×1080 desenfocado una vez con magick o ffmpeg (tema temporal)"
 if bash tests/sddm-sync.sh; then pass "fondo del login desenfocado una sola vez y sin MultiEffect"; else fail "dragon-sddm-sync prepara mal el fondo"; fi
 
+# fase5d: files
+step "dragon-files: listado, lugares, vigilancia, propiedades, abrir y miniaturas (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files -v; then pass "dragon-files"; else fail "dragon-files"; fi
+if PYTHONDONTWRITEBYTECODE=1 python3 tests/files/bench.py --limit-ms 300; then pass "dragon-files ls 1000 <300 ms"; else fail "latencia de dragon-files"; fi
+# /fase5d: files
+
 # fase5b: engines
 step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
