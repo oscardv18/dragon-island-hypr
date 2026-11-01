@@ -23,6 +23,7 @@ Singleton {
     property bool _refreshing: false
     property var stats: null
     property var details: ({})
+    property int _boardGeneration: 0
     signal changed()
 
     Component {
@@ -59,8 +60,10 @@ Singleton {
         const p = requestComponent.createObject(root, { callback: callback ?? null, reportStatus: false });
         p.exec(["sh", "-c", 'if [ -x "$0" ]; then exec "$0" "$@"; else exit 127; fi', `${Quickshell.env("HOME")}/.local/bin/dragon-herdr`].concat(args).concat(["--json"]));
     }
+    property bool _refreshPending: false
     function refresh(): void {
-        if (_refreshing) return;
+        // A refresh requested mid-flight runs again afterwards, so a write made meanwhile is never shown stale.
+        if (_refreshing) { _refreshPending = true; return; }
         _refreshing = true;
         status = "loading";
         call(["project", "list"], r => {
@@ -71,6 +74,7 @@ Singleton {
                 refreshCards();
             }
             _refreshing = false;
+            if (_refreshPending) { _refreshPending = false; refresh(); }
         });
     }
     function refreshCards(): void {
@@ -90,9 +94,9 @@ Singleton {
     function loadDetails(key): void { if (key) call(["card", "show", key].concat(_scope()), r => _storeDetails(key, r)); }
     function refreshBoard(): void {
         if (!selectedSlug) { cards = []; stats = null; return; }
-        const slug = selectedSlug;
+        const slug = selectedSlug, generation = ++_boardGeneration;
         call(["card", "list", "--project", slug], r => {
-            if (!r.ok || slug !== selectedSlug) return;
+            if (!r.ok || slug !== selectedSlug || generation !== _boardGeneration) return;
             cards = r.cards ?? [];
             for (const c of cards) if (c.criteria_total === undefined || !details[c.key]) loadDetails(c.key);
         });
