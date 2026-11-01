@@ -3,6 +3,7 @@
 Read docs/HERDR-API.md for verified protocol and honest capability limits.
 Only prompt/start accept text from stdin; there is no permission-answer command.
 """
+from contextlib import closing
 import json
 import os
 from pathlib import Path
@@ -58,7 +59,7 @@ def memory():
     path=db_path()
     if not path.is_file():return [],[]
     try:
-        with sqlite3.connect(f'file:{path}?mode=ro',uri=True,timeout=.2) as db:
+        with closing(sqlite3.connect(f'file:{path}?mode=ro',uri=True,timeout=.2)) as db:
             db.row_factory=sqlite3.Row
             return ([dict(r) for r in db.execute('SELECT * FROM project WHERE archived=0')],
                     [dict(r) for r in db.execute('SELECT * FROM card WHERE worktree IS NOT NULL')])
@@ -214,10 +215,33 @@ def hypr(command):
     return result.stdout
 
 
+def client_ancestors():
+    # Herdr can be launched inside an ordinary terminal, rather than our dedicated class.
+    # Resolve real local process ancestry without reading command-line arguments or terminal output.
+    parents={};clients=[]
+    for path in Path('/proc').iterdir():
+        if not path.name.isdecimal():continue
+        try:
+            if path.stat().st_uid != os.getuid():continue
+            fields=(path/'stat').read_text().rsplit(') ',1)[1].split()
+            pid=int(path.name);parents[pid]=int(fields[1])
+            if (path/'comm').read_text().strip()=='herdr' and parents[pid]!=1:clients.append(pid)
+        except (OSError,ValueError,IndexError):continue
+    found=set()
+    for pid in clients:
+        for _ in range(64):
+            pid=parents.get(pid,1)
+            if pid<=1:break
+            found.add(pid)
+    return found
+
+
 def focus(identifier):
     a=find_agent(identifier)
     clients=json.loads(hypr(['clients','-j']))
-    candidates=[c for c in clients if c.get('class','').lower() in ('org.dragonisland.herdr','herdr','dev.herdr.app','com.herdr.app')]
+    ancestors=client_ancestors()
+    candidates=[c for c in clients if c.get('class','').lower() in ('org.dragonisland.herdr','herdr','dev.herdr.app','com.herdr.app')
+                or (c.get('pid') in ancestors and c.get('title','').casefold().startswith('herdr'))]
     if len(candidates)>1:
         candidates=[c for c in candidates if a['space'] and a['space'].casefold() in c.get('title','').casefold()]
     if len(candidates)!=1:raise ToolError('client_not_found','No se encontró una ventana inequívoca de herdr para ese espacio.','Abre el cliente de herdr y vuelve a intentarlo.')

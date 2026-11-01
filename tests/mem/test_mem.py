@@ -58,7 +58,7 @@ class Memory(unittest.TestCase):
         key=self.add();f=self.repo/'file.txt';f.write_text('uno')
         h=hashlib.sha1(b'blob 3\0uno').hexdigest()
         self.cli('seen','set',key,'--path','file.txt','--hash',h)
-        self.assertTrue(self.cli('seen','list',key)['seen'][0]['seen'])
+        r=self.cli('seen','list',key)['seen'][0];self.assertTrue(r['seen']);self.assertEqual(r['blob_hash'],h)
         f.write_text('dos');self.assertTrue(self.cli('seen','list',key)['seen'][0]['changed'])
         f.unlink();self.assertFalse(self.cli('seen','list',key)['seen'][0]['seen'])
         self.cli('comment','add',key,'--path','file.txt','--line','2','--text','Revisar')

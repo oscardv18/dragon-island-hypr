@@ -83,7 +83,9 @@ Window {
             if (step === 2) panel.grabToImage(r => r.saveToFile(win.outDir + "/taller-agentes.png"));
             if (step === 3) attentionPreview.visible = true;
             if (step === 4) attentionPreview.grabToImage(r => r.saveToFile(win.outDir + "/taller-atencion.png"));
-            if (step === 5) Qt.quit();
+            if (step === 5) { attentionPreview.visible = false; panel.projectsOpen = true; }
+            if (step === 6) panel.grabToImage(r => r.saveToFile(win.outDir + "/taller-proyectos.png"));
+            if (step === 7) Qt.quit();
             step++;
         }
     }

@@ -273,8 +273,8 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 
 | Atajo | Acción |
 |---|---|
-| `SUPER + A` | Ir al siguiente bloqueado o listo sin ver |
 | `SUPER + SHIFT + A` | Atajos y funciones de herdr (referencia) |
+| `SUPER + A` | Ir al siguiente bloqueado o listo sin ver |
 | `SUPER + ALT + A` | Ver agentes y comandos en la isla |
 
 ### Aplicaciones
@@ -364,6 +364,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + D` | Notch (Nook / Tray) |
 | `SUPER + N` | Notificaciones |
 | `SUPER + SHIFT + V` · `SUPER + V` | Portapapeles (anillo; Enter pega) |
+| `SUPER + T` | Taller de ingeniería |
 | `SUPER + I` | Tienda de apps (pacman + AUR) |
 
 ### Sistema

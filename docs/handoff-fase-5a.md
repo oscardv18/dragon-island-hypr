@@ -129,3 +129,21 @@ del acento y opciones de paleta. No se registra la carga inicial ni repetir el
 mismo valor. La UI sigue llamando a Settings; solo el servicio llama a Mem.
 Migración 051. Prueba con Settings y Mem reales en HOME temporal: registra
 barra/cristal/paleta, ignora un duplicado y un ajuste de energía.
+
+## Ajustes encontrados al validar
+
+- El cliente real usa Ghostty ordinario (`com.mitchellh.ghostty`), con título
+  `herdr · dragon-island-hypr`. El foco también sigue los ancestros locales del
+  proceso cliente; comprobado con `dragon-herdr focus` real y con prueba aislada.
+- Los hashes Git y los IDs de sesión se conservan en los contratos JSON. El
+  detector opaco conservador sigue en el portapapeles/historial; las marcas de
+  los contratos nuevos usan tipos de secretos reconocidos, incluidas variables
+  con claves entre comillas en JSON.
+- Los respaldos y lectores cierran sus conexiones SQLite de forma explícita.
+  La búsqueda FTS filtra el proyecto antes de aplicar el límite de resultados.
+- Migración 052 despliega estos ajustes. La prueba estática anterior de motores
+  ahora permite únicamente AF_UNIX en el puente, manteniendo la prohibición de
+  red y de evaluación dinámica en los motores.
+- Capturas versionadas: solo datos sintéticos en `docs/screenshots/fase5a/`.
+  Comprimidas con `scripts/optimize-images.sh`; se usó el binario oficial de
+  optipng extraído temporalmente en `/tmp`, sin instalar paquetes del sistema.

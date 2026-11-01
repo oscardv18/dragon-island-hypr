@@ -22,7 +22,7 @@ class Bridge(unittest.TestCase):
         p=self.shim/'hyprctl';p.write_text('''#!/usr/bin/env python3
 import json,os,sys
 if sys.argv[1:]==['clients','-j']:
- print(json.dumps([{'class':'org.dragonisland.Herdr','address':'0x123','title':'demo'}]))
+ print(json.dumps([{'class':'com.mitchellh.ghostty' if os.getenv('HERDR_TEST_WINDOW_PID') else 'org.dragonisland.Herdr','pid':int(os.getenv('HERDR_TEST_WINDOW_PID','0')),'address':'0x123','title':'herdr · demo'}]))
 else:print('ok')
 ''');p.chmod(0o755)
     def cli(self,*args,code=0,input=None):
@@ -102,6 +102,20 @@ else:print('ok')
         for a in [('project','add','--path',str(self.home),'--slug','demo','--prefix','AX'),('card','add','--project','demo','--title','Task'),('card','set','AX-1','--worktree',str(self.home))]:
             subprocess.run(command+list(a),env=self.env,check=True,capture_output=True)
         a=self.cli('snapshot')['agents'][0];self.assertEqual(a['card'],'AX-1');self.assertEqual(a['project'],'demo')
+    def test_focus_regular_terminal_by_client_ancestry(self):
+        script=self.home/'herdr';script.write_text('#!/bin/sh\nread -r line\n');script.chmod(0o755)
+        client=subprocess.Popen([str(script)],stdin=subprocess.PIPE)
+        try:
+            self.env['HERDR_TEST_WINDOW_PID']=str(os.getpid())
+            deadline=time.monotonic()+1
+            while time.monotonic()<deadline:
+                try:
+                    if Path(f'/proc/{client.pid}/comm').read_text().strip()=='herdr':break
+                except OSError:pass
+                time.sleep(.01)
+            self.assertTrue(self.cli('focus','w1:p1')['ok'])
+        finally:
+            client.terminate();client.wait(timeout=2);client.stdin.close()
     def test_read_active_alternate_screen(self):
         self.server.read_busy=True
         self.assertIn("[oculto:",self.cli("read","w1:p1")["text"])

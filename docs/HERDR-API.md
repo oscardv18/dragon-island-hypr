@@ -73,6 +73,7 @@ Con `--record` registra únicamente comienzo y fin de esperas en SQLite.
 - La rama se lee del HEAD local; tarjeta y proyecto se cruzan con rutas registradas
   en `dragon-mem`. No se guarda la salida de los paneles ni se llama a modelos.
 - El foco se resuelve por clase de ventana (`org.dragonisland.Herdr`, herdr
-  nativo) y, si hay varios clientes, por el espacio del título. Si es ambiguo,
+  nativo) o por ancestros del proceso cliente en `/proc` y título de herdr en
+  una terminal ordinaria. Si hay varios clientes, se usa el espacio del título. Si es ambiguo,
   devuelve un error legible sin enfocar una ventana arbitraria.
 - No existe comando de aprobación en `dragon-herdr`. El Taller solo navega al panel.

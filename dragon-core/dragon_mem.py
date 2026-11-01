@@ -3,6 +3,7 @@
 Schema versions live in MIGRATIONS. FTS is maintained by SQL triggers in the same
 transaction as its source rows. All CLI text is redacted before persistence.
 """
+from contextlib import closing
 import hashlib
 import json
 import os
@@ -35,7 +36,7 @@ def backup(path=None):
     fd = os.open(dest, os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
     os.close(fd)
     try:
-        with sqlite3.connect(f'file:{path}?mode=ro', uri=True) as src, sqlite3.connect(dest) as dst:
+        with closing(sqlite3.connect(f'file:{path}?mode=ro', uri=True)) as src, closing(sqlite3.connect(dest)) as dst:
             src.backup(dst)
     except BaseException:
         dest.unlink(missing_ok=True)
@@ -290,10 +291,12 @@ def dispatch(db, a):
         # Quote terms so punctuation cannot inject FTS operators or trigger syntax errors.
         query=' AND '.join('"'+s.replace('"','""')+'"' for s in a.query.split())
         if not query: return dict(results=[])
-        result=rows(db,"SELECT kind,ref,title,snippet(search_fts,3,'[',']','…',18) AS fragment FROM search_fts WHERE search_fts MATCH ? ORDER BY rank LIMIT 100",(query,))
+        condition='search_fts MATCH ?';params=[query]
         if a.project:
             pid=project(db,a.project)['id']
-            result=[r for r in result if db.execute(f"SELECT 1 FROM {r['kind']} WHERE id=? AND project_id=?",(r['ref'],pid)).fetchone()]
+            condition += " AND ("+' OR '.join(f"(kind='{table}' AND ref IN (SELECT id FROM {table} WHERE project_id=?))" for table in ('card','note','prompt_template'))+")"
+            params.extend([pid]*3)
+        result=rows(db,"SELECT kind,ref,title,snippet(search_fts,3,'[',']','…',18) AS fragment FROM search_fts WHERE "+condition+" ORDER BY rank LIMIT 100",params)
         return dict(results=result)
     if group in ('seen','comment'):
         c=card(db,a.key,a.project);identifier=c['id']
