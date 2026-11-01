@@ -75,6 +75,7 @@ core_apply() {
     taller_tools_setup
     prompt_setup
     gate_setup
+    tokens_setup
     core_gpu_env
 
     # the neural core has one source (shared/neural-core): re-sync both copies

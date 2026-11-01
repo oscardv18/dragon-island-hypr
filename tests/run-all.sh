@@ -68,6 +68,8 @@ step "compositor determinista con destinos simulados (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/prompt -v; then pass "dragon-prompt"; else fail "dragon-prompt"; fi
 step "puertas de pruebas: límites, cancelación y eventos (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/gate -v; then pass "dragon-gate"; else fail "dragon-gate"; fi
+step "consumo diario con registros sintéticos (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/tokens -v; then pass "dragon-tokens"; else fail "dragon-tokens"; fi
 # /fase5c: tools
 
 # fase5b: engines

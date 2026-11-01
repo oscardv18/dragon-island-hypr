@@ -26,3 +26,12 @@ gate_setup() {
     deploy_item "$REPO_DIR/dragon-core/dragon_gate.py" "${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_gate.py"
     deploy_item "$REPO_DIR/bin/dragon-gate" "$HOME/.local/bin/dragon-gate"
 }
+
+tokens_setup() {
+    local file data="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines"
+    for file in secret_filter.py taller_common.py; do
+        deploy_item "$REPO_DIR/dragon-core/$file" "$data/$file"
+    done
+    deploy_item "$REPO_DIR/dragon-core/dragon_tokens.py" "${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_tokens.py"
+    deploy_item "$REPO_DIR/bin/dragon-tokens" "$HOME/.local/bin/dragon-tokens"
+}
