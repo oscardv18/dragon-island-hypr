@@ -881,6 +881,7 @@ Singleton {
         readonly property real statusHeight: 26
         readonly property real previewWidth: 268
         readonly property real previewImageMax: 150
+        readonly property real previewImageRatio: 0.62
         readonly property real treeLines: 5            // archive preview: lines before «+ N más…»
         readonly property real treeRow: 16
         readonly property real dialogWidth: 540        // ExtractDialog / ShareDialog (33-archivos-extraer.png)
@@ -939,6 +940,7 @@ Singleton {
         // timing
         readonly property int watchDebounce: 300       // folder events → one reload
         readonly property int searchDebounce: 120
+        readonly property int typeAhead: 900           // letters typed within this add up to one name
         readonly property int thumbConcurrency: 2      // thumbnail processes at once
         readonly property int dragThreshold: 8
         readonly property int watchRetry: 10000        // a dead device/network watcher is restarted after this

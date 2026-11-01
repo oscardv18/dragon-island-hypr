@@ -168,7 +168,7 @@ Item {
         property color tone: Theme.warn
         property bool mono: false
         Layout.fillWidth: true
-        implicitHeight: noticeText.implicitHeight + Theme.files.inset * 1.6
+        implicitHeight: noticeText.implicitHeight + Theme.files.inset + Theme.files.smallGap
         radius: Theme.files.rowRadius
         color: Theme.alpha(tone, Theme.files.badgeTint / 2)
         border.width: Theme.files.border

@@ -43,6 +43,8 @@ Window {
         function list(path, opts, cb) {
             const map = { [win.docs]: "files-ls-docs.json", [win.home + "/Descargas"]: "files-ls-descargas.json" };
             if (map[path]) { const r = win.fixture(map[path]); if (!opts?.git) for (const e of r.entries) e.git = null; cb(r); }
+            else if (path === "/sin-herramienta") cb({ ok: false, error: { code: "missing_tool", message: "dragon-files no está instalado", hint: "Ejecuta ./update.sh" } });
+            else if (path === "trash:///") cb({ ok: true, path: path, entries: [{ name: "viejo.txt", kind: "file", size: 120, mtime: 1793469120 - 86400, mime: "text/plain", hidden: false, uri: "trash:///viejo.txt" }], free: -1, total: -1 });
             else if (path === win.home + "/privado") cb({ ok: false, error: { code: "permission_denied", message: "No tienes permiso para abrir «privado»", hint: "Pide acceso al propietario o ábrela como administrador" } });
             else cb({ ok: true, path: path, entries: [], free: 499289948160, total: 1000204886016, fs: "btrfs" });
         }
@@ -90,6 +92,8 @@ Window {
         function cancel(id) { _rec("cancel", id); queue = []; }
         function dismissError() { lastError = null; }
         function undo() { _rec("undo"); }
+        function restore(u) { _rec("restore", u); }
+        function emptyTrash() { _rec("emptyTrash"); }
         function feed(ev) {
             const base = queue[0] ?? { id: 1, kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", count: 5, state: "running" };
             if (ev.t === "progress") queue = [Object.assign({}, base, { pct: ev.pct, file: ev.file, index: ev.index, count: ev.count, state: "running" })];
@@ -383,7 +387,25 @@ Window {
                 check(d.error.indexOf("carpeta personal") >= 0, "forbidden path shown");
                 shot("files-compartir-prohibido.png");
             }
-            if (step === 36) Qt.quit();
+            if (step === 36) {
+                dialog("ShareDialog").close();
+                t.go(win.docs);
+                panel.typeAhead("r"); panel.typeAhead("e");
+                eq(t.focusEntry?.name, "release-2.4.tar.gz", "type-ahead");
+                t.go("trash:///");
+            }
+            if (step === 37) {
+                check(panel.inTrash, "trash view");
+                t.selectNames(["viejo.txt"]);
+                panel.runAction("restore", t.focusEntry);
+                eq(JSON.stringify(ops.calls[ops.calls.length - 1][1]), JSON.stringify(["trash:///viejo.txt"]), "restore by uri");
+                shot("files-papelera.png");
+            }
+            if (step === 38) { t.go(win.home + "/vacia"); }
+            if (step === 39) shot("files-vacia.png");
+            if (step === 40) t.go("/sin-herramienta");
+            if (step === 41) { eq(t.error, "dragon-files no está instalado", "missing tool"); shot("files-sin-herramienta.png"); }
+            if (step === 42) Qt.quit();
             step++;
         }
     }

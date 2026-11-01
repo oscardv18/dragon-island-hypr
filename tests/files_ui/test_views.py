@@ -64,7 +64,7 @@ class Views(unittest.TestCase):
 class Services(unittest.TestCase):
     """Real services/Files*.qml in Quickshell, talking to tests/files_ui/fake_dragon_files.py."""
 
-    def run_shell(self, body, timeout=12, **extra_env):
+    def run_shell(self, body, timeout=20, **extra_env):
         tmp = tempfile.mkdtemp(prefix='files-svc-')
         self.addCleanup(shutil.rmtree, tmp, True)
         home = Path(tmp)

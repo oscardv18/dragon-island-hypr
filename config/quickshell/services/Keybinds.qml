@@ -99,6 +99,20 @@ Singleton {
     // Keys that work INSIDE the panels (no Hyprland bind): listed here so everything is in one place. Keep in step with
     // docs/KEYBINDS.md ("Teclado dentro de los paneles").
     readonly property var panelGroups: [
+        // fase5d: Files
+        { name: "Explorador de archivos (dentro)", rows: [
+            { text: "Moverse · abrir · subir de carpeta", combos: [["↑", "↓"], ["Enter"], ["Retroceso"]] },
+            { text: "Atrás · adelante · subir", combos: [["Alt", "←"], ["Alt", "→"], ["Alt", "↑"]] },
+            { text: "Editar la ruta · buscar · ir al nombre", combos: [["Ctrl", "L"], ["/"], ["escribir"]] },
+            { text: "Mostrar ocultos · lista o cuadrícula", combos: [["Ctrl", "H"], ["Ctrl", "1"], ["Ctrl", "2"]] },
+            { text: "Pestaña nueva · cerrar · cambiar", combos: [["Ctrl", "T"], ["Ctrl", "W"], ["Ctrl", "Tab"]] },
+            { text: "Seleccionar todo · ampliar la selección", combos: [["Ctrl", "A"], ["Shift", "↑↓"]] },
+            { text: "Copiar · cortar · pegar · deshacer", combos: [["Ctrl", "C"], ["Ctrl", "X"], ["Ctrl", "V"], ["Ctrl", "Z"]] },
+            { text: "Renombrar · nueva carpeta", combos: [["F2"], ["Ctrl", "Shift", "N"]] },
+            { text: "A la papelera · eliminar para siempre", combos: [["Supr"], ["Shift", "Supr"]] },
+            { text: "Menú del elemento · recargar", combos: [["Menú"], ["F5"]] }
+        ] },
+        // /fase5d: Files
         { name: "Taller (dentro)", rows: [
             { text: "Elegir agente · ir al panel", combos: [["↑"], ["↓"], ["Enter"]] },
             { text: "Cambiar de pestaña", combos: [["Ctrl", "Tab"], ["Ctrl", "Shift", "Tab"]] },

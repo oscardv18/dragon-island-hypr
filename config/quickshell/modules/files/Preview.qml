@@ -17,6 +17,7 @@ Rectangle {
     readonly property var entries: tab?.selection ?? []
     readonly property var entry: entries.length === 1 ? entries[0] : null
     readonly property bool many: entries.length > 1
+    readonly property bool inTrash: (tab?.path ?? "").indexOf("trash:") === 0
     readonly property string path: entry && tab ? tab.pathOf(entry) : (tab?.path ?? "")
     readonly property string category: entry ? F.category(entry) : "dir"
     property var props: null
@@ -88,7 +89,7 @@ Rectangle {
                 // ---- picture ----
                 Rectangle {
                     width: parent.width
-                    height: Math.min(width * 0.62, Theme.files.previewImageMax)
+                    height: Math.min(width * Theme.files.previewImageRatio, Theme.files.previewImageMax)
                     visible: root.thumbFile.length > 0 && !root.many
                     radius: Theme.files.thumbRadius
                     color: Theme.files.thumb
@@ -133,15 +134,20 @@ Rectangle {
         Flow {
             Layout.fillWidth: true
             spacing: Theme.files.inset
-            visible: !archiveLoader.active || root.many
+            visible: (!archiveLoader.active || root.many) && !root.inTrash
             FilesButton { label: "Abrir"; primary: true; visible: !!root.entry || root.many; onClicked: root.action("open", root.entry) }
             FilesButton { label: "Abrir con…"; visible: !!root.entry && root.entry.kind !== "dir"; onClicked: root.action("openWith", root.entry) }
             FilesButton { label: "Terminal aquí"; visible: !root.many; onClicked: root.action("terminal", root.entry) }
             FilesButton { label: "Enviar al agente"; enabled: root.files?.composerAvailable ?? false; onClicked: root.action("agent", root.entry) }
         }
+        Flow {
+            Layout.fillWidth: true
+            visible: root.inTrash && root.entries.length > 0
+            FilesButton { label: "Restaurar"; primary: true; onClicked: root.action("restore", root.entry) }
+        }
         Loader {
             Layout.fillWidth: true
-            active: archiveLoader.active
+            active: archiveLoader.active && !root.inTrash
             visible: active
             sourceComponent: Flow {
                 spacing: Theme.files.inset

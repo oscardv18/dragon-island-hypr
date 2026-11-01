@@ -102,6 +102,13 @@ Rectangle {
         const one = entry && sel.length <= 1;
         const isArch = one && F.isArchive(entry);
         const items = [];
+        if (inTrash) {
+            if (entry) items.push({ label: "Restaurar", action: "restore", icon: Icons.restart });
+            if (entry) items.push({ label: "Eliminar para siempre…", action: "delete", danger: true });
+            items.push({ label: "Vaciar la papelera…", action: "emptyTrash", icon: Icons.trash, danger: true, enabled: (tab?.shown.length ?? 0) > 0 });
+            menu.popup(x, y, items);
+            return;
+        }
         if (entry) {
             items.push({ label: "Abrir", action: "open", hint: "↵", icon: Icons.folderOutline });
             if (one && entry.kind !== "dir") items.push({ label: "Abrir con…", action: "openWith", icon: Icons.apps });
@@ -152,6 +159,8 @@ Rectangle {
         case "trash": trashSelection(); break;
         case "delete": askDelete(); break;
         case "undo": ops?.undo(); break;
+        case "restore": ops?.restore(tab.selection.map(e => e.uri ?? tab.pathOf(e))); break;
+        case "emptyTrash": askEmptyTrash(); break;
         case "terminal": files?.terminalHere(entry && entry.kind === "dir" ? tab.pathOf(entry) : tab.path); break;
         case "agent": files?.sendToAgent(paths.length ? paths : [tab.path]); break;
         case "hidden": state.showHidden = !state.showHidden; break;
@@ -213,6 +222,21 @@ Rectangle {
         } else if (d.mounted && d.mountpoint) tab?.go(d.mountpoint);
         else devices.mount(d.id, r => { if (r.ok) tab?.go(r.mountpoint ?? devices.deviceById(d.id)?.mountpoint ?? ""); });
     }
+    // type a name to jump to it (letters typed within Theme.files.typeAhead ms add up)
+    property string _typed: ""
+    Timer { id: typedReset; interval: Theme.files.typeAhead; onTriggered: root._typed = "" }
+    function typeAhead(ch): void {
+        if (!tab) return;
+        _typed += ch.toLowerCase(); typedReset.restart();
+        const i = tab.shown.findIndex(x => String(x.name).toLowerCase().indexOf(_typed) === 0);
+        if (i >= 0) tab.select(i, 0);
+    }
+    function askEmptyTrash(): void {
+        prompt.purpose = "emptyTrash";
+        prompt.ask({ title: "Vaciar la papelera", input: false, danger: true, message: "Todo lo que hay en la papelera se borrará para siempre. No se puede deshacer.",
+                     buttons: [{ label: "Cancelar", action: "cancel" }, { label: "Vaciar", action: "ok", primary: true, danger: true }] });
+    }
+    readonly property bool inTrash: (tab?.path ?? "").indexOf("trash:") === 0
     function editPath(): void { editingPath = true; Qt.callLater(() => pathInput.focusInput()); }
     function focusSearch(): void { searchInput.focusInput(); }
     function focusContent(): void { root.forceActiveFocus(); }
@@ -243,7 +267,7 @@ Rectangle {
         else if (ctrl && e.key === Qt.Key_Z) ops?.undo();
         else if (e.key === Qt.Key_F2) askRename();
         else if (e.key === Qt.Key_Delete && shift) askDelete();
-        else if (e.key === Qt.Key_Delete) trashSelection();
+        else if (e.key === Qt.Key_Delete) { if (inTrash) askDelete(); else trashSelection(); }
         else if (e.key === Qt.Key_Menu || (shift && e.key === Qt.Key_F10)) contextMenuFor(tab?.focusEntry, content.x + main.x + content.width / 3, content.y + main.y + content.height / 3);
         else if (ctrl && e.key === Qt.Key_T) state.newTab(tab?.path);
         else if (ctrl && e.key === Qt.Key_W) { if (state.tabs.length > 1) state.closeTab(state.currentIndex); else closeRequested(); }
@@ -252,6 +276,7 @@ Rectangle {
         else if (ctrl && e.key === Qt.Key_2) state.viewMode = "cuadricula";
         else if (e.key === Qt.Key_F5 || (ctrl && e.key === Qt.Key_R)) tab?.reload();
         else if (e.key === Qt.Key_Escape) { if (state.search) state.search = ""; else tab?.clearSelection(); }
+        else if (!ctrl && !alt && e.text.length === 1 && e.text > " ") typeAhead(e.text);
         else handled = false;
         e.accepted = handled;
     }
@@ -456,6 +481,8 @@ Rectangle {
                         text: root.tab?.status === "loading" ? "Leyendo la carpeta…"
                             : root.tab?.status === "error" ? root.tab.error
                             : root.state.search ? "Nada coincide con «" + root.state.search + "»"
+                            : root.inTrash ? "La papelera está vacía"
+                            : (root.tab?.entries.length ?? 0) > 0 ? "Solo hay archivos ocultos · Ctrl+H para verlos"
                             : "Carpeta vacía"
                     }
                     UiText {
@@ -466,7 +493,8 @@ Rectangle {
                         color: Theme.textDim
                         wrapMode: Text.Wrap
                         maximumLineCount: 3
-                        text: root.tab?.status === "error" ? (root.tab.errorHint || "") : ""
+                        text: root.tab?.status === "error" ? (root.tab.errorHint || "")
+                            : root.tab?.status === "ok" && !root.state.search && !root.inTrash && (root.tab?.entries.length ?? 0) === 0 ? "Arrastra aquí archivos o pulsa Ctrl+Mayús+N para crear una carpeta" : ""
                     }
                 }
                 NetView {
@@ -490,7 +518,7 @@ Rectangle {
                 id: preview
                 Layout.preferredWidth: Theme.files.previewWidth
                 Layout.fillHeight: true
-                visible: !(root.tab?.isNet ?? false) && root.width >= Theme.files.previewMinWindow
+                visible: !(root.tab?.isNet ?? false) && root.tab?.status !== "error" && root.width >= Theme.files.previewMinWindow
                 tab: root.tab
                 files: root.files
                 archives: root.archives
@@ -511,6 +539,13 @@ Rectangle {
                 color: Theme.textSoft
                 text: root.tab?.isNet ? netView.hosts.length + (netView.hosts.length === 1 ? " equipo · " : " equipos · ") + netView.connectedCount + (netView.connectedCount === 1 ? " conectado" : " conectados")
                     : root.tab ? F.selectionSummary(root.tab.selection, root.tab.shown.length) : ""
+            }
+            FilesButton {
+                visible: root.inTrash && (root.tab?.shown.length ?? 0) > 0
+                implicitHeight: Theme.files.statusHeight
+                label: "Vaciar la papelera"
+                danger: true
+                onClicked: root.askEmptyTrash()
             }
             OpsBar {
                 ops: root.ops
@@ -561,6 +596,7 @@ Rectangle {
             if (purpose === "rename" && action === "ok" && name && name !== F.basename(target) && name.indexOf("/") < 0) root.ops?.rename(target, name);
             else if (purpose === "mkdir" && action === "ok" && name && name.indexOf("/") < 0) root.ops?.mkdir(target, name);
             else if (purpose === "delete" && action === "ok") root.ops?.remove(targets);
+            else if (purpose === "emptyTrash" && action === "ok") root.ops?.emptyTrash();
             else if (purpose === "conflict" && action !== "cancel") root.ops?.answer(opId, action, checked);
             else if (purpose === "compress" && action !== "cancel" && name && name.indexOf("/") < 0) root.archives?.create(action, F.join(root.tab.path, name + "." + action), targets);
             else if (purpose === "unlock" && action === "ok" && value) {

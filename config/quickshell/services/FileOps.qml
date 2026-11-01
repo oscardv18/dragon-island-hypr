@@ -17,6 +17,7 @@
  * Functions:
  *   - copy(paths, dest) · move(paths, dest) · trash(paths) · remove(paths) (permanent, passes --confirm: the view
  *       asks first) · rename(path, newName) · mkdir(dir, name) · link(paths, dest)
+ *   - emptyTrash() · restore(uris) — `trash empty --confirm` / `trash restore <uri…>` (the view asks first)
  *   - run(kind, args, extra {sources, dest, count, input, callback}) — any `--json-progress` command (Archives)
  *   - cancel(id) · answer(id, choice: skip|overwrite|rename, all: bool) — reply to a conflict question
  *   - undo() · dismissError() · clearFinished()
@@ -66,6 +67,8 @@ Singleton {
     function rename(path, newName): void { _enqueue("rename", ["op", "rename", path, "--name", newName], { sources: [path], dest: F.join(F.parent(path), newName) }); }
     function mkdir(dir, name): void { _enqueue("mkdir", ["op", "mkdir", dir, "--name", name], { dest: F.join(dir, name) }); }
     function link(paths, dest): void { _enqueue("link", ["op", "link"].concat(paths, ["--dest", dest]), { sources: paths, dest: dest }); }
+    function emptyTrash(): void { _enqueue("delete", ["trash", "empty", "--confirm"], { sources: [F.TRASH] }); }
+    function restore(uris): void { _enqueue("move", ["trash", "restore"].concat(uris), { sources: uris }); }
     function run(kind, args, extra): int { return _enqueue(kind, args, extra ?? {}); }
 
     function _enqueue(kind, args, extra): int {
