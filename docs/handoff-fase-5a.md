@@ -1,6 +1,6 @@
 # Fase 5a · Base del Taller
 
-Rama `feat/fase5a-base`, desde `main`; inicio 2026-10-31. En curso.
+Rama `feat/fase5a-base`, desde `main`; 2026-10-31. Implementado; validación final al pie.
 
 ## 1. Entorno comprobado
 
@@ -182,3 +182,66 @@ Navegar con Ir ↵ o SUPER+A cierra los paneles antes de enfocar herdr, para sol
 el foco exclusivo del Taller. Si el foco falla, vuelve a Agentes con el error
 visible. El formulario de proyecto bloquea los atajos de la lista que queda
 por debajo. Prueba de navegación y de error con compositor simulado; migración 054.
+
+## Entrega y comprobación final
+
+- Los diez puntos del tramo están implementados en `feat/fase5a-base`, con un
+  commit por punto y commits adicionales para los problemas detectados al validar.
+- Migraciones **043–054**: filtro, memoria, puente, servicios, interfaz y ajustes
+  finales. Probadas en seco y sobre instalaciones copiadas con respaldo e
+  idempotencia. Aplicadas también a esta instalación enlazada, sin paquetes ni sudo.
+- `tests/run-all.sh`: **tres ejecuciones consecutivas en verde** sobre la versión
+  final. Incluye shellcheck, Bash, Lua, QML, regresiones existentes, 54 migraciones
+  sin escrituras en dry-run, documentación, imágenes e instalación idempotente.
+- Quickshell real carga la interfaz. Las cinco pestañas abren por IPC; al cerrar,
+  `dragon-taller` desaparece de las capas y solo permanece el observador nuevo de
+  herdr. `hyprctl configerrors` vacío. Base SQLite con permisos 600.
+- Snapshot, lectura en memoria y foco probados contra herdr 0.9.5 real, incluido
+  el cliente dentro de Ghostty ordinario. No se enviaron prompts ni se iniciaron
+  modelos/agentes reales durante las comprobaciones.
+
+### Qué debe verse
+
+1. `SUPER + T`: Taller centrado, contorno HUD, cabecera con proyecto/rama,
+   conexión de herdr y número de proyectos; cinco pestañas. `Esc` lo cierra.
+2. Agentes: grupos por espacio, estados y datos reales, vista previa tachada,
+   botón Ir al panel y marcado de listos vistos. Sin servidor: «herdr no está en marcha».
+3. Isla: pendiente bloqueado o listo sin ver con Ir ↵; `SUPER + A` recorre los
+   pendientes. Clic derecho en la pastilla o acción de Mando: ignorar 10 min.
+4. Selector de proyectos: elegir o registrar una carpeta; rama visible también
+   sin agentes. Escrituras solo al pulsar Registrar proyecto.
+5. Cambios de barra, cristal y paleta desde Ajustes: entradas locales en
+   `dragon-mem system log list`. Repetir un valor no añade una entrada.
+6. Mosaico conservado en `SUPER + CTRL + T` y en su cápsula de la barra.
+
+### Límites y comprobaciones pendientes
+
+- No se probaron las teclas y clics físicos. Se verificaron sus destinos por IPC,
+  los servicios reales y las vistas con datos simulados.
+- No había un agente real bloqueado disponible para medir su transición completa.
+  El recorrido socket → observador → QML → vista/prioridad cumple <2 s con herdr
+  falso; el foco y la lectura sí se comprobaron en el servidor real.
+- herdr 0.9.5 no expone relaciones de ayudantes. No se deducen del texto; el mock
+  comprueba su anidado visual para cuando existan esos datos.
+- Prompt, Kanban, Git, Contenedores, Revisión y consumo pertenecen a 5b/5c: las
+  pestañas vacías y acciones todavía no disponibles lo indican. No se implementó
+  el explorador (5d).
+- CPU con agentes activos: la variación supera el margen de 0,3 puntos y esa
+  condición no es concluyente. El perfil de reposo sin agentes no muestra aumento
+  respecto a `main` (medición anterior en este documento).
+
+### Reproducir
+
+```sh
+./tests/run-all.sh
+python3 tests/mem/bench.py
+python3 tests/herdr/bench.py
+# Vistas puras, datos sintéticos, sin agentes ni datos del usuario:
+tests/qml/render-mocks.sh /tmp/dragon-mocks
+```
+
+Capturas optimizadas: [Agentes](screenshots/fase5a/taller-agentes.png),
+[sin herdr](screenshots/fase5a/taller-vacio.png),
+[atención](screenshots/fase5a/taller-atencion.png),
+[proyectos](screenshots/fase5a/taller-proyectos.png).
+Contrato comprobado: [HERDR-API.md](HERDR-API.md).
