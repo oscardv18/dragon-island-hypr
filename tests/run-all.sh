@@ -68,6 +68,8 @@ step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
 step "Git con repositorios temporales"
 if python3 -m unittest discover -s tests/git -v; then pass "dragon-git"; else fail "dragon-git"; fi
+step "servicios Docker y Git con Quickshell real y HOME temporal"
+if python3 -m unittest discover -s tests/fase5b -v; then pass "servicios de 5b"; else fail "servicios de 5b"; fi
 # /fase5b: engines
 
 # fase5a: shared secrets
