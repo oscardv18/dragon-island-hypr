@@ -73,6 +73,7 @@ core_apply() {
     mem_setup
     herdr_bridge_setup
     taller_tools_setup
+    prompt_setup
     core_gpu_env
 
     # the neural core has one source (shared/neural-core): re-sync both copies

@@ -1,0 +1,29 @@
+{
+  "name": "Error de contenedor",
+  "blocks": [
+    {
+      "id": "instruction",
+      "type": "text",
+      "label": "Instrucciones",
+      "arg": "Diagnostica el primer error del registro y propone una corrección verificable."
+    },
+    {
+      "id": "log",
+      "type": "log",
+      "label": "Registro",
+      "arg": ""
+    },
+    {
+      "id": "paths",
+      "type": "paths",
+      "label": "Rutas",
+      "arg": ""
+    },
+    {
+      "id": "commands",
+      "type": "commands",
+      "label": "Comandos",
+      "arg": ""
+    }
+  ]
+}

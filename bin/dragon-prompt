@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Deterministic prompt composer, resolved in the repo or installed engine directory.
+set -Eeuo pipefail
+MEM_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+MEM_ROOT="$(dirname -- "$(dirname -- "$MEM_BIN")")"
+MEM_LIB="$MEM_ROOT/dragon-core/dragon_prompt.py"
+[[ -f "$MEM_LIB" ]] || MEM_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_prompt.py"
+exec python3 -S "$MEM_LIB" "$@"

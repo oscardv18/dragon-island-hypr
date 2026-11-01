@@ -1,0 +1,23 @@
+{
+  "name": "Explicar código",
+  "blocks": [
+    {
+      "id": "instruction",
+      "type": "text",
+      "label": "Instrucciones",
+      "arg": "Explica el flujo, las responsabilidades y las decisiones del código indicado."
+    },
+    {
+      "id": "paths",
+      "type": "paths",
+      "label": "Rutas",
+      "arg": ""
+    },
+    {
+      "id": "selection",
+      "type": "selection",
+      "label": "Selección",
+      "arg": ""
+    }
+  ]
+}

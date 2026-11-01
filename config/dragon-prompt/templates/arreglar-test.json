@@ -1,0 +1,35 @@
+{
+  "name": "Arreglar test",
+  "blocks": [
+    {
+      "id": "instruction",
+      "type": "text",
+      "label": "Instrucciones",
+      "arg": "Investiga el fallo y corrige su causa. Ejecuta las pruebas pertinentes."
+    },
+    {
+      "id": "card",
+      "type": "card",
+      "label": "Tarjeta",
+      "arg": ""
+    },
+    {
+      "id": "log",
+      "type": "log",
+      "label": "Registro",
+      "arg": ""
+    },
+    {
+      "id": "diff",
+      "type": "diff",
+      "label": "Cambios",
+      "arg": ""
+    },
+    {
+      "id": "commands",
+      "type": "commands",
+      "label": "Comandos",
+      "arg": ""
+    }
+  ]
+}

@@ -1,0 +1,35 @@
+{
+  "name": "Refactor pequeño",
+  "blocks": [
+    {
+      "id": "instruction",
+      "type": "text",
+      "label": "Instrucciones",
+      "arg": "Haz un refactor acotado preservando el comportamiento y verifica las pruebas."
+    },
+    {
+      "id": "card",
+      "type": "card",
+      "label": "Tarjeta",
+      "arg": ""
+    },
+    {
+      "id": "paths",
+      "type": "paths",
+      "label": "Rutas",
+      "arg": ""
+    },
+    {
+      "id": "diff",
+      "type": "diff",
+      "label": "Cambios",
+      "arg": ""
+    },
+    {
+      "id": "commands",
+      "type": "commands",
+      "label": "Comandos",
+      "arg": ""
+    }
+  ]
+}
