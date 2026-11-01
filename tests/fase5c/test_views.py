@@ -57,5 +57,9 @@ class Views(unittest.TestCase):
         self.assertIn('SEEN 4 COMMENTS 3 BADGE 1', out)
 
 
+    def test_usage_card(self):
+        self.check('taller_consumo_mock.qml', ('taller-agentes-consumo.png', 'taller-agentes-sin-consumo.png'))
+
+
 if __name__ == '__main__':
     unittest.main()

@@ -21,6 +21,8 @@ Singleton {
     readonly property bool reviewActive: ShellState.openPanel === "taller" && tab === "revision"
     onReviewActiveChanged: Review.activate(reviewActive)
     function openReview(key): void { if (key) Review.setCard(key); tab = "revision"; }
+    readonly property bool agentsActive: ShellState.openPanel === "taller" && tab === "agentes"
+    onAgentsActiveChanged: Tokens.activate(agentsActive)
     function init(): void {}
     function open(name): void {
         tab = tabs.indexOf(name) >= 0 ? name : "agentes";

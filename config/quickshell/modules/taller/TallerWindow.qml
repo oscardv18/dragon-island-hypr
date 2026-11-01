@@ -37,6 +37,7 @@ PanelWindow {
             promptService: Prompts
             gateService: Gate
             reviewService: Review
+            tokenService: Tokens
             tab: Taller.tab
             onTabRequested: name => Taller.tab = name
             onCloseRequested: ShellState.close()

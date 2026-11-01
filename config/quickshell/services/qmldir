@@ -69,4 +69,5 @@ StdinRequest 1.0 StdinRequest.qml
 singleton Prompts 1.0 Prompts.qml
 singleton Gate 1.0 Gate.qml
 singleton Review 1.0 Review.qml
+singleton Tokens 1.0 Tokens.qml
 # /fase5c

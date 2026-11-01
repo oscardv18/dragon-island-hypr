@@ -13,6 +13,7 @@ Rectangle {
     property var promptService: null
     property var gateService: null
     property var reviewService: null
+    property var tokenService: null
     property string tab: "agentes"
     property bool shown: false
     property string notice: ""
@@ -95,6 +96,7 @@ Rectangle {
                 anchors.fill: parent
                 visible: root.tab === "agentes"
                 service: root.agentService
+                tokenService: root.tokenService
                 shown: root.shown && visible
                 onPromptRequested: opts => root.openComposer(opts)
                 onReviewRequested: key => root.openReview(key)

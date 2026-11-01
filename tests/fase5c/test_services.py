@@ -269,5 +269,33 @@ class ReviewFlow(unittest.TestCase):
         self.assertEqual([json.loads(l)['target'] for l in data['sent'].splitlines()], ['clipboard'])
 
 
+TOKENS = """import Quickshell
+import QtQuick
+import "services"
+ShellRoot {
+    Component.onCompleted: Tokens.activate(true)
+    Timer { interval: 60; running: true; repeat: true
+        onTriggered: {
+            if (Tokens.status === "loading") return;
+            if (Tokens.status === "ok" || Tokens.status === "unavailable") {
+                console.log("TOKENS", Tokens.available, Tokens.format(Tokens.today.claude?.cache), Tokens.format(Tokens.today.codex?.in)); Qt.quit();
+            }
+        }
+    }
+    Timer { interval: 8000; running: true; onTriggered: { console.error("FAIL timeout"); Qt.quit(); } }
+}
+"""
+
+
+@unittest.skipUnless(shutil.which('qs'), 'Quickshell required')
+class TodayUsage(unittest.TestCase):
+    def test_with_and_without_tool(self):
+        out, _ = run_shell(TOKENS)
+        self.assertIn('TOKENS true 1,2 M —', out, out)
+        out, _ = run_shell(TOKENS, fakes=())
+        self.assertIn('TOKENS false — —', out, out)
+        for bad in BAD: self.assertNotIn(bad, out, out)
+
+
 if __name__ == '__main__':
     unittest.main()

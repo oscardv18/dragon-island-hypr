@@ -15,6 +15,7 @@ singleton Activity 1.0 Activity.qml
 singleton Prompts 1.0 Prompts.qml
 singleton Gate 1.0 Gate.qml
 singleton Review 1.0 Review.qml
+singleton Tokens 1.0 Tokens.qml
 '''
 BAD = ('ReferenceError', 'TypeError', 'Error loading configuration', 'is not a function', 'SyntaxError', 'Unable to assign', 'Cannot assign', 'is not defined')
 
