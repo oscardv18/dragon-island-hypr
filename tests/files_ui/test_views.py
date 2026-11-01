@@ -273,6 +273,19 @@ class Services(unittest.TestCase):
         self.assertIn(['stdin', 7], calls)
         self.assertNotIn('secreto', json.dumps(calls))
 
+    def test_share_enable_refuses_home_and_refreshes(self):
+        r, calls = self.run_shell('''
+    Component.onCompleted: Files.shareEnable(Quickshell.env("HOME"), "casa", false, false, bad => {
+        if (bad.ok || bad.error.code !== "forbidden_path") throw new Error("home must be refused");
+        Files.shareEnable("/h/p", "p", true, true, ok => {
+            if (!ok.ok) throw new Error("enable");
+            Qt.callLater(() => Qt.callLater(() => { console.log("SVC_OK"); Qt.quit(); }));
+        });
+    })''')
+        self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
+        self.assertIn(['share', 'enable', '--path', '/h/p', '--name', 'p', '--rw', '--guest', '--json'], calls)
+        self.assertIn(['share', 'status', '--json'], calls, 'refreshes the list after a change')
+
     def test_tool_errors_reach_the_callback(self):
         r, _ = self.run_shell('''
     Component.onCompleted: {

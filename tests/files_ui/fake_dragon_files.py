@@ -68,6 +68,13 @@ elif cmd == 'net':
             log.write(json.dumps(['stdin', len(secret)]) + '\n')
         out({'ok': True, 'mountpoint': '/run/user/1000/gvfs/sftp:host=x'})
     else: out({'ok': True})
+elif cmd == 'share':
+    path = args[args.index('--path') + 1] if '--path' in args else None
+    if path == os.environ['HOME']:
+        out(fixture('files-share-forbidden.json')); sys.exit(1)
+    if args[1] == 'status' and path is None: out({'ok': True, 'shares': [{'path': '/h/p', 'name': 'p'}]})
+    elif args[1] == 'status': out(fixture('files-share-status.json'))
+    else: out({'ok': True, 'addresses': {'smb': 'smb://dragonos/x', 'unc': '\\\\dragonos\\x'}})
 elif cmd == 'thumb':
     out({'ok': True, 'thumb': None})
 elif cmd in ('open', 'terminal-here'):

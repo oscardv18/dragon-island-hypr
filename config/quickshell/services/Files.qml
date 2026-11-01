@@ -13,6 +13,7 @@
  *   - windows: var ([{uid, path}]) — one entry per open explorer window (shell.qml instantiates FilesWindow for each)
  *   - visibleWindows: int — windows on screen; Devices only watches udisks while this is > 0
  *   - clipboard: var ({mode: "copy"|"cut", paths: []}) — shared by every window
+ *   - shares: var — folders shared right now (`share status` without a path)
  *   - composerAvailable: bool — the prompt composer (tramo 5c) is present; until then «Enviar al agente» is disabled
  *
  * Functions:
@@ -26,6 +27,11 @@
  *   - refreshPlaces() · addBookmark(path, label) · removeBookmark(path)
  *   - openWindow(path) · closeWindow(uid) · windowShown(bool)
  *   - sendToAgent(paths) — emits agentRequested(paths) for the composer; nothing is sent anywhere by itself
+ *   - shareStatus(path, callback) — `share status --path` → {shared, name, rw, guest, host, addresses: {smb, unc},
+ *       size?, firewall?: {needed, command, message}}; refreshShares() fills `shares` ([{path, name, rw, guest}])
+ *   - shareEnable(path, name, rw, guest, callback) · shareDisable(path, name, callback) — `net usershare` through
+ *       the tool, which refuses $HOME, /, ~/.ssh, ~/.gnupg, ~/.config and system paths and never touches the firewall
+ *       (it returns the exact command in `firewall.command` for the user to run)
  *
  * Signals: folderChanged(path) · agentRequested(paths) · placesChanged()
  * IPC (target "files"): open(path) — new window (home when empty) · count(): int
@@ -47,6 +53,7 @@ Singleton {
     property int visibleWindows: 0
     property var clipboard: ({ mode: "", paths: [] })
     property bool composerAvailable: false
+    property var shares: []
     property int _uid: 0
     property var _watchers: ({})
     property var _thumbs: ({})
@@ -163,6 +170,19 @@ Singleton {
     function setClipboard(mode, paths): void { clipboard = { mode: mode, paths: paths.slice() }; }
     function copyText(text): void { Quickshell.clipboardText = text; }
     function sendToAgent(paths): void { if (composerAvailable && paths.length) agentRequested(paths); }
+
+    // ---- sharing (Samba usershares) ----
+    function shareStatus(path, callback): void { call(["share", "status", "--path", path], callback); }
+    function refreshShares(): void { call(["share", "status"], r => { if (r.ok) shares = r.shares ?? []; }); }
+    function shareEnable(path, name, rw, guest, callback): void {
+        const args = ["share", "enable", "--path", path, "--name", name];
+        if (rw) args.push("--rw");
+        if (guest) args.push("--guest");
+        call(args, r => { refreshShares(); if (callback) callback(r); });
+    }
+    function shareDisable(path, name, callback): void {
+        call(["share", "disable", "--path", path].concat(name ? ["--name", name] : []), r => { refreshShares(); if (callback) callback(r); });
+    }
 
     IpcHandler {
         target: "files"

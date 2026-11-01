@@ -1,0 +1,8 @@
+{
+ "ok": false,
+ "error": {
+  "code": "forbidden_path",
+  "message": "No se comparte la carpeta personal entera",
+  "hint": "Elige una subcarpeta concreta"
+ }
+}

@@ -58,6 +58,12 @@ Window {
         function open(path) { opened = opened.concat([path]); }
         function acquireWatch(p) { const w = Object.assign({}, watched); w[p] = (w[p] ?? 0) + 1; watched = w; }
         function releaseWatch(p) { const w = Object.assign({}, watched); w[p]--; if (!w[p]) delete w[p]; watched = w; }
+        property var shares: [{ path: win.home + "/Proyectos/arxnet-erp", name: "arxnet-erp", rw: false, guest: false }]
+        property var shareCalls: []
+        function refreshShares() {}
+        function shareStatus(p, cb) { cb(p === win.home ? win.fixture("files-share-forbidden.json") : win.fixture("files-share-status.json")); }
+        function shareEnable(p, n, rw, g, cb) { shareCalls = shareCalls.concat([["enable", p, n, rw, g]]); cb(p === win.home ? win.fixture("files-share-forbidden.json") : { ok: true, addresses: { smb: "smb://dragonos/" + n, unc: "\\\\dragonos\\" + n } }); }
+        function shareDisable(p, n, cb) { shareCalls = shareCalls.concat([["disable", p, n]]); cb({ ok: true }); }
         function setClipboard(mode, paths) { clipboard = { mode: mode, paths: paths }; }
         function copyText(t) {}
         function sendToAgent(p) {}
@@ -354,8 +360,30 @@ Window {
                 nv.connectTo(nv.pendingUri, "pi", "secreto", true);
                 eq(JSON.stringify(devs.calls[devs.calls.length - 1]), JSON.stringify(["connect", "sftp://192.168.1.44", "pi", 7, true]), "connect with credentials");
                 eq(t.path, "/run/user/1000/gvfs/x", "opens the mount");
-                Qt.quit();
+                t.go(win.docs);
+                panel.runAction("shareHere", null);
             }
+            if (step === 32) {
+                const d = dialog("ShareDialog");
+                check(d.visible && d.status?.shared, "share dialog with status");
+                eq(d.smbAddress, "smb://dragonos/arxnet-erp", "smb address");
+                eq(d.uncAddress, "\\\\dragonos\\arxnet-erp", "unc address");
+            }
+            if (step === 33) shot("files-compartir.png");
+            if (step === 34) {
+                const d = dialog("ShareDialog");
+                d.rw = true; d.apply();
+                eq(JSON.stringify(files.shareCalls[0]), JSON.stringify(["enable", win.docs, "arxnet-erp", true, false]), "enable args");
+                d.close();
+                t.go(win.home);
+                panel.runAction("shareHere", null);
+            }
+            if (step === 35) {
+                const d = dialog("ShareDialog");
+                check(d.error.indexOf("carpeta personal") >= 0, "forbidden path shown");
+                shot("files-compartir-prohibido.png");
+            }
+            if (step === 36) Qt.quit();
             step++;
         }
     }

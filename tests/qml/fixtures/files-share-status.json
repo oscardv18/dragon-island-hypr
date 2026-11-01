@@ -1,0 +1,19 @@
+{
+ "ok": true,
+ "path": "/home/oddv/Proyectos/arxnet-erp",
+ "shared": true,
+ "name": "arxnet-erp",
+ "rw": false,
+ "guest": false,
+ "host": "dragonos",
+ "addresses": {
+  "smb": "smb://dragonos/arxnet-erp",
+  "unc": "\\\\dragonos\\arxnet-erp"
+ },
+ "size": 2469606195,
+ "firewall": {
+  "needed": false,
+  "command": "",
+  "message": ""
+ }
+}

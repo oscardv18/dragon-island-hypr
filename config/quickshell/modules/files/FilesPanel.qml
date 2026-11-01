@@ -128,7 +128,7 @@ Rectangle {
         }
         menu.popup(x, y, items);
     }
-    property bool shareEnabled: false
+    readonly property bool shareEnabled: !!files
     function openWithMenu(entry): void {
         const p = tab.pathOf(entry);
         files?.openWithList(p, r => {
@@ -172,7 +172,15 @@ Rectangle {
         else if (action === "compress") askCompress(paths);
         else extraAction2(action, entry, paths);
     }
-    function extraAction2(action, entry, paths): void {}
+    // sharing (d6)
+    function extraAction2(action, entry, paths): void {
+        if (action === "share" && entry) shareDialog.open(tab.pathOf(entry));
+        else if (action === "shareHere" && tab && !tab.special) shareDialog.open(tab.path);
+    }
+    function shareCurrent(): void {
+        const e = tab?.focusEntry;
+        if (e && e.kind === "dir") shareDialog.open(tab.pathOf(e)); else if (tab && !tab.special) shareDialog.open(tab.path);
+    }
     function extractHere(p): void {
         if (!archives) return;
         if (archives.cache[p]?.encrypted) { extractDialog.open(p, "", "password_required"); return; }
@@ -343,6 +351,7 @@ Rectangle {
                 onEscaped: { root.state.search = ""; root.focusContent(); }
                 input.Keys.onDownPressed: { root.focusContent(); if (root.tab?.shown.length) root.tab.select(0, 0); }
             }
+            FilesButton { label: "Compartir"; enabled: !(root.tab?.special ?? true); onClicked: root.shareCurrent() }
             Row {
                 spacing: Theme.files.thinGap
                 FilesButton { icon: Icons.viewList; checked: root.state.viewMode === "lista"; primary: checked; implicitWidth: Theme.files.navButton; implicitHeight: Theme.files.navButton; onClicked: root.state.viewMode = "lista" }
@@ -531,6 +540,12 @@ Rectangle {
         ops: root.ops
         home: root.files?.home ?? ""
         free: root.tab?.free ?? -1
+        onClosed: root.focusContent()
+    }
+    ShareDialog {
+        id: shareDialog
+        z: 25
+        files: root.files
         onClosed: root.focusContent()
     }
     FilesPrompt {
