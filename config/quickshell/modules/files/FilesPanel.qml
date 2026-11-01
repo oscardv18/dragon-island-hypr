@@ -162,8 +162,33 @@ Rectangle {
             else extraAction(action, entry, paths);
         }
     }
-    // later points (archives, sharing) extend this
-    function extraAction(action, entry, paths): void {}
+    // archives (d4); sharing extends this in d6
+    function extraAction(action, entry, paths): void {
+        const p = entry && tab ? tab.pathOf(entry) : "";
+        if (action === "extractHere" && p) extractHere(p);
+        else if (action === "extractTo" && p) extractDialog.open(p, "", "");
+        else if (action === "test" && p) archives?.test(p);
+        else if (action === "drop:extract") extractDialog.open(dropMenu.paths[0], F.join(dropMenu.dir, F.archiveStem(F.basename(dropMenu.paths[0]))) + "/", "");
+        else if (action === "compress") askCompress(paths);
+        else extraAction2(action, entry, paths);
+    }
+    function extraAction2(action, entry, paths): void {}
+    function extractHere(p): void {
+        if (!archives) return;
+        if (archives.cache[p]?.encrypted) { extractDialog.open(p, "", "password_required"); return; }
+        archives.extract(p, F.parent(p), { ownFolder: true, conflict: "ask" }, r => {
+            const code = r.error?.code ?? "";
+            if (["password_required", "bad_password", "bomb_suspected"].indexOf(code) >= 0) { ops?.dismissError(); extractDialog.open(p, "", code); }
+        });
+    }
+    function askCompress(paths): void {
+        if (!paths.length || !tab || tab.special) return;
+        prompt.purpose = "compress"; prompt.targets = paths;
+        const base = paths.length === 1 ? F.archiveStem(F.basename(paths[0])) : F.basename(tab.path);
+        prompt.ask({ title: "Comprimir " + (paths.length === 1 ? "«" + F.basename(paths[0]) + "»" : paths.length + " elementos"), value: base,
+                     placeholder: "Nombre del archivo", message: "Se crea en esta carpeta. Elige el formato:",
+                     buttons: [{ label: "Cancelar", action: "cancel" }, { label: "ZIP", action: "zip" }, { label: "7Z", action: "7z" }, { label: "TAR.ZST", action: "tar.zst", primary: true }] });
+    }
     // ---- devices (d3) ----
     function deviceAction(d, action): void {
         if (!devices || !d) return;
@@ -488,6 +513,15 @@ Rectangle {
         onPicked: a => root.runAction(a, root.tab?.focusEntry)
         onVisibleChanged: if (!visible) root.focusContent()
     }
+    ExtractDialog {
+        id: extractDialog
+        z: 25
+        archives: root.archives
+        ops: root.ops
+        home: root.files?.home ?? ""
+        free: root.tab?.free ?? -1
+        onClosed: root.focusContent()
+    }
     FilesPrompt {
         id: prompt
         z: 30
@@ -502,6 +536,7 @@ Rectangle {
             else if (purpose === "mkdir" && action === "ok" && name && name.indexOf("/") < 0) root.ops?.mkdir(target, name);
             else if (purpose === "delete" && action === "ok") root.ops?.remove(targets);
             else if (purpose === "conflict" && action !== "cancel") root.ops?.answer(opId, action, checked);
+            else if (purpose === "compress" && action !== "cancel" && name && name.indexOf("/") < 0) root.archives?.create(action, F.join(root.tab.path, name + "." + action), targets);
             else if (purpose === "unlock" && action === "ok" && value) {
                 const id = target;
                 root.devices?.unlock(id, value, r => {

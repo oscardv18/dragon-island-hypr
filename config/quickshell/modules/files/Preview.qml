@@ -155,6 +155,8 @@ Rectangle {
     readonly property string subtitle: {
         if (!entry) return "Carpeta" + (props?.dir_count !== undefined ? " · " + props.dir_count + " elementos" : "");
         if (entry.kind === "dir") return "Carpeta · " + F.formatCount(entry.count);
+        const arch = category === "archive" ? archives?.cache?.[path] : null;
+        if (arch && !arch.error) return (arch.format ?? "").toUpperCase() + " · " + F.formatSize(entry.size) + " · " + arch.count + " elementos";
         const img = props?.image;
         return F.typeLabel(entry) + " · " + F.formatSize(entry.size) + (img?.width ? " · " + img.width + "×" + img.height : "");
     }

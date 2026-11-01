@@ -28,6 +28,7 @@ FloatingWindow {
         files: Files
         ops: FileOps
         devices: Devices
+        archives: Archives
         initialPath: win.modelData.path
         active: win.visible
         drawFrame: WindowFrame.mode === "nada"

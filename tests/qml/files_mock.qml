@@ -106,6 +106,27 @@ Window {
             if (pass !== "correcta") { errors = { [id]: "Contraseña incorrecta" }; cb({ ok: false, error: { code: "bad_passphrase", message: "Contraseña incorrecta" } }); }
         }
     }
+    // ---- simulated Archives ----
+    QtObject {
+        id: arch
+        readonly property var formats: ["ZIP", "7Z", "RAR", "TAR.GZ", "TAR.XZ", "TAR.ZST", "TAR.BZ2", "ISO", "DEB", "RPM", "APPIMAGE", "CAB", "LHA"]
+        property var cache: ({})
+        property var tests: ({})
+        property var calls: []
+        function loading(p) { return false; }
+        function info(p, cb) {
+            if (!cache[p]) { const c = Object.assign({}, cache); c[p] = p.endsWith("backup-2026-10.zip") ? win.fixture("files-archive-backup.json") : { error: { message: "No es un archivo comprimido válido" } }; cache = c; }
+            if (cb) cb(cache[p]);
+        }
+        function test(p, cb) { const t = Object.assign({}, tests); t[p] = "ok"; tests = t; }
+        function extract(p, dest, o, cb) {
+            calls = calls.concat([["extract", p, dest, o]]);
+            ops.queue = [{ id: 9, kind: "extract", dest: dest, count: 1, state: "running", pct: 64, file: "src/facturas/filtros.ts", bps: 88080384 }];
+            if (!o.password && p.endsWith(".7z")) cb({ ok: false, error: { code: "password_required", message: "El archivo está cifrado" } });
+            return 9;
+        }
+        function create(fmt, out, paths) { calls = calls.concat([["create", fmt, out, paths]]); return 10; }
+    }
     function opEvents() {
         const xhr = new XMLHttpRequest();
         xhr.open("GET", Qt.resolvedUrl("fixtures/files-op-progress.jsonl"), false); xhr.send();
@@ -121,6 +142,7 @@ Window {
         files: files
         ops: ops
         devices: devs
+        archives: arch
         initialPath: win.docs
         now: win.fixedNow
     }
@@ -160,6 +182,7 @@ Window {
         eq(F.opLabel({ kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", index: 2, count: 5 }, devs), "COPIANDO A KINGSTON · 2/5", "opLabel");
     }
 
+    function dialog(type) { for (const c of panel.children) if (String(c).indexOf(type) === 0) return c; throw new Error("no " + type); }
     function prompt() { for (const c of panel.children) if (c.purpose !== undefined) return c; throw new Error("no prompt"); }
     function shot(name) { panel.grabToImage(r => r.saveToFile(win.outDir + "/" + name)); }
 
@@ -249,7 +272,35 @@ Window {
                 shot("files-cifrado.png");
             }
             if (step === 17) { prompt().reply("cancel"); t.go(win.docs); t.selectNames(["backup-2026-10.zip"]); }
-            if (step === 18) { shot("files-lista.png"); Qt.quit(); }
+            if (step === 18) { arch.test(win.docs + "/backup-2026-10.zip"); }
+            if (step === 19) shot("files-lista.png");
+            if (step === 20) { panel.state.viewMode = "cuadricula"; }
+            if (step === 21) shot("files-cuadricula.png");
+            if (step === 22) { panel.state.viewMode = "lista"; panel.runAction("extractTo", t.focusEntry); }
+            if (step === 23) {
+                const dlg = dialog("ExtractDialog");
+                check(dlg.visible, "extract dialog");
+                dlg.start();
+                const c = arch.calls[arch.calls.length - 1];
+                eq(c[2], win.docs, "own folder: dest is the archive's folder");
+                check(c[3].ownFolder && c[3].conflict === "ask", "own folder flag + ask");
+            }
+            if (step === 24) shot("files-extraer.png");
+            if (step === 25) {
+                dialog("ExtractDialog").close();
+                ops.queue = [];
+                // encrypted archive from «Extraer aquí» → dialog asking for the password
+                t.selectNames(["proyecto.7z"]);
+                panel.runAction("extractHere", t.focusEntry);
+                eq(dialog("ExtractDialog").need, "password_required", "password asked");
+                dialog("ExtractDialog").close();
+                panel.askCompress([win.docs + "/capturas"]);
+                prompt().reply("tar.zst");
+                eq(JSON.stringify(arch.calls[arch.calls.length - 1].slice(0, 3)), JSON.stringify(["create", "tar.zst", win.docs + "/capturas.tar.zst"]), "compress");
+                ops.queue = [{ id: 1, kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", count: 5, index: 2, state: "running", pct: 38 }];
+                t.selectNames(["backup-2026-10.zip"]);
+            }
+            if (step === 26) { Qt.quit(); }
             step++;
         }
     }

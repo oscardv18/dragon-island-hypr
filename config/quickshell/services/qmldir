@@ -65,4 +65,5 @@ singleton Files 1.0 Files.qml
 FilesRequest 1.0 FilesRequest.qml
 singleton FileOps 1.0 FileOps.qml
 singleton Devices 1.0 Devices.qml
+singleton Archives 1.0 Archives.qml
 # /fase5d: Files

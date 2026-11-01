@@ -881,6 +881,11 @@ Singleton {
         readonly property real statusHeight: 26
         readonly property real previewWidth: 268
         readonly property real previewImageMax: 150
+        readonly property real treeLines: 5            // archive preview: lines before «+ N más…»
+        readonly property real treeRow: 16
+        readonly property real dialogWidth: 540        // ExtractDialog / ShareDialog (33-archivos-extraer.png)
+        readonly property real segmentHeight: 34
+        readonly property real progressHeight: 4
         readonly property real previewMinWindow: 940     // narrower windows hide the preview panel
         readonly property real buttonHeight: 30
         readonly property real buttonRadius: 9

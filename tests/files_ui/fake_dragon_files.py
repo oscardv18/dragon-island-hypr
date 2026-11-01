@@ -40,6 +40,20 @@ elif cmd == 'unlock':
         log.write(json.dumps(['stdin', len(secret)]) + '\n')
     if secret == 'correcta': out({'ok': True, 'mountpoint': '/run/media/test/cifrado'})
     else: out({'ok': False, 'error': {'code': 'bad_passphrase', 'message': 'Contraseña incorrecta', 'hint': ''}}); sys.exit(1)
+elif cmd == 'archive' and args[1] == 'list':
+    out(fixture('files-archive-backup.json'))
+elif cmd == 'archive' and args[1] == 'extract':
+    if '--password-stdin' in args:
+        secret = sys.stdin.readline().rstrip('\n')
+        with open(os.environ['FAKE_FILES_LOG'], 'a') as log:
+            log.write(json.dumps(['stdin', len(secret)]) + '\n')
+        if secret != 'clave':
+            out({'t': 'error', 'error': {'code': 'bad_password', 'message': 'Contraseña incorrecta'}}); sys.exit(1)
+    elif os.path.basename(args[2]).endswith('.7z'):
+        out({'t': 'error', 'error': {'code': 'password_required', 'message': 'El archivo está cifrado'}}); sys.exit(1)
+    out({'t': 'progress', 'pct': 50, 'file': 'src/a.ts', 'bps': 10}); out({'t': 'done'})
+elif cmd == 'archive' and args[1] in ('create', 'test'):
+    out({'t': 'done'} if args[1] == 'create' else {'ok': True})
 elif cmd == 'thumb':
     out({'ok': True, 'thumb': None})
 elif cmd in ('open', 'terminal-here'):

@@ -220,6 +220,29 @@ class Services(unittest.TestCase):
         self.assertIn(['stdin', 8], calls)
         self.assertEqual(sum(1 for c in calls if c[:2] == ['devices', '--watch']), 1)
 
+    def test_archives_list_extract_with_password_and_create(self):
+        r, calls = self.run_shell('''
+    Component.onCompleted: Archives.info("/h/backup-2026-10.zip", info => {
+        if (info.count !== 214 || Archives.cache["/h/backup-2026-10.zip"] !== info) throw new Error("list/cache");
+        Archives.extract("/h/p.7z", "/h", { ownFolder: true }, r1 => {
+            if (r1.error?.code !== "password_required") throw new Error("expected password_required " + JSON.stringify(r1));
+            Archives.extract("/h/p.7z", "/h", { ownFolder: true, password: "clave", conflict: "rename", trashAfter: true }, r2 => {
+                if (!r2.ok) throw new Error("extract " + JSON.stringify(r2));
+                Archives.create("tar.zst", "/h/out.tar.zst", ["/h/a", "/h/b"]);
+            });
+        });
+    })
+    Connections {
+        target: FileOps
+        function onFinished(op) { if (op.kind === "create") { console.log("SVC_OK"); Qt.quit(); } }
+    }''')
+        self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
+        self.assertIn(['archive', 'extract', '/h/p.7z', '--dest', '/h', '--conflict', 'rename', '--own-folder', '--password-stdin', '--json-progress'], calls)
+        self.assertIn(['stdin', 5], calls)
+        self.assertNotIn('clave', json.dumps(calls))
+        self.assertIn(['op', 'trash', '/h/p.7z', '--json-progress'], calls, 'trash after extracting')
+        self.assertIn(['archive', 'create', '--format', 'tar.zst', '--out', '/h/out.tar.zst', '--paths', '/h/a', '/h/b', '--json-progress'], calls)
+
     def test_tool_errors_reach_the_callback(self):
         r, _ = self.run_shell('''
     Component.onCompleted: {
