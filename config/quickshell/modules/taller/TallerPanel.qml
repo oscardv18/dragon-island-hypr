@@ -11,6 +11,7 @@ Rectangle {
     property var dockerService: null
     property var gitService: null
     property var promptService: null
+    property var gateService: null
     property string tab: "agentes"
     property bool shown: false
     property string notice: ""
@@ -35,7 +36,7 @@ Rectangle {
     border.width: Theme.taller.buttonBorder
     border.color: Theme.taller.border
     focus: shown
-    Keys.forwardTo: root.tab === "agentes" && !root.projectsOpen && !root.composerOpen ? [agentsView] : []
+    Keys.forwardTo: root.projectsOpen || root.composerOpen ? [] : root.tab === "agentes" ? [agentsView] : root.tab === "kanban" ? [kanbanView] : []
     Keys.onEscapePressed: { if (composerOpen) { promptService.close(); forceActiveFocus(); } else if (projectsOpen) projectsOpen = false; else closeRequested(); }
     Keys.onPressed: e => {
         if (root.projectsOpen) return;
@@ -95,6 +96,16 @@ Rectangle {
                 shown: root.shown && visible
                 onPromptRequested: opts => root.openComposer(opts)
             }
+            KanbanTab {
+                id: kanbanView
+                anchors.fill: parent
+                visible: root.tab === "kanban"
+                memService: root.memService
+                gateService: root.gateService
+                agentService: root.agentService
+                shown: root.shown && visible
+                onPromptRequested: opts => root.openComposer(opts)
+            }
             ContainersTab {
                 anchors.fill: parent
                 visible: root.tab === "contenedores"
@@ -107,7 +118,7 @@ Rectangle {
                 service: root.gitService
             }
             UiText {
-                visible: root.tab !== "agentes" && root.tab !== "contenedores" && root.tab !== "git"
+                visible: root.tab !== "agentes" && root.tab !== "kanban" && root.tab !== "contenedores" && root.tab !== "git"
                 anchors.centerIn: parent
                 width: parent.width - Theme.taller.padding * 2
                 horizontalAlignment: Text.AlignHCenter

@@ -44,5 +44,13 @@ class Views(unittest.TestCase):
         self.assertIn('"template":"revisar-cambios"', out)
 
 
+    def test_kanban(self):
+        out = self.check('taller_kanban_mock.qml', ('taller-kanban.png', 'taller-kanban-wip.png', 'taller-kanban-compositor.png'))
+        self.assertIn('PENDING {"key":"AX-150","col":"doing","reason":"wip"', out)
+        self.assertIn('["move","AX-148","doing",false]', out)
+        self.assertNotIn('["move","AX-150","doing",true]', out)  # never forced without the confirmation
+        self.assertIn('NOTICE Para pasar a', out)  # AX-137 has no green gates in the fixture
+
+
 if __name__ == '__main__':
     unittest.main()

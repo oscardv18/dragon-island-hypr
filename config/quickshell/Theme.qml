@@ -875,6 +875,22 @@ Singleton {
         readonly property color chipOnBorder: root.alpha(root.cyan, 0.45)
         readonly property color segmentEmpty: root.alpha(root.text, 0.08)
         readonly property color scrim: root.alpha(root.bg, 0.55)
+        readonly property real metricValue: 18
+        readonly property real metricsHeight: 40
+        readonly property real kanbanDetailWidth: 290
+        readonly property real columnRadius: 12
+        readonly property real columnHeader: 30
+        readonly property real cardPad: 10
+        readonly property real cardRadius: 10
+        readonly property real criteriaHeight: 3
+        readonly property real criteriaGap: 3
+        readonly property real agentBadge: 18
+        readonly property real dragThreshold: 6
+        readonly property real gateRowHeight: 20
+        readonly property real confirmHeight: 44
+        readonly property color dangerTint: root.alpha(root.danger, 0.14)
+        readonly property color doingBorder: root.alpha(root.warn, 0.45)
+        readonly property color dragShadow: root.alpha(root.bg, 0.6)
         // /fase5c
     }
     // /fase5a: Taller

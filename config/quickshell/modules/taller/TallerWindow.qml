@@ -35,6 +35,7 @@ PanelWindow {
             dockerService: Docker
             gitService: Git
             promptService: Prompts
+            gateService: Gate
             tab: Taller.tab
             onTabRequested: name => Taller.tab = name
             onCloseRequested: ShellState.close()

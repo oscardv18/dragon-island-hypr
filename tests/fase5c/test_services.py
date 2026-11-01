@@ -115,5 +115,50 @@ class Wiring(unittest.TestCase):
         self.assertEqual(data['sent'], '')
 
 
+KANBAN = """import Quickshell
+import QtQuick
+import "services"
+ShellRoot {
+    property int phase: 0
+    property var keys: []
+    function fail(msg) { console.error("FAIL", phase, msg); Qt.quit(); }
+    Component.onCompleted: Mem.addProject(Quickshell.env("HOME") + "/repo", "Proyecto", "AX", r => {
+        if (!r.ok) return fail("project");
+        Mem.call(["project", "set", r.project.slug, "--wip-limit", "1"], () => { Mem.refresh(); phase = 1; });
+    })
+    Timer { interval: 60; running: true; repeat: true
+        onTriggered: {
+            if (phase === 1 && Mem.project?.wip_limit === 1) {
+                Mem.addCard("Primera", "feat", a => Mem.addCard("Segunda", "fix", b => { keys = [a.card.key, b.card.key]; phase = 2; }));
+                phase = 99;
+            } else if (phase === 2 && Mem.cards.length === 2 && Mem.stats) {
+                Mem.addCriterion(keys[0], "Criterio uno"); phase = 3;
+            } else if (phase === 3 && (Mem.details[keys[0]]?.criteria ?? []).length === 1) {
+                Mem.toggleCriterion(keys[0], Mem.details[keys[0]].criteria[0].id); phase = 4;
+            } else if (phase === 4 && Mem.details[keys[0]].criteria[0].done === 1) {
+                Mem.moveCard(keys[0], "doing", false, r => { if (!r.ok) fail("first move"); else Mem.moveCard(keys[1], "doing", false, r2 => {
+                    if (r2.error?.code !== "wip_limit_reached") return fail("WIP not enforced " + JSON.stringify(r2));
+                    Mem.moveCard(keys[1], "doing", true, r3 => { if (!r3.ok) fail("force"); phase = 5; });
+                }); });
+                phase = 98;
+            } else if (phase === 5 && Mem.cards.filter(c => c.col === "doing").length === 2) {
+                if (!(Mem.details[keys[1]]?.events ?? []).some(e => e.kind === "started")) return;
+                console.log("FASE5C_KANBAN_OK"); Qt.quit();
+            }
+        }
+    }
+    Timer { interval: 20000; running: true; onTriggered: fail("timeout " + Mem.status + " " + Mem.message) }
+}
+"""
+
+
+@unittest.skipUnless(shutil.which('qs'), 'Quickshell required')
+class KanbanMemory(unittest.TestCase):
+    def test_wip_criteria_and_stats(self):
+        out, _ = run_shell(KANBAN, setup=lambda home, env: git_repo(home, env))
+        self.assertIn('FASE5C_KANBAN_OK', out, out)
+        for bad in BAD: self.assertNotIn(bad, out, out)
+
+
 if __name__ == '__main__':
     unittest.main()

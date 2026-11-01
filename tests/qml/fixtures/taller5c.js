@@ -38,7 +38,8 @@ function stats() {
 }
 
 function gates() {
-    return { "AX-142": { tests: { state: "ok", label: "42 OK" }, seen: { seen: 4, total: 7, changed: 1, state: "pending" }, conflicts: { state: "ok", label: "OK" }, ready: false, needsConfirm: false } };
+    return { "AX-142": { tests: { state: "ok", label: "42 OK" }, seen: { seen: 4, total: 7, changed: 1, state: "pending" }, conflicts: { state: "ok", label: "OK" }, ready: false, needsConfirm: false },
+             "AX-137": { tests: { state: "none", label: "SIN EJECUTAR" }, seen: { seen: 3, total: 3, changed: 0, state: "ok" }, conflicts: { state: "ok", label: "OK" }, ready: false, needsConfirm: false } };
 }
 
 function agents(now) {

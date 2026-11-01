@@ -16,6 +16,8 @@ Singleton {
     readonly property string gitRepo: Mem.project?.path ?? ""
     onGitActiveChanged: Git.activate(gitActive,gitRepo)
     onGitRepoChanged: Git.activate(gitActive,gitRepo)
+    readonly property bool kanbanActive: ShellState.openPanel === "taller" && tab === "kanban"
+    onKanbanActiveChanged: if (kanbanActive) Mem.refreshBoard()
     function init(): void {}
     function open(name): void {
         tab = tabs.indexOf(name) >= 0 ? name : "agentes";

@@ -2,6 +2,10 @@
 // status/message: ok|loading|unavailable|error; projects/cards: SQLite rows; selectedSlug/project: current project.
 // refresh(), selectProject(slug), addProject(path,name,prefix,callback), logChange(key,old,new,source), call(args,callback).
 // Callbacks receive the stable JSON result, including errors; no CLI output is interpreted as markup.
+// fase5c (Kanban): stats (stats flow of the project) · details {key: {criteria, events}} · refreshBoard() (cards, stats and,
+// when `card list` lacks criteria_total, one `card show` per card) · loadDetails(key) · addCard(title,kind,callback) ·
+// moveCard(key,col,force,callback) (error wip_limit_reached is returned, never forced silently) · toggleCriterion(key,id) ·
+// addCriterion(key,text) · setCard(key,fields,callback) · cardByKey(key).
 pragma Singleton
 import Quickshell
 import Quickshell.Io
@@ -17,6 +21,8 @@ Singleton {
     property string selectedSlug: ""
     readonly property var project: projects.find(p => p.slug === selectedSlug) ?? null
     property bool _refreshing: false
+    property var stats: null
+    property var details: ({})
     signal changed()
 
     Component {
@@ -72,7 +78,47 @@ Singleton {
         const slug = selectedSlug;
         call(["card", "list", "--project", slug], r => { if (r.ok && slug === selectedSlug) cards = r.cards ?? []; });
     }
-    function selectProject(slug): void { selectedSlug = slug; refreshCards(); }
+    function selectProject(slug): void { selectedSlug = slug; details = {}; stats = null; refreshCards(); }
+    function cardByKey(key): var { return cards.find(c => c.key === key) ?? null; }
+    function _scope(): var { return selectedSlug ? ["--project", selectedSlug] : []; }
+    function _storeDetails(key, r): void {
+        if (!r.ok) return;
+        const all = Object.assign({}, details);
+        all[key] = { criteria: r.criteria ?? all[key]?.criteria ?? [], events: r.events ?? all[key]?.events ?? [] };
+        details = all;
+    }
+    function loadDetails(key): void { if (key) call(["card", "show", key].concat(_scope()), r => _storeDetails(key, r)); }
+    function refreshBoard(): void {
+        if (!selectedSlug) { cards = []; stats = null; return; }
+        const slug = selectedSlug;
+        call(["card", "list", "--project", slug], r => {
+            if (!r.ok || slug !== selectedSlug) return;
+            cards = r.cards ?? [];
+            for (const c of cards) if (c.criteria_total === undefined || !details[c.key]) loadDetails(c.key);
+        });
+        call(["stats", "flow", "--project", slug], r => { if (r.ok && slug === selectedSlug) stats = r; });
+    }
+    function addCard(title, kind, callback): void {
+        if (!selectedSlug || !title.trim()) return;
+        call(["card", "add", "--project", selectedSlug, "--title", title.trim(), "--kind", kind || "feat"], r => { if (r.ok) refreshBoard(); if (callback) callback(r); });
+    }
+    function moveCard(key, col, force, callback): void {
+        call(["card", "move", key, "--to", col].concat(force ? ["--force"] : []).concat(_scope()), r => {
+            if (r.ok) { refreshBoard(); loadDetails(key); changed(); }
+            if (callback) callback(r);
+        });
+    }
+    function setCard(key, fields, callback): void {
+        const args = ["card", "set", key].concat(_scope());
+        for (const k in fields) args.push("--" + k.replace(/_/g, "-"), String(fields[k]));
+        call(args, r => { if (r.ok) { refreshBoard(); changed(); } if (callback) callback(r); });
+    }
+    function toggleCriterion(key, id): void { call(["card", "criteria", "toggle", key, String(id)].concat(_scope()), r => { _storeDetails(key, r); }); }
+    function addCriterion(key, text): void {
+        if (!text.trim()) return;
+        const pos = (details[key]?.criteria ?? []).length;
+        call(["card", "criteria", "add", key, "--text", text.trim(), "--pos", String(pos)].concat(_scope()), r => { _storeDetails(key, r); });
+    }
     function addProject(path, name, prefix, callback): void {
         const args = ["project", "add", "--path", path];
         if (name) args.push("--name", name);
