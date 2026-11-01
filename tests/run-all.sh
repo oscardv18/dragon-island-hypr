@@ -73,6 +73,11 @@ if python3 -m unittest discover -s tests/fase5b -v; then pass "servicios de 5b";
 if python3 tests/fase5b/bench.py --limit-ms 300; then pass "lecturas frías <300 ms"; else fail "latencia de 5b"; fi
 # /fase5b: engines
 
+# fase5c: pantallas
+step "Taller 5c: servicios Prompts/Gate y vistas con herramientas simuladas (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/fase5c -v; then pass "pantallas y servicios de 5c"; else fail "pantallas y servicios de 5c"; fi
+# /fase5c: pantallas
+
 # fase5a: shared secrets
 step "secretos compartidos"
 if python3 -m unittest discover -s tests/secrets -v; then pass "filtro compartido"; else fail "filtro compartido"; fi

@@ -1,0 +1,61 @@
+#!/usr/bin/env python3
+"""Fake dragon-prompt for tests: the §5.5 contract, deterministic, no model. Deliveries go to $HOME/prompt-sent.jsonl."""
+import json, math, os, sys
+
+TEMPLATES = {
+    'implementar-tarjeta': [('card', 'Tarjeta'), ('criteria', 'Criterios'), ('commands', 'Comandos')],
+    'revisar-cambios': [('comments', 'Comentarios'), ('diff', 'Diff'), ('paths', 'Rutas')],
+    'error-de-contenedor': [('log', 'Log'), ('text', 'Texto libre')],
+    'libre': [],
+}
+LABELS = {'text': 'Texto libre', 'paths': 'Rutas', 'log': 'Log', 'selection': 'Selección', 'diff': 'Diff'}
+
+
+def emit(value, code=0):
+    print(json.dumps(value, ensure_ascii=False)); sys.stdout.flush(); sys.exit(code)
+
+
+def option(args, name, many=False):
+    values = [args[i + 1] for i, a in enumerate(args[:-1]) if a == name]
+    return values if many else (values[-1] if values else None)
+
+
+def tokens(text):
+    return math.ceil(len(text.encode()) / 3.8)
+
+
+args = [a for a in sys.argv[1:] if a != '--json']
+cmd = args[0] if args else ''
+if cmd == 'templates':
+    emit({'ok': True, 'templates': [{'id': k, 'name': k.replace('-', ' ').capitalize(), 'builtin': True} for k in TEMPLATES]})
+if cmd == 'build':
+    template = option(args, '--template'); card = option(args, '--card') or ''
+    if template not in TEMPLATES:
+        emit({'ok': False, 'error': {'code': 'template_not_found', 'message': 'No existe la plantilla.', 'hint': ''}}, 1)
+    off = set((option(args, '--off') or '').split(',')) - {''}
+    specs = [(t, l, '') for t, l in TEMPLATES[template]]
+    for b in option(args, '--block', True):
+        kind, _, arg = b.partition(':'); specs.append((kind, LABELS.get(kind, kind), arg))
+    blocks, parts = [], []
+    selection = sys.stdin.read() if any(s[0] == 'selection' for s in specs) and not sys.stdin.isatty() else ''
+    for i, (kind, label, arg) in enumerate(specs):
+        body = {'card': f'{card} · Filtros de facturas', 'criteria': '- [x] Filtra por estado\n- [ ] Exporta solo lo filtrado',
+                'commands': 'npm test', 'comments': f'Comentarios de {card}', 'diff': 'Diff relevante: (+9)',
+                'paths': arg or 'src/a.ts', 'log': f'contenedor {arg}: OOMKilled', 'text': arg or 'Texto libre',
+                'selection': selection}.get(kind, arg)
+        redactions = body.count('ghp_')
+        body = body.replace('ghp_secretvalue', '[oculto:token]')
+        identifier = f'{kind}-{i}'; enabled = identifier not in off
+        blocks.append({'id': identifier, 'type': kind, 'label': label, 'tokens': tokens(body), 'enabled': enabled,
+                       'truncated': False, 'redactions': redactions})
+        if enabled: parts.append(f'## {label}\n{body}')
+    text = '\n\n'.join(parts)
+    emit({'ok': True, 'text': text, 'tokens': tokens(text), 'blocks': blocks, 'warnings': []})
+if cmd == 'send':
+    target = option(args, '--target'); text = sys.stdin.read()
+    if not text.strip():
+        emit({'ok': False, 'error': {'code': 'empty_prompt', 'message': 'El prompt está vacío.', 'hint': ''}}, 1)
+    with open(os.path.join(os.environ['HOME'], 'prompt-sent.jsonl'), 'a', encoding='utf-8') as f:
+        f.write(json.dumps({'target': target, 'text': text}, ensure_ascii=False) + '\n')
+    emit({'ok': True, 'target': target, 'tokens': tokens(text)})
+emit({'ok': False, 'error': {'code': 'invalid_usage', 'message': 'Argumentos no válidos', 'hint': ''}}, 2)
