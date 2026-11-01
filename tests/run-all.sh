@@ -68,6 +68,11 @@ step "secretos compartidos"
 if python3 -m unittest discover -s tests/secrets -v; then pass "filtro compartido"; else fail "filtro compartido"; fi
 # /fase5a: shared secrets
 
+# fase5a: memory
+step "memoria SQLite del Taller (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/mem -v; then pass "dragon-mem"; else fail "dragon-mem"; fi
+# /fase5a: memory
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 

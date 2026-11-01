@@ -29,3 +29,16 @@ Ausente: `inotifywait`.
 - Las maquetas requeridas están en `docs/design/`; `FrameDecor` ya está en `main`.
 - No hay ramas locales sin fusionar. El árbol inicial está limpio; `main` tiene
   tres commits por delante de `origin/main` que se conservan.
+
+## 2–3. Filtro y memoria
+
+Filtro único en `dragon-core/secret_filter.py`, compatible con portapapeles,
+búsqueda y actividad. 4 pruebas nuevas + 40 de motores + 13 de actividad pasan.
+Migración 043 despliega también el filtro en instalaciones por copia.
+
+`dragon-mem`: esquema de §4, WAL, claves concurrentes, WIP, FTS transaccional,
+criterios, notas, plantillas, revisión por contenido, comentarios, esperas,
+métricas, exportación <4 KB, registro del sistema y 7 respaldos SQLite coherentes.
+Migración 044 e instalación nueva comparten `lib/mem.sh`; una base previa se
+respalda antes de ampliar el esquema. 13 pruebas con HOME/XDG temporales y
+shellcheck en verde. Lectura fría (mediana de 7): 87,7 ms (<150 ms).
