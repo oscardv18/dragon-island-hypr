@@ -4,7 +4,6 @@ import fcntl
 import json
 import os
 from pathlib import Path
-import re
 import tempfile
 import unicodedata
 
@@ -53,38 +52,8 @@ def folded(text):
     return ''.join(c for c in unicodedata.normalize('NFKD', text.casefold()) if not unicodedata.combining(c))
 
 
-SECRET = re.compile(
-    r'(?i)(?:\b[A-Z_][A-Z0-9_]*(?:_KEY|_TOKEN|PASSWORD[A-Z0-9_]*)\s*=\s*\S+'
-    r'|\b(?:PASSWORD|TOKEN|API_KEY)\s*[=:]\s*\S+|\bBearer\s+\S+'
-    r'|[a-z][a-z0-9+.-]*://[^\s/@]+:[^\s/@]*@[^\s]+'
-    r'|\bsk-[A-Za-z0-9_-]{8,}|\bgh[pousr]_[A-Za-z0-9_]{8,}|\bAKIA[A-Z0-9]{12,})')
-TOKEN = re.compile(r'[^\s\'"<>]{24,}')
-
-
-def secret_spans(text):
-    spans = [m.span() for m in SECRET.finditer(text)]
-    for match in TOKEN.finditer(text):
-        token = match.group()
-        # URLs/paths and readable identifiers are not opaque credential tokens.
-        if '://' in token or token.startswith(('/', '~/')):
-            continue
-        classes = sum((bool(re.search(r'[a-z]', token)), bool(re.search(r'[A-Z]', token)),
-                       bool(re.search(r'\d', token)), bool(re.search(r'[^A-Za-z0-9]', token))))
-        if classes >= 3 or (len(token) >= 32 and classes >= 2):
-            spans.append(match.span())
-    return spans
-
-
-def masked(text):
-    spans = []
-    for start, end in sorted(secret_spans(text)):
-        if spans and start <= spans[-1][1]:
-            spans[-1] = (spans[-1][0], max(end, spans[-1][1]))
-        else:
-            spans.append((start, end))
-    for start, end in reversed(spans):
-        text = text[:start] + '••••••••' + text[end:]
-    return text, bool(spans)
+# Compatibility exports for existing engine consumers.
+from secret_filter import secret_spans, masked
 
 
 def result(identifier, title, sub, icon, kind, action, score):
