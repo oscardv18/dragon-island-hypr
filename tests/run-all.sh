@@ -63,6 +63,16 @@ if bash tests/migrations-dry-run.sh; then pass "todas las migraciones, dragon-sd
 step "dragon-sddm-sync: fondo 1920×1080 desenfocado una vez con magick o ffmpeg (tema temporal)"
 if bash tests/sddm-sync.sh; then pass "fondo del login desenfocado una sola vez y sin MultiEffect"; else fail "dragon-sddm-sync prepara mal el fondo"; fi
 
+# fase5b: engines
+step "Docker con socket Unix falso"
+if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
+step "Git con repositorios temporales"
+if python3 -m unittest discover -s tests/git -v; then pass "dragon-git"; else fail "dragon-git"; fi
+step "servicios Docker y Git con Quickshell real y HOME temporal"
+if python3 -m unittest discover -s tests/fase5b -v; then pass "servicios de 5b"; else fail "servicios de 5b"; fi
+if python3 tests/fase5b/bench.py --limit-ms 300; then pass "lecturas frías <300 ms"; else fail "latencia de 5b"; fi
+# /fase5b: engines
+
 # fase5a: shared secrets
 step "secretos compartidos"
 if python3 -m unittest discover -s tests/secrets -v; then pass "filtro compartido"; else fail "filtro compartido"; fi

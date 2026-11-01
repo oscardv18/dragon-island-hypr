@@ -837,6 +837,27 @@ Singleton {
         readonly property color idleTint: root.alpha(root.lavender, 0.12)
         readonly property real captionTracking: 2
         readonly property real disabledOpacity: 0.45
+        // fase5b: Contenedores y Git (maquetas 32)
+        readonly property real containersFraction: 0.43
+        readonly property real containerRowHeight: 48
+        readonly property real metricHeight: 64
+        readonly property real sparkWidth: 64
+        readonly property real sparkHeight: 24
+        readonly property real sparkStroke: 1.3
+        readonly property real logLineHeight: 22
+        readonly property real logTimeWidth: 62
+        readonly property real logLevelWidth: 44
+        readonly property real logCountWidth: 34
+        readonly property real gitLeftFraction: 0.30
+        readonly property real gitHistoryFraction: 0.22
+        readonly property real commitHeight: 156
+        readonly property real diffLineHeight: 21
+        readonly property real diffNumberWidth: 36
+        readonly property real checkSize: 16
+        readonly property real commitTextHeight: 48
+        readonly property real bannerHeight: 52
+        readonly property real inspectHeight: 200
+        // /fase5b
     }
     // /fase5a: Taller
 

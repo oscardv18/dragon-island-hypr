@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Git adapter, resolved in the repo or installed engine directory.
+set -Eeuo pipefail
+GIT_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+GIT_ROOT="$(dirname -- "$(dirname -- "$GIT_BIN")")"
+GIT_LIB="$GIT_ROOT/dragon-core/dragon_git.py"
+[[ -f "$GIT_LIB" ]] || GIT_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_git.py"
+exec python3 -S "$GIT_LIB" "$@"

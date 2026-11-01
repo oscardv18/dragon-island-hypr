@@ -378,6 +378,31 @@ Cada línea con ✘ trae debajo `→ ver pre-instalation.md, Paso N`: repite ese
 - *`Hyprland … es anterior a 0.55`:* actualiza el sistema (Paso 2); la configuración Lua exige 0.55 o superior.
 - *El driver aparece sin cargar:* reinicia tras instalarlo (Paso 5).
 
+### Taller: Contenedores y Git (opcional)
+
+El módulo `core` instala `dragon-docker`, `dragon-git` y sus servicios junto al Taller.
+Usan Python estándar y Git (ya incluidos); no requieren dependencias Python nuevas.
+Docker y Compose (`docker`, `docker-compose`) y la herramienta de terminal `lazygit`
+están en `packages/user-pacman.txt`, disponibles desde «Mis apps» en la Tienda o
+el módulo opcional `extras` (`myapps`). Ghostty ya pertenece a `core`.
+
+Si los necesitas, después de actualizar el sistema en el Paso 2:
+
+```bash
+sudo pacman -S --needed docker docker-compose lazygit
+```
+
+Contenedores consulta `/var/run/docker.sock` solo al abrir su pestaña. Si no hay daemon,
+lo indica; si falta permiso, muestra «añade tu usuario al grupo docker y vuelve a iniciar
+sesión». El instalador y las migraciones no habilitan Docker ni cambian grupos. Sigue
+la preparación de Docker de tu equipo antes de usarlo. No se admite Podman en esta fase.
+Sin lazygit, «Abrir en lazygit» explica qué instalar; Git sigue funcionando.
+
+Git usa la identidad existente del repositorio y nunca escribe `git config`. Antes de
+cada commit comprueba **lo preparado** y rechaza `.env`, claves privadas y tokens.
+El formato `tipo(ámbito): texto` produce un aviso; el mensaje lo escribe el usuario.
+Para actualizar una instalación existente, `./update.sh` aplica **055–056** con respaldo.
+
 ## Paso 10 — Primera ejecución
 
 **Para qué sirve:** instalar dragon-island. Primero en seco (no cambia nada ni pide `sudo`), luego de verdad.

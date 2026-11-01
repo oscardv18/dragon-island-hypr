@@ -1,0 +1,8 @@
+#!/usr/bin/env bash
+# Docker socket client, resolved in the repo or installed engine directory.
+set -Eeuo pipefail
+DOCKER_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+DOCKER_ROOT="$(dirname -- "$(dirname -- "$DOCKER_BIN")")"
+DOCKER_LIB="$DOCKER_ROOT/dragon-core/dragon_docker.py"
+[[ -f "$DOCKER_LIB" ]] || DOCKER_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_docker.py"
+exec python3 -S "$DOCKER_LIB" "$@"
