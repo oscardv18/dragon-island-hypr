@@ -66,6 +66,8 @@ if bash tests/sddm-sync.sh; then pass "fondo del login desenfocado una sola vez 
 # fase5c: tools
 step "compositor determinista con destinos simulados (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/prompt -v; then pass "dragon-prompt"; else fail "dragon-prompt"; fi
+step "puertas de pruebas: límites, cancelación y eventos (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/gate -v; then pass "dragon-gate"; else fail "dragon-gate"; fi
 # /fase5c: tools
 
 # fase5b: engines

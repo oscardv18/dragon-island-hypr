@@ -21,3 +21,8 @@ prompt_setup() {
         deploy_item "$file" "${XDG_CONFIG_HOME:-$HOME/.config}/dragon-prompt/templates/${file##*/}"
     done
 }
+
+gate_setup() {
+    deploy_item "$REPO_DIR/dragon-core/dragon_gate.py" "${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_gate.py"
+    deploy_item "$REPO_DIR/bin/dragon-gate" "$HOME/.local/bin/dragon-gate"
+}
