@@ -125,6 +125,11 @@ Singleton {
         }
     }
     Timer { id: retry; interval: 10000; onTriggered: watch.running = true }
+    IpcHandler {
+        target: "herdr"
+        function attention(): void { root.focusNext(); }
+        function state(): string { return JSON.stringify({status:root.status,agents:root.agents,attention:root.attentionAgent,error:root.actionError}); }
+    }
     property var _activityIds: ({})     // pane → activity id
     function _logActivity(old: var, next: var): void {
         const ids = root._activityIds;

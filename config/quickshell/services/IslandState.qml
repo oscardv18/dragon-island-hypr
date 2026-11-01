@@ -65,7 +65,8 @@ Singleton {
     property string noticeText: ""
     property string noticeIcon: ""
 
-    readonly property var blockedAgent: Herdr.running ? (Herdr.agents.find(a => a.state === "blocked") ?? null) : null
+    readonly property var attentionAgent: Herdr.running ? Herdr.attentionAgent : null
+    readonly property var blockedAgent: attentionAgent?.state === "blocked" ? attentionAgent : null
     readonly property var workingAgents: Herdr.running ? Herdr.agents.filter(a => a.state === "working") : []
 
     property string previewMode: ""
@@ -75,7 +76,7 @@ Singleton {
         if (Osd.visible) return "osd";
         if (Dropdown.shown) return "dropdown";
         if (RecordingMode.active) return "recording";
-        if (blockedAgent) return "agentBlocked";
+        if (attentionAgent) return "agentBlocked";
         if (notifFlash && notification) return "notification";
         if (noticeFlash) return "notice";
         if (Idle.warning) return "idleWarn";

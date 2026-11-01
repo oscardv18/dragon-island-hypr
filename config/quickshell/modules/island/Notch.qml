@@ -68,7 +68,7 @@ Item {
                                                              : Theme.notchBaseWidth)
     readonly property real targetHeight: expanded ? Theme.notchExpandedHeight
                                                   : (!appeared || (micro && !microActive) ? 0
-                                                     : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8) + (peek ? Theme.notchPeekDy : 0))
+                                                     : (IslandState.mode === "agentBlocked" ? Theme.taller.attentionHeight : Math.max(Theme.notchHeight, micro ? 0 : content.implicitHeight + 8)) + (peek ? Theme.notchPeekDy : 0))
 
     // centred on the screen; collapsed, it slides aside if an island would otherwise be overlapped; expanded, never
     readonly property real targetX: expanded || lid ? (root.width - targetWidth) / 2
@@ -242,7 +242,7 @@ Item {
             enabled: !root.expanded
             hoverEnabled: true
             cursorShape: Qt.PointingHandCursor
-            acceptedButtons: Qt.LeftButton | Qt.MiddleButton
+            acceptedButtons: IslandState.mode === "agentBlocked" ? Qt.NoButton : Qt.LeftButton | Qt.MiddleButton
             // the wheel over the volume OSD keeps adjusting it without opening the panel
             onWheel: w => {
                 if (IslandState.mode === "osd" && (Osd.kind === "volume" || Osd.kind === "mic")) {
@@ -251,7 +251,7 @@ Item {
                 } else w.accepted = false;
             }
             onClicked: m => {
-                if (IslandState.mode === "agentBlocked" && m.button === Qt.LeftButton) Herdr.focusAgent(IslandState.blockedAgent);
+                if (IslandState.mode === "agentBlocked" && m.button === Qt.LeftButton) Herdr.focusAgent(IslandState.attentionAgent);
                 // recording: stop the shell's own recording; another app capturing → which one (privacy popover)
                 else if (IslandState.mode === "recording" && m.button === Qt.LeftButton) {
                     if (RecordingMode.shellRecording) RecordingMode.stop(); else ShellState.open("privacy", root.screenName);

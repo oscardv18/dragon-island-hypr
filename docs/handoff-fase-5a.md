@@ -99,3 +99,15 @@ largo en pantalla alternativa mientras trabaja (`agent_not_idle`); se comprobó
 y añadió caída a la salida visible, sin desplazar el terminal. Mock puro con
 bloqueado, trabajando, listo, reposo y ayudante renderizado sin errores. Las
 pruebas de servicios y vistas pasan. Migración 048 también renueva el puente.
+
+## 8. Atención en la isla
+
+AttentionCard (440×30, recortable al hueco disponible) con Ir ↵; prioridad de
+bloqueados y después listos sin ver. SUPER+A usa el mismo servicio y recorre los
+pendientes del estado prioritario. Ignorar 10 min por clic derecho en la pastilla
+y acción explícita en la pila de Mando; visto/ignorado solo vive en memoria.
+La pila conserva reuniones, enfoque, comandos y actualizaciones.
+
+Prueba con servicios QML reales: prioridad bloqueado > listo, ignorar, marcar
+visto y vencimiento del silencio. Mock de la pastilla renderiza a 440×30.
+Migración 049 despliega el atajo y la interfaz también en instalaciones copiadas.

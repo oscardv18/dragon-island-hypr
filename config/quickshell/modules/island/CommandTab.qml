@@ -116,7 +116,7 @@ Item {
                                     const c = bigCard.card;
                                     if (!c) return [];
                                     switch (c.kind) {
-                                        case "agent": return [{ k: "answer", l: "Ir al panel", on: true }];
+                                        case "agent": return [{ k: "answer", l: "Ir al panel", on: true }, { k: "ignoreAgent", l: "Ignorar 10 min" }];
                                         case "meeting": return (Priority.meetingLink(c.payload) ? [{ k: "join", l: "Unirse", on: true }] : []).concat([{ k: "snooze", l: "Posponer 5 min" }]);
                                         case "focus": return [{ k: "pause", l: Focus.paused ? "Reanudar" : "Pausar", on: true }, { k: "stop", l: "Terminar" }];
                                         case "command": return [{ k: "terminal", l: "Abrir terminal", on: true }];
@@ -133,6 +133,7 @@ Item {
                                         const c = bigCard.card;
                                         switch (modelData.k) {
                                             case "answer": Herdr.focusAgent(c.payload); ShellState.close(); break;
+                                            case "ignoreAgent": Herdr.snooze(c.payload, 10); break;
                                             case "join": Priority.join(c.payload); ShellState.close(); break;
                                             case "snooze": Priority.snooze(c.key, 5); break;
                                             case "pause": Focus.togglePause(); break;

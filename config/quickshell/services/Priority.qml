@@ -1,7 +1,7 @@
 // =============================================================================
 // dragon-island — Priority.qml
 // Service: the priority stack of the isla de mando (docs/design/31-isla-mando.png). It orders itself:
-//   1 agent waiting for an answer     Aprobar / Rechazar (claude, AgentRow's actions) · Responder for the rest
+//   1 blocked or completed-unseen agent · Ir al panel / Ignorar 10 min
 //   2 meeting in less than 15 min     Unirse (a Meet / Zoom / Teams link in the location or description) · Posponer 5 min
 //   3 focus block running             Pausar / Reanudar · Terminar
 //   4 long command finished < 5 min   Abrir terminal (in its folder)
@@ -55,10 +55,11 @@ Singleton {
     readonly property var cards: {
         const now = root._now, out = [];
         void Clock.minutes;
-        // 1 · agents waiting
-        for (const a of Herdr.agents.filter(x => x.state === "blocked"))
-            out.push({ key: `agent:${a.pane}`, kind: "agent", label: "Agente", title: `${a.agent} espera tu respuesta`, sub: `${a.workspace}${Herdr.details[a.pane]?.prompt ? " · " + Herdr.details[a.pane].prompt.split("\n").pop() : ""}`,
-                       when: root.ago(a.since), tone: Theme.warn, payload: a });
+        // 1 · blocked first, then completed and unseen. Snoozes/seen state live only in Herdr memory.
+        for (const a of Herdr.attentionAgents)
+            out.push({ key: `agent:${a.pane}`, kind: "agent", label: a.state === "blocked" ? "Agente · bloqueado" : "Agente · listo sin ver",
+                       title: `${a.agent} ${a.state === "blocked" ? "espera tu respuesta" : "terminó"}`, sub: [a.workspace,a.card,a.note].filter(x => x).join(" · "),
+                       when: root.ago(a.since), tone: a.state === "blocked" ? Theme.warn : Theme.ok, payload: a });
         // 2 · meetings starting within 15 min (or started less than 5 min ago)
         for (const ev of Clock.eventsBetween(new Date(now - 300000), new Date(now + 900000))) {
             const key = `meeting:${ev.startMs}:${ev.title}`;

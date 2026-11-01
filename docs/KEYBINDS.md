@@ -17,7 +17,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + SHIFT + R` | Grabar la pantalla (elige la salida; otra vez para parar). La cápsula roja de la barra también para |
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
 | `SUPER + SHIFT + A` | Referencia de herdr: atajos (los de fábrica y los que cambiaste), comandos de la CLI y estados de los agentes. Solo lectura |
-| `SUPER + A` | Agentes: abre herdr en el escritorio 5 («agentes») o, si ya hay una ventana, la enfoca. Las sesiones sobreviven al cerrar la ventana |
+| `SUPER + A` | Agentes: va al siguiente bloqueado; si no hay, al siguiente listo sin ver |
 | `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
@@ -72,7 +72,9 @@ Dos distribuciones: **English (US)** (la primera, la que resuelve los atajos) y 
 
 El bloqueo usa las mismas dos distribuciones: `SUPER + ALT + Space` también funciona al escribir la contraseña y bajo el campo se ve cuál está activa. `ALT + SHIFT` ya no cambia de distribución (chocaba con `ALT + SHIFT + Tab`, el Alt+Tab orbital hacia atrás).
 
-## herdr (SUPER + A)
+## herdr (SUPER + A = atención)
+
+`SUPER + A` enfoca al siguiente agente que necesita atención. La pastilla de la isla ofrece «Ir ↵»; clic derecho la ignora 10 minutos (solo en memoria). La pila de Mando también ofrece «Ignorar 10 min». Para abrir el cliente sin agentes pendientes, ejecuta `dragon-herdr` sin argumentos. Las decisiones de permisos se responden dentro de herdr.
 
 Primero `Ctrl+B` (el prefijo) y luego:
 
@@ -241,6 +243,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 ```sh
 qs ipc call shell toggle dashboard   # dashboard, perf, wifi, bt, audio, battery, notifications, calendar,
 qs ipc call shell open launcher      # launcher, power, clipboard, keybinds, wallpapers, store, settings
+qs ipc call herdr attention          # siguiente bloqueado o listo sin ver
 qs ipc call taller toggle            # open agentes|kanban|contenedores|git|revision · close · current
 qs ipc call shell close
 qs ipc call launcher clipboard       # el anillo del portapapeles (SUPER + V)
@@ -270,7 +273,7 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 
 | Atajo | Acción |
 |---|---|
-| `SUPER + A` | Abrir o enfocar herdr (escritorio 5) |
+| `SUPER + A` | Ir al siguiente bloqueado o listo sin ver |
 | `SUPER + SHIFT + A` | Atajos y funciones de herdr (referencia) |
 | `SUPER + ALT + A` | Ver agentes y comandos en la isla |
 

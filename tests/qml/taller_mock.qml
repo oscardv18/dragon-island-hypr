@@ -3,6 +3,7 @@ import QtQuick
 import QtQuick.Window
 import "../../config/quickshell"
 import "../../config/quickshell/modules/taller"
+import "../../config/quickshell/modules/island"
 
 Window {
     id: win
@@ -46,6 +47,20 @@ Window {
         memService: memory
         onTabRequested: name => panel.tab = name
     }
+    Rectangle {
+        id: attentionPreview
+        width: Theme.taller.attentionWidth
+        height: Theme.taller.attentionHeight
+        radius: height / 2
+        color: Theme.island
+        visible: false
+        AttentionCard {
+            anchors.centerIn: parent
+            maxWidth: parent.width - Theme.taller.inset * 2
+            agent: agents.agents[0] ?? null
+            now: Date.now()
+        }
+    }
     Timer {
         interval: 500
         running: true
@@ -66,7 +81,9 @@ Window {
                 memory.project = memory.projects[0];memory.selectedSlug = "arxnet-erp";
             }
             if (step === 2) panel.grabToImage(r => r.saveToFile(win.outDir + "/taller-agentes.png"));
-            if (step === 3) Qt.quit();
+            if (step === 3) attentionPreview.visible = true;
+            if (step === 4) attentionPreview.grabToImage(r => r.saveToFile(win.outDir + "/taller-atencion.png"));
+            if (step === 5) Qt.quit();
             step++;
         }
     }

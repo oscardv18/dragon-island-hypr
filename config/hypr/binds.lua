@@ -97,7 +97,7 @@ bind(mainMod .. " + M", hl.dsp.exec_cmd("qs ipc call dock minimize"), "Dock · M
 bind(mainMod .. " + SHIFT + R", hl.dsp.exec_cmd("qs ipc call toggles record"), "Shell · Grabar pantalla (iniciar / parar)")
 bind(mainMod .. " + SHIFT + A", hl.dsp.exec_cmd("qs ipc call shell toggle herdrhelp"), "Agentes · Atajos y funciones de herdr (referencia)")
 bind(mainMod .. " + I",         hl.dsp.exec_cmd("qs ipc call shell toggle store"), "Shell · Tienda de apps (pacman + AUR)")
-bind(mainMod .. " + A",         hl.dsp.exec_cmd("$HOME/.local/bin/dragon-herdr"), "Agentes · Abrir o enfocar herdr (escritorio 5)")
+bind(mainMod .. " + A",         hl.dsp.exec_cmd("qs ipc call herdr attention"), "Agentes · Ir al siguiente bloqueado o listo sin ver")
 bind(mainMod .. " + ALT + A",   hl.dsp.exec_cmd("qs ipc call shell nook ia"), "Agentes · Ver agentes y comandos en la isla")
 bind(mainMod .. " + slash",   hl.dsp.exec_cmd("qs ipc call shell command"),  "Shell · Línea de mando de la isla")
 bind(mainMod .. " + N",      hl.dsp.exec_cmd("qs ipc call shell toggle notifications"), "Shell · Notificaciones")

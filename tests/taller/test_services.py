@@ -32,6 +32,17 @@ ShellRoot {
             if (Mem.status !== "ok" || Herdr.agents.length !== 1) return;
             const a = Herdr.agents[0];
             if (a.agent !== "claude" || a.workspace !== "demo" || a.since < 1000000000000) throw new Error("normalization failed");
+            const since = Math.floor(Date.now()/1000);
+            Herdr._event(JSON.stringify({t:"snapshot",source:"herdr",version:"0.9.5",spaces:[],agents:[
+                {id:"blocked",kind:"claude",state:"blocked",since:since,space:"demo"},
+                {id:"done",kind:"codex",state:"done",since:since-10,space:"demo"}]}));
+            if (Herdr.attentionAgent.id !== "blocked") throw new Error("blocked priority failed");
+            Herdr.snooze(Herdr.attentionAgent,10);
+            if (Herdr.attentionAgent.id !== "done") throw new Error("snooze priority failed");
+            Herdr.markSeen(Herdr.attentionAgent);
+            if (Herdr.attentionAgent !== null) throw new Error("seen failed");
+            Herdr._now = Date.now()+600001;
+            if (Herdr.attentionAgent.id !== "blocked") throw new Error("snooze expiry failed");
             console.log("TALLER_SERVICES_OK"); Qt.quit();
         }
     }

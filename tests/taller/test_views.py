@@ -24,5 +24,6 @@ class Views(unittest.TestCase):
             self.assertEqual(r.returncode,0,r.stdout+r.stderr)
             self.assertNotIn('Error:',r.stderr,r.stderr)
             self.assertNotIn('ReferenceError',r.stderr,r.stderr)
+            raw=(work/'taller-atencion.png').read_bytes();self.assertEqual(struct.unpack('>II',raw[16:24]),(440,30))
             for name in ('taller-vacio.png','taller-agentes.png'):
                 raw=(work/name).read_bytes();self.assertEqual(struct.unpack('>II',raw[16:24]),(1226,612))
