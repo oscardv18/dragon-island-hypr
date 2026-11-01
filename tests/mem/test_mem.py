@@ -35,6 +35,10 @@ class Memory(unittest.TestCase):
         self.assertEqual(self.db.stat().st_mode&0o777,0o600)
         self.assertIn('.dragon/',(self.repo/'.git/info/exclude').read_text())
         self.assertFalse((self.repo/'.gitignore').exists())
+    def test_project_branch_without_agents(self):
+        subprocess.run(['git','-C',str(self.repo),'symbolic-ref','HEAD','refs/heads/feature/local'],env=self.env,check=True)
+        self.assertEqual(self.cli('project','list')['projects'][0]['branch'],'feature/local')
+        self.assertEqual(self.cli('project','show','test')['project']['branch'],'feature/local')
     def test_key_wip_events(self):
         keys=[self.add() for _ in range(4)];self.assertEqual(keys,['AX-1','AX-2','AX-3','AX-4'])
         for k in keys[:3]:self.cli('card','move',k,'--to','doing')

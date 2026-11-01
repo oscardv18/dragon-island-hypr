@@ -20,7 +20,8 @@ Rectangle {
     readonly property string projectBranch: {
         const slug = memService?.selectedSlug ?? "";
         const path = memService?.project?.path ?? "";
-        return agentService?.agents?.find(a => a.project === slug || (path && (a.cwd === path || a.cwd?.startsWith(path + "/"))))?.branch ?? "";
+        const live = agentService?.agents?.find(a => a.project === slug || (path && (a.cwd === path || a.cwd?.startsWith(path + "/"))))?.branch;
+        return live || memService?.project?.branch || "";
     }
     implicitWidth: Theme.taller.width
     implicitHeight: Theme.taller.height

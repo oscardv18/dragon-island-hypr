@@ -16,7 +16,7 @@ import subprocess
 import sys
 import threading
 import time
-from taller_common import Parser, ToolError, emit, error, safe
+from taller_common import Parser, ToolError, emit, error, safe, git_branch
 from secret_filter import redact
 from dragon_mem import db_path
 
@@ -66,23 +66,6 @@ def memory():
     except sqlite3.Error:return [],[]
 
 
-def branch(path):
-    if not path:return ''
-    try:
-        p=Path(path)
-        for folder in (p,*p.parents):
-            git=folder/'.git'
-            if git.is_file():
-                value=git.read_text().strip()
-                if not value.startswith('gitdir: '):return ''
-                git=folder/value[8:]
-            if git.is_dir():
-                head=(git/'HEAD').read_text().strip()
-                return head.removeprefix('ref: refs/heads/') if head.startswith('ref: refs/heads/') else head[:8]
-    except OSError:pass
-    return ''
-
-
 def normalize(snapshot,previous=None):
     previous=previous or {};projects,cards=memory();now=int(time.time())
     spaces=[dict(id=w['workspace_id'],name=w.get('label',w['workspace_id']),state=w.get('agent_status','unknown'),
@@ -96,7 +79,7 @@ def normalize(snapshot,previous=None):
         agents.append(dict(id=identifier,pane=identifier,kind=a.get('agent') if a.get('agent') in ('claude','codex') else 'other',
                            state=state,since=old.get('since',now) if old.get('state')==state else now,
                            space=labels.get(a.get('workspace_id'),a.get('workspace_id','')),
-                           space_id=a.get('workspace_id',''),tab=a.get('tab_id',''),cwd=cwd,branch=branch(cwd),helper_of=None,
+                           space_id=a.get('workspace_id',''),tab=a.get('tab_id',''),cwd=cwd,branch=git_branch(cwd),helper_of=None,
                            card=c['key'] if c else None,project=p['slug'] if p else None,
                            card_id=c['id'] if c else None,name=a.get('name') or a.get('agent') or 'agente',
                            note=c['title'] if c else '',focused=bool(a.get('focused')),title=a.get('terminal_title_stripped') or ''))

@@ -13,7 +13,7 @@ Item {
     signal ignoreRequested()
     implicitWidth: Math.min(Theme.taller.attentionWidth, maxWidth)
     implicitHeight: Theme.taller.attentionHeight
-    readonly property bool blocked: agent?.state === "blocked"
+    readonly property bool blocked: (agent?.state ?? "blocked") === "blocked"
     readonly property color tone: blocked ? Theme.warn : Theme.ok
     MouseArea {
         anchors.fill: parent

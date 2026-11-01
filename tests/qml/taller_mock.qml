@@ -85,7 +85,11 @@ Window {
             if (step === 4) attentionPreview.grabToImage(r => r.saveToFile(win.outDir + "/taller-atencion.png"));
             if (step === 5) { attentionPreview.visible = false; panel.projectsOpen = true; }
             if (step === 6) panel.grabToImage(r => r.saveToFile(win.outDir + "/taller-proyectos.png"));
-            if (step === 7) Qt.quit();
+            if (step === 7) { agents.agents=[]; memory.project={slug:"arxnet-erp",name:"arxnet-erp",branch:"feat/local-head"}; }
+            if (step === 8) {
+                if (panel.projectBranch !== "feat/local-head") throw new Error("branch missing without agents");
+                Qt.quit();
+            }
             step++;
         }
     }

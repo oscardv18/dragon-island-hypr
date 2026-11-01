@@ -100,6 +100,7 @@ Singleton {
         for (const a of next) branches[a.pane] = { branch: a.branch, prompt: "" };
         details = branches;
         agents = next;
+        if (!next.some(a => a.pane === readId)) clearRead();
         workspaces = spaces.map(s => ({ id: s.id, label: s.name, state: s.state, number: s.number, focused: s.focused }));
         running = source === "herdr";
         status = running ? "ok" : "unavailable";

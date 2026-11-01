@@ -50,6 +50,9 @@ ShellRoot {
             if (Herdr.attentionAgent !== null) throw new Error("seen failed");
             Herdr._now = Date.now()+600001;
             if (Herdr.attentionAgent.id !== "blocked") throw new Error("snooze expiry failed");
+            Herdr.readId="blocked";Herdr.readText="transient";
+            Herdr._event(JSON.stringify({t:"snapshot",source:"none",spaces:[],agents:[]}));
+            if (Herdr.readId !== "" || Herdr.readText !== "") throw new Error("stale pane output");
             console.log("TALLER_SERVICES_OK"); Qt.quit();
         }
     }

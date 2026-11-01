@@ -63,7 +63,7 @@ core_apply() {
         run cp -- "$REPO_DIR/config/dragon-island/background-apps.json" "$CFG/dragon-island/background-apps.json"
     fi
     deploy_item "$REPO_DIR/bin/dragon-pkg"   "$HOME/.local/bin/dragon-pkg"
-    deploy_item "$REPO_DIR/scripts/tiling.sh" "$HOME/.local/bin/dragon-tiling"    # SUPER + T, the bar chip, `qs ipc call tiling`
+    deploy_item "$REPO_DIR/scripts/tiling.sh" "$HOME/.local/bin/dragon-tiling"    # SUPER + CTRL + T, the bar chip, `qs ipc call tiling`
     palette_setup
     engines_setup
     activity_setup

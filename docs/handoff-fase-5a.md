@@ -172,3 +172,8 @@ copia temporal con 5a, 15 s de calentamiento + mediana de 7 muestras de 5 s:
 Con este agente trabajando las muestras oscilan entre 9,8 % y 19,2 % y no
 permiten concluir diferencias de 0,3 puntos. La sesión normal quedó restaurada
 con herdr conectado después de las mediciones.
+
+La cabecera también muestra la rama de proyectos sin agentes: Mem y Herdr
+comparten la lectura local de HEAD (sin procesos git adicionales). La vista
+vacía borra cualquier salida del panel anterior al desaparecer el agente.
+Pruebas de ambas condiciones y migración 053 para instalaciones por copia.

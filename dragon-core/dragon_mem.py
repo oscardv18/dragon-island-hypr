@@ -16,7 +16,7 @@ import subprocess
 import sys
 import tempfile
 import time
-from taller_common import Parser, ToolError, emit, error, safe
+from taller_common import Parser, ToolError, emit, error, safe, git_branch
 
 COLS = ('backlog', 'ready', 'doing', 'review', 'done')
 KINDS = ('feat', 'fix', 'chore', 'docs')
@@ -117,7 +117,9 @@ def project(db, slug):
     row = db.execute('SELECT * FROM project WHERE slug=?', (slug,)).fetchone()
     if row is None:
         raise ToolError('project_not_found', 'No se encontró el proyecto.', 'Consulta project list.')
-    return dict(row)
+    result=dict(row)
+    result['branch']=git_branch(result['path'])
+    return result
 
 
 def card(db, key, slug=None):
@@ -238,7 +240,10 @@ def dispatch(db, a):
                        (slug,safe(a.name or path.name),str(path),prefix,safe(a.test_cmd),a.compose,now))
             exclude_local(path)
             return dict(project=project(db,slug))
-        if op == 'list': return dict(projects=rows(db,'SELECT * FROM project WHERE archived=0 ORDER BY name'))
+        if op == 'list':
+            projects=rows(db,'SELECT * FROM project WHERE archived=0 ORDER BY name')
+            for p in projects:p['branch']=git_branch(p['path'])
+            return dict(projects=projects)
         p=project(db,a.slug)
         if op == 'show': return dict(project=p)
         if op == 'archive': update(db,'project',p['id'],{'archived':1})

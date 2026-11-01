@@ -41,7 +41,7 @@ Item {
         return minutes < 1 ? "ahora" : minutes < 60 ? `${minutes} min` : `${Math.floor(minutes/60)} h`;
     }
     function readSelected(): void { if (shown && selected) service?.readAgent(selected); }
-    onSelectedChanged: if (selected?.pane !== service?.readId) readSelected()
+    onSelectedChanged: { if (!selected) service?.clearRead(); else if (selected.pane !== service?.readId) readSelected(); }
     onShownChanged: { if (shown) Qt.callLater(readSelected); else service?.clearRead(); }
     Timer { interval: 30000; repeat: true; running: root.shown; onTriggered: root.now = Date.now() }
     Keys.onPressed: e => {
@@ -85,7 +85,7 @@ Item {
                         RowLayout {
                             spacing: Theme.taller.rowGap
                             UiText { text: "▪ " + modelData.name; weight: Theme.weightSemiBold; size: Theme.taller.body }
-                            UiText { text: `${modelData.count} AGENTES · SPACE`; color: Theme.textDim; mono: true; size: Theme.taller.caption }
+                            UiText { text: `${modelData.count} ${modelData.count === 1 ? "AGENTE" : "AGENTES"} · SPACE`; color: Theme.textDim; mono: true; size: Theme.taller.caption }
                             Rectangle { Layout.fillWidth: true; implicitHeight: Theme.taller.buttonBorder; color: Theme.taller.border }
                             UiText { text: modelData.state === "blocked" ? "BLOQUEADO" : modelData.state === "done" ? "LISTO" : modelData.state === "working" ? "TRABAJANDO" : "REPOSO"; color: Theme.agentColor(modelData.state); mono: true; size: Theme.taller.caption }
                         }
