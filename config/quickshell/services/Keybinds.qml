@@ -100,6 +100,7 @@ Singleton {
     // docs/KEYBINDS.md ("Teclado dentro de los paneles").
     readonly property var panelGroups: [
         { name: "Taller (dentro)", rows: [
+            { text: "Elegir agente · ir al panel", combos: [["↑"], ["↓"], ["Enter"]] },
             { text: "Cambiar de pestaña", combos: [["Ctrl", "Tab"], ["Ctrl", "Shift", "Tab"]] },
             { text: "Cerrar el Taller", combos: [["Esc"]] }
         ] },

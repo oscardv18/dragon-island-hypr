@@ -102,6 +102,10 @@ else:print('ok')
         for a in [('project','add','--path',str(self.home),'--slug','demo','--prefix','AX'),('card','add','--project','demo','--title','Task'),('card','set','AX-1','--worktree',str(self.home))]:
             subprocess.run(command+list(a),env=self.env,check=True,capture_output=True)
         a=self.cli('snapshot')['agents'][0];self.assertEqual(a['card'],'AX-1');self.assertEqual(a['project'],'demo')
+    def test_read_active_alternate_screen(self):
+        self.server.read_busy=True
+        self.assertIn("[oculto:",self.cli("read","w1:p1")["text"])
+        self.assertEqual(self.server.calls[-1][1]["source"],"visible")
     def test_start_order(self):
         r=self.cli('start','--cwd',str(self.home),'--kind','codex','--name','Task')
         self.assertEqual(r['id'],'w2:p1');self.assertEqual([m for m,p in self.server.calls],['workspace.create','agent.start'])

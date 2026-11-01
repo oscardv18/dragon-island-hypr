@@ -18,6 +18,15 @@ Window {
         property string message: "herdr no está en marcha"
         property var agents: []
         property var counts: ({ blocked: 0, done: 0, working: 0 })
+        property string readId: ""
+        property string readText: ""
+        property string actionError: ""
+        property var _seen: ({})
+        function readAgent(a) { readId = a.pane; readText = "● Bash(pnpm test --filter facturas)\n  └ Esperando aprobación…\n¿Permitir ejecutar este comando? (s/n)"; }
+        function clearRead() { readId = ""; readText = ""; }
+        function focusAgent(a) {}
+        function markSeen(a) { const s=Object.assign({},_seen);s[a.pane]=a.since;_seen=s; }
+        function snooze(a,m) {}
     }
     QtObject {
         id: memory
@@ -40,6 +49,25 @@ Window {
     Timer {
         interval: 500
         running: true
-        onTriggered: panel.grabToImage(r => { r.saveToFile(win.outDir + "/taller-vacio.png"); Qt.quit(); })
+        property int step: 0
+        repeat: true
+        onTriggered: {
+            if (step === 0) panel.grabToImage(r => r.saveToFile(win.outDir + "/taller-vacio.png"));
+            if (step === 1) {
+                agents.running = true; agents.message = ""; agents.counts = {blocked:1,done:1,working:2};
+                agents.agents = [
+                    {pane:"a",id:"a",kind:"claude",name:"claude",state:"blocked",space:"arxnet-erp",branch:"feat/facturas-filtros",card:"AX-142",note:"Pide permiso para ejecutar un comando",since:Date.now()-120000,project:"arxnet-erp"},
+                    {pane:"h",id:"h",kind:"codex",name:"revisor",state:"working",space:"arxnet-erp",branch:"revisor → informa a claude",helper_of:"a",since:Date.now()-360000},
+                    {pane:"b",id:"b",kind:"codex",state:"working",space:"arxnet-erp",branch:"fix/export-csv",card:"AX-139",note:"Editando 3 archivos",since:Date.now()-840000},
+                    {pane:"c",id:"c",kind:"claude",state:"done",space:"nextDash-3d",branch:"feat/world-kit",card:"ND-31",note:"Terminó · cambios sin revisar",since:Date.now()-540000},
+                    {pane:"d",id:"d",kind:"codex",state:"idle",space:"SoftArch",branch:"main",note:"Sin tarea",since:Date.now()-3600000}
+                ];
+                memory.projects = [{slug:"arxnet-erp",name:"arxnet-erp"},{slug:"nextDash-3d",name:"nextDash-3d"},{slug:"softarch",name:"SoftArch"}];
+                memory.project = memory.projects[0];memory.selectedSlug = "arxnet-erp";
+            }
+            if (step === 2) panel.grabToImage(r => r.saveToFile(win.outDir + "/taller-agentes.png"));
+            if (step === 3) Qt.quit();
+            step++;
+        }
     }
 }

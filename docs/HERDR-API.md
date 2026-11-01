@@ -35,6 +35,8 @@ respuesta ordinaria. Una suscripción conserva su conexión y emite JSONL.
   ventana de Hyprland por dirección. En Lua se usa `hl.dsp.focus({window=…})`;
   el antiguo dispatcher `focuswindow` del plan no funciona en configuración Lua.
 - `agent.read {target,source:"recent",lines,strip_ansi:true}`: texto del terminal.
+  En pantalla alternativa activa, leer 200 líneas recientes devuelve `agent_not_idle`
+  (comprobado); el puente usa entonces `visible`, sin desplazar el terminal.
   Fuentes admitidas: `visible`, `recent`, `recent_unwrapped`, `detection`.
 - `agent.prompt {target,text}`: entrega y pulsa Intro; **rechaza agentes bloqueados**
   con `agent_blocked`. CLI `herdr agent prompt <target> <text>`; no admite stdin.

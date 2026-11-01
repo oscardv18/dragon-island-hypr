@@ -27,6 +27,7 @@ Rectangle {
     border.width: Theme.taller.buttonBorder
     border.color: Theme.taller.border
     focus: shown
+    Keys.forwardTo: root.tab === "agentes" ? [agentsView] : []
     Keys.onEscapePressed: closeRequested()
     Keys.onPressed: e => {
         if (e.key === Qt.Key_Tab && (e.modifiers & Qt.ControlModifier)) {
@@ -74,7 +75,15 @@ Rectangle {
         Item {
             Layout.fillWidth: true
             Layout.fillHeight: true
+            AgentsTab {
+                id: agentsView
+                anchors.fill: parent
+                visible: root.tab === "agentes"
+                service: root.agentService
+                shown: root.shown && visible
+            }
             UiText {
+                visible: root.tab !== "agentes"
                 anchors.centerIn: parent
                 width: parent.width - Theme.taller.padding * 2
                 horizontalAlignment: Text.AlignHCenter

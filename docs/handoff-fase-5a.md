@@ -85,3 +85,17 @@ Mock puro renderizado offscreen; reiniciado solo Quickshell (las ventanas del
 usuario siguen abiertas) para registrar los tipos nuevos; el panel abre y cierra
 por IPC. `hyprctl reload` y `configerrors` vacíos. Las migraciones 043–047 se
 aplicaron a esta instalación enlazada, sin paquetes ni sudo.
+
+## 7. Agentes
+
+Cola por espacio, prioridad de bloqueados/listos, rama/tarjeta/nota/estado/tiempo,
+ayudantes anidados si los datos los incluyen; detalle con lectura bajo demanda,
+Ir al panel y Marcar como visto. Los botones de compositor/diff quedan visibles
+y deshabilitados hasta 5b/5c. Sin tarjeta de consumo (dragon-tokens es opcional
+de 5c, todavía ausente). Teclado: flechas y Enter, Ctrl+Tab y Ctrl+Shift+Tab.
+
+Visto con el herdr real: este agente y su rama. El servidor rechaza leer historial
+largo en pantalla alternativa mientras trabaja (`agent_not_idle`); se comprobó
+y añadió caída a la salida visible, sin desplazar el terminal. Mock puro con
+bloqueado, trabajando, listo, reposo y ayudante renderizado sin errores. Las
+pruebas de servicios y vistas pasan. Migración 048 también renueva el puente.

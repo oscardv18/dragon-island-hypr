@@ -231,7 +231,12 @@ def focus(identifier):
 
 def read(identifier,lines):
     if lines<1 or lines>200:raise ToolError('invalid_lines','El número de líneas debe estar entre 1 y 200.')
-    r=rpc('agent.read',dict(target=identifier,source='recent',lines=200,strip_ansi=True))
+    try:
+        r=rpc('agent.read',dict(target=identifier,source='recent',lines=200,strip_ansi=True))
+    except ToolError as e:
+        if e.code != 'agent_not_idle':raise
+        # Active alternate-screen agents cannot scroll their history; read the viewport instead.
+        r=rpc('agent.read',dict(target=identifier,source='visible',lines=200,strip_ansi=True))
     text=r.get('read',{}).get('text','')
     text=redact(text)[0]  # BEFORE line/character truncation
     return dict(ok=True,id=identifier,text='\n'.join(text.splitlines()[-lines:])[-8192:])

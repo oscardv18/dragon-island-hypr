@@ -7,7 +7,7 @@ import threading
 
 class FakeHerdr:
     def __init__(self,path,cwd):
-        self.path=path;self.calls=[];self.clients=[];self.lock=threading.Lock()
+        self.read_busy=False;self.path=path;self.calls=[];self.clients=[];self.lock=threading.Lock()
         self.data=dict(version='0.9.5',protocol=22,workspaces=[dict(workspace_id='w1',label='demo',agent_status='working')],
                        agents=[dict(pane_id='w1:p1',agent='claude',agent_status='working',cwd=cwd,workspace_id='w1',tab_id='w1:t1',focused=False)])
     def start(self):
@@ -27,6 +27,8 @@ class FakeHerdr:
                             with owner.lock:
                                 if self.request in owner.clients:owner.clients.remove(self.request)
                         return
+                    elif m=='agent.read' and owner.read_busy and p['source']=='recent':
+                        self.wfile.write(b'{"id":"dragon","error":{"code":"agent_not_idle","message":"cannot scroll"}}\n');return
                     elif m=='agent.read':result={'type':'pane_read','read':{'text':'normal\nAPI_TOKEN=neverexpose\nBearer private_value\nfin'}}
                     elif m=='workspace.create':result={'root_pane':{'pane_id':'w2:p1'},'workspace':{'workspace_id':'w2'},'tab':{'tab_id':'w2:t1'}}
                     elif m=='agent.start':result={'agent':{'pane_id':'w2:p1'}}

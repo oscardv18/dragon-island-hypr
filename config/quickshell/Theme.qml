@@ -811,7 +811,7 @@ Singleton {
         readonly property real groupHeight: 26
         readonly property real detailPadding: 16
         readonly property real outputHeight: 100
-        readonly property real detailsHeight: 216
+        readonly property real detailsHeight: 236
         readonly property real lineHeight: 1.4
         readonly property real leftFraction: 0.48
         readonly property real attentionWidth: 440
