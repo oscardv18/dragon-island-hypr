@@ -891,6 +891,18 @@ Singleton {
         readonly property color dangerTint: root.alpha(root.danger, 0.14)
         readonly property color doingBorder: root.alpha(root.warn, 0.45)
         readonly property color dragShadow: root.alpha(root.bg, 0.6)
+        readonly property real reviewLeftFraction: 0.29
+        readonly property real reviewRightFraction: 0.22
+        readonly property real fileRowHeight: 44
+        readonly property real progressHeight: 4
+        readonly property real gutterWidth: 22
+        readonly property real bubbleHeight: 30
+        readonly property real switchWidth: 26
+        readonly property real switchHeight: 14
+        readonly property real reviewPromptHeight: 104
+        readonly property color bubble: root.alpha(root.lavender, 0.08)
+        readonly property color bubbleBorder: root.alpha(root.lavender, 0.5)
+        readonly property color seenCheck: root.ok
         // /fase5c
     }
     // /fase5a: Taller

@@ -10,6 +10,7 @@ Item {
     property bool shown: false
     property string selectedId: ""
     signal promptRequested(var opts)
+    signal reviewRequested(string key)
     property real now: Date.now()
     readonly property var agents: service?.agents ?? []
     readonly property var selected: agents.find(a => a.pane === selectedId) ?? agents[0] ?? null
@@ -167,7 +168,7 @@ Item {
                         spacing: Theme.taller.smallGap
                         TallerButton { label: "Ir al panel ↵"; primary: true; enabled: !!root.selected; onClicked: root.service?.focusAgent(root.selected) }
                         TallerButton { label: "Preparar prompt"; enabled: !!root.selected && root.selected.state !== "blocked"; onClicked: root.promptRequested({ template: "libre", card: root.selected.card ?? "", target: "herdr:" + (root.selected.id || root.selected.pane) }) }
-                        TallerButton { label: "Ver cambios"; enabled: false }
+                        TallerButton { label: "Ver cambios"; enabled: !!root.selected?.card; onClicked: root.reviewRequested(root.selected.card) }
                         TallerButton { label: "Marcar como visto"; enabled: root.selected?.state === "done"; onClicked: root.service?.markSeen(root.selected) }
                     }
                 }

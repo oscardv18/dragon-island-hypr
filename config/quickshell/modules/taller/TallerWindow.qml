@@ -36,6 +36,7 @@ PanelWindow {
             gitService: Git
             promptService: Prompts
             gateService: Gate
+            reviewService: Review
             tab: Taller.tab
             onTabRequested: name => Taller.tab = name
             onCloseRequested: ShellState.close()

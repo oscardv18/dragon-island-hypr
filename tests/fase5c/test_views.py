@@ -52,5 +52,10 @@ class Views(unittest.TestCase):
         self.assertIn('NOTICE Para pasar a', out)  # AX-137 has no green gates in the fixture
 
 
+    def test_review(self):
+        out = self.check('taller_review_mock.qml', ('taller-revision.png', 'taller-revision-marcado.png', 'taller-revision-vacio.png'))
+        self.assertIn('SEEN 4 COMMENTS 3 BADGE 1', out)
+
+
 if __name__ == '__main__':
     unittest.main()

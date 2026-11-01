@@ -107,6 +107,8 @@ Singleton {
             { text: "Kanban: elegir tarjeta", combos: [["↑"], ["↓"], ["←"], ["→"]] },
             { text: "Kanban: mover la tarjeta de columna", combos: [["Shift", "←"], ["Shift", "→"]] },
             { text: "Kanban: marcar o desmarcar un criterio (casilla)", combos: [["Espacio"]] },
+            { text: "Revisión: marcar archivo como visto (casilla)", combos: [["Espacio"]] },
+            { text: "Revisión: guardar · cancelar el comentario de línea", combos: [["Enter"], ["Esc"]] },
             { text: "Abrir el compositor de prompts", combos: [["P"]] },
             { text: "Cerrar el compositor · cerrar el Taller", combos: [["Esc"]] }
         ] },

@@ -20,6 +20,7 @@ Item {
     property point dragPoint: Qt.point(0, 0)
     property real now: Date.now()
     signal promptRequested(var opts)
+    signal reviewRequested(string key)
     readonly property var columns: [
         { id: "backlog", label: "Backlog", tone: Theme.lavender },
         { id: "ready", label: "Listo", tone: Theme.cyan },
@@ -263,7 +264,7 @@ Item {
                     Repeater {
                         model: [
                             { label: "Pruebas del proyecto", gate: root.gates?.tests, value: root.gates?.tests?.label ?? "…", run: true },
-                            { label: "Archivos del diff vistos", gate: root.gates?.seen, value: root.gates?.seen ? `${root.gates.seen.seen} / ${root.gates.seen.total}` + (root.gates.seen.changed ? " · cambió" : "") : "…" },
+                            { label: "Archivos del diff vistos", review: true, gate: root.gates?.seen, value: root.gates?.seen ? `${root.gates.seen.seen} / ${root.gates.seen.total}` + (root.gates.seen.changed ? " · cambió" : "") : "…" },
                             { label: "Sin conflictos con main", gate: root.gates?.conflicts, value: root.gates?.conflicts?.label ?? "…" }
                         ]
                         delegate: RowLayout {
@@ -276,7 +277,10 @@ Item {
                                 implicitWidth: Theme.taller.dot - 1; implicitHeight: width; radius: width / 2
                                 color: gateState === "ok" ? Theme.ok : gateState === "fail" || gateState === "error" ? Theme.danger : gateState === "running" ? Theme.cyan : Theme.warn
                             }
-                            UiText { Layout.fillWidth: true; text: modelData.label; size: Theme.taller.body }
+                            UiText {
+                                Layout.fillWidth: true; text: modelData.label + (modelData.review ? "  ›" : ""); size: Theme.taller.body
+                                MouseArea { anchors.fill: parent; enabled: !!modelData.review; cursorShape: Qt.PointingHandCursor; onClicked: root.reviewRequested(root.selectedKey) }
+                            }
                             UiText {
                                 text: modelData.value; mono: true; size: Theme.taller.caption
                                 color: gateState === "ok" ? Theme.ok : gateState === "fail" || gateState === "error" ? Theme.danger : Theme.warn

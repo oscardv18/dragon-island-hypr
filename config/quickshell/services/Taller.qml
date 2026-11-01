@@ -18,6 +18,9 @@ Singleton {
     onGitRepoChanged: Git.activate(gitActive,gitRepo)
     readonly property bool kanbanActive: ShellState.openPanel === "taller" && tab === "kanban"
     onKanbanActiveChanged: if (kanbanActive) Mem.refreshBoard()
+    readonly property bool reviewActive: ShellState.openPanel === "taller" && tab === "revision"
+    onReviewActiveChanged: Review.activate(reviewActive)
+    function openReview(key): void { if (key) Review.setCard(key); tab = "revision"; }
     function init(): void {}
     function open(name): void {
         tab = tabs.indexOf(name) >= 0 ? name : "agentes";

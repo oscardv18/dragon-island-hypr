@@ -12,6 +12,7 @@ Rectangle {
     property var gitService: null
     property var promptService: null
     property var gateService: null
+    property var reviewService: null
     property string tab: "agentes"
     property bool shown: false
     property string notice: ""
@@ -20,6 +21,7 @@ Rectangle {
     signal closeRequested()
     signal projectRequested()
     readonly property bool composerOpen: promptService?.composerOpen ?? false
+    function openReview(key): void { if (key) reviewService?.setCard(key); tabRequested("revision"); }
     function openComposer(opts): void { projectsOpen = false; promptService?.open(opts ?? {}); }
     readonly property var tabNames: ["agentes", "kanban", "contenedores", "git", "revision"]
     readonly property var labels: ["Agentes", "Kanban", "Contenedores", "Git", "Revisión"]
@@ -79,7 +81,7 @@ Rectangle {
                 delegate: TallerButton {
                     required property string modelData
                     required property int index
-                    label: root.labels[index] + (index === 0 && (root.agentService?.counts?.blocked ?? 0) > 0 ? "  " + root.agentService.counts.blocked : index === 2 && (root.dockerService?.errorCount ?? 0) > 0 ? "  " + root.dockerService.errorCount : index === 3 && (root.gitService?.changeCount ?? 0) > 0 ? "  " + root.gitService.changeCount : "")
+                    label: root.labels[index] + (index === 0 && (root.agentService?.counts?.blocked ?? 0) > 0 ? "  " + root.agentService.counts.blocked : index === 2 && (root.dockerService?.errorCount ?? 0) > 0 ? "  " + root.dockerService.errorCount : index === 3 && (root.gitService?.changeCount ?? 0) > 0 ? "  " + root.gitService.changeCount : index === 4 && (root.reviewService?.unseenCount ?? 0) > 0 ? "  " + root.reviewService.unseenCount : "")
                     primary: root.tab === modelData
                     onClicked: root.tabRequested(modelData)
                 }
@@ -95,6 +97,7 @@ Rectangle {
                 service: root.agentService
                 shown: root.shown && visible
                 onPromptRequested: opts => root.openComposer(opts)
+                onReviewRequested: key => root.openReview(key)
             }
             KanbanTab {
                 id: kanbanView
@@ -104,6 +107,14 @@ Rectangle {
                 gateService: root.gateService
                 agentService: root.agentService
                 shown: root.shown && visible
+                onPromptRequested: opts => root.openComposer(opts)
+                onReviewRequested: key => root.openReview(key)
+            }
+            ReviewTab {
+                anchors.fill: parent
+                visible: root.tab === "revision"
+                service: root.reviewService
+                agentService: root.agentService
                 onPromptRequested: opts => root.openComposer(opts)
             }
             ContainersTab {
@@ -116,16 +127,6 @@ Rectangle {
                 anchors.fill: parent
                 visible: root.tab === "git"
                 service: root.gitService
-            }
-            UiText {
-                visible: root.tab !== "agentes" && root.tab !== "kanban" && root.tab !== "contenedores" && root.tab !== "git"
-                anchors.centerIn: parent
-                width: parent.width - Theme.taller.padding * 2
-                horizontalAlignment: Text.AlignHCenter
-                text: root.tab === "agentes" ? (root.agentService?.message || "No hay agentes activos") :
-                    ({kanban: "El tablero Kanban estará disponible en el tramo 5c", contenedores: "Contenedores estará disponible en el tramo 5b", git: "Git estará disponible en el tramo 5b", revision: "Revisión estará disponible en el tramo 5c"})[root.tab]
-                size: Theme.taller.heading
-                color: Theme.textDim
             }
         }
         UiText {

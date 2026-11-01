@@ -217,5 +217,57 @@ class StartFlow(unittest.TestCase):
         self.assertEqual(data['herdr'][0]['args'][data['herdr'][0]['args'].index('--kind') + 1], 'claude')
 
 
+REVIEW = """import Quickshell
+import QtQuick
+import "services"
+ShellRoot {
+    property int phase: 0
+    property string key: ""
+    readonly property string repo: Quickshell.env("HOME") + "/repo"
+    function fail(msg) { console.error("FAIL", phase, msg); Qt.quit(); }
+    Component { id: sh; ToolRequest {} }
+    Component.onCompleted: Mem.addProject(repo, "Proyecto", "AX", r => {
+        if (!r.ok) return fail("project");
+        Mem.addCard("Revisar", "feat", c => { key = c.card.key; Mem.setCard(key, { worktree: repo, agent_ref: "pane-1" }, () => phase = 1); });
+    })
+    Timer { interval: 60; running: true; repeat: true
+        onTriggered: {
+            if (phase === 1 && Mem.cardByKey(key)?.worktree) { Review.setCard(key); Review.activate(true); phase = 2; }
+            else if (phase === 2 && Review.status === "ok" && Review.files.length === 1 && Review.diffData.hunks?.length) {
+                if (!Review.watching) return fail("live watch should run while visible");
+                if (Review.unseenCount !== 1 || Review.files[0].path !== "nuevo.txt") return fail("files");
+                Review.markSeen("nuevo.txt"); phase = 3;
+            } else if (phase === 3 && Review.seenCount === 1) {
+                sh.createObject(null, { callback: () => phase = 4 }).exec(["sh", "-c", 'printf "otra\\\\n" >> "$0"; echo "{\\\\"ok\\\\":true}"', repo + "/nuevo.txt"]);
+                phase = 97;
+            } else if (phase === 4 && Review.files[0]?.changed) {
+                if (Review.seenCount !== 0) return fail("changed file must be unseen");
+                Review.addComment("nuevo.txt", 1, "¿Por qué este texto?"); phase = 5;
+            } else if (phase === 5 && Review.comments.length === 1 && Review.reviewTokens > 0) {
+                Prompts.open({ template: "revisar-cambios", card: key }); phase = 6;
+            } else if (phase === 6 && !Prompts.building && Prompts.result.tokens > 0) {
+                Prompts.send(); phase = 7;
+            } else if (phase === 7 && Review.comments[0]?.sent === 1) {
+                Review.activate(false); phase = 8;
+            } else if (phase === 8) {
+                if (Review.watching) return fail("watch must stop when the tab is hidden");
+                console.log("FASE5C_REVIEW_OK"); Qt.quit();
+            }
+        }
+    }
+    Timer { interval: 25000; running: true; onTriggered: fail("timeout " + Review.status + " " + Review.message + " " + JSON.stringify(Review.files)) }
+}
+"""
+
+
+@unittest.skipUnless(shutil.which('qs'), 'Quickshell required')
+class ReviewFlow(unittest.TestCase):
+    def test_seen_by_content_comments_and_watch(self):
+        out, data = run_shell(REVIEW, setup=lambda home, env: git_repo(home, env))
+        self.assertIn('FASE5C_REVIEW_OK', out, out)
+        for bad in BAD: self.assertNotIn(bad, out, out)
+        self.assertEqual([json.loads(l)['target'] for l in data['sent'].splitlines()], ['clipboard'])
+
+
 if __name__ == '__main__':
     unittest.main()
