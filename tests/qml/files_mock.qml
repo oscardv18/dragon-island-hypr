@@ -1,0 +1,149 @@
+// Pure explorer view with simulated services fed by tests/qml/fixtures/files-*.json (the dragon-files contract,
+// PLAN-FASE-5 §5.7). No processes, no real folders. render-mocks.sh supplies a pure Theme and allows the fixture reads
+// (QML_XHR_ALLOW_FILE_READ=1). Fails (exit ≠ 0) when a helper of files.js or a view state is wrong.
+import QtQuick
+import QtQuick.Window
+import "../../config/quickshell"
+import "../../config/quickshell/modules/files"
+import "../../config/quickshell/modules/files/files.js" as F
+
+Window {
+    id: win
+    width: 1366
+    height: 768
+    visible: true
+    color: Theme.bg
+    readonly property string outDir: Qt.application.arguments[Qt.application.arguments.length - 1]
+    readonly property real fixedNow: 1793469120 * 1000          // 2026-10-31 17:52 UTC, the fixtures' «now»
+    readonly property string home: "/home/oddv"
+    readonly property string docs: home + "/Proyectos/arxnet-erp/docs"
+
+    function fixture(name) {
+        const xhr = new XMLHttpRequest();
+        xhr.open("GET", Qt.resolvedUrl("fixtures/" + name), false);
+        xhr.send();
+        if (!xhr.responseText) throw new Error("fixture missing: " + name);
+        return JSON.parse(xhr.responseText);
+    }
+    function check(cond, what) { if (!cond) throw new Error("files_mock: " + what); }
+    function eq(a, b, what) { if (a !== b) throw new Error("files_mock: " + what + ": «" + a + "» ≠ «" + b + "»"); }
+
+    // ---- simulated Files service: same members the views use ----
+    QtObject {
+        id: files
+        property string home: win.home
+        property var places: win.fixture("files-places.json").places
+        property var clipboard: ({ mode: "", paths: [] })
+        property bool composerAvailable: false
+        property var opened: []
+        property var watched: ({})
+        readonly property var listings: ({})
+        signal folderChanged(string path)
+        signal agentRequested(var paths)
+        function list(path, opts, cb) {
+            const map = { [win.docs]: "files-ls-docs.json", [win.home + "/Descargas"]: "files-ls-descargas.json" };
+            if (map[path]) { const r = win.fixture(map[path]); if (!opts?.git) for (const e of r.entries) e.git = null; cb(r); }
+            else if (path === win.home + "/privado") cb({ ok: false, error: { code: "permission_denied", message: "No tienes permiso para abrir «privado»", hint: "Pide acceso al propietario o ábrela como administrador" } });
+            else cb({ ok: true, path: path, entries: [], free: 499289948160, total: 1000204886016, fs: "btrfs" });
+        }
+        function thumb(path, mtime, cb) { cb(path.endsWith(".jpg") || path.endsWith(".svg") ? Qt.resolvedUrl("../../sddm/dragon-core/background.jpg").toString().replace("file://", "") : null); }
+        function open(path) { opened = opened.concat([path]); }
+        function acquireWatch(p) { const w = Object.assign({}, watched); w[p] = (w[p] ?? 0) + 1; watched = w; }
+        function releaseWatch(p) { const w = Object.assign({}, watched); w[p]--; if (!w[p]) delete w[p]; watched = w; }
+        function setClipboard(mode, paths) { clipboard = { mode: mode, paths: paths }; }
+        function copyText(t) {}
+        function sendToAgent(p) {}
+    }
+
+    FilesPanel {
+        id: panel
+        x: 71
+        y: 47
+        width: Theme.files.width
+        height: Theme.files.height
+        files: files
+        initialPath: win.docs
+        now: win.fixedNow
+    }
+
+    function unitChecks() {
+        eq(F.formatSize(48.2 * 1048576), "48,2 MB", "formatSize MB");
+        eq(F.formatSize(312 * 1048576), "312 MB", "formatSize ≥100");
+        eq(F.formatSize(18 * 1024), "18 KB", "formatSize KB");
+        eq(F.formatSize(499289948160), "465 GB", "formatSize GB");
+        eq(F.formatCapacity(1000204886016), "1 TB", "formatCapacity TB");
+        eq(F.formatCapacity(32015679488), "32 GB", "formatCapacity GB");
+        eq(F.typeLabel({ name: "datos.tar.zst", kind: "file" }), "tar + zstd", "typeLabel compound");
+        eq(F.typeLabel({ name: "x", kind: "dir" }), "Carpeta", "typeLabel dir");
+        eq(F.archiveStem("release-2.4.tar.gz"), "release-2.4", "archiveStem");
+        eq(F.extractDest(win.docs + "/backup-2026-10.zip", true), win.docs + "/backup-2026-10/", "extractDest own folder");
+        eq(F.displayPath(win.docs, win.home), "~/Proyectos/arxnet-erp/docs", "displayPath");
+        eq(F.expandPath("~/a/../b/./c", win.home, "/"), win.home + "/b/c", "expandPath");
+        eq(F.expandPath("sub", win.home, "/tmp"), "/tmp/sub", "expandPath relative");
+        eq(F.crumbs(win.docs, win.home).map(c => c.label).join(" › "), "~ › Proyectos › arxnet-erp › docs", "crumbs");
+        eq(F.parent("/"), "", "parent of root");
+        eq(F.parent("/a"), "/", "parent of top");
+        const day = 86400;
+        eq(F.relTime(1793469120 - day, win.fixedNow), "ayer", "relTime ayer");
+        eq(F.relTime(1793469120 - 3 * day, win.fixedNow), "hace 3 d", "relTime días");
+        eq(F.relTime(1793469120 - 15 * day, win.fixedNow), "hace 2 sem", "relTime semanas");
+        const s = F.sortEntries([{ name: "b", kind: "file", size: 1 }, { name: "a10", kind: "file", size: 9 }, { name: "a9", kind: "file", size: 5 }, { name: "z", kind: "dir" }], "name", false, true);
+        eq(s.map(e => e.name).join(","), "z,a9,a10,b", "natural sort, folders first");
+        eq(F.sortEntries(s, "size", true, false).map(e => e.name).join(","), "a10,a9,b,z", "size sort desc");
+        eq(F.filterEntries([{ name: ".x", hidden: true }, { name: "Foto" }], "fo", false).length, 1, "filter + hidden");
+        eq(F.selectionSummary([{ kind: "file", size: 48.2 * 1048576 }], 12), "1 de 12 elementos seleccionado · 48,2 MB", "selection summary");
+        const tree = F.archiveTree([{ path: "src/a.ts", size: 1 }, { path: "src/b/c.ts", size: 1 }, { path: "docs/", is_dir: true },
+                                    { path: "docs/x.md", size: 1 }, { path: "README.md", size: 4096 }], 5);
+        eq(tree.lines.map(l => l.label + "=" + l.value).join(" "), "docs/=1 src/=2 README.md=4 KB", "archiveTree");
+        const devs = [{ id: "root", mounted: true, mountpoint: "/" }, { id: "usb", label: "KINGSTON", mounted: true, mountpoint: "/run/media/oddv/KINGSTON" }];
+        eq(F.deviceForPath(devs, "/run/media/oddv/KINGSTON/x").id, "usb", "deviceForPath");
+        check(!F.sameDevice(devs, win.home, "/run/media/oddv/KINGSTON"), "sameDevice");
+        eq(F.opLabel({ kind: "copy", dest: "/run/media/oddv/KINGSTON/fotos", index: 2, count: 5 }, devs), "COPIANDO A KINGSTON · 2/5", "opLabel");
+    }
+
+    function shot(name) { panel.grabToImage(r => r.saveToFile(win.outDir + "/" + name)); }
+
+    Timer {
+        interval: 400
+        running: true
+        repeat: true
+        property int step: 0
+        onTriggered: {
+            try { run(); } catch (e) { console.error(e.message); running = false; Qt.exit(1); }
+        }
+        function run() {
+            const t = panel.state.tab;
+            if (step === 0) {
+                win.unitChecks();
+                eq(t.shown.length, 12, "hidden entries filtered");
+                eq(t.shown[0].name, "capturas", "folders first");
+                eq(t.shown.find(e => e.name === "arquitectura.md").git, "M", "git marks from the second pass");
+                check(files.watched[win.docs] === 1, "current tab watches its folder");
+                t.select(t.shown.findIndex(e => e.name === "backup-2026-10.zip"), 0);
+                panel.state.newTab(win.home + "/Descargas");
+                panel.state.setCurrent(0);
+                check(!files.watched[win.home + "/Descargas"], "background tab does not watch");
+            }
+            if (step === 1) shot("files-lista.png");
+            if (step === 2) panel.state.viewMode = "cuadricula";
+            if (step === 3) shot("files-cuadricula.png");
+            if (step === 4) {
+                panel.state.viewMode = "lista";
+                // keyboard: up, back, forward, hidden files, search
+                t.up(); eq(t.path, win.home + "/Proyectos/arxnet-erp", "up");
+                t.back(); eq(t.path, win.docs, "back");
+                t.forward(); eq(t.path, win.home + "/Proyectos/arxnet-erp", "forward");
+                t.back();
+                panel.state.showHidden = true; eq(t.shown.length, 13, "Ctrl+H shows hidden");
+                panel.state.showHidden = false;
+                panel.state.search = "tar"; eq(t.shown.length, 2, "search filters"); panel.state.search = "";
+                t.select(1, 0); t.select(3, Qt.ShiftModifier); eq(t.selection.length, 3, "shift range");
+                t.select(5, Qt.ControlModifier); eq(t.selection.length, 4, "ctrl toggle");
+                t.go(win.home + "/privado");
+            }
+            if (step === 5) { eq(t.status, "error", "permission error state"); shot("files-error.png"); }
+            if (step === 6) { t.back(); panel.state.closeTab(1); check(!files.watched[win.home + "/privado"], "watch released"); Qt.quit(); }
+            step++;
+        }
+    }
+}

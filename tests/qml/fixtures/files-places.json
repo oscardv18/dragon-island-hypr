@@ -1,0 +1,61 @@
+{
+ "ok": true,
+ "places": [
+  {
+   "id": "home",
+   "label": "Inicio",
+   "path": "/home/oddv",
+   "kind": "home",
+   "repo": false,
+   "badge": null
+  },
+  {
+   "id": "desktop",
+   "label": "Escritorio",
+   "path": "/home/oddv/Escritorio",
+   "kind": "desktop",
+   "repo": false,
+   "badge": null
+  },
+  {
+   "id": "documents",
+   "label": "Documentos",
+   "path": "/home/oddv/Documentos",
+   "kind": "documents",
+   "repo": false,
+   "badge": null
+  },
+  {
+   "id": "downloads",
+   "label": "Descargas",
+   "path": "/home/oddv/Descargas",
+   "kind": "downloads",
+   "repo": false,
+   "badge": 3
+  },
+  {
+   "id": "pictures",
+   "label": "Imágenes",
+   "path": "/home/oddv/Imágenes",
+   "kind": "pictures",
+   "repo": false,
+   "badge": null
+  },
+  {
+   "id": "projects",
+   "label": "Proyectos",
+   "path": "/home/oddv/Proyectos",
+   "kind": "project",
+   "repo": true,
+   "badge": null
+  },
+  {
+   "id": "trash",
+   "label": "Papelera",
+   "path": "trash:///",
+   "kind": "trash",
+   "repo": false,
+   "badge": 4
+  }
+ ]
+}

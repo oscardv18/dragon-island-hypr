@@ -83,6 +83,11 @@ step "servicios del Taller con Quickshell real y HOME temporal"
 if python3 -m unittest discover -s tests/taller -v; then pass "servicios del Taller"; else fail "servicios del Taller"; fi
 # /fase5a: services and UI
 
+# fase5d: files UI
+step "explorador: vistas con datos de muestra y servicios con dragon-files simulado"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files_ui -v; then pass "explorador (interfaz)"; else fail "explorador (interfaz)"; fi
+# /fase5d: files UI
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 

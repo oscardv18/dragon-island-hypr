@@ -839,5 +839,99 @@ Singleton {
         readonly property real disabledOpacity: 0.45
     }
     // /fase5a: Taller
+    // fase5d: Files (33-archivos-*). Only the explorer reads these; shared colours stay in the palette above.
+    readonly property QtObject files: QtObject {
+        // window and layout (33-archivos-lista.png at 1×)
+        readonly property real width: 1226
+        readonly property real height: 612
+        readonly property real minWidth: 780
+        readonly property real minHeight: 440
+        readonly property real radius: 22
+        readonly property real padding: 17
+        readonly property real gap: 12
+        readonly property real smallGap: 6
+        readonly property real thinGap: 3
+        readonly property real inset: 10
+        readonly property real border: 1
+        readonly property real sidebarWidth: 220
+        readonly property real sidebarRow: 31
+        readonly property real sidebarSection: 34
+        readonly property real sidebarIcon: 15
+        readonly property real toolbar: 30
+        readonly property real navButton: 28
+        readonly property real searchWidth: 156
+        readonly property real tabsHeight: 26
+        readonly property real tabMaxWidth: 160
+        readonly property real headerRow: 22
+        readonly property real row: 32
+        readonly property real rowRadius: 8
+        readonly property real rowIcon: 15
+        readonly property real sizeColumn: 96
+        readonly property real dateColumn: 106
+        readonly property real typeColumn: 112
+        readonly property real nameMin: 160
+        readonly property real gitBadge: 16
+        readonly property real tileWidth: 157
+        readonly property real tileHeight: 116
+        readonly property real tileGap: 17
+        readonly property real thumbHeight: 77
+        readonly property real thumbRadius: 9
+        readonly property real thumbIcon: 26
+        readonly property real thumbPx: 256            // requested thumbnail size (normal cache = 128, large = 256)
+        readonly property real statusHeight: 26
+        readonly property real buttonHeight: 30
+        readonly property real buttonRadius: 9
+        readonly property real buttonPad: 12
+        readonly property real inputHeight: 32
+        readonly property real inputRadius: 10
+        readonly property real chipRadius: 8
+        readonly property real menuWidth: 220
+        readonly property real menuRow: 28
+        readonly property real promptWidth: 420
+        readonly property real scrollStep: 96
+        // type
+        readonly property real caption: 10
+        readonly property real captionTracking: 1.6
+        readonly property real body: 13
+        readonly property real small: 12
+        readonly property real mono: 11
+        readonly property real title: 14
+        readonly property real icon: 15
+        // colours
+        readonly property color panel: root.alpha(root.bg, 0.94)
+        readonly property color sidebar: root.alpha(root.text, 0.02)
+        readonly property color divider: root.alpha(root.text, 0.07)
+        readonly property color card: root.alpha(root.text, 0.045)
+        readonly property color rowAlt: root.alpha(root.text, 0.022)
+        readonly property color hover: root.alpha(root.text, 0.06)
+        readonly property color selected: root.alpha(root.cyan, 0.08)
+        readonly property color selectedBorder: root.alpha(root.cyan, 0.45)
+        readonly property color dropTarget: root.alpha(root.cyan, 0.16)
+        readonly property color button: root.alpha(root.text, 0.07)
+        readonly property color buttonHover: root.alpha(root.text, 0.11)
+        readonly property color buttonBorder: root.alpha(root.text, 0.09)
+        readonly property color input: root.alpha(root.bg, 0.55)
+        readonly property color scrim: root.alpha(root.bg, 0.55)
+        readonly property color dialog: root.alpha(root.bg, 0.97)
+        readonly property color thumb: root.alpha(root.text, 0.05)
+        readonly property color iconDir: root.lavender
+        readonly property color iconArchive: root.warn
+        readonly property color iconImage: root.cyan
+        readonly property color iconCode: root.ok
+        readonly property color iconDoc: root.textSoft
+        readonly property color gitModified: root.warn
+        readonly property color gitAdded: root.ok
+        readonly property color gitDeleted: root.danger
+        readonly property color gitUntracked: root.textDim
+        readonly property color hintOnPrimary: root.alpha(root.islandInk, 0.15)
+        readonly property real badgeTint: 0.16
+        readonly property real disabledOpacity: 0.45
+        // timing
+        readonly property int watchDebounce: 300       // folder events → one reload
+        readonly property int searchDebounce: 120
+        readonly property int thumbConcurrency: 2      // thumbnail processes at once
+        readonly property int dragThreshold: 8
+    }
+    // /fase5d: Files
 
 }

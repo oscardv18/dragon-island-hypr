@@ -134,6 +134,31 @@ Singleton {
     readonly property string eye:           g(0xF0208)
     readonly property string hotspot:       g(0xF0002)
     readonly property string timer:         g(0xF051B)
+    // fase5d: Files (explorer)
+    readonly property string folderOutline: g(0xF0256)
+    readonly property string fileOutline:   g(0xF0224)
+    readonly property string fileDoc:       g(0xF09EE)
+    readonly property string fileArchive:   g(0xF05C4)   // zip-box
+    readonly property string fileImage:     g(0xF0976)   // image-outline
+    readonly property string fileCode:      g(0xF022E)
+    readonly property string fileVideo:     g(0xF022B)
+    readonly property string fileLink:      g(0xF0339)   // link-variant
+    readonly property string repo:          g(0xF02A2)   // git
+    readonly property string arrowLeft:     g(0xF004D)
+    readonly property string arrowRight:    g(0xF0054)
+    readonly property string viewList:      g(0xF0572)
+    readonly property string viewGrid:      g(0xF0570)
+    readonly property string home:          g(0xF06A1)
+    readonly property string monitor:       g(0xF0379)
+    readonly property string usb:           g(0xF0553)
+    readonly property string lan:           g(0xF0317)
+    readonly property string server:        g(0xF048B)
+    readonly property string trash:         g(0xF0A7A)
+    readonly property string eject:         g(0xF01EA)
+    readonly property string printer:       g(0xF042A)
+    readonly property string share:         g(0xF0497)
+    readonly property string disc:          g(0xF019B)
+    // /fase5d: Files
     readonly property string stopwatch:     g(0xF13AB)
 
     // Helpers
