@@ -68,6 +68,7 @@
  *   glassStyle(s: string), windowFrame(s: string), page(p: string) (opens Ajustes on that page: appearance · bar ·
  *   launcher · privacy · power), current(): string (every setting, one per line)
  *
+ * Appearance setters record old/new values through Mem.logChange (system_change), never on initial load.
  * shell.qml binds Theme.motionScale, Theme.barStyle, Theme.barSize and Theme.accentIntensity to these.
  */
 pragma Singleton
@@ -208,10 +209,15 @@ Singleton {
     function setReducedMotion(on: bool): void { setMotionScale(on ? 0 : -1); }
 
     function _set(key: string, value): void {
+        const appearance = ["glassStyle", "windowFrame", "barStyle", "barSize", "islandContent", "barMetrics", "barAutohide",
+                            "accentIntensity", "wallpaperPalette", "paletteApplyExternal"];
+        const oldValue = appearance.indexOf(key) >= 0 ? root[key] : root._data[key];
+        if (JSON.stringify(oldValue) === JSON.stringify(value)) return;
         const d = Object.assign({}, root._data);
         d[key] = value;
         root._data = d;
         _save();
+        if (appearance.indexOf(key) >= 0) Mem.logChange(key, oldValue, value, "settings");
     }
 
     function setBarStyle(style: string): void {

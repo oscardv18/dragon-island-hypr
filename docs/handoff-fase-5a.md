@@ -120,3 +120,12 @@ los agentes con la memoria; escribir en los campos no produce efectos.
 La selección carga las tarjetas de ese proyecto. Errores de ruta/duplicados se
 muestran en el formulario. Prueba con servicios reales en HOME temporal: crea
 el proyecto, refresca SQLite y conserva la selección. Migración 050.
+
+## 10. Registro de apariencia
+
+Los setters de Ajustes registran en `system_change` los cambios efectivos de
+cristal, contorno, estilo/tamaño/contenido/métricas/ocultado de barra, intensidad
+del acento y opciones de paleta. No se registra la carga inicial ni repetir el
+mismo valor. La UI sigue llamando a Settings; solo el servicio llama a Mem.
+Migración 051. Prueba con Settings y Mem reales en HOME temporal: registra
+barra/cristal/paleta, ignora un duplicado y un ajuste de energía.
