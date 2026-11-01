@@ -98,3 +98,34 @@ class GitTests(unittest.TestCase):
         self.assertEqual(self.cli('stage', '--paths', '../escape', ok=False)['error']['code'], 'invalid_path')
         p = subprocess.run([str(ROOT/'bin/dragon-git'), 'checkout', '--repo', str(self.repo), '--', '--force'], env=self.env, capture_output=True, text=True)
         self.assertEqual(json.loads(p.stdout)['error']['code'], 'invalid_branch')
+
+    def test_untracked_symlink_never_reads_external_target(self):
+        self.initial(); outside = self.home/'outside'; outside.write_text('private external content')
+        (self.repo/'link').symlink_to(outside)
+        d = self.cli('diff','--path','link')
+        self.assertNotIn('private external content',str(d))
+        self.assertIn(str(outside),str(d))
+        (self.repo/'dirlink').symlink_to(self.home,target_is_directory=True)
+        self.assertEqual(self.cli('blob-hash','--path','dirlink/outside',ok=False)['error']['code'],'invalid_path')
+
+    def test_unborn_unstage_preserves_newer_working_copy(self):
+        self.write('new','staged\n'); self.cli('stage','--paths','new'); self.write('new','newer working copy\n')
+        self.cli('unstage','--paths','new')
+        self.assertEqual((self.repo/'new').read_text(),'newer working copy\n')
+        self.assertEqual(self.cli('status')['staged'],[])
+
+    def test_inotify_debounce_and_child_cleanup(self):
+        self.initial(); helpers = self.home/'bin'; helpers.mkdir(); marker = self.home/'watcher-pid'
+        watcher = helpers/'inotifywait'
+        watcher.write_text('#!/usr/bin/python3\nimport os,time\nfrom pathlib import Path\nPath('+repr(str(marker))+').write_text(str(os.getpid()))\ntime.sleep(.2)\nprint("changed",flush=True)\ntime.sleep(20)\n')
+        watcher.chmod(0o755)
+        env = dict(self.env,PATH=str(helpers)+os.pathsep+self.env['PATH'])
+        p = subprocess.Popen([str(ROOT/'bin/dragon-git'),'watch','--repo',str(self.repo)],env=env,stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True)
+        try:
+            self.assertTrue(select.select([p.stdout],[],[],3)[0]); json.loads(p.stdout.readline())
+            self.write('base.txt','changed after watch starts\n')
+            self.assertTrue(select.select([p.stdout],[],[],1.5)[0]); self.assertEqual(json.loads(p.stdout.readline())['files'][0]['path'],'base.txt')
+            pid = int(marker.read_text()); p.terminate(); p.communicate(timeout=3)
+            self.assertFalse(Path('/proc',str(pid)).exists())
+        finally:
+            if p.poll() is None: p.kill(); p.communicate()

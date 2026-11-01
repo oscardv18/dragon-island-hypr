@@ -15,7 +15,7 @@ Item {
         for (const f of changes) result.push({group:false,file:f,prepared:false});
         return result;
     }
-    Connections { target: root.service; ignoreUnknownSignals: true; function onCommitted() { message.text = ""; } }
+    Connections { target: root.service; ignoreUnknownSignals: true; function onCommitted() { message.text = ""; } function onRepoChanged() { message.text = ""; } }
     RowLayout {
         anchors.fill: parent
         spacing: Theme.taller.gap
@@ -106,6 +106,13 @@ Item {
                             font.pixelSize: Theme.taller.mono
                             wrapMode: TextEdit.Wrap
                             textFormat: TextEdit.PlainText
+                            Keys.onPressed: event => {
+                                if (event.key !== Qt.Key_Tab) return;
+                                if (event.modifiers & Qt.ControlModifier) { event.accepted = false; return; }
+                                const next = message.nextItemInFocusChain(!(event.modifiers & Qt.ShiftModifier));
+                                if (next) next.forceActiveFocus(Qt.TabFocusReason);
+                                event.accepted = true;
+                            }
                             clip: true
                             selectByMouse: true
                             activeFocusOnTab: true

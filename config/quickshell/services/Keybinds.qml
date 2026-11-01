@@ -102,6 +102,8 @@ Singleton {
         { name: "Taller (dentro)", rows: [
             { text: "Elegir agente · ir al panel", combos: [["↑"], ["↓"], ["Enter"]] },
             { text: "Cambiar de pestaña", combos: [["Ctrl", "Tab"], ["Ctrl", "Shift", "Tab"]] },
+            { text: "Git: preparar o quitar del índice (casilla)", combos: [["Espacio"]] },
+            { text: "Git: elegir tipo de commit (chip)", combos: [["Enter"]] },
             { text: "Cerrar el Taller", combos: [["Esc"]] }
         ] },
         { name: "Capturas (dentro)", rows: [

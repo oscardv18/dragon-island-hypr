@@ -70,6 +70,7 @@ step "Git con repositorios temporales"
 if python3 -m unittest discover -s tests/git -v; then pass "dragon-git"; else fail "dragon-git"; fi
 step "servicios Docker y Git con Quickshell real y HOME temporal"
 if python3 -m unittest discover -s tests/fase5b -v; then pass "servicios de 5b"; else fail "servicios de 5b"; fi
+if python3 tests/fase5b/bench.py --limit-ms 300; then pass "lecturas frías <300 ms"; else fail "latencia de 5b"; fi
 # /fase5b: engines
 
 # fase5a: shared secrets

@@ -75,6 +75,7 @@ class Docker:
                         health=state.get('Health', {}).get('Status', 'none'),
                         exit_code=state.get('ExitCode', 0), oom_killed=state.get('OOMKilled', False),
                         restart_count=data.get('RestartCount', 0), started_at=state.get('StartedAt', ''),
+                        created_at=data.get('Created', ''),
                         working_dir=labels.get('com.docker.compose.project.working_dir', ''),
                         ports=[str(p.get('PublicPort', '')) + '->' + str(p.get('PrivatePort', ''))
                                for p in row.get('Ports', []) if p.get('PublicPort')])
@@ -85,23 +86,37 @@ class Docker:
         rows = self.containers()
         now = int(time.time())
         conn, response = self.request('/events?' + urlencode(dict(since=now-600, until=now,
-            filters=json.dumps({'type': ['container'], 'event': ['restart']}))), stream=True)
-        restarts = {}
+            filters=json.dumps({'type': ['container'], 'event': ['restart', 'start', 'oom']}))), stream=True)
+        events = {}
         try:
             for line in response:
                 e = json.loads(line)
                 cid = e.get('Actor', {}).get('ID', e.get('id', ''))
-                restarts.setdefault(cid, []).append(e.get('time', now))
+                action = e.get('Action', e.get('status', ''))
+                events.setdefault(cid, {}).setdefault(action, []).append(e.get('time', now))
         finally:
             conn.close()
         issues = []
         for c in rows:
             base = dict(container=c['id'], since=c['started_at'])
-            if c['oom_killed']:
-                issues.append(dict(base, kind='oom', detail='OOMKilled · memoria agotada'))
-            if len(restarts.get(c['id'], [])) >= 3:
-                issues.append(dict(base, kind='restart_loop', since=min(restarts[c['id']]),
-                                   detail=f"Reiniciado {len(restarts[c['id']])} veces en 10 min"))
+            recent = events.get(c['id'], {})
+            oom = recent.get('oom', [])
+            if c['oom_killed'] or oom:
+                issues.append(dict(base, kind='oom', since=min(oom) if oom else c['started_at'], detail='OOMKilled · memoria agotada'))
+            # Docker emits start/die for policy restarts; explicit restart also has
+            # a start event. Count starts, excluding the initial creation, without
+            # counting an explicit restart twice. No lifetime-counter heuristic.
+            starts, explicit = recent.get('start', []), recent.get('restart', [])
+            created = c.get('created_at', '')
+            try:
+                from datetime import datetime
+                initial_in_window = datetime.fromisoformat(created.replace('Z','+00:00')).timestamp() >= now-600
+            except ValueError:
+                initial_in_window = True
+            restart_count = max(len(explicit), max(0, len(starts)-int(initial_in_window)), c.get('restart_count', 0) if initial_in_window and created else 0)
+            if restart_count >= 3:
+                issues.append(dict(base, kind='restart_loop', since=min(starts+explicit),
+                                   detail=f"Reiniciado {restart_count} veces en 10 min"))
             if c['health'] == 'unhealthy':
                 issues.append(dict(base, kind='unhealthy', detail='Comprobación de salud fallida'))
             if c['exit_code'] and c['state'] in ('exited', 'dead', 'restarting'):
@@ -111,8 +126,10 @@ class Docker:
 
 def stats(data, previous=None):
     cpu, pre = data.get('cpu_stats', {}), data.get('precpu_stats', {})
-    delta = cpu.get('cpu_usage', {}).get('total_usage', 0) - pre.get('cpu_usage', {}).get('total_usage', 0)
-    system = cpu.get('system_cpu_usage', 0) - pre.get('system_cpu_usage', 0)
+    total, system_total = cpu.get('cpu_usage', {}).get('total_usage', 0), cpu.get('system_cpu_usage', 0)
+    # one-shot=1 can omit precpu_stats. Prefer our preceding two-second sample.
+    prior_total, prior_system = (previous[3], previous[4]) if previous else (pre.get('cpu_usage', {}).get('total_usage', 0), pre.get('system_cpu_usage', 0))
+    delta, system = total-prior_total, system_total-prior_system
     cores = cpu.get('online_cpus') or len(cpu.get('cpu_usage', {}).get('percpu_usage', [])) or 1
     memory = data.get('memory_stats', {})
     cache = memory.get('stats', {}).get('inactive_file', memory.get('stats', {}).get('cache', 0))
@@ -123,7 +140,7 @@ def stats(data, previous=None):
     return dict(cpu_pct=max(0, delta / system * cores * 100) if system > 0 else 0,
                 mem_bytes=max(0, memory.get('usage', 0)-cache), mem_limit=memory.get('limit', 0),
                 net_rx_bps=max(0, (rx-previous[1])/elapsed) if previous else 0,
-                net_tx_bps=max(0, (tx-previous[2])/elapsed) if previous else 0), (now, rx, tx)
+                net_tx_bps=max(0, (tx-previous[2])/elapsed) if previous else 0), (now, rx, tx, total, system_total)
 
 
 ANSI = re.compile(r'\x1b(?:\[[0-?]*[ -/]*[@-~]|\][^\x07]*(?:\x07|\x1b\\))')
@@ -135,7 +152,7 @@ def log_line(line):
     ts, msg = parts if len(parts) == 2 and re.match(r'^\d{4}-\d\d-\d\dT', parts[0]) else ('', line)
     msg = redact(msg)[0]
     level = 'error' if re.search(r'ERROR|FATAL|panic|Traceback|Exception', msg, re.I) else 'warn' if re.search('WARN', msg, re.I) else 'info'
-    return dict(ts=ts, level=level, msg=msg, count=1)
+    return dict(ok=True, ts=ts, level=level, msg=msg, count=1)
 
 
 def read_exact(response, n):
@@ -154,6 +171,7 @@ def logs(client, args):
     delay = 1
     since = args.since
     while True:
+        cursor = since if re.match(r'^\d{4}-\d\d-\d\dT', since) else ""
         try:
             conn, response = client.request('/containers/' + quote(args.id, safe='') + '/logs?' + urlencode(dict(
                 stdout=1, stderr=1, timestamps=1, tail=args.tail, since=parse_since(since), follow=int(args.follow))), stream=True)
@@ -193,27 +211,27 @@ def logs(client, args):
                 decoded = raw.decode(errors='replace')
                 if re.search(r'-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----', decoded): pem = True
                 item = log_line(decoded)
+                if cursor and item['ts'] and item['ts'] <= cursor: continue
                 if pem: item['msg'] = '[oculto:pem]'
                 if re.search(r'-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----', decoded): pem = False
                 if item['ts']:
                     since = item['ts']
-                if args.level != 'all' and item['level'] != args.level:
-                    continue
                 if last and (last['msg'], last['level']) == (item['msg'], item['level']):
                     last['count'] += 1
                 else:
-                    if last and not args.follow:
+                    if last and not args.follow and (args.level == 'all' or last['level'] == args.level):
                         emit(last)
                     last = item
-                if args.follow:
+                if args.follow and (args.level == 'all' or last['level'] == args.level):
                     emit(last)
             if not args.follow:
-                if last:
+                if last and (args.level == 'all' or last['level'] == args.level):
                     emit(last)
                 return
             delay = 1
-        except (OSError, http.client.HTTPException):
-            pass
+        except (OSError, http.client.HTTPException, ToolError) as exc:
+            if not args.follow: raise
+            emit(error('docker_logs', 'Esperando reconexión de logs con Docker.'))
         finally:
             conn.close()
         time.sleep(delay)

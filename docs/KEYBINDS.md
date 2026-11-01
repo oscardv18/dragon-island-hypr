@@ -235,7 +235,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Capturas (`SUPER + SHIFT + S`) | `1–3` Región / Ventana / Pantalla · arrastrar dibuja (los tiradores ajustan) · `Espacio` + arrastrar mueve · `Enter` copia · `Esc` cierra |
 | Portapapeles anterior (Gravedad apagado) | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
-| Taller (`SUPER + T`) | `Ctrl+Tab` / `Ctrl+Shift+Tab` cambia de pestaña · `↑ ↓` elige agente · `Tab` recorre controles · `Enter` enfoca al agente o activa un control · `Esc` cierra |
+| Taller (`SUPER + T`) | `Ctrl+Tab` / `Ctrl+Shift+Tab` cambia de pestaña · `↑ ↓` elige agente · `Tab` recorre controles · `Enter` enfoca al agente o activa un control · Git: `Espacio` sobre una casilla prepara/quita del índice; `Enter` en un chip elige el tipo de commit · `Esc` cierra |
 | Cualquier panel | `Esc` cierra |
 
 ## IPC (para scripts y atajos propios)

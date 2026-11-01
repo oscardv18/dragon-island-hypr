@@ -34,7 +34,7 @@ def run(repo, *args, timeout=5, check=True):
         if p.poll() is None:
             os.killpg(p.pid, signal.SIGKILL); p.communicate()
     if check and p.returncode:
-        raise ToolError('git_failed', err.decode(errors='replace').strip() or 'La operación Git falló.',
+        raise ToolError('git_failed', 'Git no pudo completar la operación: ' + (err.decode(errors='replace').strip() or 'sin detalle'),
                         'Revisa el estado del repositorio; los conflictos se resuelven manualmente.')
     return out
 
@@ -51,6 +51,8 @@ def path_arg(repo, value):
         result = str(Path(value).relative_to(root))
     except ValueError:
         raise ToolError('invalid_path', 'La ruta está fuera del repositorio.') from None
+    if not Path(value).parent.resolve().is_relative_to(root.resolve()):
+        raise ToolError('invalid_path', 'La ruta atraviesa un enlace fuera del repositorio.')
     if result == '.':
         raise ToolError('invalid_path', 'Selecciona archivos concretos.')
     return result
@@ -114,7 +116,8 @@ def diff(repo, path, staged=False):
     raw = text(repo, *args, '--', path)
     # Untracked files have no git diff; present an addition without staging them.
     if not raw and not staged and any(r['path'] == path for r in status(repo)['untracked']):
-        data = (Path(repo)/path).read_bytes()
+        source = Path(repo)/path
+        data = os.fsencode(os.readlink(source)) if source.is_symlink() else source.read_bytes()
         raw = 'Binary files differ' if b'\0' in data else '@@ -0,0 +1,' + str(len(data.splitlines())) + ' @@\n' + ''.join('+'+s+'\n' for s in data.decode(errors='replace').splitlines())
     hunks, current, old, new, count = [], None, 0, 0, 0
     added = deleted = 0
@@ -247,8 +250,7 @@ def main():
     elif args.cmd in ('stage', 'unstage'):
         paths = [path_arg(repo, path) for path in args.paths]
         if args.cmd == 'stage': run(repo, 'add', '--', *paths)
-        elif run(repo, 'rev-parse', '--verify', 'HEAD', check=False): run(repo, 'restore', '--staged', '--', *paths)
-        else: run(repo, 'rm', '--cached', '--', *paths)
+        else: run(repo, 'reset', '--', *paths)
     elif args.cmd == 'commit':
         secrets = check_secrets(repo)
         if secrets:

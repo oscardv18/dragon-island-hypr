@@ -58,7 +58,9 @@ ShellRoot {
             } else if (phase === 4 && !Git.busy && Git.snapshot.staged?.length === 1) {
                 Git.commit("feat(test): safe",false); phase = 5;
             } else if (phase === 5 && !Git.busy && Git.history.length === 1) {
-                Git.lazygit(); Docker.shell(); phase = 7;
+                Docker.shell(); Docker.action("stop"); phase = 8;
+            } else if (phase === 8 && !Docker.busy && Docker.selected?.state === "exited" && !Docker.metrics[Docker.selectedId]) {
+                Git.lazygit(); phase = 7;
             } else if (phase === 7 && Git.actionError.includes("lazygit no disponible") && Docker.actionError.includes("Shell requiere")) {
                 Docker.activate(false); Git.activate(false,path); phase = 6; tick = 0;
                 console.log("SERVICES_INACTIVE");

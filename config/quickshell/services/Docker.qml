@@ -50,7 +50,7 @@ Singleton {
         else {
             stats.running = false; events.running = false; logProcess.running = false;
             for (const p of _requests) { p.callback = null; p.running = false; p.destroy(); }
-            _requests = []; _refreshing = false; busy = false; logs = []; inspectText = "";
+            _requests = []; _refreshing = false; busy = false; logs = []; metrics = {}; history = {}; inspectText = "";
         }
     }
     function refresh(): void {
@@ -59,7 +59,14 @@ Singleton {
         call(["ps", "--json"], r => {
             _refreshing = false;
             if (!r.ok) { containers = []; issues = []; stats.running = false; logProcess.running = false; return; }
-            containers = r.containers ?? []; status = "ok"; message = containers.length ? "" : "No hay contenedores";
+            containers = r.containers ?? [];
+            const currentMetrics = {}, currentHistory = {};
+            for (const c of containers) {
+                if (c.state === "running" && metrics[c.id]) currentMetrics[c.id] = metrics[c.id];
+                if (history[c.id]) currentHistory[c.id] = history[c.id];
+            }
+            metrics = currentMetrics; history = currentHistory;
+            status = "ok"; message = containers.length ? "" : "No hay contenedores";
             if (!containers.some(c => c.id === selectedId)) select(containers[0]?.id ?? "");
             else if (!logProcess.running) startLogs();
             if (!stats.running && containers.some(c => c.state === "running")) stats.running = true;
@@ -86,6 +93,7 @@ Singleton {
         try {
             const r = JSON.parse(line);
             if (!r.ok) { failure(r); return; }
+            if (!containers.some(c => c.id === r.id && c.state === "running")) return;
             const next = Object.assign({}, metrics); next[r.id] = r; metrics = next;
             const h = Object.assign({}, history); h[r.id] = (h[r.id] ?? []).concat([r]).slice(-30); history = h;
         } catch (e) { }
