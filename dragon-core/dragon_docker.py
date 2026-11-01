@@ -150,6 +150,7 @@ def read_exact(response, n):
 
 def logs(client, args):
     last = None
+    pem = False
     delay = 1
     since = args.since
     while True:
@@ -189,7 +190,11 @@ def logs(client, args):
                     if buf:
                         yield buf
             for raw in lines():
-                item = log_line(raw.decode(errors='replace'))
+                decoded = raw.decode(errors='replace')
+                if re.search(r'-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----', decoded): pem = True
+                item = log_line(decoded)
+                if pem: item['msg'] = '[oculto:pem]'
+                if re.search(r'-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----', decoded): pem = False
                 if item['ts']:
                     since = item['ts']
                 if args.level != 'all' and item['level'] != args.level:

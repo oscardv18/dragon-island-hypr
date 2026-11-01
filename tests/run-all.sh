@@ -66,6 +66,8 @@ if bash tests/sddm-sync.sh; then pass "fondo del login desenfocado una sola vez 
 # fase5b: engines
 step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
+step "Git con repositorios temporales"
+if python3 -m unittest discover -s tests/git -v; then pass "dragon-git"; else fail "dragon-git"; fi
 # /fase5b: engines
 
 # fase5a: shared secrets
