@@ -266,12 +266,18 @@ def read(identifier,lines):
     return dict(ok=True,id=identifier,text='\n'.join(text.splitlines()[-lines:])[-8192:])
 
 
-def prompt(identifier,text,no_enter=False):
-    a=find_agent(identifier)
-    if a['state']=='blocked':raise ToolError('agent_blocked','El agente espera una decisión en su panel.','Usa Ir al panel para responder allí.')
+def validate_prompt(text):
+    if len(text.encode())>65536:raise ToolError('prompt_too_large','El prompt supera los 64 KB.')
     text=redact(text)[0]
     if not text.strip():raise ToolError('empty_prompt','El prompt está vacío.')
     if len(text.encode())>65536:raise ToolError('prompt_too_large','El prompt supera los 64 KB.')
+    return text
+
+
+def prompt(identifier,text,no_enter=False):
+    a=find_agent(identifier)
+    if a['state']=='blocked':raise ToolError('agent_blocked','El agente espera una decisión en su panel.','Usa Ir al panel para responder allí.')
+    text=validate_prompt(text)
     rpc('pane.send_text' if no_enter else 'agent.prompt',dict(pane_id=identifier,text=text) if no_enter else dict(target=identifier,text=text),timeout=10)
     return dict(ok=True,id=identifier)
 
@@ -279,6 +285,7 @@ def prompt(identifier,text,no_enter=False):
 def start(cwd,kind,name,text=None):
     path=Path(cwd).expanduser().resolve()
     if not path.is_dir():raise ToolError('invalid_path','La carpeta de trabajo no existe.')
+    if text is not None:text=validate_prompt(text)
     created=rpc('workspace.create',dict(cwd=str(path),label=safe(name),focus=False))
     pane=created['root_pane']['pane_id']
     started=rpc('agent.start',dict(pane_id=pane,kind=kind,name=safe(name),args=[],timeout_ms=30000),timeout=35)

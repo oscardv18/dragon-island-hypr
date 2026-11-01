@@ -9,7 +9,7 @@ PATTERNS = [
     ('pem', re.compile(r'-----BEGIN (?:[A-Z0-9]+ )*PRIVATE KEY-----[\s\S]*?(?:-----END (?:[A-Z0-9]+ )*PRIVATE KEY-----|\Z)')),
     ('variable', re.compile(r'''(?ix)["']?\b(?:[A-Z_][A-Z0-9_]*(?:_KEY|_TOKEN|_SECRET|_PASSWORD)|PASSWORD[A-Z0-9_]*|TOKEN|SECRET|API_KEY)["']?\s*[=:]\s*(?:"[^"\n]*"|'[^'\n]*'|[^\s;]+)''')),
     ('bearer', re.compile(r'(?i)\bBearer\s+[^\s\'"<>]+')),
-    ('url', re.compile(r'(?i)[a-z][a-z0-9+.-]*://[^\s/@]+:[^\s/@]*@[^\s]+')),
+    ('url', re.compile(r'(?i)\b[a-z][a-z0-9+.-]{0,31}://[^:\s/@]+:[^\s/@]*@[^\s]+')),
     ('token', re.compile(r'\b(?:sk-[A-Za-z0-9_-]{8,}|gh[pousr]_[A-Za-z0-9_]{8,}|AKIA[A-Z0-9]{12,})')),
 ]
 TOKEN = re.compile(r'[^\s\'"<>]{24,}')

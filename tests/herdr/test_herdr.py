@@ -120,6 +120,10 @@ else:print('ok')
         self.server.read_busy=True
         self.assertIn("[oculto:",self.cli("read","w1:p1")["text"])
         self.assertEqual(self.server.calls[-1][1]["source"],"visible")
+    def test_start_invalid_prompt_does_not_create_workspace(self):
+        for text in (" ", "x"*65537):
+            self.cli("start","--cwd",str(self.home),"--kind","codex","--name","Task","--prompt-stdin",input=text,code=1)
+        self.assertEqual(self.server.calls,[])
     def test_start_order(self):
         r=self.cli('start','--cwd',str(self.home),'--kind','codex','--name','Task')
         self.assertEqual(r['id'],'w2:p1');self.assertEqual([m for m,p in self.server.calls],['workspace.create','agent.start'])

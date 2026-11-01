@@ -14,11 +14,11 @@ spec=importlib.util.spec_from_file_location('fake_herdr',ROOT/'tests/herdr/fake_
 class Services(unittest.TestCase):
     def test_real_services_with_fake_socket(self):
         with tempfile.TemporaryDirectory(prefix='dt-') as tmp:
-            home=Path(tmp);cfg=home/'shell';shutil.copytree(ROOT/'config/quickshell',cfg)
+            home=Path(tmp);(home/'runtime').mkdir(mode=0o700);cfg=home/'shell';shutil.copytree(ROOT/'config/quickshell',cfg)
             (cfg/'services/qmldir').write_text('singleton Mem 1.0 Mem.qml\nsingleton Herdr 1.0 Herdr.qml\nsingleton Activity 1.0 Activity.qml\n')
             bindir=home/'.local/bin';bindir.mkdir(parents=True)
             for name in ('dragon-herdr','dragon-mem'):(bindir/name).symlink_to(ROOT/'bin'/name)
-            env=dict(os.environ,HOME=tmp,QT_QPA_PLATFORM='offscreen',HERDR_SOCKET_PATH=str(home/'h.sock'),PYTHONDONTWRITEBYTECODE='1')
+            env=dict(os.environ,HOME=tmp,XDG_RUNTIME_DIR=str(home/'runtime'),QT_QPA_PLATFORM='offscreen',HERDR_SOCKET_PATH=str(home/'h.sock'),PYTHONDONTWRITEBYTECODE='1')
             for n in ('CONFIG','DATA','STATE','CACHE'):env[f'XDG_{n}_HOME']=str(home/n.lower())
             server=module.FakeHerdr(env['HERDR_SOCKET_PATH'],tmp).start()
             try:

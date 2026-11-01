@@ -10,7 +10,7 @@ class Migrations(unittest.TestCase):
     def test_new_migrations_are_idempotent_and_back_up_copies(self):
         with tempfile.TemporaryDirectory(prefix='taller-migrations-') as tmp:
             home=Path(tmp)
-            env=dict(os.environ,HOME=tmp,REPO_DIR=str(ROOT),LINK_MODE='copy',ASSUME_YES='true',PYTHONDONTWRITEBYTECODE='1')
+            env=dict(os.environ,HOME=tmp,XDG_RUNTIME_DIR=str(home/'runtime'),REPO_DIR=str(ROOT),LINK_MODE='copy',ASSUME_YES='true',PYTHONDONTWRITEBYTECODE='1')
             for n in ('CONFIG','DATA','STATE','CACHE'):env[f'XDG_{n}_HOME']=str(home/n.lower())
             cfg=home/'config';(cfg/'quickshell').mkdir(parents=True);(cfg/'quickshell/shell.qml').write_text('old shell')
             bindir=home/'.local/bin';bindir.mkdir(parents=True);(bindir/'dragon-herdr').write_text('old wrapper')

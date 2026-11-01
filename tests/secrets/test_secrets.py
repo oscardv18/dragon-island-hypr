@@ -1,6 +1,7 @@
 import sys
 from pathlib import Path
 import unittest
+import time
 sys.path.insert(0, str(Path(__file__).resolve().parents[2] / 'dragon-core'))
 from secret_filter import redact, secret_spans, masked
 
@@ -24,5 +25,9 @@ class Secrets(unittest.TestCase):
     def test_structural_identifiers(self):
         for value in ["01a1947a-784c-7101-a525-1de1473cf14c", "a1"*32]:
             self.assertEqual(redact(value),(value,0))
+    def test_long_plain_text_does_not_backtrack_quadratically(self):
+        for value in ('x'*65536, 'abc.'*16384, 'https://user:'+':'*65000):
+            start=time.monotonic();self.assertEqual(redact(value),(value,0))
+            self.assertLess(time.monotonic()-start,.3)
     def test_multiple(self):
         self.assertEqual(redact('A_TOKEN=x B_SECRET=y')[1],2)

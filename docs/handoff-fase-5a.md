@@ -147,3 +147,28 @@ barra/cristal/paleta, ignora un duplicado y un ajuste de energía.
 - Capturas versionadas: solo datos sintéticos en `docs/screenshots/fase5a/`.
   Comprimidas con `scripts/optimize-images.sh`; se usó el binario oficial de
   optipng extraído temporalmente en `/tmp`, sin instalar paquetes del sistema.
+
+## Validación adicional
+
+La suite completa detectó una carrera intermitente al activar WAL por primera
+vez desde dos procesos. La inicialización ahora se serializa con un bloqueo de
+archivo privado; las transacciones siguen protegidas por SQLite. La prueba crea
+ocho bases desde dos procesos concurrentes cada una.
+
+El rechazo de prompts vacíos o excesivos ocurre antes de crear un espacio.
+Una prueba de entrada larga detectó coste cuadrático en el patrón de URL sin
+credenciales; se acotó el esquema de URL y se evitó el retroceso del usuario.
+Se conservan las pruebas anteriores y una entrada de 65 KB se filtra sin pausas.
+
+Prueba de extremo a extremo: evento Unix del herdr falso → observador real
+`--record` → servicio QML real → Agentes y prioridad, en menos de 2 segundos.
+Todas las pruebas nuevas aíslan HOME y también XDG_RUNTIME_DIR.
+Benchmarks independientes (7 ejecuciones frías): memoria 89,9 ms, snapshot de
+herdr 91,8 ms; objetivo <150 ms.
+
+CPU de reposo, sin servidor herdr en ambos perfiles, comparando `main` en una
+copia temporal con 5a, 15 s de calentamiento + mediana de 7 muestras de 5 s:
+11,60 % → 10,60 % de un núcleo (delta −1,00 puntos, sin aumento medible).
+Con este agente trabajando las muestras oscilan entre 9,8 % y 19,2 % y no
+permiten concluir diferencias de 0,3 puntos. La sesión normal quedó restaurada
+con herdr conectado después de las mediciones.

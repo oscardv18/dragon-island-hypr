@@ -12,10 +12,10 @@ ROOT=Path(__file__).resolve().parents[2]
 class SettingsLog(unittest.TestCase):
     def test_appearance_only_changes_logged(self):
         with tempfile.TemporaryDirectory(prefix='settings-log-') as tmp:
-            home=Path(tmp);cfg=home/'shell';shutil.copytree(ROOT/'config/quickshell',cfg)
+            home=Path(tmp);(home/'runtime').mkdir(mode=0o700);cfg=home/'shell';shutil.copytree(ROOT/'config/quickshell',cfg)
             (cfg/'services/qmldir').write_text('singleton Mem 1.0 Mem.qml\nsingleton Settings 1.0 Settings.qml\n')
             bindir=home/'.local/bin';bindir.mkdir(parents=True);(bindir/'dragon-mem').symlink_to(ROOT/'bin/dragon-mem')
-            env=dict(os.environ,HOME=tmp,QT_QPA_PLATFORM='offscreen',PYTHONDONTWRITEBYTECODE='1')
+            env=dict(os.environ,HOME=tmp,XDG_RUNTIME_DIR=str(home/'runtime'),QT_QPA_PLATFORM='offscreen',PYTHONDONTWRITEBYTECODE='1')
             for n in ('CONFIG','DATA','STATE','CACHE'):env[f'XDG_{n}_HOME']=str(home/n.lower())
             folder=home/'config/dragon-island';folder.mkdir(parents=True);(folder/'settings.json').write_text('{"barStyle":"B","glassStyle":"ahumado","wallpaperPalette":true}')
             (cfg/'shell.qml').write_text('''import Quickshell

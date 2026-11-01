@@ -117,11 +117,12 @@ class Memory(unittest.TestCase):
             self.assertEqual(db.execute('select text from custom_note').fetchone()[0],'keep me')
         with sqlite3.connect(other) as db:self.assertEqual(db.execute('pragma user_version').fetchone()[0],1)
     def test_initial_schema_concurrency(self):
-        env=dict(self.env,XDG_DATA_HOME=str(self.home/'new/data'))
-        def invoke(_):
-            return subprocess.run([str(ROOT/'bin/dragon-mem'),'init'],env=env,capture_output=True,text=True)
-        with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(invoke,range(2)))
-        for r in results:self.assertEqual(r.returncode,0,r.stdout+r.stderr)
+        for attempt in range(8):
+            env=dict(self.env,XDG_DATA_HOME=str(self.home/f'new-{attempt}/data'))
+            def invoke(_):
+                return subprocess.run([str(ROOT/'bin/dragon-mem'),'init'],env=env,capture_output=True,text=True)
+            with concurrent.futures.ThreadPoolExecutor(max_workers=2) as pool:results=list(pool.map(invoke,range(2)))
+            for r in results:self.assertEqual(r.returncode,0,r.stdout+r.stderr)
     def test_usage_error_json(self):
         self.assertEqual(self.cli('card','move',code=2)['error']['code'],'invalid_usage')
     def test_cold_read_budget(self):

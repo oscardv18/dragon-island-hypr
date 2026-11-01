@@ -4,6 +4,7 @@ Schema versions live in MIGRATIONS. FTS is maintained by SQL triggers in the sam
 transaction as its source rows. All CLI text is redacted before persistence.
 """
 from contextlib import closing
+import fcntl
 import hashlib
 import json
 import os
@@ -49,49 +50,63 @@ def backup(path=None):
 def connect():
     path = db_path()
     path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
+    # journal_mode changes do not reliably honor SQLite busy_timeout when two
+    # processes create a new DB simultaneously. Serialize setup, not transactions.
+    fd = os.open(str(path) + '.init.lock', os.O_CREAT | os.O_RDWR, 0o600)
+    with os.fdopen(fd, 'a') as lock:
+        fcntl.flock(lock, fcntl.LOCK_EX)
+        return _connect(path)
+
+
+def _connect(path):
+    path.parent.mkdir(mode=0o700, parents=True, exist_ok=True)
     # Create privately BEFORE SQLite opens any files (including WAL and shm).
     fd = os.open(path, os.O_CREAT | os.O_RDWR, 0o600)
     os.close(fd)
     path.chmod(0o600)
     db = sqlite3.connect(path, timeout=10)
-    db.row_factory = sqlite3.Row
-    db.execute('PRAGMA foreign_keys=ON')
-    db.execute('PRAGMA busy_timeout=10000')
-    db.execute('PRAGMA journal_mode=WAL')
-    version = db.execute('PRAGMA user_version').fetchone()[0]
-    if version > max(MIGRATIONS):
+    try:
+        db.row_factory = sqlite3.Row
+        db.execute('PRAGMA foreign_keys=ON')
+        db.execute('PRAGMA busy_timeout=10000')
+        db.execute('PRAGMA journal_mode=WAL')
+        version = db.execute('PRAGMA user_version').fetchone()[0]
+        if version > max(MIGRATIONS):
+            db.close()
+            raise ToolError('newer_schema', 'La base usa un esquema más nuevo.', 'Actualiza dragon-mem.')
+        if version < max(MIGRATIONS):
+            # Serialise schema creation across first concurrent invocations.
+            db.execute('BEGIN IMMEDIATE')
+            try:
+                version = db.execute('PRAGMA user_version').fetchone()[0]
+                for number, filename in MIGRATIONS.items():
+                    if number <= version:
+                        continue
+                    script = Path(__file__).with_name(filename).read_text()
+                    for statement in script.split(';'):
+                        # Remove SQL comments before splitting (comments can contain semicolons).
+                        statement = re.sub(r'--[^\n]*', '', statement).strip()
+                        if statement:
+                            db.execute(statement)
+                    for table, title, body in [('card', 'title', 'body'), ('note', 'title', 'body'),
+                                                ('prompt_template', 'name', 'blocks')]:
+                        for action in ('insert', 'update', 'delete'):
+                            statements = []
+                            if action != 'insert':
+                                statements.append(f"DELETE FROM search_fts WHERE kind='{table}' AND ref=old.id;")
+                            if action != 'delete':
+                                statements.append(f"INSERT INTO search_fts(kind,ref,title,body) VALUES('{table}',new.id,new.{title},new.{body});")
+                            db.execute(f'CREATE TRIGGER fts_{table}_{action} AFTER {action} ON {table} BEGIN ' + ''.join(statements) + ' END')
+                    db.execute('CREATE UNIQUE INDEX one_open_wait ON agent_wait(agent_id) WHERE resumed_at IS NULL')
+                    db.execute('CREATE INDEX card_project_col ON card(project_id,col)')
+                    db.execute(f'PRAGMA user_version={number}')
+                db.commit()
+            except BaseException:
+                db.rollback(); db.close(); raise
+        return db
+    except BaseException:
         db.close()
-        raise ToolError('newer_schema', 'La base usa un esquema más nuevo.', 'Actualiza dragon-mem.')
-    if version < max(MIGRATIONS):
-        # Serialise schema creation across first concurrent invocations.
-        db.execute('BEGIN IMMEDIATE')
-        try:
-            version = db.execute('PRAGMA user_version').fetchone()[0]
-            for number, filename in MIGRATIONS.items():
-                if number <= version:
-                    continue
-                script = Path(__file__).with_name(filename).read_text()
-                for statement in script.split(';'):
-                    # Remove SQL comments before splitting (comments can contain semicolons).
-                    statement = re.sub(r'--[^\n]*', '', statement).strip()
-                    if statement:
-                        db.execute(statement)
-                for table, title, body in [('card', 'title', 'body'), ('note', 'title', 'body'),
-                                            ('prompt_template', 'name', 'blocks')]:
-                    for action in ('insert', 'update', 'delete'):
-                        statements = []
-                        if action != 'insert':
-                            statements.append(f"DELETE FROM search_fts WHERE kind='{table}' AND ref=old.id;")
-                        if action != 'delete':
-                            statements.append(f"INSERT INTO search_fts(kind,ref,title,body) VALUES('{table}',new.id,new.{title},new.{body});")
-                        db.execute(f'CREATE TRIGGER fts_{table}_{action} AFTER {action} ON {table} BEGIN ' + ''.join(statements) + ' END')
-                db.execute('CREATE UNIQUE INDEX one_open_wait ON agent_wait(agent_id) WHERE resumed_at IS NULL')
-                db.execute('CREATE INDEX card_project_col ON card(project_id,col)')
-                db.execute(f'PRAGMA user_version={number}')
-            db.commit()
-        except BaseException:
-            db.rollback(); db.close(); raise
-    return db
+        raise
 
 
 def rows(db, sql, args=()):
