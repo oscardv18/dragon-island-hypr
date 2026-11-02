@@ -179,3 +179,15 @@ hl.window_rule({
     match   = { content = "game" },
     no_blur = true,
 })
+
+-- fase5d: normal explorer windows; title scoped so other Quickshell windows keep their rules.
+hl.window_rule({
+    name = "dragon-files-window",
+    match = { class = "^(org\\.quickshell|quickshell)$", title = "^Archivos · .*" },
+    float = true,
+    center = true,
+    decorate = false,
+    size = { 1226, 612 },
+    no_blur = false,
+})
+-- /fase5d

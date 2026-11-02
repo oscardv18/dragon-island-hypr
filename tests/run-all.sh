@@ -122,6 +122,9 @@ touched="$(find "$HOME/.config/hypr" "$HOME/.config/dragon-island" "$HOME/.local
 rm -f "$marker"
 if [[ "$before" == "$after" && -z "$touched" ]]; then pass "git status idéntico y ningún archivo de configuración tocado"; else fail "el dry-run dejó rastro: ${touched:-$(diff <(echo "$before") <(echo "$after"))}"; fi
 
+# fase5d: migration
+if python3 -m unittest discover -s tests/files_migration -v; then pass "migración 080"; else fail "migración 080"; fi
+
 echo
 if ((fails == 0)); then echo "TODO EN VERDE"; else echo "$fails bloque(s) fallan"; fi
 exit "$fails"
