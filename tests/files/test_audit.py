@@ -330,3 +330,62 @@ class TrashOtherDisk(AuditBase):
         self.assertTrue((d / 'f.txt').exists())
         self.assertEqual(list((self.trash / 'info').glob('*.trashinfo')), [])
         self.assertEqual(list((self.trash / 'files').iterdir()), [], 'no half-copied folder left in the trash')
+
+
+class EventDrivenWatch(AuditBase):
+    """Hallazgo 8: `watch` re-read the folder and `devices --watch` ran lsblk every second even with inotify/udev."""
+
+    def shim(self, name, body):
+        shims = self.home / 'shims'
+        shims.mkdir(exist_ok=True)
+        f = shims / name
+        f.write_text('#!/bin/sh\n' + body)
+        f.chmod(0o755)
+        return dict(self.env, PATH=f"{shims}:{self.env['PATH']}")
+
+    def run_for(self, args, env, seconds, during=None):
+        proc = subprocess.Popen([str(BIN), *args, '--json'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        try:
+            if during:
+                import time
+                time.sleep(0.6)
+                during()
+            proc.wait(timeout=seconds)
+        except subprocess.TimeoutExpired:
+            proc.terminate()
+        out, _ = proc.communicate(timeout=5)
+        return out
+
+    def test_watch_trusts_inotify(self):
+        folder = self.home / 'carpeta'
+        folder.mkdir()
+        # a silent inotifywait: with inotify alive, a change it does not report must not be found by polling
+        env = self.shim('inotifywait', 'exec sleep 30\n')
+        out = self.run_for(['watch', str(folder)], env, 3.0, during=lambda: (folder / 'nuevo').write_text('x'))
+        self.assertNotIn('changed', out)
+
+    def test_watch_reports_inotify_events(self):
+        folder = self.home / 'carpeta'
+        folder.mkdir()
+        env = self.shim('inotifywait', 'sleep 1; echo "$4 CREATE nuevo"; exec sleep 30\n')
+        out = self.run_for(['watch', str(folder)], env, 3.0)
+        self.assertIn('changed', out)
+
+    def test_watch_polls_without_inotify(self):
+        folder = self.home / 'carpeta'
+        folder.mkdir()
+        env = self.shim('inotifywait', 'exit 1\n')
+        out = self.run_for(['watch', str(folder)], env, 3.0, during=lambda: (folder / 'nuevo').write_text('x'))
+        self.assertIn('changed', out)
+
+    def test_devices_watch_does_not_poll_lsblk(self):
+        calls = self.home / 'lsblk-calls'
+        env = self.shim('lsblk', f'echo x >> "{calls}"; echo \'{{"blockdevices": []}}\'\n')
+        env = dict(env, PATH=env['PATH'])
+        (self.home / 'shims/udevadm').write_text('#!/bin/sh\nexec sleep 30\n')
+        (self.home / 'shims/udevadm').chmod(0o755)
+        (self.home / 'shims/gio').write_text('#!/bin/sh\nexit 0\n')
+        (self.home / 'shims/gio').chmod(0o755)
+        self.run_for(['devices', '--watch'], env, 4.0)
+        n = len(calls.read_text().splitlines()) if calls.exists() else 0
+        self.assertLessEqual(n, 2, f'lsblk ran {n} times in 4 s with udev alive')

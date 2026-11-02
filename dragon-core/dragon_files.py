@@ -747,15 +747,20 @@ def cmd_watch(args):
             )
         while True:
             triggered = False
-            if proc and proc.poll() is None:
-                ready, _, _ = select.select([proc.stdout], [], [], 1.0)
-                if ready:
-                    chunk = os.read(proc.stdout.fileno(), 65536)
-                    if chunk:
-                        triggered = True
-                        while select.select([proc.stdout], [], [], 0.15)[0]:
-                            if not os.read(proc.stdout.fileno(), 65536):
-                                break
+            live = proc is not None and proc.poll() is None
+            if live:
+                # inotify is running: wait for it, no folder scan in between (audit 5d: the folder was re-read
+                # every second even with inotifywait, against the «ligero» rule)
+                ready, _, _ = select.select([proc.stdout], [], [], 30.0)
+                if not ready:
+                    continue
+                chunk = os.read(proc.stdout.fileno(), 65536)
+                if not chunk:
+                    continue   # inotifywait ended: the next turn polls
+                triggered = True
+                while select.select([proc.stdout], [], [], 0.15)[0]:
+                    if not os.read(proc.stdout.fileno(), 65536):
+                        break
             else:
                 time.sleep(1.0)
             current = dir_snapshot(target)
@@ -2153,16 +2158,21 @@ def cmd_devices(args):
     try:
         if shutil.which('udevadm'):
             proc = subprocess.Popen(
-                ['udevadm', 'monitor', '--subsystem-match=block', '--udev'],
+                ['udevadm', 'monitor', '--subsystem-match=block', '--subsystem-match=usb', '--udev'],
                 stdout=subprocess.PIPE,
                 stderr=subprocess.DEVNULL,
                 start_new_session=True,
             )
+        last_scan = time.monotonic()
         while True:
             triggered = False
             changed_id = None
             if proc and proc.poll() is None:
-                ready, _, _ = select.select([proc.stdout], [], [], 1.0)
+                # udev drives the updates; a slow rescan (10 s) only catches GVFS/MTP mounts, which send no udev
+                # event when they are mounted (audit 5d: lsblk + gio ran every second while the explorer was open)
+                ready, _, _ = select.select([proc.stdout], [], [], max(0.0, 10.0 - (time.monotonic() - last_scan)))
+                if not ready and time.monotonic() - last_scan < 10.0:
+                    continue
                 if ready:
                     chunk = os.read(proc.stdout.fileno(), 65536).decode('utf-8', errors='replace')
                     if chunk:
@@ -2177,6 +2187,7 @@ def cmd_devices(args):
                             changed_id = m.group(1)
             else:
                 time.sleep(1.0)
+            last_scan = time.monotonic()
             try:
                 curr = json.dumps(collect_devices(), sort_keys=True)
             except ToolError:
