@@ -1,4 +1,4 @@
-"""Copied installs, backups, dry runs, second application and installed CLIs."""
+"""Phase 5a migrations: copied installs, backups, dry runs and installed CLIs."""
 import hashlib
 import os
 from pathlib import Path
@@ -14,7 +14,7 @@ class Migrations(unittest.TestCase):
             for n in ('CONFIG','DATA','STATE','CACHE'):env[f'XDG_{n}_HOME']=str(home/n.lower())
             cfg=home/'config';(cfg/'quickshell').mkdir(parents=True);(cfg/'quickshell/shell.qml').write_text('old shell')
             bindir=home/'.local/bin';bindir.mkdir(parents=True);(bindir/'dragon-herdr').write_text('old wrapper')
-            migrations=sorted(p for p in (ROOT/'migrations').glob('*.sh') if int(p.name[:3])>=43)
+            migrations=sorted(p for p in (ROOT/'migrations').glob('*.sh') if 43<=int(p.name[:3])<=54)
             def tree():
                 return {str(p.relative_to(home)):hashlib.sha256(p.read_bytes()).hexdigest() for p in home.rglob('*') if p.is_file() and 'backups' not in p.parts and p.name!='manifest'}
             for phase in ('dry','first','second'):

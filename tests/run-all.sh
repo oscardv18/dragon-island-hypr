@@ -72,6 +72,11 @@ step "consumo diario con registros sintéticos (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/tokens -v; then pass "dragon-tokens"; else fail "dragon-tokens"; fi
 # /fase5c: tools
 
+# fase5c: adjustments
+step "ajustes de 5c: migración de pantallas y aislamiento de dry-run"
+if python3 -m unittest discover -s tests/fase5c_ajustes -v; then pass "ajustes de 5c"; else fail "ajustes de 5c"; fi
+# /fase5c: adjustments
+
 # fase5b: engines
 step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
