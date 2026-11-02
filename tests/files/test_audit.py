@@ -437,3 +437,19 @@ class LongNames(AuditBase):
         self.cli_ok('op', 'copy', str(self.home / name), '--dest', str(dest))
         self.cli_ok('op', 'copy', str(self.home / name), '--dest', str(dest), '--conflict', 'overwrite')
         self.assertEqual([p.name for p in dest.iterdir()], [name])
+
+
+class UnexpectedErrors(AuditBase):
+    """Hallazgo 11: an unexpected exception (RecursionError, ValueError…) printed a traceback instead of JSON."""
+
+    def test_unexpected_exception_is_json(self):
+        code = ('import sys; sys.path.insert(0, sys.argv[1]); import dragon_files as d\n'
+                'def boom(args): raise ValueError("secreto ghp_abcdefghijklmnopqrstuvwxyz0123456789")\n'
+                'd.cmd_ls = boom; sys.argv = ["dragon-files", "ls", sys.argv[2], "--json"]; d.run_cli()')
+        p = subprocess.run(['python3', '-S', '-c', code, str(ROOT / 'dragon-core'), str(self.home)], env=self.env,
+                           capture_output=True, text=True, timeout=15)
+        self.assertEqual(p.returncode, 1, p.stdout + p.stderr)
+        self.assertNotIn('Traceback', p.stdout + p.stderr)
+        res = json.loads(p.stdout.strip().splitlines()[-1])
+        self.assertEqual(res['error']['code'], 'internal_error')
+        self.assertNotIn('ghp_', p.stdout, 'the exception text (which may carry secrets) is not echoed')

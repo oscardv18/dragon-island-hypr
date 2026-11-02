@@ -2567,7 +2567,7 @@ def main():
     return 0
 
 
-if __name__ == '__main__':
+def run_cli():
     signal.signal(signal.SIGTERM, _cleanup_on_signal)
     try:
         sys.exit(main() or 0)
@@ -2583,3 +2583,18 @@ if __name__ == '__main__':
         err_payload['t'] = 'error'
         emit(err_payload)
         sys.exit(1)
+    except Exception as exc:   # noqa: BLE001 — the UI must always get JSON, never a traceback (audit 5d)
+        for path in list(_CLEANUP_PATHS):
+            try:
+                remove_existing_target(path)
+            except OSError:
+                pass
+        err_payload = error('internal_error', f'Error inesperado en dragon-files ({type(exc).__name__}).',
+                            'Vuelve a intentarlo; si se repite, ejecuta la orden en una terminal para ver el detalle.')
+        err_payload['t'] = 'error'
+        emit(err_payload)
+        sys.exit(1)
+
+
+if __name__ == '__main__':
+    run_cli()
