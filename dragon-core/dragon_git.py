@@ -14,13 +14,15 @@ import shutil
 import signal
 import subprocess
 import sys
+import tempfile
 import time
 from secret_filter import detections, redact
 from taller_common import Parser, ToolError, emit, error
 
 
-def run(repo, *args, timeout=5, check=True):
+def run(repo, *args, timeout=5, check=True, allowed_codes=(0,), env_extra=None):
     env = dict(os.environ, GIT_TERMINAL_PROMPT='0', GIT_OPTIONAL_LOCKS='0', GIT_LITERAL_PATHSPECS='1', LC_ALL='C')
+    env.update(env_extra or {})
     try:
         p = subprocess.Popen(['git', '-C', str(repo), *args], stdout=subprocess.PIPE,
                              stderr=subprocess.PIPE, env=env, start_new_session=True)
@@ -33,7 +35,7 @@ def run(repo, *args, timeout=5, check=True):
     finally:
         if p.poll() is None:
             os.killpg(p.pid, signal.SIGKILL); p.communicate()
-    if check and p.returncode:
+    if check and p.returncode not in allowed_codes:
         raise ToolError('git_failed', 'Git no pudo completar la operación: ' + (err.decode(errors='replace').strip() or 'sin detalle'),
                         'Revisa el estado del repositorio; los conflictos se resuelven manualmente.')
     return out
@@ -58,9 +60,10 @@ def path_arg(repo, value):
     return result
 
 
-def numstat(repo, staged=False):
+def numstat(repo, staged=False, base=None):
     args = ['diff', '--numstat', '-z', '--no-ext-diff', '--no-textconv']
     if staged: args.append('--cached')
+    if base: args.append(base)
     chunks = run(repo, *args, '--').split(b'\0')
     result, i = {}, 0
     while i < len(chunks):
@@ -101,6 +104,56 @@ def status(repo):
     return result
 
 
+def commit_ref(repo, value):
+    return text(repo, 'rev-parse', '--verify', '--end-of-options', branch_arg(value)+'^{commit}').strip()
+
+
+def base_commit(repo, base):
+    return text(repo, 'merge-base', commit_ref(repo, base), commit_ref(repo, 'HEAD')).strip()
+
+
+def status_base(repo, base):
+    """Net changes since the merge base, including tracked index/working edits."""
+    result = status(repo)
+    oid = base_commit(repo, base)
+    counts = numstat(repo, base=oid)
+    chunks = run(repo, 'diff', '--name-status', '-z', '--find-renames', '--no-ext-diff',
+                 '--no-textconv', oid, '--').split(b'\0')
+    staged_paths = {row['path'] for row in result['staged']}
+    result['staged'], result['changes'] = [], []
+    i = 0
+    while i < len(chunks) and chunks[i]:
+        code = os.fsdecode(chunks[i]); path = os.fsdecode(chunks[i+1]); i += 2
+        old = None
+        if code.startswith(('R', 'C')):
+            old, path = path, os.fsdecode(chunks[i]); i += 1
+        row = dict(path=path, status=code[0], old_path=old,
+                   **counts.get(path, dict(add=0, **{'del': 0})))
+        result['staged' if path in staged_paths else 'changes'].append(row)
+    return result
+
+
+def merge_check(repo, base):
+    """merge-tree never checks out files; temporary objects avoid adding merge results to the original store."""
+    ours, theirs = commit_ref(repo, 'HEAD'), commit_ref(repo, base)
+    objects = text(repo, 'rev-parse', '--path-format=absolute', '--git-path', 'objects').strip()
+    with tempfile.TemporaryDirectory(prefix='dragon-merge-') as temporary:
+        alternates = json.dumps(objects, ensure_ascii=False)
+        if os.environ.get('GIT_ALTERNATE_OBJECT_DIRECTORIES'):
+            alternates += os.pathsep+os.environ['GIT_ALTERNATE_OBJECT_DIRECTORIES']
+        raw = run(repo, 'merge-tree', '--write-tree', '--name-only', '--no-messages', '-z', ours, theirs,
+                  allowed_codes=(0, 1), env_extra=dict(GIT_OBJECT_DIRECTORY=temporary,
+                      GIT_ALTERNATE_OBJECT_DIRECTORIES=alternates))
+    fields = raw.split(b'\0')
+    if not re.fullmatch(b'[a-f0-9]{40}|[a-f0-9]{64}', fields[0]):
+        raise ToolError('merge_check_failed', 'Git no devolvió una simulación válida.')
+    conflicts = []
+    for value in fields[1:]:
+        if not value: break
+        conflicts.append(os.fsdecode(value))
+    return dict(conflicts=conflicts)
+
+
 def blob_hash(repo, path):
     p = Path(repo)/path_arg(repo, path)
     if p.is_symlink(): data = os.fsencode(os.readlink(p))
@@ -109,10 +162,11 @@ def blob_hash(repo, path):
     return hashlib.sha1(b'blob ' + str(len(data)).encode()+b'\0'+data).hexdigest()
 
 
-def diff(repo, path, staged=False):
+def diff(repo, path, staged=False, base=None):
     path = path_arg(repo, path)
     args = ['diff', '--no-ext-diff', '--no-textconv', '--no-color', '--unified=3']
     if staged: args.append('--cached')
+    if base: args.append(base_commit(repo, base))
     raw = text(repo, *args, '--', path)
     # Untracked files have no git diff; present an addition without staging them.
     if not raw and not staged and any(r['path'] == path for r in status(repo)['untracked']):
@@ -224,8 +278,9 @@ def main():
     sub = parser.add_subparsers(dest='cmd', required=True)
     def command(name, parent=sub):
         p = parent.add_parser(name); p.add_argument('--repo', required=True); p.add_argument('--json', action='store_true'); return p
-    command('status')
-    p = command('diff'); p.add_argument('--path', required=True); p.add_argument('--staged', action='store_true')
+    command('status').add_argument('--base')
+    p = command('diff'); p.add_argument('--path', required=True); p.add_argument('--staged', action='store_true'); p.add_argument('--base')
+    p = command('merge-check'); p.add_argument('branch', nargs='?'); p.add_argument('--base')
     for name in ('stage', 'unstage'):
         command(name).add_argument('--paths', nargs='+', required=True)
     p = command('commit'); p.add_argument('-m', required=True); p.add_argument('--push', action='store_true')
@@ -243,8 +298,12 @@ def main():
     command('remove', nested).add_argument('--path', required=True)
     args = parser.parse_args(); repo = text(args.repo, 'rev-parse', '--show-toplevel').strip()
     result = {}
-    if args.cmd == 'status': result = status(repo)
-    elif args.cmd == 'diff': result = diff(repo, args.path, args.staged)
+    if args.cmd == 'status': result = status_base(repo, args.base) if args.base else status(repo)
+    elif args.cmd == 'diff': result = diff(repo, args.path, args.staged, args.base)
+    elif args.cmd == 'merge-check':
+        if not (args.base or args.branch) or (args.base and args.branch):
+            parser.error('Indica una rama posicional o --base <rama>.')
+        result = merge_check(repo, args.base or args.branch)
     elif args.cmd == 'check-secrets': result = dict(secrets=check_secrets(repo))
     elif args.cmd == 'blob-hash': result = dict(hash=blob_hash(repo, args.path))
     elif args.cmd in ('stage', 'unstage'):
