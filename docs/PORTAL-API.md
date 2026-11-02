@@ -85,6 +85,25 @@ Exec=/ruta/absoluta/a/dragon-portal serve
 - Un nombre de bus con la ruta de socket de Wayland muy larga (`>108` bytes) rompe `xdg-desktop-portal-hyprland` en las pruebas:
   los tests usan `XDG_RUNTIME_DIR` cortos (`/tmp/dp…`).
 
+### Si el backend no arranca, desaparece el selector de archivos (probado)
+
+`xdg-desktop-portal` crea el proxy de cada backend **al arrancar** (`StartServiceByName`). Con un `dragon.service` que sale con error
+(`Exec=/bin/false`) el registro es este y `OpenFile` ya no existe para ninguna aplicación:
+
+```
+xdg-desktop-portal-WARNING: Failed to create file chooser proxy: Error calling StartServiceByName for org.freedesktop.impl.portal.desktop.dragon: Process … exited with status 1
+$ gdbus call … org.freedesktop.portal.FileChooser.OpenFile …
+Error: GDBus.Error:org.freedesktop.DBus.Error.UnknownMethod: No such interface “org.freedesktop.portal.FileChooser”
+```
+
+**No hay respaldo a `gtk` en este caso** aunque `portals.conf` diga `dragon;gtk`. Consecuencias para el diseño:
+
+- la migración **solo** instala el `.portal` y la preferencia si `python3 -c 'import gi'` funciona y `dragon-portal serve` arranca de verdad en una
+  prueba (ver el handoff);
+- `dragon-portal serve` importa lo mínimo, no toca Wayland ni Quickshell al arrancar y sale con 10 (no con una traza) si falta PyGObject;
+- marcha atrás sin sudo: quitar `FileChooser=` de `hyprland-portals.conf` (o el `.portal` de usuario) y `systemctl --user restart xdg-desktop-portal`;
+  `scripts/portal-rollback.sh` lo hace.
+
 ## 3. Biblioteca D-Bus para Python
 
 | Biblioteca | Instalada | Paquete | Uso |
