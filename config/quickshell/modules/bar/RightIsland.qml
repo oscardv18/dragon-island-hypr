@@ -1,14 +1,14 @@
 // Right island (docs/design/19-islas.png), in this order:
-//   [contextual capsules] · CPU ring · RAM ring · network line · │ · keyboard · tiling · Wi-Fi · BT · volume · battery · orbital clock
+//   [contextual capsules] · CPU ring · RAM ring · network line · │ · keyboard · tiling · Wi-Fi · BT · volume · battery · bell · orbital clock
 // Meters (hidden with Settings.barMetrics = false): 15 px rings (CPU cyan, RAM lavender, track white 13 %) and a
 // 30×12 cyan line of the last 12 download samples; hovering one shows its detail as a tooltip UNDER the island
 // (the island never widens, HANDOFF §7t); a click opens the Rendimiento popover.
 // Volume: icon + a 30×4 bar; wheel ±5 %, click = mute, right click = the Sonido popover.
 // Orbital clock: a 14 px lavender ring with a cyan dot going round once a minute, the time in mono 12 semibold on
-// white 6 %, the markers (No molestar, unread, updates) as tiny dots; click = calendar + notifications, right
-// click = No molestar, the date as a tooltip.
+// white 6 %, updates as a tiny dot; click = calendar, the date as a tooltip.
+// The bell owns unread/DND indicators; notifications are also accessible from the calendar.
 // Neutral capsules: icons textSoft, hover white 8 %, open → accent tint (components/Capsule.qml).
-// Style D (minimal): only the orbital clock. Style C (bare): no box, inside the joined strip.
+// Style D (minimal): the bell and orbital clock. Style C (bare): no box, inside the joined strip.
 import QtQuick
 import Quickshell
 import "../.."
@@ -39,7 +39,7 @@ Rectangle {
     }
 
     property bool bare: false            // C: drawn inside the joined strip, no box of its own
-    readonly property bool minimal: Theme.barLook === "D"   // D: only the clock
+    readonly property bool minimal: Theme.barLook === "D"   // D: bell and clock
     readonly property bool metrics: Settings.barMetrics && !minimal
 
     implicitHeight: Theme.barHeight
@@ -283,6 +283,8 @@ Rectangle {
                 }
             }
 
+            NotificationBell { island: root }
+
             // ---- orbital clock ----
             Capsule {
                 id: clockCap
@@ -296,7 +298,7 @@ Rectangle {
                     else root.openPopover("calendar", clockCap);
                 }
 
-                // markers: No molestar (muted) · unread (warn) · updates (cyan), tiny dots that grow in / out
+                // Only updates remain here: unread and DND belong to the bell.
                 component Marker: Rectangle {
                     property bool shown: false
                     anchors.verticalCenter: parent.verticalCenter
@@ -308,8 +310,6 @@ Rectangle {
                     Behavior on width { NumberAnimation { duration: Theme.durStd } }
                     Behavior on opacity { NumberAnimation { duration: Theme.durStd } }
                 }
-                Marker { shown: Notifs.dnd; color: Theme.muted }
-                Marker { shown: Notifs.hasUnread && !Notifs.dnd; color: Theme.warn }
                 Marker { shown: Updates.count > 0; color: Theme.cyan }
 
                 // 14 px ring, lavender 40 %, with a 4 px cyan dot going round once a minute

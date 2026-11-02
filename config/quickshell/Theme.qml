@@ -245,6 +245,13 @@ Singleton {
     readonly property real barSparkWidth:  38 + 4 * barStep
     readonly property real barSparkHeight: 12 + 2 * barStep
     readonly property real barVolumeWidth: 40 + 4 * barStep
+    // The bell reserves its maximum badge width, even with zero unread: no island/window resize.
+    readonly property real barBellBadgeWidth: 20
+    readonly property real barBellBadgeHeight: 12
+    readonly property real barBellBadgeFont: 9
+    readonly property real barBellBadgeInset: 0
+    readonly property real barBellContentWidth: iconSm + barBellBadgeWidth
+    readonly property int barBellCountLimit: 99
     readonly property real barOrbit:       14 + 2 * barStep
     readonly property real barDimOpacity: 0.35                     // barAutohide over a maximized window
     readonly property real barEdge: 3                              // D: hot zone at the top edge
