@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+# Dragon OS boot theme (Limine / GRUB), resolved in the repo or the installed engine directory. Needs python-pillow.
+set -Eeuo pipefail
+BOOT_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+BOOT_ROOT="${BOOT_BIN%/*}"
+BOOT_LIB="${BOOT_ROOT%/*}/dragon-core/dragon_boot.py"
+if [[ ! -f "$BOOT_LIB" ]]; then
+    BOOT_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_boot.py"
+fi
+exec python3 "$BOOT_LIB" "$@"
