@@ -1,5 +1,5 @@
 // Taller navigation only. tab: agentes|kanban|contenedores|git|revision; open/tab/close keep ShellState as authority.
-// The future prompt composer is deliberately not sent anything by navigation.
+// openComposer(opts) opens the Taller (keeping its tab) with the prompt composer; nothing is sent by navigation.
 pragma Singleton
 import Quickshell
 import Quickshell.Io
@@ -16,11 +16,22 @@ Singleton {
     readonly property string gitRepo: Mem.project?.path ?? ""
     onGitActiveChanged: Git.activate(gitActive,gitRepo)
     onGitRepoChanged: Git.activate(gitActive,gitRepo)
+    readonly property bool kanbanActive: ShellState.openPanel === "taller" && tab === "kanban"
+    onKanbanActiveChanged: if (kanbanActive) Mem.refreshBoard()
+    readonly property bool reviewActive: ShellState.openPanel === "taller" && tab === "revision"
+    onReviewActiveChanged: Review.activate(reviewActive)
+    function openReview(key): void { if (key) Review.setCard(key); tab = "revision"; }
+    readonly property bool agentsActive: ShellState.openPanel === "taller" && tab === "agentes"
+    onAgentsActiveChanged: Tokens.activate(agentsActive)
     function init(): void {}
     function open(name): void {
         tab = tabs.indexOf(name) >= 0 ? name : "agentes";
         ShellState.open("taller", "");
         Mem.refresh();
+    }
+    function openComposer(opts): void {
+        if (ShellState.openPanel !== "taller") open(tab);
+        Prompts.open(opts ?? {});
     }
     function toggle(): void {
         if (ShellState.openPanel === "taller") ShellState.close(); else open(tab);
@@ -29,7 +40,7 @@ Singleton {
         target: ShellState
         function onOpenPanelChanged() {
             if (ShellState.openPanel === "taller") Mem.refresh();
-            else Herdr.clearRead();
+            else { Herdr.clearRead(); Prompts.close(); }
         }
     }
     IpcHandler {

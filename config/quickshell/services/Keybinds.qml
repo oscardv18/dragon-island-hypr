@@ -104,7 +104,13 @@ Singleton {
             { text: "Cambiar de pestaña", combos: [["Ctrl", "Tab"], ["Ctrl", "Shift", "Tab"]] },
             { text: "Git: preparar o quitar del índice (casilla)", combos: [["Espacio"]] },
             { text: "Git: elegir tipo de commit (chip)", combos: [["Enter"]] },
-            { text: "Cerrar el Taller", combos: [["Esc"]] }
+            { text: "Kanban: elegir tarjeta", combos: [["↑"], ["↓"], ["←"], ["→"]] },
+            { text: "Kanban: mover la tarjeta de columna", combos: [["Shift", "←"], ["Shift", "→"]] },
+            { text: "Kanban: marcar o desmarcar un criterio (casilla)", combos: [["Espacio"]] },
+            { text: "Revisión: marcar archivo como visto (casilla)", combos: [["Espacio"]] },
+            { text: "Revisión: guardar · cancelar el comentario de línea", combos: [["Enter"], ["Esc"]] },
+            { text: "Abrir el compositor de prompts", combos: [["P"]] },
+            { text: "Cerrar el compositor · cerrar el Taller", combos: [["Esc"]] }
         ] },
         { name: "Capturas (dentro)", rows: [
             { text: "Región · Ventana · Pantalla", combos: [["1", "2", "3"]] },

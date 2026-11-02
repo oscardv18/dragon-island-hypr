@@ -858,6 +858,52 @@ Singleton {
         readonly property real bannerHeight: 52
         readonly property real inspectHeight: 200
         // /fase5b
+        // fase5c: compositor, Kanban y Revisión (maquetas 32-taller-compositor/kanban/revision)
+        readonly property real composerWidth: 456
+        readonly property real composerTop: 72          // the drawer starts under the header, over the tabs row
+        readonly property real chipHeight: 28
+        readonly property real chipPad: 10
+        readonly property real chipRadius: 14
+        readonly property real segmentBar: 2            // left rule of each preview segment
+        readonly property real counterSize: 22
+        readonly property int  tokenSegments: 30
+        readonly property real tokenSegmentHeight: 6
+        readonly property real tokenSegmentGap: 2
+        readonly property int  tokenScaleMax: 3000      // the bar fills at 3 000 tokens (scale 0 / 1 000 / 2 000 / 3 000+)
+        readonly property real targetListHeight: 132
+        readonly property color chipOn: root.alpha(root.cyan, 0.10)
+        readonly property color chipOnBorder: root.alpha(root.cyan, 0.45)
+        readonly property color segmentEmpty: root.alpha(root.text, 0.08)
+        readonly property color scrim: root.alpha(root.bg, 0.55)
+        readonly property real metricValue: 18
+        readonly property real metricsHeight: 40
+        readonly property real kanbanDetailWidth: 290
+        readonly property real columnRadius: 12
+        readonly property real columnHeader: 30
+        readonly property real cardPad: 10
+        readonly property real cardRadius: 10
+        readonly property real criteriaHeight: 3
+        readonly property real criteriaGap: 3
+        readonly property real agentBadge: 18
+        readonly property real dragThreshold: 6
+        readonly property real gateRowHeight: 20
+        readonly property real confirmHeight: 44
+        readonly property color dangerTint: root.alpha(root.danger, 0.14)
+        readonly property color doingBorder: root.alpha(root.warn, 0.45)
+        readonly property color dragShadow: root.alpha(root.bg, 0.6)
+        readonly property real reviewLeftFraction: 0.29
+        readonly property real reviewRightFraction: 0.22
+        readonly property real fileRowHeight: 44
+        readonly property real progressHeight: 4
+        readonly property real gutterWidth: 22
+        readonly property real bubbleHeight: 30
+        readonly property real switchWidth: 26
+        readonly property real switchHeight: 14
+        readonly property real reviewPromptHeight: 104
+        readonly property color bubble: root.alpha(root.lavender, 0.08)
+        readonly property color bubbleBorder: root.alpha(root.lavender, 0.5)
+        readonly property color seenCheck: root.ok
+        // /fase5c
     }
     // /fase5a: Taller
 

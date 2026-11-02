@@ -7,8 +7,11 @@ import "../../components"
 Item {
     id: root
     property var service: null
+    property var tokenService: null
     property bool shown: false
     property string selectedId: ""
+    signal promptRequested(var opts)
+    signal reviewRequested(string key)
     property real now: Date.now()
     readonly property var agents: service?.agents ?? []
     readonly property var selected: agents.find(a => a.pane === selectedId) ?? agents[0] ?? null
@@ -165,8 +168,8 @@ Item {
                     RowLayout {
                         spacing: Theme.taller.smallGap
                         TallerButton { label: "Ir al panel ↵"; primary: true; enabled: !!root.selected; onClicked: root.service?.focusAgent(root.selected) }
-                        TallerButton { label: "Preparar prompt"; enabled: false }
-                        TallerButton { label: "Ver cambios"; enabled: false }
+                        TallerButton { label: "Preparar prompt"; enabled: !!root.selected && root.selected.state !== "blocked"; onClicked: root.promptRequested({ template: "libre", card: root.selected.card ?? "", target: "herdr:" + (root.selected.id || root.selected.pane) }) }
+                        TallerButton { label: "Ver cambios"; enabled: !!root.selected?.card; onClicked: root.reviewRequested(root.selected.card) }
                         TallerButton { label: "Marcar como visto"; enabled: root.selected?.state === "done"; onClicked: root.service?.markSeen(root.selected) }
                     }
                 }
@@ -174,6 +177,41 @@ Item {
             UiText { Layout.fillWidth: true; visible: (root.service?.actionError ?? "").length > 0; text: root.service?.actionError ?? ""; color: Theme.danger; size: Theme.taller.body; maximumLineCount: 3; wrapMode: Text.Wrap }
             UiText { Layout.fillWidth: true; text: "ESTADOS  ● bloqueado · ● trabajando · ● listo sin ver · ● en reposo"; mono: true; size: Theme.taller.caption; color: Theme.textDim }
             Item { Layout.fillHeight: true }
+            Rectangle {
+                id: usage
+                Layout.fillWidth: true
+                Layout.preferredHeight: usageRows.implicitHeight + Theme.taller.inset * 2
+                visible: !!root.tokenService?.available
+                readonly property var today: root.tokenService?.today ?? ({})
+                radius: Theme.taller.buttonRadius
+                color: Theme.taller.card
+                border.width: Theme.taller.buttonBorder
+                border.color: Theme.taller.border
+                ColumnLayout {
+                    id: usageRows
+                    anchors.fill: parent
+                    anchors.margins: Theme.taller.inset
+                    spacing: Theme.taller.thinGap
+                    RowLayout {
+                        Layout.fillWidth: true
+                        UiText { Layout.fillWidth: true; text: "CONSUMO DE HOY"; mono: true; size: Theme.taller.caption; color: Theme.textDim; font.letterSpacing: Theme.taller.captionTracking / 2 }
+                        UiText { text: "registros locales · estimación"; size: Theme.taller.caption; color: Theme.textDim }
+                    }
+                    Repeater {
+                        model: [
+                            { name: "claude", data: usage.today.claude, cache: true },
+                            { name: "codex", data: usage.today.codex, cache: false }
+                        ]
+                        delegate: RowLayout {
+                            required property var modelData
+                            Layout.fillWidth: true
+                            spacing: Theme.taller.inset
+                            UiText { Layout.preferredWidth: Theme.taller.stateWidth / 2; text: modelData.name; size: Theme.taller.body; weight: Theme.weightSemiBold }
+                            UiText { Layout.fillWidth: true; text: modelData.data ? `entrada ${root.tokenService.format(modelData.data.in)} · salida ${root.tokenService.format(modelData.data.out)}` + (modelData.cache ? ` · caché ${root.tokenService.format(modelData.data.cache)}` : "") : "—"; mono: true; size: Theme.taller.caption; color: modelData.data ? Theme.textSoft : Theme.textDim }
+                        }
+                    }
+                }
+            }
         }
     }
 }

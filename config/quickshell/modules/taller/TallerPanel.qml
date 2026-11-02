@@ -10,6 +10,10 @@ Rectangle {
     property var memService: null
     property var dockerService: null
     property var gitService: null
+    property var promptService: null
+    property var gateService: null
+    property var reviewService: null
+    property var tokenService: null
     property string tab: "agentes"
     property bool shown: false
     property string notice: ""
@@ -17,6 +21,9 @@ Rectangle {
     signal tabRequested(string name)
     signal closeRequested()
     signal projectRequested()
+    readonly property bool composerOpen: promptService?.composerOpen ?? false
+    function openReview(key): void { if (key) reviewService?.setCard(key); tabRequested("revision"); }
+    function openComposer(opts): void { projectsOpen = false; promptService?.open(opts ?? {}); }
     readonly property var tabNames: ["agentes", "kanban", "contenedores", "git", "revision"]
     readonly property var labels: ["Agentes", "Kanban", "Contenedores", "Git", "Revisión"]
     readonly property string projectBranch: {
@@ -32,10 +39,13 @@ Rectangle {
     border.width: Theme.taller.buttonBorder
     border.color: Theme.taller.border
     focus: shown
-    Keys.forwardTo: root.tab === "agentes" && !root.projectsOpen ? [agentsView] : []
-    Keys.onEscapePressed: { if (projectsOpen) projectsOpen = false; else closeRequested(); }
+    Keys.forwardTo: root.projectsOpen || root.composerOpen ? [] : root.tab === "agentes" ? [agentsView] : root.tab === "kanban" ? [kanbanView] : []
+    Keys.onEscapePressed: { if (composerOpen) { promptService.close(); forceActiveFocus(); } else if (projectsOpen) projectsOpen = false; else closeRequested(); }
     Keys.onPressed: e => {
         if (root.projectsOpen) return;
+        if (e.key === Qt.Key_P && !(e.modifiers & (Qt.ControlModifier | Qt.AltModifier | Qt.MetaModifier)) && !root.composerOpen) {
+            root.openComposer({}); e.accepted = true; return;
+        }
         if (e.key === Qt.Key_Tab && (e.modifiers & Qt.ControlModifier)) {
             const i = tabNames.indexOf(tab);
             tabRequested(tabNames[(i + (e.modifiers & Qt.ShiftModifier ? 4 : 1)) % tabNames.length]);
@@ -62,7 +72,7 @@ Rectangle {
             Rectangle { Layout.fillWidth: true; implicitHeight: Theme.taller.buttonBorder; color: Theme.taller.border }
             UiText { text: root.agentService?.running ? `● HERDR ${root.agentService?.version ?? ""} · SOCKET` : "HERDR · SIN CONEXIÓN"; color: root.agentService?.running ? Theme.ok : Theme.textDim; mono: true; size: Theme.taller.caption }
             UiText { text: `DB · ${root.memService?.projects?.length ?? 0} PROYECTOS`; mono: true; size: Theme.taller.caption; color: root.memService?.status === "error" ? Theme.danger : Theme.textDim }
-            TallerButton { label: "Prompt ✎ [P]"; enabled: false }
+            TallerButton { label: "Prompt ✎ [P]"; primary: root.composerOpen; enabled: !!root.promptService; onClicked: root.composerOpen ? root.promptService.close() : root.openComposer({}) }
             UiText { text: "SUPER + T"; mono: true; size: Theme.taller.caption; color: Theme.textDim }
         }
         Row {
@@ -72,7 +82,7 @@ Rectangle {
                 delegate: TallerButton {
                     required property string modelData
                     required property int index
-                    label: root.labels[index] + (index === 0 && (root.agentService?.counts?.blocked ?? 0) > 0 ? "  " + root.agentService.counts.blocked : index === 2 && (root.dockerService?.errorCount ?? 0) > 0 ? "  " + root.dockerService.errorCount : index === 3 && (root.gitService?.changeCount ?? 0) > 0 ? "  " + root.gitService.changeCount : "")
+                    label: root.labels[index] + (index === 0 && (root.agentService?.counts?.blocked ?? 0) > 0 ? "  " + root.agentService.counts.blocked : index === 2 && (root.dockerService?.errorCount ?? 0) > 0 ? "  " + root.dockerService.errorCount : index === 3 && (root.gitService?.changeCount ?? 0) > 0 ? "  " + root.gitService.changeCount : index === 4 && (root.reviewService?.unseenCount ?? 0) > 0 ? "  " + root.reviewService.unseenCount : "")
                     primary: root.tab === modelData
                     onClicked: root.tabRequested(modelData)
                 }
@@ -86,27 +96,39 @@ Rectangle {
                 anchors.fill: parent
                 visible: root.tab === "agentes"
                 service: root.agentService
+                tokenService: root.tokenService
                 shown: root.shown && visible
+                onPromptRequested: opts => root.openComposer(opts)
+                onReviewRequested: key => root.openReview(key)
+            }
+            KanbanTab {
+                id: kanbanView
+                anchors.fill: parent
+                visible: root.tab === "kanban"
+                memService: root.memService
+                gateService: root.gateService
+                agentService: root.agentService
+                shown: root.shown && visible
+                onPromptRequested: opts => root.openComposer(opts)
+                onReviewRequested: key => root.openReview(key)
+            }
+            ReviewTab {
+                anchors.fill: parent
+                visible: root.tab === "revision"
+                service: root.reviewService
+                agentService: root.agentService
+                onPromptRequested: opts => root.openComposer(opts)
             }
             ContainersTab {
                 anchors.fill: parent
                 visible: root.tab === "contenedores"
                 service: root.dockerService
+                onPromptRequested: opts => root.openComposer(opts)
             }
             GitTab {
                 anchors.fill: parent
                 visible: root.tab === "git"
                 service: root.gitService
-            }
-            UiText {
-                visible: root.tab !== "agentes" && root.tab !== "contenedores" && root.tab !== "git"
-                anchors.centerIn: parent
-                width: parent.width - Theme.taller.padding * 2
-                horizontalAlignment: Text.AlignHCenter
-                text: root.tab === "agentes" ? (root.agentService?.message || "No hay agentes activos") :
-                    ({kanban: "El tablero Kanban estará disponible en el tramo 5c", contenedores: "Contenedores estará disponible en el tramo 5b", git: "Git estará disponible en el tramo 5b", revision: "Revisión estará disponible en el tramo 5c"})[root.tab]
-                size: Theme.taller.heading
-                color: Theme.textDim
             }
         }
         UiText {
@@ -131,4 +153,20 @@ Rectangle {
         }
     }
 
+    Item {
+        anchors.fill: parent
+        visible: root.composerOpen
+        Rectangle { anchors.fill: parent; radius: root.radius; color: Theme.taller.scrim }
+        MouseArea { anchors.fill: parent; onClicked: { root.promptService.close(); root.forceActiveFocus(); } }
+        PromptComposer {
+            anchors.right: parent.right
+            anchors.top: parent.top
+            anchors.bottom: parent.bottom
+            anchors.margins: Theme.taller.thinGap
+            anchors.topMargin: Theme.taller.composerTop
+            width: Math.min(Theme.taller.composerWidth, parent.width - Theme.taller.padding * 2)
+            service: root.promptService
+            onCloseRequested: { root.promptService.close(); root.forceActiveFocus(); }
+        }
+    }
 }
