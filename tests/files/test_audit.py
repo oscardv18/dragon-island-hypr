@@ -171,3 +171,55 @@ class ProtectedPaths(AuditBase):
         self.cli_ok('op', 'delete', str(self.home / '.config/app'), '--confirm')
         self.cli_ok('op', 'trash', str(self.home / 'Docs/sub'))
         self.assertFalse((self.home / 'Docs/sub').exists())
+
+
+class ConflictRaces(AuditBase):
+    """Hallazgo 4: a file created at the destination after the conflict check was silently overwritten."""
+
+    def slow_copy_with_intruder(self, policy, kind='copy'):
+        src = self.home / 'big.bin'
+        src.write_bytes(os.urandom(4 * 262144))
+        dest = self.home / 'dest'; dest.mkdir()
+        env = dict(self.env, DRAGON_FILES_SLOW_MS='120')
+        proc = subprocess.Popen([str(BIN), 'op', kind, str(src), '--dest', str(dest), '--conflict', policy,
+                                 '--json-progress', '--json'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        first = proc.stdout.readline()          # the copy is running: the conflict check is behind us
+        self.assertIn('progress', first)
+        (dest / 'big.bin').write_text('written meanwhile')
+        out, err = proc.communicate(timeout=30)
+        return proc.returncode, first + out + err, src, dest
+
+    def test_copy_skip_keeps_intruder(self):
+        rc, out, _, dest = self.slow_copy_with_intruder('skip')
+        self.assertEqual(rc, 0, out)
+        self.assertEqual((dest / 'big.bin').read_text(), 'written meanwhile')
+        self.assertEqual([p.name for p in dest.iterdir()], ['big.bin'], 'no temporary left behind')
+
+    def test_copy_rename_takes_next_name(self):
+        rc, out, src, dest = self.slow_copy_with_intruder('rename')
+        self.assertEqual(rc, 0, out)
+        self.assertEqual((dest / 'big.bin').read_text(), 'written meanwhile')
+        self.assertEqual((dest / 'big (1).bin').read_bytes(), src.read_bytes())
+
+    def test_rename_never_replaces(self):
+        a = self.home / 'a'; a.write_text('a')
+        b = self.home / 'b'; b.write_text('b')
+        self.cli_error('op', 'rename', str(a), '--name', 'b', code='already_exists')
+        self.assertEqual(b.read_text(), 'b')
+
+    def test_restore_does_not_overwrite(self):
+        f = self.home / 'nota.txt'; f.write_text('vieja')
+        self.cli_ok('op', 'trash', str(f))
+        f.write_text('nueva')
+        self.cli_ok('trash', 'restore', 'trash:///nota.txt')     # default policy: rename
+        self.assertEqual(f.read_text(), 'nueva')
+        self.assertEqual((self.home / 'nota (1).txt').read_text(), 'vieja')
+
+    def test_restore_over_a_folder_of_that_name(self):
+        f = self.home / 'cosa'; f.write_text('archivo')
+        self.cli_ok('op', 'trash', str(f))
+        f.mkdir()
+        (f / 'dentro').write_text('x')
+        self.cli_ok('trash', 'restore', 'trash:///cosa')
+        self.assertEqual(sorted(p.name for p in f.iterdir()), ['dentro'], 'never moved inside the folder')
+        self.assertEqual((self.home / 'cosa (1)').read_text(), 'archivo')

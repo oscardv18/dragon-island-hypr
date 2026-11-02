@@ -3,6 +3,7 @@
 All optional system helpers degrade cleanly: missing thumbnailers return thumb=null; missing inotifywait falls back
 to one-second folder polling while watched. Passwords and secrets never appear in arguments or output.
 """
+import errno
 import json
 import os
 from pathlib import Path
@@ -1393,6 +1394,50 @@ def total_bytes_of(paths):
     return total
 
 
+def rename_noreplace(src, dst):
+    """rename(2) that never replaces: FileExistsError when `dst` appeared (audit 5d).
+
+    Conflicts are resolved by looking first and writing much later (after a long copy): a plain os.replace then
+    overwrote whatever another program had created meanwhile, even with --conflict skip/rename. renameat2 with
+    RENAME_NOREPLACE closes that window; filesystems without it fall back to link()+unlink() for files and to a
+    last check for folders. Other errors (EXDEV…) are raised as OSError like os.rename.
+    """
+    import ctypes
+    import errno
+    try:
+        fn = ctypes.CDLL(None, use_errno=True).renameat2
+        fn.argtypes = (ctypes.c_int, ctypes.c_char_p, ctypes.c_int, ctypes.c_char_p, ctypes.c_uint)
+    except (OSError, AttributeError):
+        fn = None
+    if fn is not None:
+        if fn(-100, os.fsencode(src), -100, os.fsencode(dst), 1) == 0:   # AT_FDCWD, RENAME_NOREPLACE
+            return
+        err = ctypes.get_errno()
+        if err == errno.EEXIST:
+            raise FileExistsError(err, os.strerror(err), dst)
+        if err not in (errno.EINVAL, errno.ENOSYS, errno.EOPNOTSUPP):
+            raise OSError(err, os.strerror(err), src, None, dst)
+    if os.path.islink(src) or not os.path.isdir(src):
+        try:
+            os.link(src, dst, follow_symlinks=False)
+            os.unlink(src)
+            return
+        except FileExistsError:
+            raise
+        except OSError:
+            pass
+    if os.path.lexists(dst):
+        raise FileExistsError(errno.EEXIST, os.strerror(errno.EEXIST), dst)
+    os.rename(src, dst)
+
+
+def publish(src, dst, overwrite):
+    if overwrite:
+        os.replace(src, dst)
+    else:
+        rename_noreplace(src, dst)
+
+
 def copy_single_file(src, dst, tracker, index, count, overwrite=False):
     import shutil
     import tempfile
@@ -1429,7 +1474,7 @@ def copy_single_file(src, dst, tracker, index, count, overwrite=False):
         shutil.copystat(src, tmp_dst, follow_symlinks=False)
         if overwrite and os.path.isdir(dst) and not os.path.islink(dst):
             shutil.rmtree(dst)
-        os.replace(tmp_dst, dst)
+        publish(tmp_dst, dst, overwrite)
     finally:
         _CLEANUP_PATHS.discard(tmp_dst)
         if os.path.lexists(tmp_dst):
@@ -1447,7 +1492,11 @@ def copy_tree_item(src, dst, tracker, index, count, overwrite=False):
         return
     if overwrite and os.path.lexists(dst) and (os.path.islink(dst) or not os.path.isdir(dst)):
         remove_existing_target(dst)
-    os.makedirs(dst, exist_ok=True)
+    if overwrite:
+        os.makedirs(dst, exist_ok=True)
+    else:
+        os.makedirs(os.path.dirname(dst), exist_ok=True)
+        os.mkdir(dst)   # never merge into a folder that appeared after the conflict check
     for entry in os.scandir(src):
         sub_src = entry.path
         sub_dst = os.path.join(dst, entry.name)
@@ -1594,7 +1643,10 @@ def cmd_op(args):
         if dst != src and os.path.lexists(dst):
             raise ToolError('already_exists', f'Ya existe «{name}».', 'Elige otro nombre.')
         if dst != src:
-            os.replace(src, dst)
+            try:
+                rename_noreplace(src, dst)
+            except FileExistsError:
+                raise ToolError('already_exists', f'Ya existe «{name}».', 'Elige otro nombre.') from None
         moved.append({'from': src, 'to': dst})
         if want_progress:
             emit({'t': 'progress', 'pct': 100, 'file': name, 'bps': 0, 'index': 1, 'count': 1})
@@ -1685,24 +1737,35 @@ def cmd_op(args):
         raw_dst = os.path.join(dest_dir, os.path.basename(src))
         if kind == 'move' and os.path.abspath(src) == os.path.abspath(raw_dst):
             continue
-        dst, overwrite = resolve_conflict(src, raw_dst, policy, is_dir=is_dir)
-        if dst is None:
-            continue
-        if want_progress:
-            emit({'t': 'progress', 'pct': int(((idx - 1) * 100) / max(1, count)), 'file': os.path.basename(src), 'bps': 0, 'index': idx, 'count': count})
-        if kind == 'copy':
-            copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
-        elif kind == 'move':
-            if overwrite and os.path.lexists(dst):
-                remove_existing_target(dst)
+        # A name that appears between the conflict check and the final rename is a conflict too: apply the
+        # policy again (ask, skip, rename…) instead of overwriting it.
+        for attempt in range(5):
+            dst, overwrite = resolve_conflict(src, raw_dst, policy, is_dir=is_dir)
+            if dst is None:
+                break
+            if want_progress and attempt == 0:
+                emit({'t': 'progress', 'pct': int(((idx - 1) * 100) / max(1, count)), 'file': os.path.basename(src), 'bps': 0, 'index': idx, 'count': count})
             try:
-                os.replace(src, dst)
-            except OSError:
-                if free_bytes > 0 and total_bytes > free_bytes:
-                    raise ToolError('no_space', 'No queda espacio suficiente en el destino.', 'Libera espacio e inténtalo de nuevo.') from None
-                copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
-                remove_existing_target(src)
-            moved.append({'from': src, 'to': dst})
+                if kind == 'copy':
+                    copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
+                elif kind == 'move':
+                    if overwrite and os.path.lexists(dst):
+                        remove_existing_target(dst)
+                    try:
+                        publish(src, dst, overwrite)
+                    except FileExistsError:
+                        raise
+                    except OSError:
+                        if free_bytes > 0 and total_bytes > free_bytes:
+                            raise ToolError('no_space', 'No queda espacio suficiente en el destino.', 'Libera espacio e inténtalo de nuevo.') from None
+                        copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
+                        remove_existing_target(src)
+                    moved.append({'from': src, 'to': dst})
+            except FileExistsError as exc:
+                if exc.filename != dst or attempt == 4:
+                    raise
+                continue
+            break
         elapsed = max(0.001, time.perf_counter() - tracker['start'])
         bps = int(tracker['done_bytes'] / elapsed)
         if want_progress:
@@ -1759,16 +1822,35 @@ def cmd_trash(args):
             orig_path = str(Path(os.environ.get('HOME') or Path.home()) / name)
         os.makedirs(os.path.dirname(orig_path), exist_ok=True)
         is_dir = os.path.isdir(src_file) and not os.path.islink(src_file)
-        dst, overwrite = resolve_conflict(str(src_file), orig_path, policy, is_dir=is_dir)
+        # Never overwrite a file that appeared at the original place after the conflict check, and never let
+        # shutil.move drop the item *inside* an existing folder of that name (audit 5d).
+        dst = None
+        for attempt in range(5):
+            dst, overwrite = resolve_conflict(str(src_file), orig_path, policy, is_dir=is_dir)
+            if dst is None:
+                break
+            if overwrite and os.path.lexists(dst):
+                remove_existing_target(dst)
+            try:
+                publish(str(src_file), dst, overwrite)
+            except FileExistsError:
+                if attempt == 4:
+                    raise
+                continue
+            except OSError as exc:
+                if exc.errno != errno.EXDEV:
+                    raise
+                tracker = {'total_bytes': 1, 'done_bytes': 0, 'start': time.perf_counter(), 'last_emit': 0.0, 'progress': False}
+                try:
+                    copy_tree_item(str(src_file), dst, tracker, idx, count, overwrite=overwrite)
+                except FileExistsError:
+                    if attempt == 4:
+                        raise
+                    continue
+                remove_existing_target(str(src_file))
+            break
         if dst is None:
             continue
-        if overwrite and os.path.lexists(dst):
-            remove_existing_target(dst)
-        try:
-            os.replace(str(src_file), dst)
-        except OSError:
-            import shutil
-            shutil.move(str(src_file), dst)
         if info_file.exists():
             try:
                 info_file.unlink()
