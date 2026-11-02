@@ -1,0 +1,5 @@
+[
+  {"id":"instruction","type":"text","label":"Instrucciones","arg":"Revisa sin modificar datos."},
+  {"id":"card","type":"card","label":"Tarjeta"},
+  {"id":"selection","type":"selection","label":"Selección"}
+]

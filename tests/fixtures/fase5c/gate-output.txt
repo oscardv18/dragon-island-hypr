@@ -1,0 +1,6 @@
+Inicio de pruebas
+API_TOKEN=fixture-secret
+-----BEGIN PRIVATE KEY-----
+fixture-private-key-content
+-----END PRIVATE KEY-----
+Pruebas completas

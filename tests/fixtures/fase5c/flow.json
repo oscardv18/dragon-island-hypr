@@ -1,0 +1,9 @@
+{
+  "cards": [
+    {"created_h": 96, "started_h": 48, "done_h": 24, "returned": true},
+    {"created_h": 72, "started_h": 24, "done_h": 12, "returned": false},
+    {"created_h": 900, "started_h": 800, "done_h": 780, "returned": true}
+  ],
+  "waits": [2, 4, 6],
+  "expected": {"lead_time_median_h": 66, "cycle_time_median_h": 18, "rework_pct": 50, "throughput_7d": 2, "approval_wait_median_h": 4}
+}

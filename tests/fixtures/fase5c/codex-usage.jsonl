@@ -1,0 +1,5 @@
+{"type":"session_meta","payload":{"id":"session-synthetic-1"}}
+{"type":"event_msg","timestamp":"YESTERDAY","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":100,"output_tokens":20}}}}
+{"type":"event_msg","timestamp":"TODAY","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":150,"output_tokens":30},"last_token_usage":{"input_tokens":50,"output_tokens":10}}}}
+{"type":"event_msg","timestamp":"TODAY","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":150,"output_tokens":30}}}}
+{"type":"event_msg","timestamp":"TODAY","payload":{"type":"token_count","info":{"total_token_usage":{"input_tokens":190,"output_tokens":40}}}}

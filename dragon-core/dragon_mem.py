@@ -182,11 +182,12 @@ def export_context(db, p, destination=None):
     conventions = rows(db, "SELECT title,body FROM note WHERE project_id=? AND kind='convention' ORDER BY updated_at DESC", (p['id'],))
     decisions = rows(db, "SELECT title,body FROM note WHERE project_id=? AND kind='decision' ORDER BY created_at DESC,id DESC LIMIT 10", (p['id'],))
     current = rows(db, "SELECT * FROM card WHERE project_id=? AND col IN ('doing','review') ORDER BY started_at DESC,id DESC LIMIT 1", (p['id'],))
-    parts = ['<!-- generado por dragon-mem; no editar -->', '# '+p['name'], '## Convenciones']
+    parts = ['<!-- generado por dragon-mem; no editar -->']
     # Per-section budgets keep the current card and its criteria present in a large project.
     def clipped(text, size):
-        raw = text.encode('utf-8')
+        raw = safe(text).encode('utf-8')
         return raw[:size].decode('utf-8', 'ignore') + ('…' if len(raw) > size else '')
+    parts.extend(['# '+clipped(p['name'], 180), '## Convenciones'])
     parts.append(clipped('\n'.join('- '+n['title']+': '+n['body'] for n in conventions), 900))
     parts.append('## Últimas decisiones')
     parts.extend('- '+clipped(n['title']+': '+n['body'], 100) for n in decisions)
@@ -212,16 +213,19 @@ def export_context(db, p, destination=None):
 
 
 def flow(db, p, days):
+    if days < 1:
+        raise ToolError('invalid_days', 'El período debe ser de al menos un día.')
     now = int(time.time()); since = now-days*86400
-    done = rows(db, 'SELECT * FROM card WHERE project_id=? AND done_at>=?', (p['id'], since))
+    done = rows(db, "SELECT * FROM card WHERE project_id=? AND col='done' AND done_at BETWEEN ? AND ?", (p['id'], since, now))
     def median(values):
-        return statistics.median(values)/3600 if values else None
-    waits = rows(db, 'SELECT w.* FROM agent_wait w JOIN card c ON c.id=w.card_id WHERE c.project_id=? AND w.resumed_at>=?', (p['id'], since))
-    returned = db.execute("SELECT COUNT(DISTINCT c.id) FROM card c JOIN card_event e ON c.id=e.card_id WHERE c.project_id=? AND c.done_at>=? AND e.kind='returned'", (p['id'], since)).fetchone()[0]
+        valid = [value for value in values if value >= 0]
+        return statistics.median(valid)/3600 if valid else None
+    waits = rows(db, 'SELECT w.* FROM agent_wait w JOIN card c ON c.id=w.card_id WHERE c.project_id=? AND w.resumed_at BETWEEN ? AND ?', (p['id'], since, now))
+    returned = {r['card_id'] for r in rows(db, "SELECT DISTINCT e.card_id FROM card_event e JOIN card c ON c.id=e.card_id WHERE c.project_id=? AND e.kind='returned' AND e.ts<=?", (p['id'], now))}
     return dict(lead_time_median_h=median([c['done_at']-c['created_at'] for c in done]),
                 cycle_time_median_h=median([c['done_at']-c['started_at'] for c in done if c['started_at'] is not None]),
-                rework_pct=100*returned/len(done) if done else 0,
-                throughput_7d=db.execute('SELECT COUNT(*) FROM card WHERE project_id=? AND done_at>=?', (p['id'], now-7*86400)).fetchone()[0],
+                rework_pct=100*sum(c['id'] in returned for c in done)/len(done) if done else 0,
+                throughput_7d=db.execute("SELECT COUNT(*) FROM card WHERE project_id=? AND col='done' AND done_at BETWEEN ? AND ?", (p['id'], now-7*86400, now)).fetchone()[0],
                 approval_wait_median_h=median([w['resumed_at']-w['blocked_at'] for w in waits]))
 
 

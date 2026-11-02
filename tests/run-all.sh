@@ -63,6 +63,15 @@ if bash tests/migrations-dry-run.sh; then pass "todas las migraciones, dragon-sd
 step "dragon-sddm-sync: fondo 1920×1080 desenfocado una vez con magick o ffmpeg (tema temporal)"
 if bash tests/sddm-sync.sh; then pass "fondo del login desenfocado una sola vez y sin MultiEffect"; else fail "dragon-sddm-sync prepara mal el fondo"; fi
 
+# fase5c: tools
+step "compositor determinista con destinos simulados (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/prompt -v; then pass "dragon-prompt"; else fail "dragon-prompt"; fi
+step "puertas de pruebas: límites, cancelación y eventos (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/gate -v; then pass "dragon-gate"; else fail "dragon-gate"; fi
+step "consumo diario con registros sintéticos (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/tokens -v; then pass "dragon-tokens"; else fail "dragon-tokens"; fi
+# /fase5c: tools
+
 # fase5b: engines
 step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi

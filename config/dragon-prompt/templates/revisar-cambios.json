@@ -1,0 +1,35 @@
+{
+  "name": "Revisar cambios",
+  "blocks": [
+    {
+      "id": "instruction",
+      "type": "text",
+      "label": "Instrucciones",
+      "arg": "Revisa los cambios, busca regresiones y contrasta los criterios."
+    },
+    {
+      "id": "card",
+      "type": "card",
+      "label": "Tarjeta",
+      "arg": ""
+    },
+    {
+      "id": "criteria",
+      "type": "criteria",
+      "label": "Criterios",
+      "arg": ""
+    },
+    {
+      "id": "diff",
+      "type": "diff",
+      "label": "Cambios",
+      "arg": ""
+    },
+    {
+      "id": "comments",
+      "type": "comments",
+      "label": "Comentarios",
+      "arg": ""
+    }
+  ]
+}

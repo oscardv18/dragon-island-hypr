@@ -1,0 +1,35 @@
+{
+  "name": "Escribir pruebas",
+  "blocks": [
+    {
+      "id": "instruction",
+      "type": "text",
+      "label": "Instrucciones",
+      "arg": "Añade pruebas de comportamiento para los criterios y los casos límite."
+    },
+    {
+      "id": "card",
+      "type": "card",
+      "label": "Tarjeta",
+      "arg": ""
+    },
+    {
+      "id": "criteria",
+      "type": "criteria",
+      "label": "Criterios",
+      "arg": ""
+    },
+    {
+      "id": "paths",
+      "type": "paths",
+      "label": "Rutas",
+      "arg": ""
+    },
+    {
+      "id": "commands",
+      "type": "commands",
+      "label": "Comandos",
+      "arg": ""
+    }
+  ]
+}

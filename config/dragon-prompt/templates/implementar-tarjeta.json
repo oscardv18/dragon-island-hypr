@@ -1,0 +1,41 @@
+{
+  "name": "Implementar tarjeta",
+  "blocks": [
+    {
+      "id": "instruction",
+      "type": "text",
+      "label": "Instrucciones",
+      "arg": "Implementa la tarjeta y verifica los criterios. Explica los cambios y las pruebas."
+    },
+    {
+      "id": "card",
+      "type": "card",
+      "label": "Tarjeta",
+      "arg": ""
+    },
+    {
+      "id": "criteria",
+      "type": "criteria",
+      "label": "Criterios",
+      "arg": ""
+    },
+    {
+      "id": "paths",
+      "type": "paths",
+      "label": "Rutas",
+      "arg": ""
+    },
+    {
+      "id": "decisions",
+      "type": "decisions",
+      "label": "Decisiones",
+      "arg": ""
+    },
+    {
+      "id": "commands",
+      "type": "commands",
+      "label": "Comandos",
+      "arg": ""
+    }
+  ]
+}
