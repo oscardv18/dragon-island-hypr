@@ -23,6 +23,7 @@ Estado de partida: repositorio `oscardv18/dragon-island-hypr`, `main` en la fase
 | `keyring` | sí | `gnome-keyring` `libsecret` (+ `seahorse` opcional) y la configuración que lo deja **desbloqueado al iniciar sesión** |
 | `taller` | sí | `docker` `docker-compose` `docker-buildx` `lazygit` `lazydocker` (ambos en `extra` de Arch) + `herdr` (instalador oficial, opt-in con aviso) |
 | `archivos` | sí | `udisks2` `inotify-tools` `gvfs` `gvfs-smb` `gvfs-mtp` `gvfs-nfs` `7zip` `libvips` `imagemagick` `poppler` `smbclient` `avahi` `xdg-utils`; opcionales: `samba`, `python-gobject` |
+| `editor` | sí (separable con `--modules`) | `neovim` ≥ 0.12 + las herramientas que usa la configuración personal (`packages/pacman-editor.txt`); configuración en `~/.config/nvim` con respaldo; plugins en el primer uso **con confirmación y tiempo máximo**; migración 150 **opt-in** (`DRAGON_NVIM=1`) aun con `--yes`; retirada restaura el Neovim anterior y conserva plugins y datos (`docs/NVIM.md`) |
 | `login` | opt-in | `sddm` + tema (toca `/etc`) |
 | `mis-apps` | opt-in, **fuera de la base** | las listas personales (`user-pacman.txt`, `user-aur.txt`): editores, Android Studio, Telegram, etc. |
 

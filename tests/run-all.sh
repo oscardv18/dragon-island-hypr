@@ -148,6 +148,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/session -v; t
 step "mosaico: selectores numéricos, con nombre y especiales (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tiling -v; then pass "modos de mosaico"; else fail "modos de mosaico"; fi
 
+step "Neovim: editor, opt-in, seguridad y retirada (HOME/XDG temporales, sin sincronización real)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/nvim -v; then pass "módulo editor"; else fail "módulo editor"; fi
+
 step "campana de notificaciones: isla real con servicios de prueba y migración 130 (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/bar -v; then pass "campana de notificaciones"; else fail "campana de notificaciones"; fi
 

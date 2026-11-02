@@ -1103,3 +1103,16 @@ y reabrir desde el lanzador para tomar el entorno. Véase el handoff específico
   094 en HOME temporal con respaldo, simulación y repetición, shellcheck y diff.
   La captura inmediata tras abrir no mostró el Taller; blur visual en sesión
   real todavía pendiente de confirmar.
+
+## Neovim personal y módulo editor (2026-11-02)
+
+Rama `feat/nvim`, desde main `a3cafe7`: configuración LazyVim del usuario
+inventariada, revisada con el filtro compartido y copiada sin estado. 49 plugins
+fijados; mínimo efectivo Neovim 0.12/LuaJIT. Nuevo módulo `editor` predeterminado,
+separable, con paquetes validados, backup, LINK_MODE y retirada que restaura.
+Restauración confirmada al primer uso, offline tolerante y acotada por timeout.
+Migración **150 opt-in**, incluso con --yes; no se aplicó sobre el HOME real.
+Catorce pruebas aisladas y dry-run del instalador pasan; plugins reales y CachyOS
+limpia quedan para la VM. Inventario y manual: [NVIM.md](NVIM.md); detalle y límites:
+[handoff-nvim.md](handoff-nvim.md). Se creó PLAN-INSTALADOR.md desde los módulos
+actuales porque faltaba en main, con autorización expresa del usuario.
