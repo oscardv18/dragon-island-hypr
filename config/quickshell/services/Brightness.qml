@@ -23,8 +23,9 @@
  *   - levelFor(screenName: string): real         (0.0 - 1.0)
  *   - setLevelFor(screenName: string, v: real): void (debounced for DDC, which is slow)
  *
- * Change notification: brightnessPctChanged (property signal). Osd.qml listens to it,
- * so hardware keys (brightnessctl from Hyprland binds) show the OSD within ~300 ms.
+ * Change notification: brightnessPctChanged (property signal). Osd.qml listens to it, so hardware keys
+ * (brightnessctl from Hyprland binds) show the OSD at once: the backlight's kernel uevents wake the service
+ * (`udevadm monitor`, eventsLive: bool [readonly]); without udevadm it polls every 300 ms.
  * DDC needs the i2c-dev module and udev access; the ddcutil package ships both.
  */
 pragma Singleton
@@ -72,11 +73,26 @@ Singleton {
         }
     }
 
-    // sysfs does not emit inotify events: poll the (cheap) file read instead of spawning processes
+    // sysfs does not emit inotify events, but every write to `brightness` (brightnessctl, firmware hotkeys) sends a
+    // kernel uevent: one idle `udevadm monitor` wakes us only on a change (fase 5e: the 300 ms poll cost ~0,4 % of a
+    // core at rest). If udevadm is missing or dies, the poll comes back.
+    property bool eventsLive: false
+    Process {
+        id: ueventMonitor
+        running: root.available
+        command: ["sh", "-c", "command -v udevadm >/dev/null || exit 127; exec udevadm monitor --kernel --subsystem-match=backlight"]
+        stdout: SplitParser {
+            onRead: line => {
+                if (line.startsWith("monitor will print")) root.eventsLive = true;
+                else if (line.includes(" change ") && line.endsWith("(backlight)")) curFile.reload();
+            }
+        }
+        onExited: root.eventsLive = false
+    }
     Timer {
         interval: 300
         repeat: true
-        running: root.available
+        running: root.available && !root.eventsLive
         onTriggered: curFile.reload()
     }
 

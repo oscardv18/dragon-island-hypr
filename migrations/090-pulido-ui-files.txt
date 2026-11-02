@@ -1,2 +1,4 @@
 services/Mem.qml
 modules/settings/TallerSettingsPage.qml
+services/Brightness.qml
+components/NeuralCore.qml

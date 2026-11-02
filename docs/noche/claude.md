@@ -16,3 +16,13 @@ Sesión del 2026-11-01/02. Sin vin.py ni teclas a otras terminales. Capturas sol
 - Migración `090-pulido-ui.sh` (rango propio 090–099 para 5e; 065/070/080 ya ocupados) redepliega los QML tocados
   en instalaciones por copia.
 - No exporta al añadir decisiones: hoy ninguna pantalla crea notas (`note add` solo por CLI).
+
+### (b) CPU en reposo
+- Medición en instancia temporal (HOME aislado, Hyprland real), alternando main/rama: **5,9 % → 5,1 %**.
+  Detalle y reparto en `docs/handoff-fase-5e-claude.md`.
+- Hecho: brillo por uevents (`udevadm monitor`, con sondeo de respaldo) y `Canvas.Immediate` en el núcleo (un
+  frame por tic en vez de dos; píxeles idénticos, con prueba).
+- No forzado: el < 3 % exige recortar efectos (núcleo «Pensando…» ≈ 2 puntos, dock oculto ≈ 1). Queda como
+  decisión del usuario.
+- Nota: la ventana «pesada» intermitente de las primeras medidas era la isla con agentes trabajando (pares de
+  frames cada ~160 ms), no el sondeo de brillo; lo confirmé al mapear ventanas con `WINID`.

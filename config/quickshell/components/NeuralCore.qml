@@ -201,7 +201,7 @@ Item {
         readonly property real side: Math.min(core.width, core.height) * (core.compact ? 1.0 : 1.3)   // room for the expanded (ok) dial
         width: side; height: side
         anchors.centerIn: parent
-        renderStrategy: Canvas.Cooperative
+        renderStrategy: Canvas.Immediate
         onSideChanged: requestPaint()
 
         function rgba(c, a) {
