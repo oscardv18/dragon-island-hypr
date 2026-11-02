@@ -383,6 +383,9 @@ def create(args, api):
                     for p in [path, *path.rglob('*')] if path.is_dir() else [path]:
                         if p.is_symlink():
                             raise ToolError('unsafe_paths', 'No se comprimen enlaces simbólicos en ZIP.')
+                        if not (p.is_dir() or p.is_file()):   # zipfile open()s a FIFO and blocks forever (audit 5d)
+                            raise ToolError('special_file', f'«{p.name}» es una tubería, un socket o un dispositivo.',
+                                            'Quítalo de la selección o usa tar.')
                         z.write(p, str(Path(path.name) / p.relative_to(path)))
         elif args.format in ('tar.gz', 'tar.xz'):
             with tarfile.open(temp, 'w:' + args.format.split('.')[1]) as tar:

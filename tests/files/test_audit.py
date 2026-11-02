@@ -572,3 +572,16 @@ class CancelCleanup(AuditBase):
         self.assertEqual((dest / 'datos.bin').read_text(), 'versión antigua')
         self.assertEqual([p.name for p in dest.iterdir()], ['datos.bin'])
         self.assertTrue(src.exists())
+
+
+class ZipSpecialFiles(AuditBase):
+    """Archive creation (d4): zipfile opened a FIFO inside the selection and blocked forever."""
+
+    def test_zip_with_fifo_fails_fast(self):
+        d = self.home / 'd'; d.mkdir()
+        (d / 'ok.txt').write_text('x')
+        os.mkfifo(d / 'tuberia')
+        out = self.home / 'a.zip'
+        self.cli_error('archive', 'create', '--format', 'zip', '--out', str(out), '--paths', str(d), code='special_file', timeout=10)
+        self.assertFalse(out.exists())
+        self.assertEqual([p.name for p in self.home.iterdir() if p.name.startswith('.dragon-')], [])
