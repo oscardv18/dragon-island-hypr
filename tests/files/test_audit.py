@@ -491,3 +491,18 @@ class OpenWithIds(AuditBase):
         for app in (rel, '/usr/bin/touch', 'a/../b'):
             self.cli_error('open-with', str(target), '--app', app, code='invalid_app')
         self.assertFalse(marker.exists())
+
+
+class TrashInfoPaths(AuditBase):
+    """Hallazgo 14: a relative Path= in .trashinfo was restored relative to the current directory."""
+
+    def test_relative_path_goes_home(self):
+        (self.trash / 'files').mkdir(parents=True)
+        (self.trash / 'info').mkdir(parents=True)
+        (self.trash / 'files/nota.txt').write_text('x')
+        (self.trash / 'info/nota.txt.trashinfo').write_text('[Trash Info]\nPath=sub/nota.txt\nDeletionDate=2026-01-01T00:00:00\n')
+        p = subprocess.run([str(BIN), 'trash', 'restore', 'trash:///nota.txt', '--json'], env=self.env, cwd=self.outside,
+                           capture_output=True, text=True, timeout=15)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertTrue((self.home / 'nota.txt').exists())
+        self.assertEqual(list(self.outside.iterdir()), [])

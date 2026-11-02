@@ -1891,8 +1891,11 @@ def cmd_trash(args):
         if not os.path.lexists(src_file):
             raise ToolError('not_found', f'No está en la papelera: «{name}».')
         orig_path, _ = parse_trashinfo(info_file)
-        if not orig_path:
+        # The home trash stores absolute paths; a relative or missing one (hand-edited, another tool) goes back to
+        # HOME instead of the current directory (audit 5d).
+        if not orig_path or not os.path.isabs(orig_path) or '\0' in orig_path:
             orig_path = str(Path(os.environ.get('HOME') or Path.home()) / name)
+        orig_path = os.path.normpath(orig_path)
         os.makedirs(os.path.dirname(orig_path), exist_ok=True)
         is_dir = os.path.isdir(src_file) and not os.path.islink(src_file)
         # Never overwrite a file that appeared at the original place after the conflict check, and never let
