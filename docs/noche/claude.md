@@ -26,3 +26,10 @@ Sesión del 2026-11-01/02. Sin vin.py ni teclas a otras terminales. Capturas sol
   decisión del usuario.
 - Nota: la ventana «pesada» intermitente de las primeras medidas era la isla con agentes trabajando (pares de
   frames cada ~160 ms), no el sondeo de brillo; lo confirmé al mapear ventanas con `WINID`.
+
+### (c) Pre-auditoría d1–d3 (solo lectura)
+- `docs/noche/pre-auditoria-d1d3.md`: 3 hallazgos altos (traversal en la papelera, copiar/mover dentro de sí
+  mismo vía enlace, `delete` sin rutas protegidas), 5 medios y 6 bajos; casi todos confirmados con sondas en un
+  HOME temporal. Una sonda de `trash restore` dejó un archivo de prueba fuera de su carpeta
+  (`/tmp/claude-1000/.../keep`), justo por el fallo 1; lo borré.
+- La condición de la parte 2 ya se cumplía al terminar la parte 1 (`ESTADO: COMPLETO`).

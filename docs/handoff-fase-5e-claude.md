@@ -2,6 +2,8 @@
 
 Rama `feat/fase5e-pulido`, desde `main` (a7b0b69). 2026-11-01/02. Migración propia: **090** (rango 090–099).
 
+(c) La pre-auditoría de d1–d3 está en `docs/noche/pre-auditoria-d1d3.md`.
+
 ## (a) Punto 8: `.dragon/CONTEXT.md` automático
 - `Mem` exporta en silencio, con antirrebote de 400 ms, tras añadir, mover o editar una tarjeta o sus criterios.
   Una ráfaga de cambios produce una sola llamada a `dragon-mem export`.
