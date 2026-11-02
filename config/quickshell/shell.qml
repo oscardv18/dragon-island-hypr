@@ -89,7 +89,7 @@ ShellRoot {
     }
 
     // starts the wallpaper service: IPC target "wallpaper" and restoring the saved wallpaper at login
-    Component.onCompleted: { Wallpaper.init(); Store.init(); Herdr.init(); Taller.init(); Tiling.refresh(); Tray.init(); }
+    Component.onCompleted: { Wallpaper.init(); Store.init(); Herdr.init(); Taller.init(); Tiling.refresh(); Tray.init(); FilePicker.init(); }
 
     Connections {
         target: Herdr

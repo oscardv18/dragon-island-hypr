@@ -128,6 +128,11 @@ step "explorador: vistas con datos de muestra y servicios con dragon-files simul
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files_ui -v; then pass "explorador (interfaz)"; else fail "explorador (interfaz)"; fi
 # /fase5d: files UI
 
+# fase6: portal
+step "Dragon Portal: núcleo, CLI, xdg-desktop-portal real en bus propio, explorador simulado, interfaz del modo selector y migraciones 100-102"
+if PYTHONDONTWRITEBYTECODE=1 python3 -W ignore -m unittest discover -s tests/portal -t tests/portal -v; then pass "Dragon Portal"; else fail "Dragon Portal"; fi
+# /fase6: portal
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 
@@ -145,6 +150,12 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tiling -v; th
 
 step "Neovim: editor, opt-in, seguridad y retirada (HOME/XDG temporales, sin sincronización real)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/nvim -v; then pass "módulo editor"; else fail "módulo editor"; fi
+
+step "campana de notificaciones: isla real con servicios de prueba y migración 130 (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/bar -v; then pass "campana de notificaciones"; else fail "campana de notificaciones"; fi
+
+step "llavero y GTK (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/keyring_gtk -v; then pass "llavero y GTK"; else fail "llavero y GTK"; fi
 
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi

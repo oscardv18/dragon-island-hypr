@@ -25,7 +25,7 @@
  *   - acquireWatch(path) / releaseWatch(path) — one `watch` process per folder while some visible tab shows it
  *   - setClipboard(mode, paths) · copyText(text) (system clipboard, for the share addresses)
  *   - refreshPlaces() · addBookmark(path, label) · removeBookmark(path)
- *   - openWindow(path) · closeWindow(uid) · windowShown(bool)
+ *   - openWindow(path, picker?): int · closeWindow(uid) · windowShown(bool) — picker = dragon-portal request (FilePicker), null for a normal window
  *   - sendToAgent(paths) — emits agentRequested(paths) and opens the Taller composer with a `paths` block; nothing is
  *     sent anywhere by itself
  *   - shareStatus(path, callback) — `share status --path` → {shared, name, rw, guest, host, addresses: {smb, unc},
@@ -77,10 +77,12 @@ Singleton {
     }
 
     // ---- windows ----
-    function openWindow(path): void {
+    // `picker` (fase 6): the request of a file dialog from another app → the window opens in selector mode; returns the window uid
+    function openWindow(path, picker): int {
         _uid++;
-        windows = windows.concat([{ uid: _uid, path: path || home }]);
+        windows = windows.concat([{ uid: _uid, path: path || home, picker: picker ?? null }]);
         if (windows.length === 1) refreshPlaces();
+        return _uid;
     }
     function closeWindow(uid): void { windows = windows.filter(w => w.uid !== uid); }
     function windowShown(shown): void { visibleWindows = Math.max(0, visibleWindows + (shown ? 1 : -1)); }

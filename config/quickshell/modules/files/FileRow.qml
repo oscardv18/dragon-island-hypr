@@ -27,7 +27,8 @@ Rectangle {
          : index % 2 === 1 ? Theme.files.rowAlt : Theme.transparent
     border.width: isSelected ? Theme.files.border : 0
     border.color: Theme.files.selectedBorder
-    opacity: entry.hidden ? Theme.files.disabledOpacity + (1 - Theme.files.disabledOpacity) / 2 : 1
+    readonly property bool pickable: (tab?.view?.canSelect(entry) ?? true) || F.isDirEntry(entry)   // selector mode: what cannot be chosen is dimmed (folders stay open for walking)
+    opacity: (entry.hidden ? Theme.files.disabledOpacity + (1 - Theme.files.disabledOpacity) / 2 : 1) * (pickable ? 1 : Theme.files.disabledOpacity)
     Row {
         anchors.fill: parent
         anchors.leftMargin: Theme.files.inset

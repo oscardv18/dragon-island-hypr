@@ -25,7 +25,7 @@ QtObject {
     readonly property string title: F.basename(path)
     readonly property bool special: F.isSpecial(path)
     readonly property bool isNet: path === F.NET
-    readonly property var shown: F.sortEntries(F.filterEntries(entries, view?.search ?? "", view?.showHidden ?? false),
+    readonly property var shown: F.sortEntries(F.filterEntries(entries, view?.search ?? "", view?.showHidden ?? false).filter(e => view?.entryVisible(e) ?? true),
                                                view?.sortKey ?? "name", view?.sortDesc ?? false, view?.dirsFirst ?? true)
     readonly property var selection: shown.filter(e => selected[e.name])
     readonly property var current: currentIndex >= 0 && currentIndex < shown.length ? shown[currentIndex] : null
@@ -91,10 +91,13 @@ QtObject {
     function select(i, mods): void {
         if (i < 0 || i >= shown.length) return;
         const name = shown[i].name;
+        // selector mode: what the request does not allow can be looked at but not selected; one item unless «multiple»
+        if (view && !view.canSelect(shown[i])) { currentIndex = i; if (!(mods & Qt.ControlModifier)) selected = ({}); return; }
+        if ((view?.maxSelect ?? 1e9) <= 1) mods = 0;
         if (mods & Qt.ShiftModifier && anchorIndex >= 0) {
             const s = (mods & Qt.ControlModifier) ? Object.assign({}, selected) : {};
             const a = Math.min(anchorIndex, i), b = Math.max(anchorIndex, i);
-            for (let k = a; k <= b; k++) s[shown[k].name] = true;
+            for (let k = a; k <= b; k++) if (!view || view.canSelect(shown[k])) s[shown[k].name] = true;
             selected = s;
         } else if (mods & Qt.ControlModifier) {
             const s = Object.assign({}, selected);
@@ -115,7 +118,12 @@ QtObject {
         const i = shown.findIndex(e => s[e.name]);
         if (i >= 0) { currentIndex = i; anchorIndex = i; }
     }
-    function selectAll(): void { const s = {}; for (const e of shown) s[e.name] = true; selected = s; }
+    function selectAll(): void {
+        if ((view?.maxSelect ?? 1e9) <= 1) return;
+        const s = {};
+        for (const e of shown) if (!view || view.canSelect(e)) s[e.name] = true;
+        selected = s;
+    }
     function clearSelection(): void { selected = ({}); }
     function move(delta, mods): void {
         if (!shown.length) return;

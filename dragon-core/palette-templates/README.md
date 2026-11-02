@@ -21,6 +21,10 @@ un ejemplo verificado en `tests/palette/golden/` y otro en `golden/legacy/`.
   memoria con la configuración existente y la entrega por stdin a fastfetch.
   No cambia los módulos, las etiquetas, los comandos ni los logos. `-c` /
   `--config` explícitos conservan su comportamiento y omiten esta combinación.
+- `gtk.css`: colores con nombre para GTK3/adw-gtk3 y GTK4/libadwaita. La
+  migración 121 importa el resultado al final del CSS del usuario para superar
+  los colores que genera KDE. `apply` sigue la paleta; `reset` usa Dragon.
+  El selector toma los colores nuevos al volver a abrirse.
 - `legacy.json`: valores anteriores a la fase 3. **Decisión del usuario:**
   `reset` restaura estos valores por aplicación, conservando las inclusiones.
   No modifica la paleta Dragon del JSON de fallback.
