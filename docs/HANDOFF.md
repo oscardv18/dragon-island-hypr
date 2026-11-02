@@ -1042,3 +1042,9 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
   `qs ipc call tiling toggle` cambió el escritorio 2 a Dwindle y de vuelta a Scrolling, confirmados
   tanto por `hyprctl` como por `qs ipc call tiling get`; `configerrors` vacío. No se pulsaron las
   teclas físicas ni se capturó la barra; al alternar debe cambiar el icono de cuadrícula / columnas.
+
+## Llavero Claude y selector GTK (2026-11-02)
+
+Trabajo en `feat/llavero-portal-gtk`; detalle y límites de verificación en
+[handoff-llavero-gtk.md](handoff-llavero-gtk.md). Migración 120 selecciona libsecret
+para Claude sin tocar secretos ni PAM. Procedimiento manual en [KEYRING.md](KEYRING.md).

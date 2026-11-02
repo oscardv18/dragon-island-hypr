@@ -143,6 +143,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/session -v; t
 step "mosaico: selectores numéricos, con nombre y especiales (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tiling -v; then pass "modos de mosaico"; else fail "modos de mosaico"; fi
 
+step "llavero y GTK (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/keyring_gtk -v; then pass "llavero y GTK"; else fail "llavero y GTK"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 
