@@ -247,10 +247,14 @@ class Services(unittest.TestCase):
         r, calls = self.run_shell('''
     Component.onCompleted: Devices.discover()
     property bool started: false
+    // discover() and the mounts it refreshes answer separately: start once both are in (hostState needs mounts)
     Connections {
         target: Devices
-        function onHostsChanged() {
-            if (started || Devices.hosts.length !== 5) return;
+        function onHostsChanged() { tryStart(); }
+        function onNetMountsChanged() { tryStart(); }
+    }
+    function tryStart() {
+            if (started || Devices.hosts.length !== 5 || !Devices.netMounts.length) return;
             started = true;
             Qt.callLater(() => {
                 const nas = Devices.hosts[0], printer = Devices.hosts[3];
@@ -266,7 +270,6 @@ class Services(unittest.TestCase):
                     });
                 });
             });
-        }
     }''')
         self.assertIn('SVC_OK', r.stdout + r.stderr, r.stderr[-3000:])
         self.assertIn(['net', 'connect', 'sftp://192.168.1.44', '--user', 'pi', '--password-stdin', '--save', '--json'], calls)
