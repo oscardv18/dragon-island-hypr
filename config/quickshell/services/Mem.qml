@@ -9,6 +9,9 @@
 // fase5c (Ajustes › Taller): setProject(slug,{wip_limit,test_cmd},callback) (`project set`; the row in `projects` is
 // updated in place) · exportContext(slug,callback) (`export`: {path, bytes}, < 4 KB in <repo>/.dragon/CONTEXT.md).
 // Both report errors only to their callback, never to status (a refused value must not blank the Taller).
+// fase5e (punto 8): exports {slug: {path, bytes, at}} (last export per project) · every successful card change (add,
+// move, set, criteria) schedules one quiet export of that project after autoExportDelay ms, so <repo>/.dragon/CONTEXT.md
+// follows the current card without a click. Bursts collapse into one call; failures stay out of status.
 pragma Singleton
 import Quickshell
 import Quickshell.Io
@@ -27,7 +30,21 @@ Singleton {
     property var stats: null
     property var details: ({})
     property int _boardGeneration: 0
+    property var exports: ({})
+    readonly property int autoExportDelay: 400
+    property var _exportQueue: []
     signal changed()
+
+    Timer { id: exportTimer; interval: root.autoExportDelay; onTriggered: root._flushExports() }
+    function _scheduleExport(slug): void {
+        if (!slug) return;
+        if (_exportQueue.indexOf(slug) < 0) _exportQueue = _exportQueue.concat([slug]);
+        exportTimer.restart();
+    }
+    function _flushExports(): void {
+        const queue = _exportQueue; _exportQueue = [];
+        for (const slug of queue) exportContext(slug, null);
+    }
 
     Component {
         id: requestComponent
@@ -107,24 +124,30 @@ Singleton {
     }
     function addCard(title, kind, callback): void {
         if (!selectedSlug || !title.trim()) return;
-        call(["card", "add", "--project", selectedSlug, "--title", title.trim(), "--kind", kind || "feat"], r => { if (r.ok) refreshBoard(); if (callback) callback(r); });
+        const slug = selectedSlug;
+        call(["card", "add", "--project", slug, "--title", title.trim(), "--kind", kind || "feat"], r => { if (r.ok) { refreshBoard(); _scheduleExport(slug); } if (callback) callback(r); });
     }
     function moveCard(key, col, force, callback): void {
+        const slug = selectedSlug;
         call(["card", "move", key, "--to", col].concat(force ? ["--force"] : []).concat(_scope()), r => {
-            if (r.ok) { refreshBoard(); loadDetails(key); changed(); }
+            if (r.ok) { refreshBoard(); loadDetails(key); changed(); _scheduleExport(slug); }
             if (callback) callback(r);
         });
     }
     function setCard(key, fields, callback): void {
-        const args = ["card", "set", key].concat(_scope());
+        const args = ["card", "set", key].concat(_scope()), slug = selectedSlug;
         for (const k in fields) args.push("--" + k.replace(/_/g, "-"), String(fields[k]));
-        call(args, r => { if (r.ok) { refreshBoard(); changed(); } if (callback) callback(r); });
+        call(args, r => { if (r.ok) { refreshBoard(); changed(); _scheduleExport(slug); } if (callback) callback(r); });
     }
-    function toggleCriterion(key, id): void { call(["card", "criteria", "toggle", key, String(id)].concat(_scope()), r => { _storeDetails(key, r); }); }
+    function toggleCriterion(key, id): void {
+        const slug = selectedSlug;
+        call(["card", "criteria", "toggle", key, String(id)].concat(_scope()), r => { _storeDetails(key, r); if (r.ok) _scheduleExport(slug); });
+    }
     function addCriterion(key, text): void {
         if (!text.trim()) return;
         const pos = (details[key]?.criteria ?? []).length;
-        call(["card", "criteria", "add", key, "--text", text.trim(), "--pos", String(pos)].concat(_scope()), r => { _storeDetails(key, r); });
+        const slug = selectedSlug;
+        call(["card", "criteria", "add", key, "--text", text.trim(), "--pos", String(pos)].concat(_scope()), r => { _storeDetails(key, r); if (r.ok) _scheduleExport(slug); });
     }
     function addProject(path, name, prefix, callback): void {
         const args = ["project", "add", "--path", path];
@@ -141,7 +164,13 @@ Singleton {
             if (callback) callback(r);
         }, true);
     }
-    function exportContext(slug, callback): void { if (slug) call(["export", "--project", slug], r => { if (callback) callback(r); }, true); }
+    function exportContext(slug, callback): void {
+        if (!slug) return;
+        call(["export", "--project", slug], r => {
+            if (r.ok) { const all = Object.assign({}, exports); all[slug] = { path: r.path, bytes: r.bytes, at: new Date() }; exports = all; }
+            if (callback) callback(r);
+        }, true);
+    }
     function logChange(key, oldValue, newValue, source): void {
         if (JSON.stringify(oldValue) === JSON.stringify(newValue)) return;
         call(["system", "log", "add", "--key", key, "--old", JSON.stringify(oldValue), "--new", JSON.stringify(newValue), "--source", source || "settings"], r => { if (r.ok) changed(); });
