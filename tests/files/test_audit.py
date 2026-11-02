@@ -294,3 +294,39 @@ class SpecialFiles(AuditBase):
         os.mkfifo(self.home / 'd/tuberia')
         dest = self.home / 'dest'; dest.mkdir()
         self.cli_error('op', 'copy', str(self.home / 'd'), '--dest', str(dest), code='special_file', timeout=10)
+
+
+@unittest.skipUnless(SHM.is_dir() and os.access(SHM, os.W_OK), 'a second filesystem (/dev/shm) is needed')
+class TrashOtherDisk(AuditBase):
+    """Hallazgo 7: trashing from another filesystem used shutil.move (any error → copy) with no space check."""
+
+    def setUp(self):
+        super().setUp()
+        self.other = Path(tempfile.mkdtemp(prefix='df-audit-', dir=SHM))
+        self.addCleanup(lambda: subprocess.run(['rm', '-rf', '--', str(self.other)], check=False))
+        if os.stat(self.other).st_dev == os.stat(self.home).st_dev:
+            self.skipTest('/dev/shm is on the same filesystem')
+
+    def test_trash_and_restore_from_other_disk(self):
+        d = self.other / 'carpeta'
+        d.mkdir()
+        (d / 'f.txt').write_text('x')
+        self.cli_ok('op', 'trash', str(d))
+        self.assertFalse(d.exists())
+        self.assertEqual((self.trash / 'files/carpeta/f.txt').read_text(), 'x')
+        self.assertEqual([p.name for p in (self.trash / 'files').iterdir() if p.name.startswith('.dragon-')], [])
+        self.cli_ok('trash', 'restore', 'trash:///carpeta')
+        self.assertEqual((d / 'f.txt').read_text(), 'x')
+
+    def test_failed_copy_keeps_original_and_no_trashinfo(self):
+        d = self.other / 'bloqueada'
+        d.mkdir()
+        (d / 'f.txt').write_text('x')
+        (d / 'f.txt').chmod(0)
+        self.addCleanup((d / 'f.txt').chmod, 0o644)
+        if os.access(d / 'f.txt', os.R_OK):
+            self.skipTest('running as root')
+        self.cli_error('op', 'trash', str(d))
+        self.assertTrue((d / 'f.txt').exists())
+        self.assertEqual(list((self.trash / 'info').glob('*.trashinfo')), [])
+        self.assertEqual(list((self.trash / 'files').iterdir()), [], 'no half-copied folder left in the trash')

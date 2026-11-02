@@ -1595,10 +1595,20 @@ def trash_put_one(src_path):
         with os.fdopen(info_fd, 'w', encoding='utf-8') as handle:
             handle.write(content)
         try:
-            os.replace(src_path, str(dest_file))
-        except OSError:
-            shutil.move(src_path, str(dest_file))
-    except Exception:
+            rename_noreplace(src_path, str(dest_file))
+        except OSError as exc:
+            if exc.errno != errno.EXDEV:
+                raise
+            # Another filesystem (a USB disk…): the home trash needs a full copy. Check the space first and copy
+            # through a staging name so a failure never loses the original (audit 5d; was shutil.move on any error).
+            need = total_bytes_of([src_path])
+            free, _, _ = filesystem_info(str(files_dir))
+            if free > 0 and need > free:
+                raise ToolError('no_space', 'No cabe en la papelera de tu carpeta personal: el archivo está en otro disco.',
+                                'Elimínalo de forma permanente o libera espacio.')
+            tracker = {'total_bytes': max(1, need), 'done_bytes': 0, 'start': time.perf_counter(), 'last_emit': 0.0, 'progress': False}
+            move_item(src_path, str(dest_file), False, tracker, 1, 1)
+    except BaseException:
         if info_path and info_path.exists():
             try:
                 info_path.unlink()
