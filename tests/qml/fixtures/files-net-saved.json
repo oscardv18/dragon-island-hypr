@@ -1,0 +1,23 @@
+{
+ "ok": true,
+ "servers": [
+  {
+   "uri": "smb://192.168.1.20/media",
+   "name": "nas-casa / media",
+   "protocol": "smb",
+   "user": "oddv"
+  },
+  {
+   "uri": "sftp://203.0.113.9/var/www",
+   "name": "vps-prod · /var/www",
+   "protocol": "sftp",
+   "user": "deploy"
+  },
+  {
+   "uri": "sftp://192.168.1.44/home/pi",
+   "name": "pi-lab · /home/pi",
+   "protocol": "sftp",
+   "user": "pi"
+  }
+ ]
+}

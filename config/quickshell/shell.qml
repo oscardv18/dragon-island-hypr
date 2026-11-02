@@ -30,6 +30,7 @@ import "modules/overview"
 import "modules/lock"
 import "modules/frame"
 import "modules/taller"
+import "modules/files"
 import "debug"
 
 ShellRoot {
@@ -164,6 +165,13 @@ ShellRoot {
         model: Quickshell.screens
         delegate: Component { TallerWindow {} }
     }
+
+    // fase5d: file explorer — normal windows, one per Files.windows entry (IPC target "files": open [ruta])
+    Variants {
+        model: Files.windows
+        delegate: Component { FilesWindow {} }
+    }
+    // /fase5d: file explorer
 
     // capture overlay (SUPER + SHIFT + S): the frozen screen, the selection and the actions
     Variants {

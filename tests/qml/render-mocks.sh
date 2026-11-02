@@ -20,6 +20,6 @@ for f in Theme Icons; do
 done
 printf 'singleton Theme 1.0 Theme.qml\nsingleton Icons 1.0 Icons.qml\n' > "$WORK/config/quickshell/qmldir"
 for m in "$WORK"/tests/qml/*_mock.qml; do
-    QT_QPA_PLATFORM=offscreen timeout 90 qml6 "$m" -- "$OUT"
+    QT_QPA_PLATFORM=offscreen QML_XHR_ALLOW_FILE_READ=1 timeout 90 qml6 "$m" -- "$OUT"
 done
 ls "$OUT"
