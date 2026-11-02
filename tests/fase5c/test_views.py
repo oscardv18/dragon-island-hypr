@@ -61,5 +61,21 @@ class Views(unittest.TestCase):
         self.check('taller_consumo_mock.qml', ('taller-agentes-consumo.png', 'taller-agentes-sin-consumo.png'))
 
 
+    def test_settings_taller(self):
+        with tempfile.TemporaryDirectory() as tmp:
+            r = render('settings_taller_mock.qml', tmp)
+            out = r.stdout + r.stderr
+            self.assertEqual(r.returncode, 0, out)
+            for bad in BAD: self.assertNotIn(bad, r.stderr, r.stderr)
+            for name in ('ajustes-taller.png', 'ajustes-taller-editado.png', 'ajustes-taller-vacio.png'):
+                self.assertEqual(size(Path(tmp) / name), (670, 620), name)
+        self.assertIn('CALL thresholds 2000 4000', out)
+        self.assertIn('CALL set arxnet {"wip_limit":4}', out)
+        self.assertEqual(out.count('CALL set arxnet {"test_cmd"'), 1, out)  # trimmed, and an unchanged command is not rewritten
+        self.assertIn('CALL set arxnet {"test_cmd":"pytest -q"}', out)
+        self.assertIn('CALL export arxnet', out)
+        self.assertIn('STATE dragon true', out)
+
+
 if __name__ == '__main__':
     unittest.main()

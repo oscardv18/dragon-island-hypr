@@ -56,6 +56,6 @@ if cmd == 'send':
     if not text.strip():
         emit({'ok': False, 'error': {'code': 'empty_prompt', 'message': 'El prompt está vacío.', 'hint': ''}}, 1)
     with open(os.path.join(os.environ['HOME'], 'prompt-sent.jsonl'), 'a', encoding='utf-8') as f:
-        f.write(json.dumps({'target': target, 'text': text}, ensure_ascii=False) + '\n')
+        f.write(json.dumps({'target': target, 'text': text, 'args': args}, ensure_ascii=False) + '\n')
     emit({'ok': True, 'target': target, 'tokens': tokens(text)})
 emit({'ok': False, 'error': {'code': 'invalid_usage', 'message': 'Argumentos no válidos', 'hint': ''}}, 2)

@@ -7,6 +7,7 @@
 //                   "Ocultar automáticamente"
 //   Apariencia      "Cristal" (ahumado · clásico · líquido, services/Glass.qml), "Contorno de ventanas" (escuadras · solo hilo · nada), "Relojes del mundo" (Fecha y hora), "Intensidad del acento" (sutil ↔ intenso, live sample), "Paleta desde el fondo", "Aplicar a las apps"
 //   Launcher        "Launcher Gravedad" (off = the previous orbital launcher), "Alt+Tab orbital", "Reducir movimiento"
+//   Taller          TallerSettingsPage: token thresholds, prompt history, WIP / test command / CONTEXT.md of a project
 // Every control writes through Settings (settings.json), so it persists and other monitors follow.
 // Keys: 1–4 pick the bar style A–D · Tab switches page · Esc closes.
 // =============================================================================
@@ -20,7 +21,7 @@ Item {
     id: root
 
     property bool shown: false
-    property string page: "bar"            // "appearance" | "bar" | "launcher" | "privacy" | "power"
+    property string page: "bar"            // "appearance" | "bar" | "launcher" | "privacy" | "power" | "taller"
     // `qs ipc call settings page <key>` opens Ajustes on that page
     Connections {
         target: Settings
@@ -33,14 +34,16 @@ Item {
         { key: "bar",        label: "Barra superior", icon: Icons.barTop },
         { key: "launcher",   label: "Launcher",       icon: Icons.apps },
         { key: "privacy",    label: "Privacidad",     icon: Icons.eyeOff },
-        { key: "power",      label: "Energía",        icon: Icons.sleep }
+        { key: "power",      label: "Energía",        icon: Icons.sleep },
+        { key: "taller",     label: "Taller",         icon: Icons.robot }
     ]
     readonly property var titles: ({
         appearance: ["Apariencia", "Cuánto acento llevan los estados activos y de dónde sale la paleta."],
         bar:        ["Barra superior", "El cambio se aplica al instante y Hyprland ajusta el espacio reservado."],
         launcher:   ["Launcher", "Cómo se abren las apps, las ventanas y el portapapeles."],
         privacy:    ["Privacidad", "El modo grabación se activa solo mientras grabas o compartes la pantalla."],
-        power:      ["Energía", "Qué pasa cuando dejas el equipo sin usar."]
+        power:      ["Energía", "Qué pasa cuando dejas el equipo sin usar."],
+        taller:     ["Taller", "Prompts, límite de trabajo en curso y pruebas de cada proyecto."]
     })
     function minutes(s: int): string { return s % 60 === 0 ? `${s / 60} min` : `${(s / 60).toFixed(1)} min`; }
     readonly property var styles: [
@@ -58,6 +61,10 @@ Item {
             e.accepted = true;
         }
     }
+
+    // the project list comes from dragon-mem, read on demand: only when the Taller page is on screen
+    readonly property bool tallerVisible: shown && page === "taller"
+    onTallerVisibleChanged: if (tallerVisible) Mem.refresh()
 
     onShownChanged: {
         anim.stop();
@@ -189,7 +196,8 @@ Item {
                 height: parent.height - y
                 contentWidth: width
                 contentHeight: Math.max(barPage.visible ? barPage.implicitHeight : 0, appearancePage.visible ? appearancePage.implicitHeight : 0,
-                                        privacyPage.visible ? privacyPage.implicitHeight : 0, powerPage.visible ? powerPage.implicitHeight : 0)
+                                        privacyPage.visible ? privacyPage.implicitHeight : 0, powerPage.visible ? powerPage.implicitHeight : 0,
+                                        tallerPage.visible ? tallerPage.implicitHeight : 0)
                 clip: true
                 boundsBehavior: Flickable.StopAtBounds
 
@@ -545,6 +553,15 @@ Item {
                     Glyph { anchors.verticalCenter: parent.verticalCenter; icon: Icons.shield; size: Theme.iconMd; color: Theme.cyan }
                     UiText { anchors.verticalCenter: parent.verticalCenter; text: "No avanza si hay un vídeo en reproducción, un agente trabajando o el modo grabación activo."; color: Theme.textDim }
                 }
+            }
+
+            // ======== Taller (fase 5c) ========
+            TallerSettingsPage {
+                id: tallerPage
+                visible: root.page === "taller"
+                width: parent.width
+                settings: Settings
+                mem: Mem
             }
             }
         }

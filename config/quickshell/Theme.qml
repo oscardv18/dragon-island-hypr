@@ -460,6 +460,10 @@ Singleton {
     readonly property real settingsWidth:    900
     readonly property real settingsHeight:   620
     readonly property real settingsNavWidth: 230
+    // fase5c · Ajustes › Taller
+    readonly property real settingsFieldWidth: 280     // text fields (the project's test command)
+    readonly property real settingsScaleHeight: 6      // the green / amber / red token scale under the thresholds
+    readonly property real settingsNameWidth: 190      // project name between ‹ ›
 
     // Store panel (Tienda)
     readonly property real storeWidth:      760
