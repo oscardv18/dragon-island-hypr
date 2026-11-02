@@ -57,3 +57,13 @@ Sesión del 2026-11-01/02. Sin vin.py ni teclas a otras terminales. Capturas sol
 - La 2.ª pasada falló en una prueba de red de pantallas que era intermitente (3 de 6): no esperaba a los
   montajes. Corregida (8 de 8).
 - Después, `run-all.sh` pasó **tres veces seguidas**: 138 ✔, 0 ✘, 349 pruebas unittest, ~470 s cada pasada.
+- Con todo en verde: etiqueta `pre-fase5-final` (= a7b0b69) y merge en `main` (`f764479`), subido con la
+  etiqueta y la rama. `./update.sh --dry-run` limpio; `./update.sh` con exit 0, `configerrors` vacío y qs vivo.
+- Mi error de suposición: sin terminal, `update.sh` entra en modo desatendido (`ASSUME_YES=true`) y la 074 puso
+  Archivos Dragon como gestor de carpetas (antes `kitty-open.desktop`). Es reversible con
+  `dragon-files --restore-default`. Nada con sudo.
+- Tras fusionar encontré 24 `udevadm monitor` huérfanos de mis mediciones: un `qs` muerto de golpe no se lleva
+  al hijo. Los borré y, sin volver a tocar `main`, dejé la corrección en `fix/udevadm-huerfano`
+  (`setpriv --pdeathsig`, prueba y migración 091, más el arreglo de una prueba intermitente mía).
+  `run-all.sh` en verde.
+- Informe final: `docs/INFORME-NOCHE.md` en esta rama (no en `main`, por la regla de no tocarlo tras un fallo).
