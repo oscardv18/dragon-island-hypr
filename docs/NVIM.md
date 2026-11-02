@@ -139,3 +139,12 @@ configuración de StyLua y licencia: sin claves API, tokens, URLs privadas ni da
 personales que eliminar. No hubo sustituciones por variables de entorno porque
 no se encontraron secretos. Las únicas URLs son documentación pública y GitHub.
 El código no intenta anonimizar ni copiar logs.
+
+## 2. Copia versionada
+
+Se copiaron los 15 archivos seleccionados a `config/nvim`, byte por byte tras la
+revisión, sin seguir enlaces ni leer directorios de plugins. El lockfile conserva
+los 49 commits originales. El ejemplo Lua se conserva como parte de tu carpeta,
+pero sigue desactivado. Las exclusiones de estado se añadieron al `.gitignore`.
+Los ajustes del primer arranque se añaden en el punto del módulo, sin modificar
+ningún archivo del origen instalado.
