@@ -9,7 +9,6 @@ from pathlib import Path
 import re
 import selectors
 import shutil
-import socket
 import subprocess
 import time
 from urllib.parse import quote, unquote, urlsplit, urlunsplit

@@ -4,7 +4,6 @@ import os
 from pathlib import Path
 import pwd
 import re
-import socket
 from taller_common import ToolError
 from files_network import run
 
@@ -49,7 +48,7 @@ def inventory():
     except configparser.Error:
         raise ToolError('samba_error','La respuesta de Samba no es válida.') from None
     rows = []
-    host = socket.gethostname()
+    host = os.uname().nodename
     for name in parser.sections():
         section = parser[name]
         path = section.get('path','')
@@ -85,7 +84,7 @@ def command(args, api):
     if guest: acl += f',Everyone:{"F" if args.rw else "R"}'
     run(['net','usershare','add',name,str(path),'Compartido desde Archivos',acl,
          'guest_ok=y' if guest else 'guest_ok=n'])
-    host = socket.gethostname()
+    host = os.uname().nodename
     return dict(shared=True,path=str(path),name=name,rw=args.rw,guest=guest,host=host,
                 addresses=dict(smb=f'smb://{host}/{name}',unc=f'\\\\{host}\\{name}'),
                 firewall=dict(needed=None,command='sudo ufw allow from <SUBRED_LOCAL/CIDR> to any app Samba',
