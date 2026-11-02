@@ -199,5 +199,17 @@ class Cli(Temp):
         self.assertEqual(core.read_private_json(core.channel('rep'), req['id'] + '.json')['paths'], [path])
 
 
+class FolderOption(unittest.TestCase):
+    def test_missing_current_folder_falls_back_to_home(self):
+        r = core.build_request('open', '', 't', {'current_folder': b'/no/such/folder\0'}, '/home/x')
+        self.assertEqual(r['current_folder'], '/home/x')
+        r = core.build_request('open', '', 't', {'current_folder': b'/tmp\0'}, '/home/x')
+        self.assertEqual(r['current_folder'], '/tmp')
+        r = core.build_request('save', '', 't', {'current_folder': b'/no/such\0', 'current_file': b'/tmp/a.txt\0'}, '/home/x')
+        self.assertEqual((r['current_folder'], r['current_name']), ('/tmp', 'a.txt'))
+        r = core.build_request('save', '', 't', {'current_file': b'/no/such/a.txt\0'}, '/home/x')
+        self.assertEqual((r['current_folder'], r['current_name']), ('/home/x', 'a.txt'))
+
+
 if __name__ == '__main__':
     unittest.main()

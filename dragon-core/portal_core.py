@@ -204,6 +204,8 @@ def build_request(kind, app_id, title, options, home, now=None):
             if not filters:                     # «may be specified when the list is empty to apply the filter unconditionally»
                 filters, current = [cf], 0
     folder = bytes_to_path(opts.get('current_folder'))
+    if not os.path.isdir(folder):                             # a folder that does not exist: start at home instead of an error screen
+        folder = ''
     current_file = bytes_to_path(opts.get('current_file')) if kind == 'save' else ''
     name = ''
     if kind == 'save':
@@ -213,6 +215,8 @@ def build_request(kind, app_id, title, options, home, now=None):
             name = os.path.basename(current_file)
         if not folder and current_file:
             folder = os.path.dirname(current_file)
+        if not os.path.isdir(folder):
+            folder = ''
     request = dict(
         id=new_id(), kind=kind, app_id=clean_text(app_id, 120), title=clean_text(title) or ('Abrir' if kind == 'open' else 'Guardar'),
         accept_label=clean_text(str(opts.get('accept_label', '')).replace('_', ''), 40),
