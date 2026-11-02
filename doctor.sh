@@ -40,6 +40,7 @@ pre() {   # pre <check-id> <label>
 }
 
 if $PRE; then
+    PYTHONDONTWRITEBYTECODE=1 python3 "$REPO_DIR/lib/installer_prereq.py" || FAILS=$((FAILS + 1))
     echo "Requisitos previos (pre-instalation.md)"
     detect_distro; detect_gpu
     pre root    "No eres root"
