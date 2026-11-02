@@ -534,3 +534,41 @@ class ExtractPublishRace(AuditBase):
         self.assertEqual(json.loads(p.stdout.splitlines()[-1])['error']['code'], 'conflict')
         self.assertEqual((dest / 'nota.txt').read_text(), 'written meanwhile')
         self.assertEqual([x.name for x in dest.iterdir()], ['nota.txt'], 'staging removed')
+
+
+class CancelCleanup(AuditBase):
+    """Cancelling (SIGTERM) must leave neither temporaries nor a destination set aside."""
+
+    def test_cancel_right_after_start_never_leaves_temporaries(self):
+        src = self.home / 'grande.bin'
+        src.write_bytes(b'A' * (262144 * 4))
+        env = dict(self.env, DRAGON_FILES_SLOW_MS='60')
+        for i in range(12):
+            dest = self.home / f'dest{i}'; dest.mkdir()
+            proc = subprocess.Popen([str(BIN), 'op', 'copy', str(src), '--dest', str(dest), '--json-progress', '--json'],
+                                    env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+            proc.stdout.readline()        # the first progress line comes before the temporary exists
+            proc.terminate()
+            proc.communicate(timeout=10)
+            self.assertEqual(list(dest.iterdir()), [], f'run {i}')
+
+    @unittest.skipUnless(SHM.is_dir() and os.access(SHM, os.W_OK), 'a second filesystem (/dev/shm) is needed')
+    def test_cancel_overwrite_move_puts_destination_back(self):
+        other = Path(tempfile.mkdtemp(prefix='df-audit-', dir=SHM))
+        self.addCleanup(lambda: subprocess.run(['rm', '-rf', '--', str(other)], check=False))
+        if os.stat(other).st_dev == os.stat(self.home).st_dev:
+            self.skipTest('same filesystem')
+        src = other / 'datos.bin'
+        src.write_bytes(b'B' * (262144 * 8))
+        dest = self.home / 'dest'; dest.mkdir()
+        (dest / 'datos.bin').write_text('versión antigua')
+        env = dict(self.env, DRAGON_FILES_SLOW_MS='80')
+        proc = subprocess.Popen([str(BIN), 'op', 'move', str(src), '--dest', str(dest), '--conflict', 'overwrite',
+                                 '--json-progress', '--json'], env=env, stdout=subprocess.PIPE, stderr=subprocess.PIPE, text=True)
+        proc.stdout.readline()
+        proc.stdout.readline()            # the copy itself is under way
+        proc.terminate()
+        proc.communicate(timeout=10)
+        self.assertEqual((dest / 'datos.bin').read_text(), 'versión antigua')
+        self.assertEqual([p.name for p in dest.iterdir()], ['datos.bin'])
+        self.assertTrue(src.exists())

@@ -24,6 +24,7 @@ _SECRET_TOKENS = (
 _NUM_RE = re.compile(r'(\d+)')
 _CLEANUP_PATHS = set()
 _CLEANUP_PROCS = set()
+_RESTORE_ASIDE = {}   # aside path → original path: put back on cancel (move with overwrite)
 
 
 def _cleanup_on_signal(*_):
@@ -40,6 +41,12 @@ def _cleanup_on_signal(*_):
             elif os.path.isdir(path):
                 import shutil
                 shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass
+    for aside, original in list(_RESTORE_ASIDE.items()):
+        try:
+            if not os.path.lexists(original):
+                os.rename(aside, original)
         except OSError:
             pass
     sys.exit(0)
@@ -1470,8 +1477,8 @@ def move_item(src, dst, overwrite, tracker, index, count):
     aside = None
     if overwrite and os.path.lexists(dst):
         aside = _hidden_sibling(dst, 'old')
+        _RESTORE_ASIDE[aside] = dst
         os.rename(dst, aside)
-        _CLEANUP_PATHS.discard(aside)
     try:
         try:
             rename_noreplace(src, dst)
@@ -1493,8 +1500,10 @@ def move_item(src, dst, overwrite, tracker, index, count):
     except BaseException:
         if aside and not os.path.lexists(dst):
             os.rename(aside, dst)
+        _RESTORE_ASIDE.pop(aside, None)
         raise
     if aside:
+        _RESTORE_ASIDE.pop(aside, None)
         remove_existing_target(aside)
 
 
@@ -1515,8 +1524,19 @@ def copy_single_file(src, dst, tracker, index, count, overwrite=False):
 
     dest_dir = os.path.dirname(dst)
     os.makedirs(dest_dir, exist_ok=True)
-    fd, tmp_dst = tempfile.mkstemp(prefix='.dragon-part-', dir=dest_dir)   # not the name: 255 bytes max (audit 5d)
-    _CLEANUP_PATHS.add(tmp_dst)
+    # Register the temporary BEFORE it exists: a SIGTERM between creating and registering it left a partial
+    # .dragon-part behind (audit 5d). Not the file name in it: 255 bytes max.
+    import secrets
+    for _ in range(100):
+        tmp_dst = os.path.join(dest_dir, '.dragon-part-' + secrets.token_hex(6))
+        _CLEANUP_PATHS.add(tmp_dst)
+        try:
+            fd = os.open(tmp_dst, os.O_WRONLY | os.O_CREAT | os.O_EXCL | os.O_CLOEXEC, 0o600)
+            break
+        except FileExistsError:
+            _CLEANUP_PATHS.discard(tmp_dst)
+    else:
+        raise ToolError('io_error', 'No se pudo crear un archivo temporal en el destino.')
     slow_ms = int(os.environ.get('DRAGON_FILES_SLOW_MS', '0') or '0')
     try:
         with open(src, 'rb') as fsrc, os.fdopen(fd, 'wb') as fdst:
