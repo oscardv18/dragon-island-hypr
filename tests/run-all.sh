@@ -155,6 +155,9 @@ if tests/idempotency.sh; then pass "idempotente"; else fail "idempotency.sh fall
 step "install.sh --dry-run no deja rastro (HOME/XDG temporales)"
 if python3 tests/install-dry-run.py; then pass "instalador sin escrituras en HOME/XDG ni cambios en git"; else fail "el dry-run dejó rastro o falló"; fi
 
+# fase5d: migration
+if python3 -m unittest discover -s tests/files_migration -v; then pass "migración 080"; else fail "migración 080"; fi
+
 echo
 if ((fails == 0)); then echo "TODO EN VERDE"; else echo "$fails bloque(s) fallan"; fi
 exit "$fails"
