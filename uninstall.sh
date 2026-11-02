@@ -12,7 +12,7 @@ STATE_DIR="${XDG_STATE_HOME:-$HOME/.local/state}/$PROJECT"
 LOG="$STATE_DIR/uninstall.log"
 BACKUP_DIR="$STATE_DIR/backups/$(date +%Y%m%d-%H%M%S)"
 MANIFEST="$STATE_DIR/manifest"
-ALL_MODULES=(core shell theme plugins login keyring keyboard extras)
+ALL_MODULES=(core shell editor theme plugins login keyring keyboard extras)
 
 DRY_RUN=false
 ASSUME_YES=false

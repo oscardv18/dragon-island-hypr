@@ -148,3 +148,46 @@ los 49 commits originales. El ejemplo Lua se conserva como parte de tu carpeta,
 pero sigue desactivado. Las exclusiones de estado se añadieron al `.gitignore`.
 Los ajustes del primer arranque se añaden en el punto del módulo, sin modificar
 ningún archivo del origen instalado.
+
+## 3. Módulo editor y primer uso
+
+`editor` estará activo por defecto y puede excluirse con `--modules`. Despliega
+según LINK_MODE, conserva un `backup_copy` del destino y lo registra para la
+retirada. Uninstall restaura el respaldo sin borrar plugins ni datos de usuario;
+una segunda retirada no elimina la configuración restaurada.
+
+Paquetes validados con `pacman -Si` (2026-11-02): neovim, git, ripgrep, fd, gcc,
+tree-sitter-cli, nodejs, npm, lazygit, go, rust, php, composer, curl, unzip y
+wl-clipboard. No se ejecutó ninguna instalación de paquetes en esta máquina.
+Rust incluye Cargo/rustfmt/Clippy; pacman reconoce el proveedor rustup existente
+sin sustituirlo. Con rustup ya instalado, el toolchain y sus componentes siguen
+siendo responsabilidad del usuario. No se cambian dependencias de proyectos.
+
+El aspecto y los specs personales se conservan. Solo se añade una barrera en
+`init.lua` y `lua/config/dragon_first_use.lua`, más estos ajustes de bootstrap:
+se fija lazy.nvim al commit de su lockfile y la instalación de plugins ausentes
+solo está habilitada en el hijo confirmado. El primer uso pide Sí/No (No por
+defecto), prueba GitHub con un máximo de 8 s y ejecuta, como usuario:
+
+```sh
+nvim --headless '+Lazy! restore' +qa
+```
+
+La implementación usa `timeout --kill-after=5s 180s`, hereda el config/XDG del
+usuario y añade `DRAGON_NVIM_RESTORE=1` **solo al hijo** para evitar recursión.
+No muestra la salida de red ni credenciales en errores. Sin red, sin consentimiento,
+con versión insuficiente o con fallo/timeout, avisa y abre el editor base.
+`:DragonNvimRestore` vuelve a ofrecer la confirmación. Para automatizar en la VM:
+`DRAGON_NVIM_SYNC=1 nvim` autoriza expresamente la misma restauración acotada.
+
+El estado de éxito queda en `stdpath("state")/dragon-plugins-restored`, asociado
+al hash del lockfile; se comprueba además la presencia de los 49 directorios.
+No se persiste en la configuración ni se copia desde esta máquina. Los LSP,
+formateadores y parsers se gestionan por Mason/Treesitter al usarlos; no quedan
+congelados por el lock de plugins.
+
+**La sincronización real no se ejecuta en las pruebas ni en esta máquina.** Se
+hará en la VM CachyOS limpia, con red y confirmación, seguida de `:checkhealth`,
+`:checkhealth mason` y `:checkhealth vim.lsp`. Allí hay que probar un proyecto
+Laravel/Blade, Astro/TypeScript, Rust y Go con sus dependencias locales; Xdebug,
+Composer/npm y Rustup requieren su configuración de proyecto/toolchain habitual.

@@ -12,6 +12,14 @@ if not (vim.uv or vim.loop).fs_stat(lazypath) then
     os.exit(1)
   end
 end
+-- Pin the bootstrap manager too; all network/bootstrap work runs in the bounded restore child.
+if vim.env.DRAGON_NVIM_RESTORE == "1" then
+  local versions = vim.json.decode(table.concat(vim.fn.readfile(vim.fn.stdpath("config") .. "/lazy-lock.json"), "\n"))
+  local output = vim.fn.system({ "git", "-C", lazypath, "checkout", "--detach", versions["lazy.nvim"].commit })
+  if vim.v.shell_error ~= 0 then
+    error("No se pudo fijar lazy.nvim al commit del lockfile")
+  end
+end
 vim.opt.rtp:prepend(lazypath)
 
 require("lazy").setup({
@@ -30,9 +38,9 @@ require("lazy").setup({
     version = false, -- always use the latest git commit
     -- version = "*", -- try installing the latest stable version for plugins that support semver
   },
-  install = { colorscheme = { "tokyonight", "habamax" } },
+  install = { missing = vim.env.DRAGON_NVIM_RESTORE == "1", colorscheme = { "tokyonight", "habamax" } },
   checker = {
-    enabled = true, -- check for plugin updates periodically
+    enabled = vim.env.DRAGON_NVIM_RESTORE ~= "1", -- keep checks out of the bounded restore
     notify = false, -- notify on update
   }, -- automatically check for plugin updates
   performance = {
