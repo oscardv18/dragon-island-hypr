@@ -425,3 +425,15 @@ class OddNames(AuditBase):
                            env=self.env, capture_output=True, text=True, timeout=15)
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertTrue((dest / '-x').exists())
+
+
+class LongNames(AuditBase):
+    """Hallazgo 10: the copy temporary `.dragon-part-<name>-XXXX` went over 255 bytes for long names."""
+
+    def test_copy_255_byte_name(self):
+        name = 'x' * 251 + '.txt'
+        (self.home / name).write_text('x')
+        dest = self.home / 'dest'; dest.mkdir()
+        self.cli_ok('op', 'copy', str(self.home / name), '--dest', str(dest))
+        self.cli_ok('op', 'copy', str(self.home / name), '--dest', str(dest), '--conflict', 'overwrite')
+        self.assertEqual([p.name for p in dest.iterdir()], [name])

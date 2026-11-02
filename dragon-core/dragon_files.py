@@ -1505,7 +1505,7 @@ def copy_single_file(src, dst, tracker, index, count, overwrite=False):
 
     dest_dir = os.path.dirname(dst)
     os.makedirs(dest_dir, exist_ok=True)
-    fd, tmp_dst = tempfile.mkstemp(prefix=f'.dragon-part-{os.path.basename(dst)}-', dir=dest_dir)
+    fd, tmp_dst = tempfile.mkstemp(prefix='.dragon-part-', dir=dest_dir)   # not the name: 255 bytes max (audit 5d)
     _CLEANUP_PATHS.add(tmp_dst)
     slow_ms = int(os.environ.get('DRAGON_FILES_SLOW_MS', '0') or '0')
     try:
