@@ -63,8 +63,9 @@ class BrightnessEvents(unittest.TestCase):
             if with_udevadm: (fake / 'udevadm').write_text(UDEVADM)
             for f in fake.iterdir(): f.chmod(0o755)
             # PATH without /usr/bin for udevadm: link only what the service needs besides the fakes.
-            for tool in ('sh', 'ls', 'head'):
-                (fake / tool).symlink_to(shutil.which(tool))
+            for tool in ('sh', 'ls', 'head', 'setpriv'):
+                if shutil.which(tool):
+                    (fake / tool).symlink_to(shutil.which(tool))
             env = dict(os.environ, HOME=tmp, XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORM='offscreen',
                        PATH=str(fake))
             p = subprocess.run([shutil.which('qs'), '-p', str(cfg)], env=env, capture_output=True, text=True, timeout=30)
@@ -76,6 +77,46 @@ class BrightnessEvents(unittest.TestCase):
         self.assertIn('EVENTS_OK', out, out)
         self.assertIn('monitor --kernel --subsystem-match=backlight', calls)
         self.assertEqual(calls.count('monitor'), 1, 'a dead monitor must not be respawned in a loop')
+
+    @unittest.skipUnless(shutil.which('setpriv'), 'setpriv (util-linux) required')
+    def test_monitor_dies_with_quickshell(self):
+        """Killing Quickshell abruptly must not leave `udevadm monitor` orphaned (it only notices on its next write)."""
+        import signal
+        import time
+        with tempfile.TemporaryDirectory(prefix='d5e-') as tmp:
+            home = Path(tmp); runtime = home / 'runtime'; runtime.mkdir(mode=0o700)
+            cfg = home / 'shell'; (cfg / 'services').mkdir(parents=True)
+            shutil.copy(ROOT / 'config/quickshell/services/Brightness.qml', cfg / 'services')
+            (cfg / 'services/qmldir').write_text('singleton Brightness 1.0 Brightness.qml\n')
+            (cfg / 'shell.qml').write_text('import Quickshell\nimport QtQuick\nimport "services"\n'
+                                           'ShellRoot { Component.onCompleted: console.log(Brightness.device) }\n')
+            fake = home / 'bin'; fake.mkdir()
+            pidfile = home / 'monitor.pid'
+            (fake / 'udevadm').write_text(f'#!/bin/sh\necho $$ > "{pidfile}"\necho "monitor will print"\nexec sleep 300\n')
+            (fake / 'ddcutil').write_text('#!/bin/sh\nexit 1\n')
+            for f in fake.iterdir(): f.chmod(0o755)
+            for tool in ('sh', 'ls', 'head', 'setpriv', 'sleep'):
+                (fake / tool).symlink_to(shutil.which(tool))
+            env = dict(os.environ, HOME=tmp, XDG_RUNTIME_DIR=str(runtime), QT_QPA_PLATFORM='offscreen', PATH=str(fake))
+            qs = subprocess.Popen([shutil.which('qs'), '-p', str(cfg)], env=env, stdout=subprocess.DEVNULL, stderr=subprocess.DEVNULL)
+            try:
+                deadline = time.monotonic() + 15
+                while not pidfile.exists() and time.monotonic() < deadline:
+                    time.sleep(0.1)
+                self.assertTrue(pidfile.exists(), 'the monitor never started')
+                monitor = int(pidfile.read_text())
+                os.kill(qs.pid, signal.SIGKILL)
+                qs.wait(timeout=5)
+                deadline = time.monotonic() + 5
+                while time.monotonic() < deadline and Path(f'/proc/{monitor}').exists():
+                    time.sleep(0.1)
+                alive = Path(f'/proc/{monitor}').exists()
+                if alive:
+                    os.kill(monitor, signal.SIGTERM)
+                self.assertFalse(alive, 'udevadm monitor outlived Quickshell')
+            finally:
+                if qs.poll() is None:
+                    qs.kill()
 
     def test_without_udevadm_it_polls(self):
         out, _ = self.run_shell(False)

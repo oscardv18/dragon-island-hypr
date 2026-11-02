@@ -11,6 +11,8 @@ from helpers import run_shell, git_repo, BAD  # noqa: E402
 EXTRA = '''singleton Files 1.0 Files.qml
 FilesRequest 1.0 FilesRequest.qml
 singleton Taller 1.0 Taller.qml
+singleton Git 1.0 Git.qml
+singleton Docker 1.0 Docker.qml
 '''
 
 SHELL = '''import Quickshell
