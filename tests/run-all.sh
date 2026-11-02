@@ -77,6 +77,12 @@ step "ajustes de 5c: migración de pantallas y aislamiento de dry-run"
 if python3 -m unittest discover -s tests/fase5c_ajustes -v; then pass "ajustes de 5c"; else fail "ajustes de 5c"; fi
 # /fase5c: adjustments
 
+# fase5d: files
+step "dragon-files: listado, lugares, vigilancia, propiedades, abrir y miniaturas (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files -v; then pass "dragon-files"; else fail "dragon-files"; fi
+if PYTHONDONTWRITEBYTECODE=1 python3 tests/files/bench.py --limit-ms 300; then pass "dragon-files ls 1000 <300 ms"; else fail "latencia de dragon-files"; fi
+# /fase5d: files
+
 # fase5b: engines
 step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
