@@ -12,8 +12,10 @@
 - d6: usershares con ACL del usuario, invitados apagados por defecto, rutas sensibles y alias rechazados. Cuatro pruebas contra net falso (corregida la invocación del caso --name=-bad para que llegue a la validación). Preparación privilegiada documentada en FILES-SAMBA.md; la migración 073 solo despliega herramientas.
 - d7: .desktop sin recursión, asociación reversible y FileManager1 opcional sin sustituir propietarios ni autoinicio; cuatro pruebas con qs/xdg-mime falsos. Propiedades/selección por IPC no están en el contrato actual.
 
-- d8 parcial: atajo SUPER+E, migración 075 con backup_copy, espera de UI en 074/075, documentación de teclado, verificación de enlaces tras conflictos, lectura acotada del snapshot y prueba privada de FileManager1.
-- La integración «Enviar al agente» necesita Files.composerAvailable/agentRequested en config/quickshell; consulta enviada al usuario, sin respuesta al cerrar esta entrega. Se conserva el contrato de 5c y el veto de tocar QML en B.
+- d8: atajo SUPER+E, migración 075 con backup_copy, espera de UI en 074/075, documentación de teclado, verificación de enlaces tras conflictos, lectura acotada del snapshot y prueba privada de FileManager1.
+- La integración «Enviar al agente» necesita Files.composerAvailable/agentRequested en config/quickshell; el usuario confirmó «Dejar el enlace a 5c pendiente». Se conserva el contrato de 5c y el veto de tocar QML en B.
 - Validación final: 52 pruebas de tests/files, una sola ejecución de esa carpeta completa; mediana ls-1000 de 112,5 ms (<150 ms).
 - tests/migrations-dry-run.sh: 62 migraciones con DRY_RUN=1/true y tres estados del actualizador sin escrituras ni comandos reales de sesión/sudo/red. shellcheck -x, luac -p y git diff --check pasan.
 - No se ejecutó tests/run-all.sh. Solo se repitieron pruebas focalizadas por fallos o lógica nueva. Sin UI real, SMB/NFS reales ni cambios en la instalación.
+
+- Cierre: alcance de B completo por la aclaración del usuario; integración de Enviar al agente reservada a 5c. Handoff con ESTADO: COMPLETO. Ambos worktrees limpios, sin push ni fusiones.
