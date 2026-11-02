@@ -8,3 +8,4 @@ unzip
 gum
 github-cli
 yay            # EndeavourOS repo; on plain Arch it is an AUR package (build it by hand, see pre-instalation.md)
+adw-gtk-theme  # GTK3 dark base for the provisional file chooser

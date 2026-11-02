@@ -13,7 +13,7 @@ Rectangle {
     implicitWidth: Theme.taller.projectDialogWidth
     implicitHeight: body.implicitHeight + Theme.taller.detailPadding * 2
     radius: Theme.taller.buttonRadius
-    color: Theme.taller.panel
+    color: Theme.taller.overlay
     border.width: Theme.taller.buttonBorder
     border.color: Theme.taller.selectedBorder
     focus: visible

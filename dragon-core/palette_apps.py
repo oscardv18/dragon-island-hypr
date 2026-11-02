@@ -34,6 +34,7 @@ def render(palette, legacy=False):
            for key, token in (('accent','accent'), ('accent_deep','accentDeep'), ('glow','glow'))}
     sgr.update(cyan='38;2;103;232;249', ok='38;2;134;239;172', warn='38;2;245;176;74')
     return {
+        'gtk.css': template('gtk.css', palette),
         'dragon-dynamic': ghostty,
         'ghostty.conf': template('ghostty.conf', dict(ghostty_colors=ghostty.rstrip())),
         'dragon-dynamic.conf': template('kitty.conf', previous.get('kitty', terminal)),

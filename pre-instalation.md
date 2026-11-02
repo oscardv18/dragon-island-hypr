@@ -110,7 +110,7 @@ AUR y plugins), `curl`, `unzip`, `gum` (la interfaz de terminal), `github-cli` y
 `packages/base.txt`.
 
 ```bash
-sudo pacman -S --needed git base-devel curl unzip gum github-cli yay
+sudo pacman -S --needed git base-devel curl unzip gum github-cli yay adw-gtk-theme
 ```
 
 (`yay` está en el repositorio de EndeavourOS. En **Arch puro** no está en pacman: compílalo desde el AUR con
@@ -451,6 +451,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `gum` | (previo, Paso 3) | oficial |
 | `github-cli` | (previo, Paso 3) | oficial |
 | `yay` | (previo, Paso 3) | oficial |
+| `adw-gtk-theme` | (previo, Paso 3) | oficial |
 | `hyprland` | core | oficial |
 | `hyprlock` | core | oficial |
 | `hypridle` | core | oficial |
@@ -504,6 +505,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `bat` | shell | oficial |
 | `ttf-jetbrains-mono-nerd` | theme | oficial |
 | `nwg-look` | theme | oficial |
+| `adw-gtk-theme` | theme | oficial |
 | `ttf-outfit` | theme | AUR |
 | `candy-icons-git` | theme | AUR |
 | `sweet-folders-icons-git` | theme | AUR |
