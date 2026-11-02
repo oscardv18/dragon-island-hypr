@@ -190,4 +190,17 @@ hl.window_rule({
     size = { 1226, 612 },
     no_blur = false,
 })
+-- The explorer's glass is a rounded rectangle (Theme.files.radius = 22) that fills its window: clip the native blur to
+-- the same radius, or the blur shows past the corners (global rounding is 14). The Lua rule parser caps rounding at
+-- 20, so set_prop, as for the emulator skin above.
+local function roundFilesWindow(w)
+    if w and (w.class == "org.quickshell" or w.class == "quickshell") and w.title:match("^Archivos · ") then
+        hl.dispatch(hl.dsp.window.set_prop({ window = w, prop = "rounding", value = "22" }))
+    end
+end
+hl.on("window.open", roundFilesWindow)
+hl.on("window.title", roundFilesWindow)
+hl.on("config.reloaded", function()
+    for _, w in ipairs(hl.get_windows()) do roundFilesWindow(w) end
+end)
 -- /fase5d

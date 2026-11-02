@@ -833,7 +833,9 @@ Singleton {
         readonly property real rowIndent: 28
         readonly property real projectListHeight: 180
         readonly property real stateWidth: 110
-        readonly property color panel: root.alpha(root.bg, 0.94)
+        readonly property color panel: root.popoverBg
+        // In-window overlays must hide the content underneath; compositor blur only sees behind the window.
+        readonly property color overlay: root.bg
         readonly property color card: root.alpha(root.text, 0.045)
         readonly property color output: root.alpha(root.bg, 0.85)
         readonly property color selected: root.alpha(root.cyan, 0.06)
@@ -977,6 +979,11 @@ Singleton {
         readonly property real menuWidth: 220
         readonly property real menuRow: 28
         readonly property real promptWidth: 420
+        // selector mode (Dragon Portal: the explorer as another app's file dialog)
+        readonly property real pickerBar: 46
+        readonly property real pickerName: 240
+        readonly property real pickerFilter: 190
+        readonly property real pickerTitle: 24
         readonly property real scrollStep: 96
         // type
         readonly property real caption: 10
@@ -987,7 +994,7 @@ Singleton {
         readonly property real title: 14
         readonly property real icon: 15
         // colours
-        readonly property color panel: root.alpha(root.bg, 0.94)
+        readonly property color panel: root.popoverBg
         readonly property color sidebar: root.alpha(root.text, 0.02)
         readonly property color divider: root.alpha(root.text, 0.07)
         readonly property color card: root.alpha(root.text, 0.045)

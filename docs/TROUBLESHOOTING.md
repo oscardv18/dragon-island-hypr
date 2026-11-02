@@ -119,3 +119,18 @@ La llave SSH no está en tu cuenta de GitHub. Usa HTTPS: `gh auth setup-git` y `
 
 Es el comportamiento esperado cuando falta un requisito: el mensaje dice qué falta y el paso de `pre-instalation.md` que lo resuelve.
 Comprobación completa: `./doctor.sh --pre`. Con `--dry-run` el instalador muestra los fallos y continúa para enseñar el plan.
+
+## Brave o Telegram abren la ventana blanca de GTK (o ningún selector de archivos)
+
+Dragon Portal (`dragon-portal`, `docs/PORTAL-API.md`) hace que el explorador de Dragon sea el diálogo de archivos de otras apps.
+
+- **Sigue saliendo la ventana de GTK:** el backend aún no está registrado o `xdg-desktop-portal` no se reinició. Comprueba
+  `ls ~/.local/share/xdg-desktop-portal/portals/dragon.portal` y reinicia el portal: `systemctl --user restart xdg-desktop-portal`
+  (corta una captura de pantalla en curso) o cierra sesión. Si el archivo no existe, la migración 102 se saltó una condición:
+  `./update.sh` te dice cuál (falta `python-gobject`, falta `xdg-desktop-portal-gtk` o el servicio no arrancó en la prueba).
+- **Tarda unos segundos y sale GTK:** es el respaldo. El explorador no respondió en 10 s o dejó de contestar; `journalctl --user -b | grep "Dragon Portal"`
+  dice por qué. Quickshell tiene que estar en marcha y haber cargado la versión nueva (`qs ipc call picker has 00000000000000000000000000000000`
+  debe contestar `false`; si dice que no existe el objetivo `picker`, reinicia Quickshell).
+- **No sale ningún diálogo en ninguna app:** un backend registrado que no arranca retira el portal de archivos por completo (probado).
+  Desactívalo sin sudo: `scripts/portal-rollback.sh --restart` y avisa; mientras tanto vuelve el selector de GTK.
+- **Ver el servicio a mano:** `dragon-portal status` (peticiones pendientes) y `dragon-portal serve` en una terminal (se cierra solo a los 60 s sin peticiones).

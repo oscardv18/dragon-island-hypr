@@ -1,0 +1,4 @@
+Theme.qml
+modules/taller/ProjectPicker.qml
+modules/taller/PromptComposer.qml
+modules/taller/KanbanTab.qml

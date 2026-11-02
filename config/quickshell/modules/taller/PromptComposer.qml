@@ -18,7 +18,7 @@ Rectangle {
     signal closeRequested()
     function toneFor(t): color { const l = service?.colorLevel(t) ?? "ok"; return l === "ok" ? Theme.tokenOk : l === "warn" ? Theme.tokenWarn : Theme.tokenHigh; }
     radius: Theme.taller.radius
-    color: Theme.taller.panel
+    color: Theme.taller.overlay
     border.width: Theme.taller.buttonBorder
     border.color: Theme.taller.selectedBorder
     MouseArea { anchors.fill: parent; acceptedButtons: Qt.AllButtons }
