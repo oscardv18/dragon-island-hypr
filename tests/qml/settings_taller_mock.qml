@@ -37,7 +37,13 @@ Window {
             projects = projects.map(p => p.slug === slug ? Object.assign({}, p, fields) : p);
             cb({ ok: true, project: projects.find(p => p.slug === slug) });
         }
-        function exportContext(slug, cb) { console.log("CALL export", slug); cb({ ok: true, path: "/home/u/Devs/arxnet/.dragon/CONTEXT.md", bytes: 1843 }); }
+        property var exports: ({})
+        function exportContext(slug, cb) {
+            console.log("CALL export", slug);
+            const r = { ok: true, path: "/home/u/Devs/arxnet/.dragon/CONTEXT.md", bytes: 1843 };
+            const all = Object.assign({}, exports); all[slug] = { path: r.path, bytes: r.bytes, at: new Date() }; exports = all;
+            cb(r);
+        }
     }
     Rectangle { anchors.fill: parent; color: Theme.bg }
     Rectangle { anchors.fill: parent; color: Theme.popoverBg }

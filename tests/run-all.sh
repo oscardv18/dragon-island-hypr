@@ -92,6 +92,11 @@ step "Taller 5c: servicios Prompts/Gate y vistas con herramientas simuladas (HOM
 if python3 -m unittest discover -s tests/fase5c -v; then pass "pantallas y servicios de 5c"; else fail "pantallas y servicios de 5c"; fi
 # /fase5c: pantallas
 
+# fase5e: pulido
+step "Taller 5e: CONTEXT.md se exporta solo al cambiar de tarjeta (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/fase5e -v; then pass "exportación automática de contexto"; else fail "exportación automática de contexto"; fi
+# /fase5e: pulido
+
 # fase5a: shared secrets
 step "secretos compartidos"
 if python3 -m unittest discover -s tests/secrets -v; then pass "filtro compartido"; else fail "filtro compartido"; fi

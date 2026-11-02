@@ -1,0 +1,2 @@
+services/Mem.qml
+modules/settings/TallerSettingsPage.qml

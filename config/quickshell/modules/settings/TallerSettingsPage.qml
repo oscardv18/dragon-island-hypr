@@ -19,7 +19,7 @@ Column {
     readonly property var projects: mem?.projects ?? []
     property string notice: ""            // last result of a project write / export (shown under the group)
     property bool noticeError: false
-    property var exported: ({})           // slug → {path, bytes, at}
+    readonly property var exported: mem?.exports ?? ({})   // slug → {path, bytes, at}; Mem also exports on card changes
     spacing: Theme.spacingLg
 
     function kb(bytes): string { return bytes < 1024 ? `${bytes} B` : `${(bytes / 1024).toFixed(1).replace(".", ",")} KB`; }
@@ -46,7 +46,6 @@ Column {
     function exportNow(): void {
         const slug = project.slug;
         mem.exportContext(slug, r => {
-            if (r.ok) { const all = Object.assign({}, exported); all[slug] = { path: r.path, bytes: r.bytes, at: new Date() }; exported = all; }
             report(r, "");
         });
     }
