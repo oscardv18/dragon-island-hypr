@@ -14,6 +14,11 @@ Capsule {
     readonly property int unread: Notifs.unreadCount
     readonly property bool dnd: Toggles.dnd
     readonly property string countLabel: unread > Theme.barBellCountLimit ? `${Theme.barBellCountLimit}+` : `${unread}`
+    active: island.bar.isOpen("notifications")
+    onClicked: mouse => {
+        if (mouse.button === Qt.RightButton) Toggles.toggleDnd();
+        else if (mouse.button === Qt.LeftButton) island.openPopover("notifications", bell);
+    }
     Accessible.role: Accessible.Button
     Accessible.name: `${dnd ? "No molestar" : "Notificaciones"} · ${unread} sin leer`
 

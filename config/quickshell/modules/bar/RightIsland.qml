@@ -293,10 +293,7 @@ Rectangle {
                 radius: height / 2
                 padH: Theme.spacingSm
                 active: root.bar.isOpen("calendar")
-                onClicked: m => {
-                    if (m.button === Qt.RightButton) Notifs.toggleDnd();
-                    else root.openPopover("calendar", clockCap);
-                }
+                onClicked: root.openPopover("calendar", clockCap)
 
                 // Only updates remain here: unread and DND belong to the bell.
                 component Marker: Rectangle {
