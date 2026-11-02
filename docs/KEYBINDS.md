@@ -18,7 +18,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
 | `SUPER + SHIFT + A` | Referencia de herdr: atajos (los de fábrica y los que cambiaste), comandos de la CLI y estados de los agentes. Solo lectura |
 | `SUPER + A` | Agentes: va al siguiente bloqueado; si no hay, al siguiente listo sin ver |
-| `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
+| `SUPER + N` | Centro de notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
 | `Print` | Captura de la pantalla completa, directa: se copia y se guarda en Imágenes (aviso en la isla, sin popup) |
@@ -150,7 +150,8 @@ Por IPC: `qs ipc call wallpaper orbital | orbitalAt <x> <y> | toggle` (cuadrícu
 | Cápsulas contextuales (solo cuando aplican) | Micrófono / cámara / pantalla: lista de apps · grabación: parar · VPN: abre Proton VPN · auriculares: Bluetooth · cafeína y No molestar: alternar · actualizaciones: abre Ghostty con la actualización · red: Rendimiento | Las que no caben se agrupan en `+N` (ratón encima: despliega los iconos) |
 | Volumen (icono + barra) | Silenciar | Rueda: ±5 % · clic derecho: popover Sonido |
 | Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |
-| Reloj orbital (marcadores: No molestar · sin leer · actualizaciones) | Calendario, notificaciones y actualizaciones en un solo popover | Clic derecho: No molestar · ratón encima: la fecha |
+| Campana (contador de no leídas; tachada con No molestar) | Abre / cierra el centro de notificaciones | Clic derecho: alterna No molestar; el contador se mantiene |
+| Reloj orbital (marcador: actualizaciones) | Calendario; desde allí también se abre Notificaciones | Ratón encima: la fecha |
 | Reloj (cont.) | Calendario | Clic en un día: su agenda (khal) · rueda: cambiar de mes |
 | Popup de notificación | Acción por defecto (o cerrar el popup) | Central: descartar · pasar el ratón: no caduca |
 | Isla cerrada | Dashboard | Música: clic central = play/pausa |

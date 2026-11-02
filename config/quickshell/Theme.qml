@@ -201,7 +201,7 @@ Singleton {
     //   A notch     26 → 31      30 → 35            34 → 39     side islands at top 5, notch attached, as high as them
     //   B island    26 → 32      30 → 36            34 → 40     side islands and the floating notch pill at top 6
     //   C joined    24 → 24      28 → 28            32 → 32     one edge-to-edge strip, notch exactly as high, ears
-    //   D minimal   18 → 18      22 → 22            26 → 26     constellation pill + orbital clock at top 4; micro-island
+    //   D minimal   18 → 18      22 → 22            26 → 26     constellation pill + bell and orbital clock at top 4; micro-island
     //                                                           only with activity; touching the top edge shows style B
     //                                                           (barRevealed) without changing the reserved space
     property string barStyle: "B"
@@ -245,6 +245,13 @@ Singleton {
     readonly property real barSparkWidth:  38 + 4 * barStep
     readonly property real barSparkHeight: 12 + 2 * barStep
     readonly property real barVolumeWidth: 40 + 4 * barStep
+    // The bell reserves its maximum badge width, even with zero unread: no island/window resize.
+    readonly property real barBellBadgeWidth: 20
+    readonly property real barBellBadgeHeight: 12
+    readonly property real barBellBadgeFont: 9
+    readonly property real barBellBadgeInset: 0
+    readonly property real barBellContentWidth: iconSm + barBellBadgeWidth
+    readonly property int barBellCountLimit: 99
     readonly property real barOrbit:       14 + 2 * barStep
     readonly property real barDimOpacity: 0.35                     // barAutohide over a maximized window
     readonly property real barEdge: 3                              // D: hot zone at the top edge
