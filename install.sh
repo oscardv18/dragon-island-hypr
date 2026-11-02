@@ -17,6 +17,9 @@ MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
 ALL_MODULES=(core shell editor theme plugins login keyring keyboard boot extras)
 DEFAULT_MODULES=(core shell editor theme plugins keyboard)   # login, keyring, boot and extras touch /etc, /boot or install apps: opt-in
 
+CHECK_ONLY=false
+CHECK_JSON=false
+REQUESTED_PROFILES=""
 DRY_RUN=false
 ASSUME_YES=false
 NO_SUDO=false
@@ -40,6 +43,9 @@ Uso: $0 [OPCIONES]
 Instalador modular de dragon-island. Antes de ejecutarlo: pre-instalation.md (./doctor.sh --pre lo comprueba).
 
 OPCIONES:
+  --check              Preflight de solo lectura; salida 1 si hay bloqueos
+  --json               JSON de --check (esquema 1)
+  --profiles a,b       Perfiles para --check (manifiesto packages/profiles.json)
   --dry-run            Muestra el plan completo sin cambiar nada (no pide sudo, no escribe en tu HOME)
   --yes, -y            Modo desatendido: respuestas por defecto. Los pasos con sudo siguen mostrando qué hacen
   --modules a,b,c      Módulos a instalar: ${ALL_MODULES[*]}  (core siempre se incluye)
@@ -69,6 +75,10 @@ done
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --check)     CHECK_ONLY=true ;;
+        --json)      CHECK_JSON=true ;;
+        --profiles)  REQUESTED_PROFILES="${2:?--profiles necesita una lista}"; shift ;;
+        --profiles=*) REQUESTED_PROFILES="${1#*=}" ;;
         --dry-run)   DRY_RUN=true ;;
         --yes|-y)    ASSUME_YES=true ;;
         --no-sudo)   NO_SUDO=true ;;
@@ -86,6 +96,22 @@ while [[ $# -gt 0 ]]; do
     shift
 done
 export DRAGON_EXTRAS BOOTLOADER
+
+# Dispatch before state/logs, module sourcing or TUI: --check is strictly read-only.
+if $CHECK_ONLY; then
+    # shellcheck source=lib/preflight.sh
+    . "$REPO_DIR/lib/preflight.sh"
+    check_args=()
+    $CHECK_JSON && check_args+=(--json)
+    [[ -n "$REQUESTED_PROFILES" ]] && check_args+=(--profiles "$REQUESTED_PROFILES")
+    [[ -n "$REQUESTED_MODULES" ]] && check_args+=(--modules "$REQUESTED_MODULES")
+    preflight "${check_args[@]}"
+    exit $?
+fi
+if $CHECK_JSON || [[ -n "$REQUESTED_PROFILES" ]]; then
+    echo "--json y --profiles requieren --check; la aplicación por perfiles corresponde a I3." >&2
+    exit 2
+fi
 
 [[ -t 0 && -t 1 ]] || ASSUME_YES=true
 
