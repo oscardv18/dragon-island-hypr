@@ -1,0 +1,14 @@
+# Perfil archivos — nombres validados con pacman -Si, 2026-11-02.
+udisks2
+inotify-tools
+gvfs
+gvfs-smb
+gvfs-mtp
+gvfs-nfs
+7zip
+libvips
+imagemagick
+poppler
+smbclient
+avahi
+xdg-utils

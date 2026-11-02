@@ -6,6 +6,13 @@
 set -Eeuo pipefail
 REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
+# Focused checks for individual installer commits; the full suite runs once at closure.
+if [[ "${1:-}" == --only ]]; then
+  case "${2:-}" in
+    profiles|prereq|preflight) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -p "test_${2}.py" -v ;;
+    *) echo "Uso: $0 --only profiles|prereq|preflight" >&2; exit 2 ;;
+  esac
+fi
 fails=0
 step() { printf '\n== %s ==\n' "$1"; }
 pass() { echo "✔ $*"; }
