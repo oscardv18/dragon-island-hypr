@@ -550,7 +550,11 @@ class CancelCleanup(AuditBase):
             proc.stdout.readline()        # the first progress line comes before the temporary exists
             proc.terminate()
             proc.communicate(timeout=10)
-            self.assertEqual(list(dest.iterdir()), [], f'run {i}')
+            # Cancelled in time: nothing. Too late on a loaded machine: the complete copy. Never a partial temporary.
+            left = [x.name for x in dest.iterdir()]
+            self.assertIn(left, ([], ['grande.bin']), f'run {i}: {left}')
+            if left:
+                self.assertEqual((dest / 'grande.bin').read_bytes(), src.read_bytes())
 
     @unittest.skipUnless(SHM.is_dir() and os.access(SHM, os.W_OK), 'a second filesystem (/dev/shm) is needed')
     def test_cancel_overwrite_move_puts_destination_back(self):
