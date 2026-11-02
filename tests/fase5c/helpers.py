@@ -16,12 +16,14 @@ singleton Prompts 1.0 Prompts.qml
 singleton Gate 1.0 Gate.qml
 singleton Review 1.0 Review.qml
 singleton Tokens 1.0 Tokens.qml
+singleton Settings 1.0 Settings.qml
 '''
 BAD = ('ReferenceError', 'TypeError', 'Error loading configuration', 'is not a function', 'SyntaxError', 'Unable to assign', 'Cannot assign', 'is not defined')
 
 
-def run_shell(body, extra_qmldir='', fakes=('dragon-prompt', 'dragon-gate', 'dragon-tokens'), setup=None, timeout=40, env_extra=None):
-    """body: QML ShellRoot source. Returns (output, home path contents dict). setup(home, env) prepares files first."""
+def run_shell(body, extra_qmldir='', fakes=('dragon-prompt', 'dragon-gate', 'dragon-tokens'), setup=None, timeout=40, env_extra=None, collect=None):
+    """body: QML ShellRoot source. Returns (output, home path contents dict). setup(home, env) prepares files first;
+    collect(home) reads what the test needs before the temporary HOME is removed (data['collected'])."""
     with tempfile.TemporaryDirectory(prefix='d5c-') as tmp:
         home = Path(tmp); runtime = home / 'runtime'; runtime.mkdir(mode=0o700)
         cfg = home / 'shell'; shutil.copytree(ROOT / 'config/quickshell', cfg)
@@ -41,7 +43,8 @@ def run_shell(body, extra_qmldir='', fakes=('dragon-prompt', 'dragon-gate', 'dra
         sent = (home / 'prompt-sent.jsonl').read_text() if (home / 'prompt-sent.jsonl').exists() else ''
         herdr = (home / 'herdr-calls.jsonl').read_text() if (home / 'herdr-calls.jsonl').exists() else ''
         import json
-        return p.stdout + p.stderr, {'sent': sent, 'herdr': [json.loads(l) for l in herdr.splitlines()], 'home': tmp}
+        collected = collect(home) if collect else None
+        return p.stdout + p.stderr, {'sent': sent, 'herdr': [json.loads(l) for l in herdr.splitlines()], 'home': tmp, 'collected': collected}
 
 
 def git_repo(home, env, name='repo'):

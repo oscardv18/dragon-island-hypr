@@ -60,13 +60,18 @@
  *   - worldClocksText(): string (the same text form, for the Ajustes field)
  *   - setGlassStyle(style: string): void ("ahumado" | "clasico" | "liquido"; use Glass.setStyle from the UI)
  *   - setWindowFrame(mode: string): void ("escuadras" | "hilo" | "nada")
+ *   - promptHistory: bool [readonly] (dragon-prompt keeps the redacted text of what it sends in prompt_run.body; default
+ *       false: only tokens, date, target and hash. Read by dragon-prompt itself from this file)
+ *   - tokenWarnAt / tokenHighAt: int [readonly] (prompt counters: green < warnAt ≤ amber < highAt ≤ red; defaults
+ *       1500 / 3000, steps of tokenStep 250, highAt always ≥ warnAt + 250; Prompts binds to them)
+ *   - setTokenThresholds(warn: int, high: int): void (clamps and keeps the order; writes both keys at once)
  *   - page: string [readonly] (the Ajustes page to show next; set by the `page` IPC, read by SettingsPanel)
  *
  * IPC (`qs ipc call settings <fn>`): motion(scale: real), reducedMotion(on: bool), barStyle(s: string), cycleBarStyle(),
  *   barSize(s: string), accent(x: real), islandContent(s: string), metrics(on: bool), autohide(on: bool), wallpaperPalette(on: bool),
  *   paletteApplyExternal(on: bool), launcherGravity(on: bool), reduceMotion(on: bool), switcherOrbital(on: bool),
  *   glassStyle(s: string), windowFrame(s: string), page(p: string) (opens Ajustes on that page: appearance · bar ·
- *   launcher · privacy · power), current(): string (every setting, one per line)
+ *   launcher · privacy · power · taller), promptHistory(on: bool), current(): string (every setting, one per line)
  *
  * Appearance setters record old/new values through Mem.logChange (system_change), never on initial load.
  * shell.qml binds Theme.motionScale, Theme.barStyle, Theme.barSize and Theme.accentIntensity to these.
@@ -151,6 +156,21 @@ Singleton {
     readonly property var windowFrames: ["escuadras", "hilo", "nada"]
     readonly property string windowFrame: windowFrames.indexOf(root._data.windowFrame) >= 0 ? root._data.windowFrame : "escuadras"
     property string page: ""
+    // fase5c · Ajustes › Taller. promptHistory is the key dragon-prompt reads itself (only true keeps the redacted text
+    // in prompt_run.body); the token thresholds only colour the counters of the UI.
+    readonly property bool promptHistory: root._data.promptHistory === true
+    function _tokens(key: string, def: int): int { const v = Number(root._data[key]); return root._data[key] !== undefined && !isNaN(v) && v >= root.tokenStep ? Math.min(root.tokenMax, Math.round(v)) : def; }
+    readonly property int tokenStep: 250
+    readonly property int tokenMax: 20000
+    readonly property int tokenWarnAt: Math.min(root.tokenMax - root.tokenStep, _tokens("tokenWarnAt", 1500))
+    readonly property int tokenHighAt: Math.max(root.tokenWarnAt + root.tokenStep, _tokens("tokenHighAt", 3000))
+    function setTokenThresholds(warn: int, high: int): void {
+        const w = Math.max(root.tokenStep, Math.min(root.tokenMax - root.tokenStep, Math.round(warn)));
+        const h = Math.max(w + root.tokenStep, Math.min(root.tokenMax, Math.round(high)));
+        if (w === root.tokenWarnAt && h === root.tokenHighAt && root._data.tokenWarnAt !== undefined) return;
+        root._data = Object.assign({}, root._data, { tokenWarnAt: w, tokenHighAt: h });
+        _save();
+    }
     function setWindowFrame(mode: string): void { if (root.windowFrames.indexOf(mode) >= 0) _set("windowFrame", mode); }
 
     FileView {
@@ -268,12 +288,14 @@ Singleton {
         function switcherOrbital(on: bool): void { root.setFlag("switcherOrbital", on); }
         function glassStyle(s: string): void { root.setGlassStyle(s); }
         function windowFrame(s: string): void { root.setWindowFrame(s); }
+        function promptHistory(on: bool): void { root.setFlag("promptHistory", on); }
         function page(p: string): void { root.page = ""; root.page = p; ShellState.open("settings"); }
         function current(): string {
             return [`motionScale=${root.motionScale} (${root.source})`, `barStyle=${root.barStyle}`, `barSize=${root.barSize}`, `islandContent=${root.islandContent}`,
                     `barMetrics=${root.barMetrics}`, `barAutohide=${root.barAutohide}`, `accentIntensity=${root.accentIntensity}`,
                     `wallpaperPalette=${root.wallpaperPalette}`, `paletteApplyExternal=${root.paletteApplyExternal}`, `longCommandSeconds=${root.longCommandSeconds}`, `recordingMode=${root.recordingMode}`,
-                    `launcherGravity=${root.launcherGravity}`, `reduceMotion=${root.reduceMotion}`, `switcherOrbital=${root.switcherOrbital}`, `glassStyle=${root.glassStyle}`, `windowFrame=${root.windowFrame}`].join("\n");
+                    `launcherGravity=${root.launcherGravity}`, `reduceMotion=${root.reduceMotion}`, `switcherOrbital=${root.switcherOrbital}`, `glassStyle=${root.glassStyle}`, `windowFrame=${root.windowFrame}`,
+                    `promptHistory=${root.promptHistory}`, `tokenWarnAt=${root.tokenWarnAt}`, `tokenHighAt=${root.tokenHighAt}`].join("\n");
         }
     }
 }

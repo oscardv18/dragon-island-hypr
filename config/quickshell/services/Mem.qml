@@ -6,6 +6,9 @@
 // when `card list` lacks criteria_total, one `card show` per card) · loadDetails(key) · addCard(title,kind,callback) ·
 // moveCard(key,col,force,callback) (error wip_limit_reached is returned, never forced silently) · toggleCriterion(key,id) ·
 // addCriterion(key,text) · setCard(key,fields,callback) · cardByKey(key).
+// fase5c (Ajustes › Taller): setProject(slug,{wip_limit,test_cmd},callback) (`project set`; the row in `projects` is
+// updated in place) · exportContext(slug,callback) (`export`: {path, bytes}, < 4 KB in <repo>/.dragon/CONTEXT.md).
+// Both report errors only to their callback, never to status (a refused value must not blank the Taller).
 pragma Singleton
 import Quickshell
 import Quickshell.Io
@@ -52,8 +55,8 @@ Singleton {
             onExited: (code, exitStatus) => { proc.exitCode = code; proc.ended = true; proc.finish(); }
         }
     }
-    function call(args, callback): void {
-        const p = requestComponent.createObject(root, { callback: callback ?? null });
+    function call(args, callback, quiet): void {
+        const p = requestComponent.createObject(root, { callback: callback ?? null, reportStatus: !quiet });
         p.exec(["sh", "-c", 'if [ -x "$0" ]; then exec "$0" "$@"; else exit 127; fi', root.tool].concat(args).concat(["--json"]));
     }
     function callHerdr(args, callback): void {
@@ -129,6 +132,16 @@ Singleton {
         if (prefix) args.push("--prefix", prefix);
         call(args, r => { if (r.ok) { selectedSlug = r.project.slug; refresh(); changed(); } if (callback) callback(r); });
     }
+    function setProject(slug, fields, callback): void {
+        if (!slug) return;
+        const args = ["project", "set", slug];
+        for (const k in fields) args.push("--" + k.replace(/_/g, "-"), String(fields[k]));
+        call(args, r => {
+            if (r.ok && r.project) { projects = projects.map(p => p.slug === slug ? Object.assign({}, p, r.project) : p); changed(); }
+            if (callback) callback(r);
+        }, true);
+    }
+    function exportContext(slug, callback): void { if (slug) call(["export", "--project", slug], r => { if (callback) callback(r); }, true); }
     function logChange(key, oldValue, newValue, source): void {
         if (JSON.stringify(oldValue) === JSON.stringify(newValue)) return;
         call(["system", "log", "add", "--key", key, "--old", JSON.stringify(oldValue), "--new", JSON.stringify(newValue), "--source", source || "settings"], r => { if (r.ok) changed(); });

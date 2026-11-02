@@ -12,7 +12,7 @@
  *   - redactions: int — secrets struck out in the enabled blocks · building, sending: bool
  *   - target: "herdr:<id>" | "clipboard" | "start:claude" | "start:codex" · targets: [{id, label, enabled}]
  *   - startWarning / startKind / startStep — «Iniciar»: WIP warning waiting for confirmation, chosen agent, step on screen
- *   - warnAt / highAt: token thresholds (green < warnAt ≤ amber < highAt ≤ red); level: ligero|medio|pesado
+ *   - warnAt / highAt [readonly, Settings.tokenWarnAt / tokenHighAt]: token thresholds (green < warnAt ≤ amber < highAt ≤ red); level: ligero|medio|pesado
  * Functions:
  *   - open(opts {template, card, blocks, target, mode, selection}) · close() · refreshTemplates()
  *   - setTemplate(id) · toggleBlock(id) · addBlock("tipo:arg") · removeBlock(index) · rebuild()
@@ -50,8 +50,8 @@ Singleton {
     property string startWarning: ""
     property string startKind: "claude"
     property string startStep: ""
-    property int warnAt: 1500
-    property int highAt: 3000
+    readonly property int warnAt: Settings.tokenWarnAt     // Ajustes › Taller (default 1 500 / 3 000)
+    readonly property int highAt: Settings.tokenHighAt
     property int _generation: 0
     readonly property int redactions: (result.blocks ?? []).filter(b => b.enabled !== false).reduce((n, b) => n + (b.redactions ?? 0), 0)
     readonly property string level: levelFor(result.tokens ?? 0)
@@ -80,6 +80,10 @@ Singleton {
 
     function levelFor(tokens): string { return tokens < warnAt ? "ligero" : tokens < highAt ? "medio" : "pesado"; }
     function colorLevel(tokens): string { return tokens < warnAt ? "ok" : tokens < highAt ? "warn" : "high"; }
+    // project, card and template of a delivery, so its prompt_run is attributed (the CLI keeps no state from `build`)
+    function attribution(key): var {
+        return (project ? ["--project", project] : []).concat(key ? ["--card", key] : []).concat(template ? ["--template", template] : []);
+    }
     function argv(args): var { return ["sh", "-c", 'if [ -x "$0" ]; then exec "$0" "$@"; else exit 127; fi', tool].concat(args).concat(["--json"]); }
     Component { id: request; ToolRequest {} }
     Component { id: stdinRequest; StdinRequest {} }
@@ -156,7 +160,7 @@ Singleton {
             sent(destination, key, snapshot);
             if (after) after();
         } });
-        p.exec(argv(["send", "--target", destination, "--stdin"]));
+        p.exec(argv(["send", "--target", destination, "--stdin"].concat(attribution(key))));
     }
     function send(): void { _deliver(target, () => close()); }
     function copy(): void { _deliver("clipboard", null); }
@@ -199,7 +203,7 @@ Singleton {
             _tool("dragon-herdr", ["start", "--cwd", worktree, "--kind", kind, "--name", key], h => {
                 if (!h.ok) return _stop("Agente", h);
                 startStep = "Enviando el prompt…";
-                _tool("dragon-prompt", ["send", "--target", "herdr:" + h.id, "--stdin"], s => {
+                _tool("dragon-prompt", ["send", "--target", "herdr:" + h.id, "--stdin"].concat(attribution(key)), s => {
                     Mem.setCard(key, { branch: branch, worktree: worktree, agent_ref: h.id }, () => Mem.moveCard(key, "doing", true, () => {
                         sending = false; startStep = "";
                         if (!s.ok) { actionError = "El agente arrancó, pero el prompt no se pudo enviar: " + (s.error?.message ?? "error") + ". Usa «Copiar»."; return; }
