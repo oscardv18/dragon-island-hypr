@@ -389,3 +389,39 @@ class EventDrivenWatch(AuditBase):
         self.run_for(['devices', '--watch'], env, 4.0)
         n = len(calls.read_text().splitlines()) if calls.exists() else 0
         self.assertLessEqual(n, 2, f'lsblk ran {n} times in 4 s with udev alive')
+
+
+class OddNames(AuditBase):
+    """Hallazgo 9: names starting with '-' (rejected by argparse) and names with line breaks."""
+
+    def test_rename_and_mkdir_to_dash_names(self):
+        f = self.home / 'nota.txt'; f.write_text('x')
+        self.cli_ok('op', 'rename', str(f), '--name', '-borrador.txt')
+        self.assertTrue((self.home / '-borrador.txt').exists())
+        self.cli_ok('op', 'mkdir', str(self.home), '--name', '--raro')
+        self.assertTrue((self.home / '--raro').is_dir())
+
+    def test_dash_value_never_eats_a_real_option(self):
+        f = self.home / 'nota.txt'; f.write_text('x')
+        self.cli_error('op', 'rename', str(f), '--name', code='invalid_usage')   # `--json` follows: still an option
+
+    def test_line_breaks_round_trip(self):
+        f = self.home / 'a'; f.write_text('x')
+        weird = 'línea 1\nlínea 2'
+        self.cli_ok('op', 'rename', str(f), '--name', weird)
+        listing = self.cli_ok('ls', str(self.home))
+        self.assertIn(weird, [e['name'] for e in listing['entries']])
+        dest = self.home / 'dest'; dest.mkdir()
+        self.cli_ok('op', 'copy', str(self.home / weird), '--dest', str(dest), '--json-progress')
+        self.cli_ok('op', 'trash', str(dest / weird))
+        listing = self.cli_ok('ls', 'trash:///')
+        self.cli_ok('trash', 'restore', listing['entries'][0]['uri'])
+        self.assertTrue((dest / weird).exists())
+
+    def test_dash_paths_after_double_dash(self):
+        (self.home / '-x').write_text('x')
+        dest = self.home / 'dest'; dest.mkdir()
+        p = subprocess.run([str(BIN), 'op', 'copy', '--dest', str(dest), '--json', '--', str(self.home / '-x')],
+                           env=self.env, capture_output=True, text=True, timeout=15)
+        self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertTrue((dest / '-x').exists())

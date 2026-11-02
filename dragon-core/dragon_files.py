@@ -2480,9 +2480,38 @@ def build_parser():
     return parser
 
 
+_FREE_TEXT_OPTIONS = ('--name', '--label', '--dest', '--out', '--path', '--user', '--app')
+
+
+def _option_strings(parser):
+    import argparse
+    found = set()
+    for action in parser._actions:
+        found.update(action.option_strings)
+        if isinstance(action, argparse._SubParsersAction):
+            for child in action.choices.values():
+                found |= _option_strings(child)
+    return found
+
+
+def join_free_text(argv, known):
+    """`--name -borrador` → `--name=-borrador` (audit 5d): argparse took a value starting with '-' for an option,
+    so a file could not be renamed to (or created as) a name beginning with a dash. Real options stay as they are."""
+    out, i = [], 0
+    while i < len(argv):
+        tok = argv[i]
+        if tok in _FREE_TEXT_OPTIONS and i + 1 < len(argv) and argv[i + 1].startswith('-') and argv[i + 1] not in known:
+            out.append(f'{tok}={argv[i + 1]}')
+            i += 2
+            continue
+        out.append(tok)
+        i += 1
+    return out
+
+
 def main():
     parser = build_parser()
-    args = parser.parse_args()
+    args = parser.parse_args(join_free_text(sys.argv[1:], _option_strings(parser)))
     if args.browse is not None or args.set_default or args.restore_default:
         if args.cmd:
             raise ToolError('invalid_usage', 'No combines una acción de escritorio con un subcomando.')
