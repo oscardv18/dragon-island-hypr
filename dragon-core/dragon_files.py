@@ -226,6 +226,24 @@ def trash_root():
     return data_home / 'Trash'
 
 
+def trash_item_name(raw):
+    """The single file name inside Trash/files that a trash:/// URI (or a bare name) refers to.
+
+    The name is percent-decoded once and must stay one path component: no '/', no NUL, not '', '.' or '..'.
+    Anything else would reach outside the trash (audit 5d: `trash:///..%2F..%2Fx` deleted or restored any file).
+    """
+    import urllib.parse
+    text = str(raw or '')
+    if text.startswith('trash:'):
+        name = urllib.parse.unquote(text[len('trash:'):].lstrip('/'))
+    else:
+        name = os.path.basename(text)
+    if not name or name in ('.', '..') or '/' in name or '\0' in name:
+        raise ToolError('invalid_trash_item', f'Elemento de la papelera no válido: «{raw}».',
+                        'Usa la URI trash:/// que devuelve el listado de la papelera.')
+    return name
+
+
 def parse_trashinfo(info_file):
     import datetime
     import urllib.parse
@@ -1562,10 +1580,12 @@ def cmd_op(args):
             raise ToolError('confirm_required', 'El borrado permanente exige --confirm.', 'Confirma la operación con --confirm.')
         count = len(args.paths)
         troot = trash_root()
+        for raw in args.paths:   # validate every name before deleting the first one
+            if raw.startswith('trash:'):
+                trash_item_name(raw)
         for idx, raw in enumerate(args.paths, 1):
             if raw.startswith('trash:'):
-                import urllib.parse
-                tname = urllib.parse.unquote(raw.split('trash:///', 1)[-1].lstrip('/'))
+                tname = trash_item_name(raw)
                 tfile = troot / 'files' / tname
                 tinfo = troot / 'info' / f'{tname}.trashinfo'
                 if os.path.lexists(tfile):
@@ -1685,11 +1705,10 @@ def cmd_trash(args):
     policy = {'mode': args.conflict, 'apply_all': args.conflict != 'ask'}
     moved = []
     count = len(args.uris)
+    for raw_uri in args.uris:   # validate every name before restoring the first one
+        trash_item_name(raw_uri)
     for idx, raw_uri in enumerate(args.uris, 1):
-        if raw_uri.startswith('trash:'):
-            name = urllib.parse.unquote(raw_uri.split('trash:///', 1)[-1].lstrip('/'))
-        else:
-            name = os.path.basename(raw_uri)
+        name = trash_item_name(raw_uri)
         src_file = files_dir / name
         info_file = info_dir / f'{name}.trashinfo'
         if not os.path.lexists(src_file):
