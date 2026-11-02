@@ -80,7 +80,10 @@ Singleton {
     Process {
         id: ueventMonitor
         running: root.available
-        command: ["sh", "-c", "command -v udevadm >/dev/null || exit 127; exec udevadm monitor --kernel --subsystem-match=backlight"]
+        // setpriv --pdeathsig: if Quickshell dies abruptly (SIGKILL, a crash, the session closing without `qs kill`) the
+        // monitor dies with it instead of staying orphaned until the next backlight change (it only notices on write)
+        command: ["sh", "-c", "command -v udevadm >/dev/null || exit 127; m='udevadm monitor --kernel --subsystem-match=backlight'; "
+                  + "if command -v setpriv >/dev/null; then exec setpriv --pdeathsig TERM $m; fi; exec $m"]
         stdout: SplitParser {
             onRead: line => {
                 if (line.startsWith("monitor will print")) root.eventsLive = true;
