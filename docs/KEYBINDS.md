@@ -236,6 +236,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Portapapeles anterior (Gravedad apagado) | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
 | Taller (`SUPER + T`) | `Ctrl+Tab` / `Ctrl+Shift+Tab` cambia de pestaña · `↑ ↓` elige agente · `Tab` recorre controles · `Enter` enfoca al agente o activa un control · Git: `Espacio` sobre una casilla prepara/quita del índice; `Enter` en un chip elige el tipo de commit · Kanban: flechas eligen tarjeta, `Shift+←/→` la mueve de columna (con WIP lleno pide confirmar), `Espacio` en una casilla marca el criterio; también se arrastra con el ratón · Revisión: `Espacio` en la casilla marca el archivo como visto; clic en el margen abre el comentario (`Enter` guarda, `Esc` cancela) · `P` abre el compositor de prompts (`Enter`/`Espacio` en un bloque lo quita o lo pone) · `Esc` cierra el compositor y, si no está abierto, el Taller |
+| Selector de archivos de otras apps (Dragon Portal) | `Enter` acepta · `Esc` cancela (primero borra la búsqueda) · clic elige solo lo que la app pide (un archivo salvo que permita varios; carpetas en el modo carpeta) · `Ctrl+Shift+N` carpeta nueva · filtro y opciones en los botones junto a «Cancelar» · no se puede copiar, mover, renombrar ni borrar desde aquí |
 | Cualquier panel | `Esc` cierra |
 
 ## IPC (para scripts y atajos propios)
@@ -418,3 +419,14 @@ La conexión «Enviar al agente» al compositor corresponde al tramo 5c; el bot�
 permanece deshabilitado hasta que ese servicio esté conectado. No se envían rutas
 ni prompts automáticamente. La migración 080 aporta las reglas de ventana y la
 075 el atajo SUPER+E; hay que integrar ambas ramas antes de activar el explorador.
+
+### Selector de archivos de otras apps (Dragon Portal) · fase 6
+
+Cuando Brave, Telegram u otra aplicación pide un archivo, el explorador se abre en **modo selector** (ventana «Archivos · <título de la app>»):
+
+| Teclas | Acción |
+|---|---|
+| Intro | Aceptar (en una carpeta, entrar; en modo carpeta, elegir la marcada o la actual) |
+| Esc | Cancelar (si hay búsqueda, la borra primero) |
+| Ctrl+Shift+N | Carpeta nueva |
+| Ctrl+H | Mostrar ocultos |

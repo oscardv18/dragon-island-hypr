@@ -48,7 +48,7 @@ default=hyprland;gtk
 org.freedesktop.impl.portal.Secret=gnome-keyring
 ```
 
-Hay que añadir `org.freedesktop.impl.portal.FileChooser=dragon;gtk`. Orden de búsqueda de los `*portals.conf`:
+Hay que añadir `org.freedesktop.impl.portal.FileChooser=dragon;gtk`. Probado: si ese nombre **no** tiene `.portal` instalado, `xdg-desktop-portal` lo salta y usa `gtk` (la llamada llegó al backend GTK), así que la línea es inocua hasta que se registre el backend; `UseIn=Hyprland` del `.portal` además avisa «deprecated UseIn key» (solo un aviso). Orden de búsqueda de los `*portals.conf`:
 `$XDG_CONFIG_HOME`, `$XDG_CONFIG_DIRS`, `/etc`, `$XDG_DATA_HOME`, `$XDG_DATA_DIRS`, `/usr/share`.
 
 > **Importante:** la lista `dragon;gtk` solo decide **qué backend se carga**. Si `dragon` está instalado, `xdg-desktop-portal`
@@ -136,6 +136,19 @@ OpenFile('/org/freedesktop/portal/desktop/request/1_9/t', '', '', 'Titulo', {'mu
 Para ver el `Response` hay que suscribirse **antes** (`gdbus monitor --session --dest org.freedesktop.portal.Desktop`) o usar un cliente
 que lo espere; las pruebas de `tests/portal/` lo hacen con Gio (`signal_subscribe`). La ruta de la petición lleva el nombre único del
 llamante (`1_9`) y el `handle_token` (`t`, o el que se pase en `options`).
+
+**La respuesta no se ve con `gdbus call` ni con `gdbus monitor`** (probado): `Request.Response` se envía **solo al que llamó**; `gdbus call`
+sale en cuanto recibe la ruta y la señal se pierde, y un monitor ajeno no la ve (ni `dbus-monitor`/`busctl monitor` con la salida a un
+archivo sin `stdbuf -oL`). Para probar sin interfaz hay que dejar vivo al llamante y escuchar su señal: es lo que hace
+`tests/portal/harness.py` y un cliente de unas 15 líneas con Gio (`bus.signal_subscribe(... 'Response', path ...)` +
+`GLib.Variant.parse(GLib.VariantType('(ssa{sv})'), "('', 'Título', {'multiple': <true>})")`, la misma sintaxis de texto que `gdbus`).
+
+Detalles de sintaxis comprobados:
+
+- los tipos del filtro son `u`: en texto GVariant hay que escribir `(uint32 1, 'image/*')`; con `(1, …)` el portal responde
+  `Expected type 'a(sa(us))' for option 'filters', got 'a(sa(is))'`;
+- `current_folder` es `ay`: `<b'/ruta'>` sirve (el servicio tolera que falte el NUL final);
+- `xdg-desktop-portal` valida por su cuenta los nombres de `SaveFiles`: rechaza `../x` o `a/b` con `invalid filename` antes de llegar al backend.
 
 Opciones útiles para `gdbus`: `a{sv}` se escribe `"{'directory': <true>, 'filters': <[('Imágenes', [(1, 'image/*')])]>}"`.
 `current_folder` es `ay` terminado en NUL: `<b'/tmp\x00'>`.

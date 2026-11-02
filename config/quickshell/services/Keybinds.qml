@@ -113,6 +113,13 @@ Singleton {
             { text: "Menú del elemento · recargar", combos: [["Menú"], ["F5"]] }
         ] },
         // /fase5d: Files
+        // fase6: Dragon Portal — the explorer as another app's file dialog
+        { name: "Selector de archivos de otras apps (dentro)", rows: [
+            { text: "Aceptar · cancelar", combos: [["Enter"], ["Esc"]] },
+            { text: "Elegir (según lo que pide la app) · carpeta nueva", combos: [["clic"], ["Ctrl", "Shift", "N"]] },
+            { text: "Filtro y opciones: botones junto a Cancelar", combos: [["clic"]] }
+        ] },
+        // /fase6
         { name: "Taller (dentro)", rows: [
             { text: "Elegir agente · ir al panel", combos: [["↑"], ["↓"], ["Enter"]] },
             { text: "Cambiar de pestaña", combos: [["Ctrl", "Tab"], ["Ctrl", "Shift", "Tab"]] },
