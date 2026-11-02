@@ -9,6 +9,12 @@ ROOT = Path(__file__).resolve().parents[2]
 
 class OverlayMigration(unittest.TestCase):
     def test_copy_dry_run_backup_and_idempotence(self):
+        self.check_migration("093-taller-overlays", "093-taller-overlays-files.txt")
+
+    def test_main_panel_glass_migration(self):
+        self.check_migration("094-panel-glass", "094-panel-glass-files.txt")
+
+    def check_migration(self, migration, manifest):
         with tempfile.TemporaryDirectory() as tmp:
             home = Path(tmp)
             cfg = home / "config/quickshell"
@@ -21,14 +27,14 @@ class OverlayMigration(unittest.TestCase):
                 return {str(p.relative_to(home)): p.read_bytes()
                         for p in home.rglob("*") if p.is_file()}
             def run(dry):
-                result = subprocess.run(["bash", str(ROOT / "migrations/093-taller-overlays.sh")],
+                result = subprocess.run(["bash", str(ROOT / "migrations" / (migration + ".sh"))],
                                         env=dict(env, DRY_RUN=dry), capture_output=True, text=True)
                 self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
             before = snapshot()
             run("true")
             self.assertEqual(before, snapshot())
             run("false")
-            files = (ROOT / "migrations/093-taller-overlays-files.txt").read_text().splitlines()
+            files = (ROOT / "migrations" / manifest).read_text().splitlines()
             for rel in files:
                 self.assertEqual((cfg / rel).read_bytes(), (ROOT / "config/quickshell" / rel).read_bytes())
             self.assertTrue(any(p.read_bytes() == b"old theme" for p in (home / "backup").rglob("*") if p.is_file()))

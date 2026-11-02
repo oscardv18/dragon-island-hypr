@@ -1059,3 +1059,19 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
   No se verificó el resultado en una captura de la sesión real. Al abrir el selector,
   los proyectos deben verse sobre un fondo oscuro sólido, sin pestañas ni agentes
   atravesándolo; igual para el compositor y los formularios de Kanban.
+
+## Corrección: cristal del Taller y del explorador (2026-11-02)
+
+- `Theme.taller.panel` y `Theme.files.panel` usan ahora `Theme.popoverBg`, el
+  material común de cristal: ahumado, clásico o líquido según Ajustes. El fondo
+  anterior al 94 % ocultaba casi todo el desenfoque. Los menús internos conservan
+  su fondo opaco para tapar las filas de su propia ventana.
+- Sesión real consultada: blur nativo activo, estilo ahumado, sin configerrors.
+- Migración **094** renueva Theme en instalaciones copiadas, con los mismos
+  respaldos, idempotencia y DRY_RUN / ASSUME_YES que 093.
+- Debe verse el escritorio desenfocado a través del Taller y del explorador;
+  los menús de proyectos deben seguir legibles sin texto atravesándolos.
+- Verificado: 12 pruebas de vistas/servicios (Taller y explorador), migración
+  094 en HOME temporal con respaldo, simulación y repetición, shellcheck y diff.
+  La captura inmediata tras abrir no mostró el Taller; blur visual en sesión
+  real todavía pendiente de confirmar.
