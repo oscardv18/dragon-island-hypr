@@ -59,6 +59,7 @@ El instalador es **modular**; en el menú eliges qué instalar (`core` es obliga
 | `theme` | Fuentes (Outfit, JetBrains Mono Nerd), iconos Candy + Sweet Folders, tema Qt/GTK, fondos | sí |
 | `plugins` | hyprfocus y hyprglass con `hyprpm` (en primer plano, pide sudo) | sí |
 | `keyboard` | Distribuciones `us,latam` (us siempre primera) | sí |
+| `boot` | Tema del gestor de arranque (Limine / GRUB), `docs/BOOT.md` | no (toca /boot) |
 | `login` | Tema de login dragon-core para SDDM (opt-in; no toca Plasma Login Manager) | no |
 | `keyring` | gnome-keyring como único llavero, con el cambio de PAM mostrado como diff | no |
 | `extras` | Brave, Proton VPN, herdr, «Mis apps» | no |
@@ -273,7 +274,7 @@ Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo s
 pre-instalation.md      lo que hay que hacer ANTES del instalador (12 pasos)
 install.sh update.sh uninstall.sh doctor.sh bootstrap.sh
 lib/                    funciones comunes: log, gum, detect (distro / GPU / versiones), checks (comprobación → paso de pre-instalation.md), backup, marcadores
-modules/                core shell theme plugins login keyring keyboard extras  (desc / sudo / check / plan / apply / revert)
+modules/                core shell theme plugins login keyring keyboard boot extras  (desc / sudo / check / plan / apply / revert)
 packages/               base, pacman-*, aur-*, extras (+ user-*.txt: «Mis apps» de la Tienda)
 config/                 hypr/ quickshell/ ghostty/ kitty/ starship/ zsh/ herdr/ gtk-*/ … (lo que se enlaza a ~/.config)
 config/quickshell/      shell.qml, Theme.qml, services/, components/, modules/ (bar, island, popovers, launcher, lock, …)

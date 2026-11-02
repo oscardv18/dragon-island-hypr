@@ -2,7 +2,7 @@
 # =============================================================================
 # dragon-island — modular installer (gum TUI). Arch / EndeavourOS / CachyOS.
 # Requirements BEFORE running it: pre-instalation.md (check them with ./doctor.sh --pre).
-# Modules: core (mandatory) shell theme plugins login keyring keyboard extras — see docs/INSTALL.md.
+# Modules: core (mandatory) shell theme plugins login keyring keyboard boot extras — see docs/INSTALL.md.
 # =============================================================================
 set -Eeuo pipefail
 shopt -s nullglob
@@ -14,14 +14,16 @@ LOG="$STATE_DIR/install.log"
 BACKUP_DIR="$STATE_DIR/backups/$(date +%Y%m%d-%H%M%S)"
 MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
 
-ALL_MODULES=(core shell theme plugins login keyring keyboard extras)
-DEFAULT_MODULES=(core shell theme plugins keyboard)   # login, keyring and extras touch /etc or install apps: opt-in
+ALL_MODULES=(core shell theme plugins login keyring keyboard boot extras)
+DEFAULT_MODULES=(core shell theme plugins keyboard)   # login, keyring, boot and extras touch /etc, /boot or install apps: opt-in
 
 DRY_RUN=false
 ASSUME_YES=false
 NO_SUDO=false
 LINK_MODE="symlink"
 REQUESTED_MODULES=""
+BOOTLOADER="auto"
+BOOT_REVERT=false
 export DRAGON_EXTRAS="${DRAGON_EXTRAS:-}"
 
 # Gum styling (Sweet / Garuda Dragonized palette)
@@ -42,6 +44,8 @@ OPCIONES:
   --yes, -y            Modo desatendido: respuestas por defecto. Los pasos con sudo siguen mostrando qué hacen
   --modules a,b,c      Módulos a instalar: ${ALL_MODULES[*]}  (core siempre se incluye)
   --extras a,b         Extras sin preguntar: brave,protonvpn,herdr,myapps
+  --bootloader B       Módulo boot: grub | limine | auto (por defecto detecta el que esté en uso)
+  --revert-boot        Quita el tema de arranque (módulo boot) y vuelve a la configuración anterior
   --no-sudo            Omite todo paso que necesite sudo (imprime el comando para hacerlo a mano)
   --copy               Copia los archivos en vez de enlazarlos (por defecto: symlink al repo)
   --update             Equivale a ./update.sh
@@ -68,6 +72,9 @@ while [[ $# -gt 0 ]]; do
         --dry-run)   DRY_RUN=true ;;
         --yes|-y)    ASSUME_YES=true ;;
         --no-sudo)   NO_SUDO=true ;;
+        --bootloader)   BOOTLOADER="${2:?--bootloader necesita grub, limine o auto}"; shift ;;
+        --bootloader=*) BOOTLOADER="${1#*=}" ;;
+        --revert-boot)  BOOT_REVERT=true ;;
         --copy)      LINK_MODE="copy" ;;
         --modules)   REQUESTED_MODULES="${2:?--modules necesita una lista (a,b,c)}"; shift ;;
         --modules=*) REQUESTED_MODULES="${1#*=}" ;;
@@ -78,7 +85,7 @@ while [[ $# -gt 0 ]]; do
     esac
     shift
 done
-export DRAGON_EXTRAS
+export DRAGON_EXTRAS BOOTLOADER
 
 [[ -t 0 && -t 1 ]] || ASSUME_YES=true
 
@@ -101,6 +108,9 @@ for m in "$REPO_DIR"/modules/*.sh; do
     # shellcheck source=/dev/null
     . "$m"
 done
+
+# the boot theme can be taken off on its own (it never needs the rest of the installer)
+if $BOOT_REVERT; then boot_revert_all; exit $?; fi
 
 # --dry-run without gum: nothing can be prompted
 if $DRY_RUN && ! has_gum; then ASSUME_YES=true; fi

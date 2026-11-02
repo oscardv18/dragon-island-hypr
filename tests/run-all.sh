@@ -128,6 +128,11 @@ step "explorador: vistas con datos de muestra y servicios con dragon-files simul
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files_ui -v; then pass "explorador (interfaz)"; else fail "explorador (interfaz)"; fi
 # /fase5d: files UI
 
+# fase boot: theme
+step "tema de arranque: Limine y GRUB en una ESP / raíz falsas, regeneración simulada, gancho, módulo y migraciones 160-161 (sin tocar /boot)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -W ignore -m unittest discover -s tests/boot -v; then pass "tema de arranque"; else fail "tema de arranque"; fi
+# /fase boot: theme
+
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
 
