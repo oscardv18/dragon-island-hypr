@@ -72,6 +72,11 @@ step "consumo diario con registros sintéticos (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/tokens -v; then pass "dragon-tokens"; else fail "dragon-tokens"; fi
 # /fase5c: tools
 
+# fase5c: adjustments
+step "ajustes de 5c: migración de pantallas y aislamiento de dry-run"
+if python3 -m unittest discover -s tests/fase5c_ajustes -v; then pass "ajustes de 5c"; else fail "ajustes de 5c"; fi
+# /fase5c: adjustments
+
 # fase5b: engines
 step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
@@ -126,15 +131,8 @@ if scripts/sync-shared.sh --check; then pass "NeuralCore/CoreIcon idénticos en 
 step "idempotencia en un \$HOME temporal"
 if tests/idempotency.sh; then pass "idempotente"; else fail "idempotency.sh falló"; fi
 
-step "install.sh --dry-run no deja rastro"
-before="$(git status --porcelain)"
-marker="$(mktemp)"
-sleep 1
-if ./install.sh --dry-run --yes --modules core,shell,theme,plugins,keyboard,extras,keyring,login --extras brave,protonvpn,herdr >/dev/null 2>&1; then pass "el dry-run completo termina bien"; else fail "el dry-run falló"; fi
-after="$(git status --porcelain)"
-touched="$(find "$HOME/.config/hypr" "$HOME/.config/dragon-island" "$HOME/.local/state/dragon-island" "$HOME/.zshrc" "$HOME/.config/gtk-3.0" "$HOME/.config/gtk-4.0" -newer "$marker" -type f 2>/dev/null | grep -v '\.log$\|launcher.json\|dock.json\|wallpaper.json\|pkg-status.json\|pkg.log' || true)"
-rm -f "$marker"
-if [[ "$before" == "$after" && -z "$touched" ]]; then pass "git status idéntico y ningún archivo de configuración tocado"; else fail "el dry-run dejó rastro: ${touched:-$(diff <(echo "$before") <(echo "$after"))}"; fi
+step "install.sh --dry-run no deja rastro (HOME/XDG temporales)"
+if python3 tests/install-dry-run.py; then pass "instalador sin escrituras en HOME/XDG ni cambios en git"; else fail "el dry-run dejó rastro o falló"; fi
 
 echo
 if ((fails == 0)); then echo "TODO EN VERDE"; else echo "$fails bloque(s) fallan"; fi

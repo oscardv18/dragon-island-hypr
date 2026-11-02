@@ -129,3 +129,92 @@ class GitTests(unittest.TestCase):
             self.assertFalse(Path('/proc',str(pid)).exists())
         finally:
             if p.poll() is None: p.kill(); p.communicate()
+
+    def snapshot(self):
+        return {str(p.relative_to(self.repo)): (p.read_bytes(), p.stat().st_mode, None if '.git/objects/' in p.as_posix() else p.stat().st_mtime_ns)
+                for p in self.repo.rglob('*') if p.is_file() and not p.is_symlink()}
+
+    def test_base_diff_includes_commits_index_and_working_copy(self):
+        self.initial(); self.git('checkout', '-b', 'feature')
+        self.write('base.txt', 'committed\ntwo\n'); self.git('commit', '-am', 'feature')
+        self.write('base.txt', 'committed\nstaged\n'); self.git('add', 'base.txt')
+        self.write('base.txt', 'committed\nworking\n')
+        before = self.snapshot()
+        d = self.cli('diff', '--path', 'base.txt', '--base', 'main')
+        self.assertEqual((d['add'], d['del']), (2, 2))
+        self.assertIn('working', str(d)); self.assertNotIn("'text': 'staged'", str(d))
+        staged = self.cli('diff', '--path', 'base.txt', '--base', 'main', '--staged')
+        self.assertIn("'text': 'staged'", str(staged))
+        rows = self.cli('status', '--base', 'main')['staged']
+        self.assertEqual((rows[0]['add'], rows[0]['del']), (2, 2))
+        self.assertEqual(before, self.snapshot())
+
+    def test_base_is_merge_base_and_supports_renames_deletions(self):
+        self.initial(); self.git('checkout', '-b', 'feature')
+        self.git('mv', 'base.txt', 'renamed ñ\tline\n.txt'); self.git('commit', '-am', 'rename')
+        self.git('checkout', 'main'); self.write('only-main', 'main\n'); self.git('add', '.'); self.git('commit', '-m', 'main advances')
+        self.git('checkout', 'feature')
+        s = self.cli('status', '--base', 'main')
+        self.assertEqual([f['path'] for f in s['changes']], ['renamed ñ\tline\n.txt'])
+        self.assertEqual(s['changes'][0]['old_path'], 'base.txt')
+        self.assertFalse(self.cli('diff', '--path', 'only-main', '--base', 'main')['hunks'])
+        self.git('rm', 'renamed ñ\tline\n.txt'); self.git('commit', '-m', 'delete')
+        s = self.cli('status', '--base', 'main'); self.assertEqual(s['changes'][0]['status'], 'D')
+        self.assertEqual(self.cli('diff', '--path', 'base.txt', '--base', 'main')['del'], 2)
+
+    def test_base_diff_redaction_binary_truncation_and_untracked(self):
+        self.initial(); self.git('checkout', '-b', 'feature')
+        self.write('secret', 'API_TOKEN=private-value\n'); self.write('large', 'line\n'*2100)
+        (self.repo/'binary').write_bytes(b'a\0b'); self.git('add', '.'); self.git('commit', '-m', 'fixtures')
+        self.assertNotIn('private-value', str(self.cli('diff', '--path', 'secret', '--base', 'main')))
+        self.assertTrue(self.cli('diff', '--path', 'binary', '--base', 'main')['binary'])
+        self.assertTrue(self.cli('diff', '--path', 'large', '--base', 'main')['truncated'])
+        self.write('untracked', 'new\n'); self.assertEqual(self.cli('diff', '--path', 'untracked', '--base', 'main')['add'], 1)
+
+    def test_merge_check_conflicts_and_clean_leave_entire_repo_unchanged(self):
+        self.initial(); name = 'conflict ñ\tline\n.txt'; self.write(name, 'base\n'); self.git('add', '.'); self.git('commit', '-m', 'base')
+        self.git('checkout', '-b', 'feature'); self.write(name, 'feature\n'); self.git('commit', '-am', 'feature')
+        self.git('checkout', 'main'); self.write(name, 'main\n'); self.git('commit', '-am', 'main')
+        self.git('checkout', 'feature'); self.write('dirty', 'keep\n'); self.git('add', 'dirty'); self.write(name, 'working copy\n')
+        before = self.snapshot()
+        for args in (('main',), ('--base', 'main')):
+            r = self.cli('merge-check', *args); self.assertTrue(r['ok']); self.assertEqual(r['conflicts'], [name])
+        self.assertEqual(before, self.snapshot())
+        self.assertEqual(self.cli('merge-check', 'HEAD')['conflicts'], [])
+        self.assertEqual(before, self.snapshot())
+
+    def test_merge_check_clean_divergence_and_linked_worktree(self):
+        self.initial(); self.git('checkout', '-b', 'feature'); self.write('feature', 'new\n'); self.git('add', '.'); self.git('commit', '-m', 'feature')
+        self.git('checkout', 'main'); self.write('main', 'new\n'); self.git('add', '.'); self.git('commit', '-m', 'main')
+        target = self.home/'worktree'; self.git('worktree', 'add', str(target), 'feature')
+        before = self.snapshot()
+        r = subprocess.run([str(ROOT/'bin/dragon-git'), 'merge-check', '--repo', str(target), '--base', 'main', '--json'], env=self.env, capture_output=True, text=True)
+        self.assertEqual(json.loads(r.stdout), {'ok': True, 'conflicts': []}, r.stderr)
+        self.assertEqual(before, self.snapshot()); self.assertEqual((target/'base.txt').read_text(), 'one\ntwo\n')
+
+    def test_base_and_merge_invalid_refs_and_unborn(self):
+        self.assertFalse(self.cli('merge-check', 'missing', ok=False)['ok'])
+        self.initial()
+        for command, args in [('merge-check', ('--base', 'missing')), ('diff', ('--path', 'base.txt', '--base', 'missing')), ('status', ('--base', 'missing'))]:
+            self.assertFalse(self.cli(command, *args, ok=False)['ok'])
+        self.assertEqual(self.cli('merge-check', '--base=-invalid', ok=False)['error']['code'], 'invalid_branch')
+        for args in ((), ('main', '--base', 'main')):
+            r = subprocess.run([str(ROOT/'bin/dragon-git'), 'merge-check', '--repo', str(self.repo), *args, '--json'], env=self.env, capture_output=True, text=True)
+            self.assertEqual(r.returncode, 2); self.assertEqual(json.loads(r.stdout)['error']['code'], 'invalid_usage')
+
+    def test_migration_066_refreshes_copied_engine_with_backup_and_dry_run(self):
+        env = dict(self.env, LINK_MODE='copy', ASSUME_YES='true', BACKUP_DIR=str(self.home/'backups'))
+        r = subprocess.run(['bash', str(ROOT/'migrations/055-taller-tools.sh')], env=env, capture_output=True)
+        self.assertEqual(r.returncode, 0, r.stderr)
+        engine = self.home/'DATA/dragon-island/engines/dragon_git.py'; engine.write_text('old engine')
+        for flag in ('1', 'true'):
+            r = subprocess.run(['bash', str(ROOT/'migrations/066-git-base-check.sh')], env=dict(env, DRY_RUN=flag), capture_output=True)
+            self.assertEqual(r.returncode, 0, r.stderr); self.assertEqual(engine.read_text(), 'old engine')
+        for _ in range(2):
+            r = subprocess.run(['bash', str(ROOT/'migrations/066-git-base-check.sh')], env=env, capture_output=True)
+            self.assertEqual(r.returncode, 0, r.stderr)
+        copies = list((self.home/'backups').rglob('dragon_git.py'))
+        self.assertEqual(len(copies), 1); self.assertEqual(copies[0].read_text(), 'old engine')
+        self.initial()
+        r = subprocess.run([str(self.home/'.local/bin/dragon-git'), 'merge-check', 'main', '--repo', str(self.repo), '--json'], env=self.env, capture_output=True, text=True)
+        self.assertEqual(json.loads(r.stdout), {'ok': True, 'conflicts': []}, r.stderr)
