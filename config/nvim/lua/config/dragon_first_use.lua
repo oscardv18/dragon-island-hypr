@@ -71,8 +71,13 @@ function M.ready(force)
       return false
     end
   end
+  local final_ok, _, final_digest = pcall(lock)
+  if not final_ok then
+    warn("No se pudo verificar el lockfile restaurado; reintenta con :DragonNvimRestore.")
+    return false
+  end
   vim.fn.mkdir(vim.fn.stdpath("state"), "p")
-  vim.fn.writefile({ digest }, marker)
+  vim.fn.writefile({ final_digest }, marker)
   return true
 end
 

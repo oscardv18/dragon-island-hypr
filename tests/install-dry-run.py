@@ -40,7 +40,7 @@ def check(installer=None):
         (state/'components').write_text('core\nshell\ntheme\n')
         before = snapshot(sandbox)
         result = subprocess.run([str(installer), '--dry-run', '--yes', '--modules',
-                                 'core,shell,theme,plugins,keyboard,extras,keyring,login',
+                                 'core,shell,editor,theme,plugins,keyboard,extras,keyring,login',
                                  '--extras', 'brave,protonvpn,herdr'], cwd=ROOT, env=env,
                                 capture_output=True, text=True, timeout=120)
         if result.returncode:

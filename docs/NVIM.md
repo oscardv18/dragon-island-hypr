@@ -211,3 +211,19 @@ la instalación nueva permite `--copy`. Las diferencias actuales esperables son
 el guard del primer uso, los ajustes de bootstrap y el log excluido del repo.
 No borres tu carpeta a mano para instalar. Si no optas por adoptarla, mantienes
 tu configuración actual y la migración queda pendiente.
+
+## 5. Pruebas sin tocar el HOME real
+
+`python3 -m unittest discover -s tests/nvim -v`: catorce casos, con HOME y todas las
+raíces XDG temporales. Cubren enlaces/copias, doble despliegue sin cambios,
+backup (también de enlaces y copias idénticas), rechazo seguro de backup fallido, dry-run (1/true), retirada real por uninstall y segunda retirada segura,
+opt-in obligatorio aun con --yes, comparación antes de reemplazar, igualdad con
+respaldo, filtro de secretos/URL privada/ruta personal, sintaxis Lua, inicio sin
+consentimiento, offline y timeout simulados, y marcador de restauración simulada
+que evita repetir la red. No hay sincronización real ni pruebas sobre tus plugins.
+La consulta de versión usa `NVIM_LOG_FILE=/dev/null`: incluso `nvim --version`
+podría crear un log, y no debe hacerlo durante dry-run.
+
+El grupo está incluido en `tests/run-all.sh`; el smoke test de dry-run del
+instalador incluye ahora `editor`. La validación real de los plugins y la
+apariencia de Neovim queda para la máquina virtual, como se indica arriba.

@@ -12,7 +12,7 @@ src="$REPO_DIR/config/nvim"
 dest="$(nvim_config_dir)"
 [[ -L "$dest" && "$(readlink -f "$dest")" == "$(readlink -f "$src")" ]] && exit 10
 opt_in="$(bool_flag "${DRAGON_NVIM:-false}")"
-if ! $opt_in && { $ASSUME_YES || [[ ! -t 0 || ! -t 1 ]] || ! has_gum; }; then
+if ! $opt_in && { $DRY_RUN || $ASSUME_YES || [[ ! -t 0 || ! -t 1 ]] || ! has_gum; }; then
     log_info 'Neovim conservado. Para comparar y adoptar con respaldo: DRAGON_NVIM=1 bash migrations/150-nvim-opt-in.sh'
     exit 10
 fi

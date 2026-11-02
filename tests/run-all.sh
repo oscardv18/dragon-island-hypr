@@ -143,6 +143,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/session -v; t
 step "mosaico: selectores numéricos, con nombre y especiales (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tiling -v; then pass "modos de mosaico"; else fail "modos de mosaico"; fi
 
+step "Neovim: editor, opt-in, seguridad y retirada (HOME/XDG temporales, sin sincronización real)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/nvim -v; then pass "módulo editor"; else fail "módulo editor"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 
