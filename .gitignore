@@ -10,3 +10,15 @@ __pycache__/
 # Per-machine Hyprland overrides (monitors, GPU, keyboard) written by install.sh
 config/hypr/local.lua
 sddm/dragon-core/accent.conf
+
+# Neovim: only configuration belongs in config/nvim (never runtime state).
+config/nvim/.git/
+config/nvim/.lazy/
+config/nvim/**/shada/
+config/nvim/**/swap/
+config/nvim/**/undo/
+config/nvim/**/cache/
+config/nvim/**/*.log
+config/nvim/**/*.swp
+config/nvim/**/*.swo
+config/nvim/**/*~

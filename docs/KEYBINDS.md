@@ -18,7 +18,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 | `SUPER + I` | Tienda de apps (pacman + AUR). También: lanzador → `+nombre` |
 | `SUPER + SHIFT + A` | Referencia de herdr: atajos (los de fábrica y los que cambiaste), comandos de la CLI y estados de los agentes. Solo lectura |
 | `SUPER + A` | Agentes: va al siguiente bloqueado; si no hay, al siguiente listo sin ver |
-| `SUPER + N` | Calendario + notificaciones + actualizaciones (el popover del reloj) |
+| `SUPER + N` | Centro de notificaciones |
 | `SUPER + Escape` | Menú de energía |
 | `SUPER + L` | Bloquear (`loginctl lock-session` → hyprlock) |
 | `Print` | Captura de la pantalla completa, directa: se copia y se guarda en Imágenes (aviso en la isla, sin popup) |
@@ -150,7 +150,8 @@ Por IPC: `qs ipc call wallpaper orbital | orbitalAt <x> <y> | toggle` (cuadrícu
 | Cápsulas contextuales (solo cuando aplican) | Micrófono / cámara / pantalla: lista de apps · grabación: parar · VPN: abre Proton VPN · auriculares: Bluetooth · cafeína y No molestar: alternar · actualizaciones: abre Ghostty con la actualización · red: Rendimiento | Las que no caben se agrupan en `+N` (ratón encima: despliega los iconos) |
 | Volumen (icono + barra) | Silenciar | Rueda: ±5 % · clic derecho: popover Sonido |
 | Iconos de la bandeja | Acción principal de la app (o su menú si solo tiene menú) | Derecho: menú · central: acción secundaria · rueda: desplazar |
-| Reloj orbital (marcadores: No molestar · sin leer · actualizaciones) | Calendario, notificaciones y actualizaciones en un solo popover | Clic derecho: No molestar · ratón encima: la fecha |
+| Campana (contador de no leídas; tachada con No molestar) | Abre / cierra el centro de notificaciones | Clic derecho: alterna No molestar; el contador se mantiene |
+| Reloj orbital (marcador: actualizaciones) | Calendario; desde allí también se abre Notificaciones | Ratón encima: la fecha |
 | Reloj (cont.) | Calendario | Clic en un día: su agenda (khal) · rueda: cambiar de mes |
 | Popup de notificación | Acción por defecto (o cerrar el popup) | Central: descartar · pasar el ratón: no caduca |
 | Isla cerrada | Dashboard | Música: clic central = play/pausa |
@@ -236,6 +237,7 @@ Dentro del buscador: `/` acepta la carpeta y sigue completando (rutas profundas)
 | Portapapeles anterior (Gravedad apagado) | Escribir para filtrar · `↑ ↓` o `Tab` · `Enter` copia · `Supr` (con la búsqueda vacía) borra la entrada · `Esc` cierra |
 | Popover Wi‑Fi | `Enter` en la contraseña conecta · `Esc` cierra |
 | Taller (`SUPER + T`) | `Ctrl+Tab` / `Ctrl+Shift+Tab` cambia de pestaña · `↑ ↓` elige agente · `Tab` recorre controles · `Enter` enfoca al agente o activa un control · Git: `Espacio` sobre una casilla prepara/quita del índice; `Enter` en un chip elige el tipo de commit · Kanban: flechas eligen tarjeta, `Shift+←/→` la mueve de columna (con WIP lleno pide confirmar), `Espacio` en una casilla marca el criterio; también se arrastra con el ratón · Revisión: `Espacio` en la casilla marca el archivo como visto; clic en el margen abre el comentario (`Enter` guarda, `Esc` cancela) · `P` abre el compositor de prompts (`Enter`/`Espacio` en un bloque lo quita o lo pone) · `Esc` cierra el compositor y, si no está abierto, el Taller |
+| Selector de archivos de otras apps (Dragon Portal) | `Enter` acepta · `Esc` cancela (primero borra la búsqueda) · clic elige solo lo que la app pide (un archivo salvo que permita varios; carpetas en el modo carpeta) · `Ctrl+Shift+N` carpeta nueva · filtro y opciones en los botones junto a «Cancelar» · no se puede copiar, mover, renombrar ni borrar desde aquí |
 | Cualquier panel | `Esc` cierra |
 
 ## IPC (para scripts y atajos propios)
@@ -418,3 +420,14 @@ La conexión «Enviar al agente» al compositor corresponde al tramo 5c; el bot�
 permanece deshabilitado hasta que ese servicio esté conectado. No se envían rutas
 ni prompts automáticamente. La migración 080 aporta las reglas de ventana y la
 075 el atajo SUPER+E; hay que integrar ambas ramas antes de activar el explorador.
+
+### Selector de archivos de otras apps (Dragon Portal) · fase 6
+
+Cuando Brave, Telegram u otra aplicación pide un archivo, el explorador se abre en **modo selector** (ventana «Archivos · <título de la app>»):
+
+| Teclas | Acción |
+|---|---|
+| Intro | Aceptar (en una carpeta, entrar; en modo carpeta, elegir la marcada o la actual) |
+| Esc | Cancelar (si hay búsqueda, la borra primero) |
+| Ctrl+Shift+N | Carpeta nueva |
+| Ctrl+H | Mostrar ocultos |

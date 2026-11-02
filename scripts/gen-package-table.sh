@@ -13,7 +13,7 @@ table() {
     echo "| Paquete | Módulo | Origen |"
     echo "|---|---|---|"
     local f mod src name
-    for f in base pacman-core aur-core pacman-shell pacman-theme aur-theme pacman-login pacman-plugins; do
+    for f in base pacman-core aur-core pacman-shell pacman-editor pacman-theme aur-theme pacman-login pacman-plugins; do
         case "$f" in
             base) mod="(previo, Paso 3)"; src="oficial" ;;
             pacman-*) mod="${f#pacman-}"; src="oficial" ;;

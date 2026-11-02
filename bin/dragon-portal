@@ -1,0 +1,14 @@
+#!/usr/bin/env bash
+# Dragon Portal CLI (FileChooser backend of xdg-desktop-portal), resolved in the repo or the installed engine directory.
+set -Eeuo pipefail
+PORTAL_BIN="$(readlink -f -- "${BASH_SOURCE[0]}")"
+PORTAL_ROOT="${PORTAL_BIN%/*}"
+PORTAL_LIB="${PORTAL_ROOT%/*}/dragon-core/dragon_portal.py"
+if [[ ! -f "$PORTAL_LIB" ]]; then
+    PORTAL_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_portal.py"
+fi
+# Only the service needs PyGObject (site-packages); take / reply / status run without it, fast.
+if [[ "${1:-}" == serve ]]; then
+    exec python3 "$PORTAL_LIB" "$@"
+fi
+exec python3 -S "$PORTAL_LIB" "$@"

@@ -1,0 +1,25 @@
+{
+  "services": {
+    "Settings": {"barMetrics": true, "calmMotion": true},
+    "Audio": {"muted": false, "volume": 0.55, "volumePct": 55},
+    "Bluetooth": {"adapterAvailable": true, "enabled": true, "connectedDevices": []},
+    "Brightness": {}, "Caffeine": {},
+    "Clock": {"time": "16:42", "seconds": 0, "dateFormatted": "Lunes, 2 de noviembre"},
+    "Keyboard": {"code": "US"},
+    "Network": {"connected": true, "hasWifi": true, "wifiConnected": true, "wifiEnabled": true, "wiredConnected": false, "signalStrength": 80},
+    "Notifs": {"unreadCount": 3, "dnd": false},
+    "Power": {"hasBattery": false, "batteryPct": 70, "isCharging": false, "isLow": false},
+    "Privacy": {"mic": false},
+    "SysStats": {"cpuPct": 18, "tempC": 45, "memUsedGb": 4.2, "memTotalGb": 16, "memPct": 26, "rxHistory": [0.2, 0.4, 0.3, 0.7, 0.5, 0.8], "rxRate": 200, "txRate": 20},
+    "Tiling": {"scrolling": true, "shortcut": "SUPER + T"},
+    "Updates": {"count": 2}, "Vpn": {},
+    "BarContext": {"items": [], "slots": [], "byKey": {}}
+  },
+  "states": [
+    {"name": "empty", "count": 0, "dnd": false},
+    {"name": "unread", "count": 3, "dnd": false},
+    {"name": "dnd", "count": 3, "dnd": true},
+    {"name": "dnd-empty", "count": 0, "dnd": true},
+    {"name": "overflow", "count": 120, "dnd": false}
+  ]
+}

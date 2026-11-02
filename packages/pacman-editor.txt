@@ -1,0 +1,17 @@
+# Verified with pacman -Si, 2026-11-02. See docs/NVIM.md for each use.
+neovim          # >= 0.12 with LuaJIT: pinned Treesitter/rustaceanvim
+git             # lazy.nvim bootstrap/restore
+ripgrep         # Snacks grep
+fd              # Snacks file search
+gcc             # tree-sitter grammar compilation
+tree-sitter-cli # >= 0.26.1, not the npm package
+nodejs          # JS LSP, frontend formatters, debug adapters
+npm             # Mason's JS tool installers
+lazygit         # LazyVim git UI
+go              # gopls, goimports/gofumpt builds and Go development
+rust            # cargo/rustfmt/Clippy; an existing rustup provider is retained
+php             # PHP CLI / Laravel / PHP tools
+composer        # PHP tool installers and project dependencies
+curl            # Mason downloads
+unzip           # Mason archives
+wl-clipboard    # Neovim Wayland clipboard provider

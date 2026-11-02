@@ -2,7 +2,7 @@
 # =============================================================================
 # dragon-island — modular installer (gum TUI). Arch / EndeavourOS / CachyOS.
 # Requirements BEFORE running it: pre-instalation.md (check them with ./doctor.sh --pre).
-# Modules: core (mandatory) shell theme plugins login keyring keyboard boot extras — see docs/INSTALL.md.
+# Modules: core (mandatory) shell editor theme plugins login keyring keyboard boot extras — see docs/INSTALL.md.
 # =============================================================================
 set -Eeuo pipefail
 shopt -s nullglob
@@ -14,8 +14,8 @@ LOG="$STATE_DIR/install.log"
 BACKUP_DIR="$STATE_DIR/backups/$(date +%Y%m%d-%H%M%S)"
 MANIFEST="$STATE_DIR/manifest"   # lines: <action>\t<target>\t<backup-or-source>
 
-ALL_MODULES=(core shell theme plugins login keyring keyboard boot extras)
-DEFAULT_MODULES=(core shell theme plugins keyboard)   # login, keyring, boot and extras touch /etc, /boot or install apps: opt-in
+ALL_MODULES=(core shell editor theme plugins login keyring keyboard boot extras)
+DEFAULT_MODULES=(core shell editor theme plugins keyboard)   # login, keyring, boot and extras touch /etc, /boot or install apps: opt-in
 
 DRY_RUN=false
 ASSUME_YES=false

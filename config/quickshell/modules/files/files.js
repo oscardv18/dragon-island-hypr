@@ -327,3 +327,91 @@ function selectionSummary(selected, total) {
     const bytes = selected.reduce((s, e) => s + (e.kind === "dir" ? 0 : (e.size || 0)), 0);
     return n + " de " + total + (total === 1 ? " elemento" : " elementos") + (n === 1 ? " seleccionado" : " seleccionados") + (bytes ? " · " + formatSize(bytes) : "");
 }
+
+// ---- selector mode (Dragon Portal: the explorer as the file dialog of other apps) ----
+// `picker` is the request of `dragon-portal take`: {kind: open|save|save_files, title, accept_label, multiple, directory,
+// filters: [{name, patterns: [{type: glob|mime, value}]}], current_filter, choices, current_name, files}.
+function isDirEntry(entry) { return !!entry && (entry.kind === "dir" || (entry.kind === "link" && !!entry.link_dir)); }
+
+// fnmatch-style, case-sensitive like the portal spec: * ? [abc] [!abc]; everything else is literal
+function globToRegExp(glob) {
+    let re = "^";
+    const g = String(glob);
+    for (let i = 0; i < g.length; i++) {
+        const c = g[i];
+        if (c === "*") re += "[^]*";
+        else if (c === "?") re += "[^]";
+        else if (c === "[") {
+            const end = g.indexOf("]", i + 2);
+            if (end < 0) { re += "\\["; continue; }
+            let set = g.slice(i + 1, end);
+            const neg = set[0] === "!" || set[0] === "^";
+            if (neg) set = set.slice(1);
+            re += "[" + (neg ? "^" : "") + set.replace(/[\\\]]/g, "\\$&") + "]";
+            i = end;
+        } else re += c.replace(/[.+^${}()|\\\]\/-]/g, "\\$&");
+    }
+    return new RegExp(re + "$");
+}
+
+function matchesRule(entry, rule) {
+    if (rule.type === "glob") return globToRegExp(rule.value).test(String(entry.name));
+    const want = String(rule.value).toLowerCase(), have = String(entry.mime || "").toLowerCase();
+    if (!have) return false;
+    return want.endsWith("/*") ? have.indexOf(want.slice(0, -1)) === 0 : have === want;
+}
+
+// folders always show (you must be able to walk into them); a filter with no rules lets everything through
+function matchesFilter(entry, filter) {
+    if (!filter || !filter.patterns || !filter.patterns.length || isDirEntry(entry)) return true;
+    return filter.patterns.some(r => matchesRule(entry, r));
+}
+
+// What the user may select: open files → files; open folders → folders; save → files (their name is copied); save_files → folders
+function pickerCanSelect(picker, entry) {
+    if (!picker) return true;
+    const dir = isDirEntry(entry);
+    if (picker.kind === "open") return picker.directory ? dir : !dir;
+    if (picker.kind === "save") return !dir;
+    return dir;
+}
+function pickerMaxSelection(picker) { return picker && !(picker.kind === "open" && picker.multiple) ? 1 : 1e9; }
+function pickerAcceptLabel(picker) {
+    if (!picker) return "";
+    if (picker.accept_label) return picker.accept_label;
+    if (picker.kind === "open") return picker.directory ? "Elegir" : "Abrir";
+    return picker.kind === "save" ? "Guardar" : "Guardar aquí";
+}
+function validFileName(name) {
+    const n = String(name);
+    return n.trim().length > 0 && n !== "." && n !== ".." && n.indexOf("/") < 0 && n.indexOf("\0") < 0 && n.length <= 255;
+}
+
+// → {ok, paths, why}: `dir` the folder being shown, `selection` its selected entries, `name` the typed name (save)
+function pickerResolve(picker, dir, selection, name) {
+    if (!picker) return { ok: false, paths: [], why: "" };
+    if (picker.kind === "save") {
+        if (!validFileName(name)) return { ok: false, paths: [], why: "Escribe un nombre de archivo (sin «/»)" };
+        return { ok: true, paths: [join(dir, name)], why: "" };
+    }
+    if (picker.kind === "save_files") {
+        const target = selection.length === 1 ? join(dir, selection[0].name) : dir;
+        return { ok: !isSpecial(dir), paths: [target], why: isSpecial(dir) ? "Elige una carpeta real" : "" };
+    }
+    const sel = selection.filter(e => pickerCanSelect(picker, e));
+    if (!sel.length) {
+        if (picker.directory && !isSpecial(dir)) return { ok: true, paths: [dir], why: "" };       // nothing selected = this folder
+        return { ok: false, paths: [], why: picker.directory ? "Elige una carpeta" : "Elige un archivo" };
+    }
+    if (sel.length > pickerMaxSelection(picker)) return { ok: false, paths: [], why: "Solo se puede elegir un elemento" };
+    return { ok: true, paths: sel.map(e => join(dir, e.name)), why: "" };
+}
+
+function pickerSummary(picker, selection, dir, name) {
+    if (!picker) return "";
+    if (picker.kind === "save_files") return picker.files.length + (picker.files.length === 1 ? " archivo se guardará en " : " archivos se guardarán en ") + basename(dir);
+    if (picker.kind === "save") return validFileName(name) ? "Se guardará como «" + name + "»" : "Escribe un nombre para guardar";
+    const n = selection.length;
+    if (!n) return picker.directory ? "Se elegirá esta carpeta si no marcas ninguna" : "Elige " + (picker.multiple ? "uno o varios archivos" : "un archivo");
+    return n === 1 ? "«" + selection[0].name + "»" : n + " elementos";
+}

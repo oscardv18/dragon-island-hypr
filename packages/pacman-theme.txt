@@ -3,3 +3,5 @@
 
 ttf-jetbrains-mono-nerd
 nwg-look
+
+adw-gtk-theme

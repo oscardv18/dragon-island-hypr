@@ -1,4 +1,4 @@
-// Notificaciones (SUPER + N, the bell marker of the clock, «Notificaciones» in Fecha y hora): the notification
+// Notificaciones (SUPER + N, the bar bell, «Notificaciones» in Fecha y hora): the notification
 // centre in the HUD frame — No molestar, the cards (single or grouped), «Borrar todo» and the pending updates.
 import QtQuick
 import QtQuick.Layouts
