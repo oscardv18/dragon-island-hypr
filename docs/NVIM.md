@@ -124,3 +124,18 @@ Exclusiones: `nvim.log`, logs, swap, undo, shada, cachés, historial y **todo**
 - `trouble.nvim`
 - `ts-comments.nvim`
 - `which-key.nvim`
+
+## 1. Revisión de publicación
+
+Los 15 archivos seleccionados pasaron `scripts/check-nvim-public.py` **antes de
+copiarlos**. Usa `dragon-core/secret_filter.py` en su modo de detecciones tipadas
+(el mismo de `redact`): no interpreta los hashes públicos del lockfile como tokens.
+También rechaza rutas personales, emails, enlaces simbólicos y URLs cuyo host no
+esté revisado. No imprime los valores detectados. Se repite sobre `config/nvim`
+antes del despliegue y en las pruebas.
+
+La revisión manual cubrió todos los Lua activos, el ejemplo inactivo, JSON,
+configuración de StyLua y licencia: sin claves API, tokens, URLs privadas ni datos
+personales que eliminar. No hubo sustituciones por variables de entorno porque
+no se encontraron secretos. Las únicas URLs son documentación pública y GitHub.
+El código no intenta anonimizar ni copiar logs.
