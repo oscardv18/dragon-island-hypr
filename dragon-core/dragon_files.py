@@ -1283,6 +1283,9 @@ def cmd_open_with(args):
         raise ToolError('invalid_usage', 'Indica --list o --app <id>.')
 
     app_id = args.app
+    # a desktop id or a command name, never a path: `../../x` escaped the applications folders (audit 5d)
+    if not re.fullmatch(r'[A-Za-z0-9][A-Za-z0-9._+-]*', app_id) or '..' in app_id:
+        raise ToolError('invalid_app', f'Identificador de aplicación no válido: «{app_id}».', 'Usa un id de --list.')
     want = app_id if app_id.endswith('.desktop') else f'{app_id}.desktop'
     for folder in application_dirs():
         candidate = folder / want

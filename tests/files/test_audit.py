@@ -476,3 +476,18 @@ class ThumbnailDemuxers(AuditBase):
         self.assertIn('-f image2 -i', calls[0])
         self.assertIn('-format_whitelist', calls[1])
         self.assertNotIn('hls', calls[1].split('-format_whitelist ')[1].split(' ')[0])
+
+
+class OpenWithIds(AuditBase):
+    """Hallazgo 13: `open-with --app ../../x` joined the id to each applications folder and escaped it."""
+
+    def test_path_like_ids_are_refused(self):
+        evil = self.outside / 'evil.desktop'
+        marker = self.outside / 'ran'
+        evil.write_text(f'[Desktop Entry]\nType=Application\nName=x\nExec=touch {marker}\n')
+        target = self.home / 'f.txt'; target.write_text('x')
+        apps = self.home / 'data/applications'; apps.mkdir(parents=True)
+        rel = os.path.relpath(self.outside / 'evil', apps)
+        for app in (rel, '/usr/bin/touch', 'a/../b'):
+            self.cli_error('open-with', str(target), '--app', app, code='invalid_app')
+        self.assertFalse(marker.exists())
