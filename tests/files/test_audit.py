@@ -585,3 +585,31 @@ class ZipSpecialFiles(AuditBase):
         self.cli_error('archive', 'create', '--format', 'zip', '--out', str(out), '--paths', str(d), code='special_file', timeout=10)
         self.assertFalse(out.exists())
         self.assertEqual([p.name for p in self.home.iterdir() if p.name.startswith('.dragon-')], [])
+
+
+class SambaHiddenFolders(AuditBase):
+    """Samba (d6): only a fixed list of sensitive folders was refused; ~/.password-store, ~/.mozilla, ~/.aws… could
+    be shared. Guests stay off unless asked for."""
+
+    def setUp(self):
+        super().setUp()
+        bindir = self.home / 'fakebin'; bindir.mkdir()
+        self.argv = self.home / 'net-argv'
+        (bindir / 'net').write_text(f'#!/bin/sh\necho "$*" >> "{self.argv}"\nexit 0\n')
+        (bindir / 'net').chmod(0o755)
+        self.env = dict(self.env, PATH=f"{bindir}:{self.env['PATH']}")
+
+    def test_hidden_folders_and_their_contents_are_refused(self):
+        for rel in ('.password-store', '.mozilla/firefox', '.aws', '.var/app/x', 'Proyectos/.git'):
+            (self.home / rel).mkdir(parents=True, exist_ok=True)
+            self.cli_error('share', 'enable', '--path', str(self.home / rel), '--name', 'Mal', code='forbidden_path')
+        self.assertFalse(self.argv.exists(), 'net must not run for a refused path')
+
+    def test_ordinary_folder_still_shares_without_guests(self):
+        (self.home / 'Público').mkdir()
+        res = self.cli_ok('share', 'enable', '--path', str(self.home / 'Público'), '--name', 'Publico')
+        self.assertFalse(res['guest'])
+        added = [l for l in self.argv.read_text().splitlines() if l.startswith('usershare add')]
+        self.assertEqual(len(added), 1)
+        self.assertIn('guest_ok=n', added[0])
+        self.assertNotIn('Everyone', added[0])

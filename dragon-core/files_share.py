@@ -19,6 +19,11 @@ def allowed_path(raw):
             or any(p == path or p in path.parents or path in p.parents for p in sensitive)):
         raise ToolError('forbidden_path','Solo puedes compartir carpetas propias no sensibles dentro de tu HOME.',
                         'No se admite HOME entero, rutas de sistema, SSH, GnuPG, configuración ni llaveros.')
+    # Hidden folders hold configuration and secrets the fixed list cannot enumerate (~/.password-store, ~/.mozilla,
+    # ~/.aws, ~/.kube, ~/.var…): no component below HOME may be hidden (audit 5d).
+    if any(part.startswith('.') for part in path.relative_to(home).parts):
+        raise ToolError('forbidden_path','No se comparten carpetas ocultas ni lo que hay dentro de ellas.',
+                        'Las carpetas que empiezan por punto guardan configuración y credenciales.')
     # Every component must belong to this user; do not publish another user's tree through a symlink.
     if any(p.stat().st_uid != os.getuid() for p in [path, *list(path.parents)[:len(path.parts)-len(home.parts)]]):
         raise ToolError('forbidden_path','La carpeta no pertenece al usuario de esta sesión.')
