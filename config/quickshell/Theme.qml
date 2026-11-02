@@ -201,7 +201,7 @@ Singleton {
     //   A notch     26 → 31      30 → 35            34 → 39     side islands at top 5, notch attached, as high as them
     //   B island    26 → 32      30 → 36            34 → 40     side islands and the floating notch pill at top 6
     //   C joined    24 → 24      28 → 28            32 → 32     one edge-to-edge strip, notch exactly as high, ears
-    //   D minimal   18 → 18      22 → 22            26 → 26     constellation pill + orbital clock at top 4; micro-island
+    //   D minimal   18 → 18      22 → 22            26 → 26     constellation pill + bell and orbital clock at top 4; micro-island
     //                                                           only with activity; touching the top edge shows style B
     //                                                           (barRevealed) without changing the reserved space
     property string barStyle: "B"

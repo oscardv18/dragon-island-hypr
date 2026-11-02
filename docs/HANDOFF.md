@@ -1042,3 +1042,15 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
   `qs ipc call tiling toggle` cambió el escritorio 2 a Dwindle y de vuelta a Scrolling, confirmados
   tanto por `hyprctl` como por `qs ipc call tiling get`; `configerrors` vacío. No se pulsaron las
   teclas físicas ni se capturó la barra; al alternar debe cambiar el icono de cuadrícula / columnas.
+
+## Campana de notificaciones en la barra (2026-11-02)
+
+Rama `feat/icono-notificaciones`: campana y contador vuelven a la isla derecha,
+incluso en D; No molestar se distingue con `bellOff` y tono atenuado. La campana
+es el único indicador de no leídas/DND: se quitan esos puntos del reloj, que
+conserva actualizaciones. Clic abre/cierra Notificaciones mediante el anclaje
+existente y derecho alterna No molestar. Tokens en Theme y ancho reservado,
+sin trabajo periódico nuevo. Migración **130** para copias, con backup y DRY_RUN.
+Cinco pruebas con servicios simulados y ShellState real, 18 capturas locales,
+y fixture en reposo a 0,0 % de un núcleo (8 s); no se tocó el shell instalado.
+Detalle y límites en [handoff-icono-notificaciones.md](handoff-icono-notificaciones.md).
