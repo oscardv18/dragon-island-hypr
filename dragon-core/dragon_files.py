@@ -2267,13 +2267,18 @@ def build_parser():
     p.add_argument('--passphrase-stdin', dest='passphrase_stdin', action='store_true')
     p.add_argument('--json', action='store_true')
 
+    import files_archives
+    files_archives.configure(sub)
     return parser
 
 
 def main():
     parser = build_parser()
     args = parser.parse_args()
-    if args.cmd == 'ls':
+    if args.cmd == 'archive':
+        import files_archives
+        result = files_archives.command(args, sys.modules[__name__])
+    elif args.cmd == 'ls':
         result = cmd_ls(args)
     elif args.cmd == 'places':
         result = cmd_places(args)
