@@ -2271,6 +2271,8 @@ def build_parser():
     files_archives.configure(sub)
     import files_network
     files_network.configure(sub)
+    import files_share
+    files_share.configure(sub)
     return parser
 
 
@@ -2283,6 +2285,9 @@ def main():
     elif args.cmd == 'net':
         import files_network
         result = files_network.command(args, sys.modules[__name__])
+    elif args.cmd == 'share':
+        import files_share
+        result = files_share.command(args, sys.modules[__name__])
     elif args.cmd == 'ls':
         result = cmd_ls(args)
     elif args.cmd == 'places':

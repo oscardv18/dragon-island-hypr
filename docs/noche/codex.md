@@ -9,3 +9,4 @@
 - d4: 17 pruebas de archivos maliciosos/formatos (falló la salida .7z de creación; corregida y repetida solo esa prueba). d1–d3: 16 pruebas pasan.
 - Lectura con API libarchive en lugar de parsear listados de texto: conserva nombres con controles y contraseña por stdin sin pasarla a argv. Formatos dependientes de la libarchive instalada; cifrado 7z requiere verificar soporte, error legible si falta.
 - d5: descubrimiento avahi, GVFS con diálogo acotado, montajes/rutas FUSE, recursos SMB, marcadores públicos y credenciales con secret-tool. Seis pruebas con ejecutables falsos; ninguna conexión real.
+- d6: usershares con ACL del usuario, invitados apagados por defecto, rutas sensibles y alias rechazados. Cuatro pruebas contra net falso (corregida la invocación del caso --name=-bad para que llegue a la validación). Preparación privilegiada documentada en FILES-SAMBA.md; la migración 073 solo despliega herramientas.
