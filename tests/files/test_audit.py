@@ -453,3 +453,26 @@ class UnexpectedErrors(AuditBase):
         res = json.loads(p.stdout.strip().splitlines()[-1])
         self.assertEqual(res['error']['code'], 'internal_error')
         self.assertNotIn('ghp_', p.stdout, 'the exception text (which may carry secrets) is not echoed')
+
+
+class ThumbnailDemuxers(AuditBase):
+    """Hallazgo 12: ffmpeg probed untrusted files freely (an HLS/concat «image» can pull other local files in)."""
+
+    def test_ffmpeg_formats_are_pinned(self):
+        shims = self.home / 'shims'; shims.mkdir()
+        log = self.home / 'ffmpeg-args'
+        (shims / 'ffmpeg').write_text(f'#!/bin/sh\nprintf "%s\\n" "$*" >> "{log}"\nexit 1\n')
+        (shims / 'ffmpeg').chmod(0o755)
+        for other in ('vipsthumbnail', 'magick', 'convert', 'ffmpegthumbnailer', 'pdftoppm'):
+            (shims / other).write_text('#!/bin/sh\nexit 1\n')
+            (shims / other).chmod(0o755)
+        env = dict(self.env, PATH=f"{shims}:{self.env['PATH']}")
+        (self.home / 'foto.png').write_text('#EXTM3U\n#EXT-X-MEDIA-SEQUENCE:0\n#EXTINF:1,\nfile:///etc/passwd\n')
+        (self.home / 'clip.mp4').write_bytes(b'\0' * 64)
+        self.run_cli('thumb', str(self.home / 'foto.png'), env=env)
+        self.run_cli('thumb', str(self.home / 'clip.mp4'), env=env)
+        calls = log.read_text().splitlines()
+        self.assertEqual(len(calls), 2, calls)
+        self.assertIn('-f image2 -i', calls[0])
+        self.assertIn('-format_whitelist', calls[1])
+        self.assertNotIn('hls', calls[1].split('-format_whitelist ')[1].split(' ')[0])

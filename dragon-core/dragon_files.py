@@ -1042,6 +1042,10 @@ def cmd_props(args):
 
 # ---- thumbnails ----
 
+# Real video containers only: no hls, concat, playlist or image2 pattern demuxers that open other files.
+_VIDEO_DEMUXERS = 'mov,mp4,m4a,3gp,3g2,mj2,matroska,webm,avi,flv,mpegts,mpeg,ogg,asf,wmv,m4v,rm,nut'
+
+
 def generate_thumbnail(src_path, mime, dest_png, px):
     import shutil
     import subprocess
@@ -1059,12 +1063,15 @@ def generate_thumbnail(src_path, mime, dest_png, px):
             elif shutil.which('convert'):
                 cmds.append(['convert', f'{src_path}[0]', '-auto-orient', '-thumbnail', f'{px}x{px}', f'PNG:{tmp_path}'])
             if shutil.which('ffmpeg'):
-                cmds.append(['ffmpeg', '-y', '-v', 'error', '-i', src_path, '-vf', f"scale='min({px},iw)':-1", '-frames:v', '1', tmp_path])
+                # -f image2: never let ffmpeg probe a downloaded «.png» as an HLS/concat playlist that reads other
+                # local files into the thumbnail (audit 5d)
+                cmds.append(['ffmpeg', '-y', '-v', 'error', '-f', 'image2', '-i', src_path, '-vf', f"scale='min({px},iw)':-1", '-frames:v', '1', tmp_path])
         elif mime.startswith('video/'):
             if shutil.which('ffmpegthumbnailer'):
                 cmds.append(['ffmpegthumbnailer', '-i', src_path, '-o', tmp_path, '-s', str(px)])
             if shutil.which('ffmpeg'):
-                cmds.append(['ffmpeg', '-y', '-v', 'error', '-i', src_path, '-vf', f"scale='min({px},iw)':-1", '-frames:v', '1', tmp_path])
+                cmds.append(['ffmpeg', '-y', '-v', 'error', '-format_whitelist', _VIDEO_DEMUXERS, '-protocol_whitelist', 'file',
+                             '-i', src_path, '-vf', f"scale='min({px},iw)':-1", '-frames:v', '1', tmp_path])
         elif mime == 'application/pdf':
             if shutil.which('vipsthumbnail'):
                 cmds.append(['vipsthumbnail', f'{src_path}[page=0]', '-s', str(px), '-o', tmp_path])
