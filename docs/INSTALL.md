@@ -10,6 +10,7 @@
 git clone https://github.com/oscardv18/dragon-island-hypr.git ~/dragon-island-hypr
 cd ~/dragon-island-hypr
 ./doctor.sh --pre        # requisitos previos
+./install.sh --check     # conflictos: solo lectura, salida 1 si hay bloqueos
 ./install.sh --dry-run   # plan completo, sin cambiar nada
 ./install.sh
 ```
@@ -52,6 +53,9 @@ sustituye ese opt-in. No se ha aplicado al Neovim del usuario en esta revisión.
 
 | Bandera | Efecto |
 |---|---|
+| `--check` | consulta conflictos sin crear estado ni logs; texto por defecto, salida 1 con bloqueos |
+| `--check --json` | informe JSON esquema 1: perfiles, paquetes, comprobaciones y bloqueos |
+| `--check --profiles a,b` | inspecciona esos perfiles; requiere `--check`, no aplica cambios |
 | `--dry-run` | imprime el plan completo; no escribe en tu `$HOME` ni pide sudo |
 | `--yes`, `-y` | sin preguntas; los pasos con sudo siguen mostrando qué hacen |
 | `--modules a,b` | solo esos módulos (core siempre) |
@@ -95,3 +99,30 @@ sin cambios de lógica a `bin/dragon-wifi`, se desplegará mediante `core` a
 `~/.local/bin/dragon-wifi` con respaldo y retirada, y se probará con `nmcli` falso.
 Para sistemas ya instalados corresponderá una migración desde la 170, idempotente,
 con `backup_copy` y respeto a `DRY_RUN`. Esa entrega sigue pendiente.
+
+## Perfiles y preflight (I1 / I2)
+
+`packages/profiles.json` declara base, keyring, taller, archivos y editor por
+defecto; mis-apps, login y boot son opt-in. Taller reúne Docker, Compose, Buildx,
+LazyGit y LazyDocker; herdr necesita confirmación aparte. Los navegadores quedan
+fuera de base. Las listas personales permanecen desactivadas por defecto.
+
+```sh
+./install.sh --check --json
+./install.sh --check --profiles base,keyring,taller,archivos,editor
+./install.sh --check --modules core,editor
+```
+
+El perfil base agrupa core/shell/theme/plugins. La traducción de `--modules` a
+perfiles se usa solo al comprobar; por ejemplo `core,editor` inspecciona base y
+editor. `--profiles` y `--modules` no se combinan. `--check` no activa servicios,
+no autentica sudo, no crea instantáneas ni guarda archivos. Informa qué hay que
+resolver y devuelve 0 sin bloqueos, 1 con bloqueos o 2 para selección inválida.
+Los avisos también deben revisarse antes de instalar.
+
+I3 conectará estos perfiles con la selección, TUI y aplicación. En este tramo
+el flujo de aplicación existente conserva sus módulos y confirmaciones:
+`--profiles` aún no sirve para instalar, ni selecciona PAM por defecto. I4
+creará la instantánea y guardará `pacman -Qqe` antes de aplicar. Contratos,
+pruebas, limitaciones y pendientes en
+[handoff-instalador-preflight.md](handoff-instalador-preflight.md).
