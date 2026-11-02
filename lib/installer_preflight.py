@@ -104,9 +104,11 @@ class Inspector:
                  'Reinicia y repite doctor.sh --pre antes de instalar cabeceras.' if k['reboot'] else '')
         dkms = [p['name'] for p in self.installed if p['name'] == 'dkms' or p['name'].endswith('-dkms')]
         headers = next((p for p in self.installed if p['name'] == k['headers']), None)
-        level = 'bloqueante' if dkms and (not headers or k['reboot']) else 'aviso' if not headers else 'informacion'
+        kernel_package = next((p for p in self.installed if p['name'] == k['pkgbase']), None)
+        mismatch = bool(headers and kernel_package and headers['version'] != kernel_package['version'])
+        level = 'bloqueante' if dkms and (not headers or mismatch or k['reboot']) else 'aviso' if not headers or mismatch else 'informacion'
         self.add('headers', level, 'Cabeceras del kernel; obligatorias con DKMS.',
-                 json.dumps({'headers': k['headers'], 'installed': bool(headers), 'dkms': dkms}),
+                 json.dumps({'headers': k['headers'], 'installed': bool(headers), 'version_mismatch': mismatch, 'dkms': dkms}),
                  'Ejecuta doctor.sh --pre; instala sus prerrequisitos manuales tras reiniciar si lo pide.' if level != 'informacion' else '')
         self.add('root', 'bloqueante' if os.geteuid() == 0 else 'informacion', 'El instalador debe ejecutarse como usuario.', str(os.geteuid()))
         for path in sorted(set(('/', str(Path.home())))):
@@ -127,11 +129,13 @@ class Inspector:
                  'Disponibilidad de sudo y grupo administrativo; no autentica ni modifica credenciales.',
                  groups or err, 'Los permisos sudo efectivos y la autenticación se validarán al aplicar (I3).')
         rc, out, err = run('lspci', '-k')
-        self.add('gpu', 'informacion' if rc == 0 else 'aviso',
+        self.add('gpu', 'informacion' if rc == 0 and 'Kernel driver in use:' in out else 'aviso',
                  'GPU y módulos del kernel (no instala drivers).', out or err,
                  'Comprueba el driver en uso y DKMS antes de instalar.')
-        self.probe('display-manager', ('systemctl', 'show', 'display-manager.service', '-p', 'Id', '-p', 'ActiveState', '-p', 'FragmentPath'),
-                   'Gestor de acceso activo; no se cambia.')
+        rc, out, err = run('systemctl', 'show', 'display-manager.service', '-p', 'Id', '-p', 'ActiveState', '-p', 'FragmentPath')
+        self.add('display-manager', 'informacion' if rc == 0 and 'ActiveState=active' in out else 'aviso',
+                 'Gestor de acceso activo; no se cambia.', out or err,
+                 'Comprueba el gestor de acceso antes de iniciar la sesión Hyprland.' if 'ActiveState=active' not in out else '')
         managers = []
         for name in ('sddm', 'gdm', 'lightdm', 'greetd', 'plasmalogin'):
             if run('systemctl', 'is-enabled', name + '.service')[1] in ('enabled', 'enabled-runtime', 'linked', 'linked-runtime', 'alias'):
@@ -164,7 +168,7 @@ class Inspector:
         tools = [t for t in ('snapper', 'timeshift') if shutil.which(t)]
         if tools:
             for tool in tools:
-                self.probe('snapshot:' + tool, (tool, 'list') if tool == 'timeshift' else (tool, 'list-configs'),
+                self.probe('snapshot:' + tool, (tool, '--list') if tool == 'timeshift' else (tool, 'list-configs'),
                            'Configuración de instantáneas; hay que crear una previa al aplicar (I4).')
                 if tool == 'snapper':
                     self.probe('snapshot-existing', ('snapper', 'list'), 'Instantáneas existentes; ninguna se crea durante --check.')

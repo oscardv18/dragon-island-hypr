@@ -213,6 +213,23 @@ class Preflight(unittest.TestCase):
         self.installed = record('dkms') + record('nvidia-dkms')
         self.assertEqual(self.check(self.inspect(), 'headers')['level'], 'bloqueante')
 
+    def test_headers_from_different_kernel_version_block_with_dkms(self):
+        self.installed = record('linux-cachyos', version='2') + record('linux-cachyos-headers', version='1') + record('dkms')
+        self.assertEqual(self.check(self.inspect(), 'headers')['level'], 'bloqueante')
+
+    def test_gpu_without_driver_and_inactive_dm_warn(self):
+        original = self.fake
+        def fake(*args):
+            if args[0] == 'lspci':
+                return 0, 'VGA: AMD', ''
+            if args[0] == 'systemctl' and 'display-manager.service' in args:
+                return 0, 'ActiveState=inactive', ''
+            return original(*args)
+        with patch.object(pf, 'run', fake):
+            data = self.inspect()
+        self.assertEqual(self.check(data, 'gpu')['level'], 'aviso')
+        self.assertEqual(self.check(data, 'display-manager')['level'], 'aviso')
+
     def test_running_kernel_reboot_blocks_with_dkms(self):
         self.installed += record('dkms')
         original = self.fake
