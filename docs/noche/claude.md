@@ -33,3 +33,27 @@ Sesión del 2026-11-01/02. Sin vin.py ni teclas a otras terminales. Capturas sol
   HOME temporal. Una sonda de `trash restore` dejó un archivo de prueba fuera de su carpeta
   (`/tmp/claude-1000/.../keep`), justo por el fallo 1; lo borré.
 - La condición de la parte 2 ya se cumplía al terminar la parte 1 (`ESTADO: COMPLETO`).
+
+## Parte 2 · `feat/fase5d-auditoria` (worktree `~/Devs/dragon-5d-auditoria`, desde `feat/fase5d-archivos-codex` 09b99a7)
+- Espera: la 1.ª comprobación ya daba `ESTADO: COMPLETO`; no hizo falta esperar.
+- 18 hallazgos corregidos, un commit y una prueba cada uno (`tests/files/test_audit.py`); migración 076.
+  Detalle en `docs/handoff-fase-5d-auditoria-claude.md`.
+- Incidente: la primera versión de la prueba de rutas protegidas pasaba `/` y `/usr` a `op delete --confirm`; el
+  clasificador de permisos la bloqueó antes de ejecutarse (bien hecho: si la protección fallaba, borraba el
+  sistema). La rehice: la CLI solo recibe rutas del HOME temporal y las del sistema se comprueban llamando a
+  `protected_reason()`.
+- La prueba existente `test_d2_cancel_copy_cleans_partial_temp_file` fallaba de vez en cuando: era una carrera
+  real (SIGTERM entre `mkstemp` y el registro del temporal). Corregida (hallazgo 16).
+- Sin corregir por ser diseño: papelera de HOME frente a `gio trash` (decisión del usuario).
+
+## Parte 3 · `integracion/fase5-final` (worktree `~/Devs/dragon-integracion`, desde `main` a7b0b69)
+- Fusiones `--no-ff`: pulido → auditoría → pantallas → migración. Hubo conflictos triviales en `run-all.sh`,
+  `modules/core.sh`, `qmldir`, `render-mocks.sh` y `docs/noche/codex.md`; los resolví conservando ambos lados
+  (en `render-mocks.sh` la línea de main ya cubría lo que pedía pantallas).
+- «Enviar al agente» conectado: `Files.sendToAgent` abre el compositor con un bloque `paths`, con destino en
+  el portapapeles. Tiene prueba.
+- La 1.ª pasada de `run-all.sh` falló en la prueba de motores: `files_share` y `files_network` importaban
+  `socket` solo para `gethostname()`. Corregido con `os.uname().nodename`.
+- La 2.ª pasada falló en una prueba de red de pantallas que era intermitente (3 de 6): no esperaba a los
+  montajes. Corregida (8 de 8).
+- Después, `run-all.sh` pasó **tres veces seguidas**: 138 ✔, 0 ✘, 349 pruebas unittest, ~470 s cada pasada.
