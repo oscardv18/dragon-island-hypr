@@ -40,6 +40,7 @@ Singleton {
     property int reviewTokens: 0
     readonly property string reviewLevel: Prompts.levelFor(reviewTokens)
     property int _generation: 0
+    property int _refreshSeq: 0      // only the latest refresh may write `files` (a slower, older one would undo a mark)
     readonly property bool watching: watch.running
     readonly property int seenCount: files.filter(f => f.seen).length
     readonly property int unseenCount: files.length - seenCount
@@ -67,14 +68,14 @@ Singleton {
     function refresh(): void {
         if (!active) return;
         if (!card) { status = "unavailable"; message = Mem.project ? "Elige una tarjeta con worktree o agente" : "Selecciona un proyecto"; files = []; return; }
-        const generation = _generation, key = cardKey;
+        const generation = _generation, key = cardKey, seq = ++_refreshSeq;
         if (!files.length) status = "loading";
         Gate.changedFiles(repo, r => {
             if (generation !== _generation) return;
             if (!r.ok) { status = r.error?.code === "missing_tool" ? "unavailable" : "error"; message = r.error?.message ?? "No se pudo leer el worktree"; return; }
             base = !!r.base;
             Gate.seenList(key, Mem.selectedSlug, s => {
-                if (generation !== _generation) return;
+                if (generation !== _generation || seq !== _refreshSeq) return;
                 const marks = {};
                 for (const m of (s.ok ? s.seen : []) ?? []) marks[m.path] = m;
                 files = r.files.map(f => Object.assign({}, f, { seen: !!marks[f.path]?.seen, changed: !!marks[f.path] && !marks[f.path].seen }));
@@ -112,7 +113,8 @@ Singleton {
             Mem.call(["seen", "set", key, "--path", path, "--hash", h.hash].concat(slugArgs()), r => {
                 if (!r.ok) { actionError = r.error?.message ?? "No se pudo marcar"; return; }
                 actionError = "";
-                if (key === cardKey) files = files.map(f => f.path === path ? Object.assign({}, f, { seen: true, changed: false }) : f);
+                // shown at once; the refresh re-reads it and supersedes any refresh started before the mark
+                if (key === cardKey) { files = files.map(f => f.path === path ? Object.assign({}, f, { seen: true, changed: false }) : f); refresh(); }
                 if (card) Gate.evaluate(Object.assign({}, card, { events: Mem.details?.[key]?.events ?? [] }), Mem.project);
             });
         });
