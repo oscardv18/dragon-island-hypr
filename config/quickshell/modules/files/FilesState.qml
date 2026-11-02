@@ -16,6 +16,15 @@ QtObject {
     property bool dirsFirst: true
     property bool showHidden: false
     property string search: ""
+    // selector mode (fase 6): the request from dragon-portal; null in a normal explorer window
+    property var picker: null
+    property int filterIndex: -1              // chosen entry of picker.filters (-1: none)
+    property string pickName: ""              // name typed to save (picker.kind === "save")
+    property var pickChoices: ({})            // choice id → option id
+    readonly property var activeFilter: picker && filterIndex >= 0 ? (picker.filters[filterIndex] ?? null) : null
+    readonly property int maxSelect: F.pickerMaxSelection(picker)
+    function entryVisible(entry): bool { return !picker || F.matchesFilter(entry, activeFilter); }
+    function canSelect(entry): bool { return !picker || F.pickerCanSelect(picker, entry); }
 
     property Component _tabComponent: Component { FilesTab {} }
 

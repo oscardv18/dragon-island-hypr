@@ -13,6 +13,7 @@ Rectangle {
     property var files: null
     property var archives: null
     property real now: Date.now()
+    property bool actions: true             // false in selector mode: a file dialog only looks, it never opens anything
     signal action(string name, var entry)   // open | openWith | terminal | agent | extractHere | extractTo | test
     readonly property var entries: tab?.selection ?? []
     readonly property var entry: entries.length === 1 ? entries[0] : null
@@ -134,7 +135,7 @@ Rectangle {
         Flow {
             Layout.fillWidth: true
             spacing: Theme.files.inset
-            visible: (!archiveLoader.active || root.many) && !root.inTrash
+            visible: root.actions && (!archiveLoader.active || root.many) && !root.inTrash
             FilesButton { label: "Abrir"; primary: true; visible: !!root.entry || root.many; onClicked: root.action("open", root.entry) }
             FilesButton { label: "Abrir con…"; visible: !!root.entry && root.entry.kind !== "dir"; onClicked: root.action("openWith", root.entry) }
             FilesButton { label: "Terminal aquí"; visible: !root.many; onClicked: root.action("terminal", root.entry) }
@@ -147,7 +148,7 @@ Rectangle {
         }
         Loader {
             Layout.fillWidth: true
-            active: archiveLoader.active && !root.inTrash
+            active: root.actions && archiveLoader.active && !root.inTrash
             visible: active
             sourceComponent: Flow {
                 spacing: Theme.files.inset
