@@ -1438,6 +1438,51 @@ def publish(src, dst, overwrite):
         rename_noreplace(src, dst)
 
 
+def _hidden_sibling(path, tag):
+    import uuid
+    return os.path.join(os.path.dirname(path), f'.dragon-{tag}-{uuid.uuid4().hex[:12]}')
+
+
+def move_item(src, dst, overwrite, tracker, index, count):
+    """Move `src` to `dst` without ever losing data (audit 5d).
+
+    - Only EXDEV (another filesystem) falls back to copy + delete; any other error is reported as it is.
+    - The cross-device copy goes to a hidden staging name next to `dst` and is published at the end, so a failed or
+      cancelled copy never leaves a half-written `dst` and never deletes `src`.
+    - With overwrite, the old `dst` is set aside first and deleted only once the new item is in place; on failure
+      it is put back.
+    """
+    aside = None
+    if overwrite and os.path.lexists(dst):
+        aside = _hidden_sibling(dst, 'old')
+        os.rename(dst, aside)
+        _CLEANUP_PATHS.discard(aside)
+    try:
+        try:
+            rename_noreplace(src, dst)
+        except FileExistsError:
+            raise
+        except OSError as exc:
+            if exc.errno != errno.EXDEV:
+                raise
+            staging = _hidden_sibling(dst, 'part')
+            _CLEANUP_PATHS.add(staging)
+            try:
+                copy_tree_item(src, staging, tracker, index, count, overwrite=False)
+                rename_noreplace(staging, dst)
+            finally:
+                _CLEANUP_PATHS.discard(staging)
+                if os.path.lexists(staging):
+                    remove_existing_target(staging)
+            remove_existing_target(src)
+    except BaseException:
+        if aside and not os.path.lexists(dst):
+            os.rename(aside, dst)
+        raise
+    if aside:
+        remove_existing_target(aside)
+
+
 def copy_single_file(src, dst, tracker, index, count, overwrite=False):
     import shutil
     import tempfile
@@ -1600,6 +1645,13 @@ def guard_removable(paths):
                             'Elige los archivos de dentro, no la carpeta entera.')
 
 
+def same_filesystem(a, b):
+    try:
+        return os.lstat(a).st_dev == os.stat(b).st_dev
+    except OSError:
+        return False
+
+
 def check_not_inside(src, dest_dir):
     # realpath, not abspath: a destination reached through a symlink to the source (or to a folder inside it)
     # made copy/move recurse into their own output until RecursionError (audit 5d).
@@ -1749,17 +1801,9 @@ def cmd_op(args):
                 if kind == 'copy':
                     copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
                 elif kind == 'move':
-                    if overwrite and os.path.lexists(dst):
-                        remove_existing_target(dst)
-                    try:
-                        publish(src, dst, overwrite)
-                    except FileExistsError:
-                        raise
-                    except OSError:
-                        if free_bytes > 0 and total_bytes > free_bytes:
-                            raise ToolError('no_space', 'No queda espacio suficiente en el destino.', 'Libera espacio e inténtalo de nuevo.') from None
-                        copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
-                        remove_existing_target(src)
+                    if free_bytes > 0 and total_bytes > free_bytes and not same_filesystem(src, dest_dir):
+                        raise ToolError('no_space', 'No queda espacio suficiente en el destino.', 'Libera espacio e inténtalo de nuevo.')
+                    move_item(src, dst, overwrite, tracker, idx, count)
                     moved.append({'from': src, 'to': dst})
             except FileExistsError as exc:
                 if exc.filename != dst or attempt == 4:
@@ -1829,25 +1873,13 @@ def cmd_trash(args):
             dst, overwrite = resolve_conflict(str(src_file), orig_path, policy, is_dir=is_dir)
             if dst is None:
                 break
-            if overwrite and os.path.lexists(dst):
-                remove_existing_target(dst)
+            tracker = {'total_bytes': 1, 'done_bytes': 0, 'start': time.perf_counter(), 'last_emit': 0.0, 'progress': False}
             try:
-                publish(str(src_file), dst, overwrite)
+                move_item(str(src_file), dst, overwrite, tracker, idx, count)
             except FileExistsError:
                 if attempt == 4:
                     raise
                 continue
-            except OSError as exc:
-                if exc.errno != errno.EXDEV:
-                    raise
-                tracker = {'total_bytes': 1, 'done_bytes': 0, 'start': time.perf_counter(), 'last_emit': 0.0, 'progress': False}
-                try:
-                    copy_tree_item(str(src_file), dst, tracker, idx, count, overwrite=overwrite)
-                except FileExistsError:
-                    if attempt == 4:
-                        raise
-                    continue
-                remove_existing_target(str(src_file))
             break
         if dst is None:
             continue

@@ -223,3 +223,56 @@ class ConflictRaces(AuditBase):
         self.cli_ok('trash', 'restore', 'trash:///cosa')
         self.assertEqual(sorted(p.name for p in f.iterdir()), ['dentro'], 'never moved inside the folder')
         self.assertEqual((self.home / 'cosa (1)').read_text(), 'archivo')
+
+
+SHM = Path('/dev/shm')
+
+
+@unittest.skipUnless(SHM.is_dir() and os.access(SHM, os.W_OK), 'a second filesystem (/dev/shm) is needed')
+class CrossDeviceMove(AuditBase):
+    """Hallazgo 5: moving between filesystems fell back to copy+delete on any error and, with overwrite, deleted
+    the destination before knowing whether the move would work."""
+
+    def setUp(self):
+        super().setUp()
+        self.other = Path(tempfile.mkdtemp(prefix='df-audit-', dir=SHM))
+        self.addCleanup(lambda: subprocess.run(['rm', '-rf', '--', str(self.other)], check=False))
+        if os.stat(self.other).st_dev == os.stat(self.home).st_dev:
+            self.skipTest('/dev/shm is on the same filesystem')
+        self.src = self.other / 'proj'
+        (self.src / 'sub').mkdir(parents=True)
+        (self.src / 'sub/a.txt').write_text('nuevo')
+        (self.src / 'b.txt').write_text('nuevo b')
+        self.dest = self.home / 'dest'
+        self.dest.mkdir()
+
+    def leftovers(self):
+        return [p.name for p in self.dest.iterdir() if p.name.startswith('.dragon-')]
+
+    def test_move_dir_between_filesystems(self):
+        self.cli_ok('op', 'move', str(self.src), '--dest', str(self.dest))
+        self.assertEqual((self.dest / 'proj/sub/a.txt').read_text(), 'nuevo')
+        self.assertFalse(self.src.exists())
+        self.assertEqual(self.leftovers(), [])
+
+    def test_failed_copy_keeps_source_and_old_destination(self):
+        old = self.dest / 'proj'
+        old.mkdir()
+        (old / 'antiguo.txt').write_text('no lo pierdas')
+        locked = self.src / 'sub/a.txt'
+        locked.chmod(0)
+        self.addCleanup(locked.chmod, 0o644)
+        if os.access(locked, os.R_OK):
+            self.skipTest('running as root: permissions do not block reads')
+        self.cli_error('op', 'move', str(self.src), '--dest', str(self.dest), '--conflict', 'overwrite')
+        self.assertEqual((old / 'antiguo.txt').read_text(), 'no lo pierdas')
+        self.assertTrue((self.src / 'b.txt').exists(), 'the source must survive a failed copy')
+        self.assertEqual(self.leftovers(), [])
+
+    def test_overwrite_replaces_only_after_success(self):
+        old = self.dest / 'proj'
+        old.mkdir()
+        (old / 'antiguo.txt').write_text('x')
+        self.cli_ok('op', 'move', str(self.src), '--dest', str(self.dest), '--conflict', 'overwrite')
+        self.assertEqual(sorted(p.name for p in old.iterdir()), ['b.txt', 'sub'])
+        self.assertEqual(self.leftovers(), [])
