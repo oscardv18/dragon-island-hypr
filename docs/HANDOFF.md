@@ -1042,3 +1042,36 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
   `qs ipc call tiling toggle` cambió el escritorio 2 a Dwindle y de vuelta a Scrolling, confirmados
   tanto por `hyprctl` como por `qs ipc call tiling get`; `configerrors` vacío. No se pulsaron las
   teclas físicas ni se capturó la barra; al alternar debe cambiar el icono de cuadrícula / columnas.
+
+## Corrección: fondos de menús del Taller (2026-11-02)
+
+- El selector de proyectos usaba `Theme.taller.panel` (94 % de alfa), dejando ver
+  las pestañas y filas del propio Taller. El blur del compositor actúa detrás de
+  la ventana, por lo que no elimina esa superposición interna.
+- Nuevo token opaco `Theme.taller.overlay`: selector de proyectos, compositor de
+  prompts, formulario de nueva tarjeta, confirmación y tarjeta arrastrada de Kanban.
+- Migración **093** para copias: renueva solo Theme y las tres vistas modificadas,
+  con respaldo, idempotencia y respeto a `DRY_RUN` / `ASSUME_YES`.
+- Verificado: captura offscreen del selector con tres proyectos, sin contenido
+  visible a través del fondo; pruebas de vistas del Taller y fase 5c, migración
+  en HOME temporal (dry-run, copia, respaldo y repetición), Bash y shellcheck.
+- Instalación local enlazada al repo: recibe los cambios mediante recarga QML.
+  No se verificó el resultado en una captura de la sesión real. Al abrir el selector,
+  los proyectos deben verse sobre un fondo oscuro sólido, sin pestañas ni agentes
+  atravesándolo; igual para el compositor y los formularios de Kanban.
+
+## Corrección: cristal del Taller y del explorador (2026-11-02)
+
+- `Theme.taller.panel` y `Theme.files.panel` usan ahora `Theme.popoverBg`, el
+  material común de cristal: ahumado, clásico o líquido según Ajustes. El fondo
+  anterior al 94 % ocultaba casi todo el desenfoque. Los menús internos conservan
+  su fondo opaco para tapar las filas de su propia ventana.
+- Sesión real consultada: blur nativo activo, estilo ahumado, sin configerrors.
+- Migración **094** renueva Theme en instalaciones copiadas, con los mismos
+  respaldos, idempotencia y DRY_RUN / ASSUME_YES que 093.
+- Debe verse el escritorio desenfocado a través del Taller y del explorador;
+  los menús de proyectos deben seguir legibles sin texto atravesándolos.
+- Verificado: 12 pruebas de vistas/servicios (Taller y explorador), migración
+  094 en HOME temporal con respaldo, simulación y repetición, shellcheck y diff.
+  La captura inmediata tras abrir no mostró el Taller; blur visual en sesión
+  real todavía pendiente de confirmar.

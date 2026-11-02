@@ -349,7 +349,7 @@ Item {
         width: Theme.taller.kanbanDetailWidth * 0.6
         height: dragTitle.implicitHeight + Theme.taller.cardPad * 2
         radius: Theme.taller.cardRadius
-        color: Theme.taller.panel
+        color: Theme.taller.overlay
         border.width: Theme.taller.buttonBorder
         border.color: Theme.cyan
         UiText { id: dragTitle; anchors.fill: parent; anchors.margins: Theme.taller.cardPad; text: (root.dragCard?.key ?? "") + " · " + (root.dragCard?.title ?? ""); size: Theme.taller.body; wrapMode: Text.Wrap; maximumLineCount: 2 }
@@ -361,7 +361,7 @@ Item {
         width: Math.min(parent.width, confirmRow.implicitWidth + Theme.taller.padding * 2)
         height: Theme.taller.confirmHeight
         radius: Theme.taller.buttonRadius
-        color: Theme.taller.panel
+        color: Theme.taller.overlay
         border.width: Theme.taller.buttonBorder
         border.color: Theme.warn
         RowLayout {
@@ -383,7 +383,7 @@ Item {
             width: Theme.taller.projectDialogWidth
             height: form.implicitHeight + Theme.taller.padding * 2
             radius: Theme.taller.columnRadius
-            color: Theme.taller.panel
+            color: Theme.taller.overlay
             border.width: Theme.taller.buttonBorder
             border.color: Theme.taller.selectedBorder
             MouseArea { anchors.fill: parent }
