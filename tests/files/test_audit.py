@@ -95,3 +95,35 @@ class TrashNames(AuditBase):
 
 if __name__ == '__main__':
     unittest.main()
+
+
+class IntoItself(AuditBase):
+    """Hallazgo 2: copying or moving a folder into itself through a symlink recursed ~1000 levels."""
+
+    def setUp(self):
+        super().setUp()
+        self.src = self.home / 'a'
+        (self.src / 'sub').mkdir(parents=True)
+        (self.src / 'f').write_text('hi')
+        (self.home / 'to-a').symlink_to(self.src)
+        (self.home / 'to-sub').symlink_to(self.src / 'sub')
+
+    def tree(self):
+        return sorted(str(p.relative_to(self.src)) for p in self.src.rglob('*'))
+
+    def test_copy_into_symlink_to_itself(self):
+        before = self.tree()
+        for dest in ('to-a', 'to-sub'):
+            self.cli_error('op', 'copy', str(self.src), '--dest', str(self.home / dest), '--conflict', 'rename',
+                           code='invalid_dest')
+        self.assertEqual(self.tree(), before)
+
+    def test_move_into_symlink_to_itself(self):
+        before = self.tree()
+        self.cli_error('op', 'move', str(self.src), '--dest', str(self.home / 'to-sub'), '--conflict', 'rename',
+                       code='invalid_dest')
+        self.assertEqual(self.tree(), before)
+
+    def test_copy_next_to_itself_still_works(self):
+        self.cli_ok('op', 'copy', str(self.src), '--dest', str(self.home), '--conflict', 'rename')
+        self.assertTrue((self.home / 'a (1)/f').exists())

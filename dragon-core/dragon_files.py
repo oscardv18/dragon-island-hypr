@@ -1517,8 +1517,10 @@ def validate_simple_name(name):
 
 
 def check_not_inside(src, dest_dir):
-    real_src = os.path.abspath(src)
-    real_dst = os.path.abspath(dest_dir)
+    # realpath, not abspath: a destination reached through a symlink to the source (or to a folder inside it)
+    # made copy/move recurse into their own output until RecursionError (audit 5d).
+    real_src = os.path.realpath(src)
+    real_dst = os.path.realpath(dest_dir)
     if real_dst == real_src or real_dst.startswith(real_src.rstrip('/') + '/'):
         raise ToolError('invalid_dest', 'No se puede copiar ni mover una carpeta dentro de sí misma.', 'Elige otra carpeta de destino.')
 
