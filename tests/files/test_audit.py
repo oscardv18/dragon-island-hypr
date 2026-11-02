@@ -276,3 +276,21 @@ class CrossDeviceMove(AuditBase):
         self.cli_ok('op', 'move', str(self.src), '--dest', str(self.dest), '--conflict', 'overwrite')
         self.assertEqual(sorted(p.name for p in old.iterdir()), ['b.txt', 'sub'])
         self.assertEqual(self.leftovers(), [])
+
+
+class SpecialFiles(AuditBase):
+    """Hallazgo 6: copying a FIFO (or a device) blocked forever in open()."""
+
+    def test_fifo_is_refused_fast(self):
+        fifo = self.home / 'tuberia'
+        os.mkfifo(fifo)
+        dest = self.home / 'dest'; dest.mkdir()
+        self.cli_error('op', 'copy', str(fifo), '--dest', str(dest), code='special_file', timeout=10)
+        self.assertEqual(list(dest.iterdir()), [])
+
+    def test_fifo_inside_a_folder(self):
+        (self.home / 'd').mkdir()
+        (self.home / 'd/ok.txt').write_text('x')
+        os.mkfifo(self.home / 'd/tuberia')
+        dest = self.home / 'dest'; dest.mkdir()
+        self.cli_error('op', 'copy', str(self.home / 'd'), '--dest', str(dest), code='special_file', timeout=10)

@@ -1493,6 +1493,10 @@ def copy_single_file(src, dst, tracker, index, count, overwrite=False):
         link_to = os.readlink(src)
         os.symlink(link_to, dst)
         return
+    if not stat.S_ISREG(lstat.st_mode):
+        # open() on a FIFO blocks forever and a device never ends (audit 5d): only files, folders and links copy.
+        raise ToolError('special_file', f'«{os.path.basename(src)}» es una tubería, un socket o un dispositivo: no se copia.',
+                        'Quítalo de la selección.')
 
     dest_dir = os.path.dirname(dst)
     os.makedirs(dest_dir, exist_ok=True)
