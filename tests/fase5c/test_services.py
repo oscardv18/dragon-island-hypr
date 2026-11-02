@@ -2,7 +2,14 @@
 import json
 import shutil
 import unittest
-from helpers import run_shell, git_repo, BAD
+from helpers import run_shell, git_repo, BAD, ROOT
+
+LEGACY_GIT = '''#!/bin/sh
+# dragon-git before `--base` and `merge-check`: rejects them as unknown usage.
+case " $* " in *" merge-check "*|*" --base "*)
+  echo '{{"ok":false,"error":{{"code":"invalid_usage","message":"uso","hint":""}}}}'; exit 2;; esac
+exec "{real}" "$@"
+'''
 
 SHELL = '''import Quickshell
 import QtQuick
@@ -11,6 +18,8 @@ ShellRoot {
     property int phase: 0
     property var card: null
     readonly property string repo: Quickshell.env("HOME") + "/repo"
+    readonly property bool legacy: Quickshell.env("GATE_LEGACY_GIT") === "1"
+    readonly property string conflictsState: legacy ? "unknown" : "ok"
     function fail(msg) { console.error("FAIL", phase, msg); Qt.quit(); }
     Component.onCompleted: Mem.addProject(repo, "Proyecto", "AX", r => {
         if (!r.ok) return fail("project " + JSON.stringify(r));
@@ -41,20 +50,21 @@ ShellRoot {
                 Prompts.target = "herdr:agente-1"; Prompts.send(); phase = 6;
             } else if (phase === 6 && !Prompts.sending && !Prompts.composerOpen) {
                 Gate.evaluate(card, Mem.project); phase = 7;
-            } else if (phase === 7 && Gate.gates[card.key]?.seen && Gate.gates[card.key]?.conflicts?.state === "unknown") {
+            } else if (phase === 7 && Gate.gates[card.key]?.seen && Gate.gates[card.key]?.conflicts?.state === conflictsState) {
                 const g = Gate.gates[card.key];
                 if (g.tests.state !== "none") return fail("tests " + JSON.stringify(g.tests));
                 if (g.seen.total !== 1 || g.seen.seen !== 0 || g.ready) return fail("seen " + JSON.stringify(g.seen));
-                if (Gate.mergeCheckSupported !== false || Gate.baseSupported !== false) return fail("fallbacks");
+                if (Gate.mergeCheckSupported !== !legacy || Gate.baseSupported !== !legacy) return fail("support detection " + Gate.mergeCheckSupported + " " + Gate.baseSupported);
                 Gate.run(card, Mem.project); phase = 8;
             } else if (phase === 8 && Gate.runs[card.key]?.state === "ok") {
                 if (Gate.gates[card.key].tests.state !== "ok") return fail("tests gate after run");
                 Gate.call(Gate.gitTool, ["blob-hash", "--repo", repo, "--path", "nuevo.txt"], h =>
                     Mem.call(["seen", "set", card.key, "--path", "nuevo.txt", "--hash", h.hash], () => { Gate.evaluate(card, Mem.project); phase = 9; }));
                 phase = 99;
-            } else if (phase === 9 && Gate.gates[card.key]?.seen?.seen === 1 && Gate.gates[card.key]?.conflicts?.state === "unknown") {
+            } else if (phase === 9 && Gate.gates[card.key]?.seen?.seen === 1 && Gate.gates[card.key]?.conflicts?.state === conflictsState) {
                 const g = Gate.gates[card.key];
-                if (g.ready || !g.needsConfirm) return fail("unknown conflicts must ask " + JSON.stringify(g));
+                if (legacy && (g.ready || !g.needsConfirm)) return fail("unknown conflicts must ask " + JSON.stringify(g));
+                if (!legacy && (!g.ready || g.needsConfirm)) return fail("all gates green must be ready " + JSON.stringify(g));
                 console.log("FASE5C_SERVICES_OK"); Qt.quit();
             }
         }
@@ -66,14 +76,25 @@ ShellRoot {
 
 @unittest.skipUnless(shutil.which('qs'), 'Quickshell required')
 class PromptAndGate(unittest.TestCase):
-    def test_compose_send_and_gates(self):
-        out, data = run_shell(SHELL, setup=lambda home, env: git_repo(home, env))
+    def check(self, out, data):
         self.assertIn('FASE5C_SERVICES_OK', out, out)
         for bad in BAD: self.assertNotIn(bad, out, out)
         sent = [json.loads(l) for l in data['sent'].splitlines()]
         self.assertEqual([s['target'] for s in sent], ['clipboard', 'herdr:agente-1'])
         self.assertNotIn('ghp_secretvalue', data['sent'])
         self.assertNotIn('## Comandos', sent[0]['text'])
+
+    def test_compose_send_and_gates(self):
+        # Real dragon-git supports `status --base` and `merge-check`: every gate can turn green.
+        self.check(*run_shell(SHELL, setup=lambda home, env: git_repo(home, env)))
+
+    def test_gates_degrade_without_git_extensions(self):
+        # A dragon-git without the optional extensions: conflicts stay unknown and «Hecho» asks first.
+        def setup(home, env):
+            git_repo(home, env)
+            tool = home / '.local/bin/dragon-git'; tool.unlink()
+            tool.write_text(LEGACY_GIT.format(real=ROOT / 'bin/dragon-git')); tool.chmod(0o755)
+        self.check(*run_shell(SHELL, setup=setup, env_extra={'GATE_LEGACY_GIT': '1'}))
 
 
 
