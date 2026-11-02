@@ -1720,6 +1720,466 @@ def cmd_trash(args):
     return {'t': 'done', 'moved': moved}
 
 
+# ---- devices (d3: lsblk/udisksctl/gio, mount, unmount, eject, unlock) ----
+
+def _bool_field(val):
+    if isinstance(val, bool):
+        return val
+    if isinstance(val, (int, float)):
+        return val != 0
+    if isinstance(val, str):
+        return val.strip().lower() in ('1', 'true', 'yes')
+    return False
+
+
+def _int_or_none(val):
+    if val is None or val == '':
+        return None
+    try:
+        return int(val)
+    except (ValueError, TypeError):
+        return None
+
+
+def _node_mountpoint(node):
+    mps = node.get('mountpoints')
+    if isinstance(mps, list):
+        for mp in mps:
+            if mp and mp != '[SWAP]':
+                return str(mp)
+    mp = node.get('mountpoint')
+    if mp and mp != '[SWAP]':
+        return str(mp)
+    return None
+
+
+def _is_hidden_mount(mountpoint, label, partlabel):
+    if mountpoint in ('/boot', '/boot/efi', '/efi', '/recovery'):
+        return True
+    if mountpoint and (mountpoint.startswith('/boot/') or mountpoint.startswith('/efi/')):
+        return True
+    pl = (partlabel or '').strip().lower()
+    lb = (label or '').strip().upper()
+    if pl.startswith('efi') or (lb == 'EFI' and mountpoint):
+        return True
+    return False
+
+
+def _format_block_entry(node, parent_ctx=None):
+    parent_ctx = parent_ctx or {}
+    dev_id = str(node.get('name') or node.get('kname') or '').strip()
+    if not dev_id:
+        return None
+    ntype = str(node.get('type') or '').strip().lower()
+    fstype = str(node.get('fstype') or '').strip() or None
+    if ntype in ('loop', 'ram', 'zram') or fstype == 'swap':
+        return None
+
+    mountpoint = _node_mountpoint(node)
+    mounted = bool(mountpoint)
+    removable = (
+        _bool_field(node.get('rm'))
+        or _bool_field(node.get('hotplug'))
+        or parent_ctx.get('removable', False)
+        or str(node.get('tran') or parent_ctx.get('tran') or '').lower() in ('usb', 'mmc')
+    )
+
+    label = (
+        str(node.get('label') or '').strip()
+        or str(node.get('partlabel') or '').strip()
+        or str(node.get('model') or '').strip()
+        or parent_ctx.get('label', '')
+        or parent_ctx.get('model', '')
+        or ('Sistema' if mountpoint == '/' else dev_id)
+    )
+    hidden = _is_hidden_mount(mountpoint, node.get('label'), node.get('partlabel'))
+    size = _int_or_none(node.get('size'))
+    if size is None:
+        size = parent_ctx.get('size')
+
+    if fstype == 'crypto_LUKS':
+        kind = 'luks'
+        locked = True
+        mounted = False
+        mountpoint = None
+        used = None
+        free = None
+    else:
+        locked = False
+        if ntype == 'rom' or fstype in ('iso9660', 'udf'):
+            kind = 'optical'
+        elif removable:
+            kind = 'usb'
+        else:
+            kind = 'disk'
+        if mounted and not hidden:
+            used = _int_or_none(node.get('fsused'))
+            free = _int_or_none(node.get('fsavail'))
+            if (used is None or free is None) and mountpoint and os.path.isdir(mountpoint):
+                try:
+                    stv = os.statvfs(mountpoint)
+                    total_b = int(stv.f_blocks * stv.f_frsize)
+                    free_b = int(stv.f_bavail * stv.f_frsize)
+                    if free is None and total_b > 0:
+                        free = free_b
+                    if used is None and total_b > 0:
+                        used = max(0, total_b - int(stv.f_bfree * stv.f_frsize))
+                except OSError:
+                    pass
+        else:
+            used = None
+            free = None
+
+    entry = {
+        'id': dev_id,
+        'label': label,
+        'kind': kind,
+        'size': size,
+        'used': used,
+        'free': free,
+        'fstype': fstype,
+        'mounted': mounted,
+        'mountpoint': mountpoint,
+        'removable': bool(removable),
+        'locked': bool(locked),
+    }
+    if hidden:
+        entry['hidden'] = True
+    return entry
+
+
+def _walk_lsblk_nodes(nodes, out, parent_ctx=None):
+    for node in nodes or []:
+        if not isinstance(node, dict):
+            continue
+        ntype = str(node.get('type') or '').strip().lower()
+        if ntype in ('loop', 'ram', 'zram'):
+            continue
+        fstype = str(node.get('fstype') or '').strip()
+        children = node.get('children') or []
+        ctx = {
+            'removable': (
+                (parent_ctx or {}).get('removable', False)
+                or _bool_field(node.get('rm'))
+                or _bool_field(node.get('hotplug'))
+                or str(node.get('tran') or '').lower() in ('usb', 'mmc')
+            ),
+            'tran': str(node.get('tran') or (parent_ctx or {}).get('tran') or ''),
+            'model': str(node.get('model') or (parent_ctx or {}).get('model') or '').strip(),
+            'label': str(node.get('label') or node.get('partlabel') or (parent_ctx or {}).get('label') or '').strip(),
+            'size': _int_or_none(node.get('size')) or (parent_ctx or {}).get('size'),
+        }
+        if fstype == 'crypto_LUKS':
+            if children:
+                _walk_lsblk_nodes(children, out, parent_ctx=ctx)
+            else:
+                entry = _format_block_entry(node, parent_ctx=ctx)
+                if entry:
+                    out.append(entry)
+            continue
+        if ntype == 'disk' and children:
+            _walk_lsblk_nodes(children, out, parent_ctx=ctx)
+            continue
+        if not fstype and not _node_mountpoint(node) and ntype != 'rom':
+            if children:
+                _walk_lsblk_nodes(children, out, parent_ctx=ctx)
+            continue
+        entry = _format_block_entry(node, parent_ctx=parent_ctx)
+        if entry:
+            out.append(entry)
+        if children:
+            _walk_lsblk_nodes(children, out, parent_ctx=ctx)
+
+
+def _collect_mtp_devices(seen_mountpoints):
+    import urllib.parse
+    mtp_list = []
+    runtime_dir = os.environ.get('XDG_RUNTIME_DIR') or f'/run/user/{os.getuid()}'
+    gvfs_dir = Path(runtime_dir) / 'gvfs'
+    if gvfs_dir.is_dir():
+        try:
+            for item in sorted(gvfs_dir.iterdir(), key=lambda p: p.name):
+                if not item.name.startswith('mtp:'):
+                    continue
+                mp = str(item)
+                if mp in seen_mountpoints:
+                    continue
+                seen_mountpoints.add(mp)
+                host = item.name
+                if 'host=' in host:
+                    host = host.split('host=', 1)[1].split(',', 1)[0]
+                host = urllib.parse.unquote(host)
+                dev_id = f'mtp:{host}' if not host.startswith('mtp:') else host
+                label = host.replace('_', ' ').strip() or 'MTP'
+                mtp_list.append({
+                    'id': dev_id,
+                    'label': label,
+                    'kind': 'mtp',
+                    'size': None,
+                    'used': None,
+                    'free': None,
+                    'fstype': 'mtp',
+                    'mounted': True,
+                    'mountpoint': mp,
+                    'removable': True,
+                    'locked': False,
+                })
+        except OSError:
+            pass
+    return mtp_list
+
+
+def collect_devices():
+    import shutil
+    import subprocess
+    if not shutil.which('lsblk'):
+        raise ToolError('missing_tool', 'lsblk no está instalado.', 'Instala util-linux.')
+    cols = 'NAME,KNAME,PKNAME,LABEL,PARTLABEL,MODEL,TYPE,FSTYPE,SIZE,FSUSED,FSAVAIL,MOUNTPOINT,MOUNTPOINTS,RM,HOTPLUG,TRAN,UUID'
+    r = subprocess.run(['lsblk', '-J', '-b', '-o', cols], capture_output=True, text=True, timeout=8, check=False)
+    if r.returncode != 0:
+        raise ToolError('lsblk_failed', (r.stderr or r.stdout or 'No se pudieron leer los dispositivos').strip())
+    try:
+        payload = json.loads(r.stdout or '{}')
+    except ValueError:
+        raise ToolError('lsblk_failed', 'Salida JSON inválida de lsblk.') from None
+
+    devices = []
+    _walk_lsblk_nodes(payload.get('blockdevices') or [], devices, parent_ctx=None)
+    seen_mps = {d['mountpoint'] for d in devices if d.get('mountpoint')}
+    devices.extend(_collect_mtp_devices(seen_mps))
+    return {'devices': devices}
+
+
+def cmd_devices(args):
+    import select
+    import shutil
+    import subprocess
+    if not args.watch:
+        return collect_devices()
+
+    proc = None
+    try:
+        prev = json.dumps(collect_devices(), sort_keys=True)
+    except ToolError:
+        prev = ''
+    try:
+        if shutil.which('udevadm'):
+            proc = subprocess.Popen(
+                ['udevadm', 'monitor', '--subsystem-match=block', '--udev'],
+                stdout=subprocess.PIPE,
+                stderr=subprocess.DEVNULL,
+                start_new_session=True,
+            )
+        while True:
+            triggered = False
+            changed_id = None
+            if proc and proc.poll() is None:
+                ready, _, _ = select.select([proc.stdout], [], [], 1.0)
+                if ready:
+                    chunk = os.read(proc.stdout.fileno(), 65536).decode('utf-8', errors='replace')
+                    if chunk:
+                        triggered = True
+                        while select.select([proc.stdout], [], [], 0.15)[0]:
+                            more = os.read(proc.stdout.fileno(), 65536).decode('utf-8', errors='replace')
+                            if not more:
+                                break
+                            chunk += more
+                        m = re.search(r'/block/(?:[a-z0-9]+/)?([a-z0-9_-]+)', chunk)
+                        if m:
+                            changed_id = m.group(1)
+            else:
+                time.sleep(1.0)
+            try:
+                curr = json.dumps(collect_devices(), sort_keys=True)
+            except ToolError:
+                curr = prev
+            if triggered or curr != prev:
+                prev = curr
+                ev = {'t': 'changed'}
+                if changed_id:
+                    ev['id'] = changed_id
+                emit(ev)
+    finally:
+        if proc and proc.poll() is None:
+            try:
+                os.killpg(proc.pid, signal.SIGTERM)
+                proc.communicate(timeout=2)
+            except Exception:
+                pass
+
+
+def _resolve_block_dev(dev_id):
+    clean = str(dev_id or '').strip()
+    if not clean or '/' in clean.removeprefix('/dev/'):
+        raise ToolError('invalid_device', f'Identificador de dispositivo no válido: «{dev_id}».')
+    return clean if clean.startswith('/dev/') else f'/dev/{clean}'
+
+
+def _parse_udisks_mountpoint(output, dev_id):
+    text = (output or '').strip()
+    m = re.search(r' at\s+(/[^\n\r]+?)\.?\s*$', text)
+    if m:
+        return m.group(1).rstrip('.')
+    try:
+        for dev in collect_devices()['devices']:
+            if dev['id'] == dev_id.removeprefix('/dev/') and dev.get('mountpoint'):
+                return dev['mountpoint']
+    except Exception:
+        pass
+    return None
+
+
+def _raise_udisks_error(output, default_code='device_error'):
+    msg = (output or '').strip()
+    low = msg.lower()
+    if 'notauthorized' in low or 'not authorized' in low or 'permission' in low:
+        raise ToolError('permission_denied', 'No tienes permiso para realizar esta acción en el dispositivo.', 'Comprueba los permisos de Polkit/UDisks2.')
+    if 'busy' in low or 'target is busy' in low:
+        raise ToolError('device_busy', 'El dispositivo está ocupado.', 'Cierra los archivos o terminales abiertos en él.')
+    if 'no such object' in low or 'does not exist' in low or 'not found' in low:
+        raise ToolError('not_found', 'No se encontró el dispositivo.')
+    raise ToolError(default_code, msg or 'No se pudo completar la operación en el dispositivo.')
+
+
+def cmd_mount(args):
+    import shutil
+    import subprocess
+    dev_id = args.id.strip()
+    if dev_id.startswith('mtp:') or '://' in dev_id:
+        if not shutil.which('gio'):
+            raise ToolError('missing_tool', 'gio no está disponible.', 'Instala glib2.')
+        uri = dev_id if '://' in dev_id else f"mtp://{dev_id.split(':', 1)[1]}/"
+        r = subprocess.run(['gio', 'mount', uri], capture_output=True, text=True, timeout=15, check=False)
+        if r.returncode != 0 and 'already mounted' not in (r.stderr or '').lower():
+            raise ToolError('mount_failed', (r.stderr or r.stdout or 'No se pudo montar el dispositivo MTP').strip())
+        for d in _collect_mtp_devices(set()):
+            if d['id'] == dev_id or d['mountpoint']:
+                return {'mountpoint': d['mountpoint']}
+        return {'mountpoint': None}
+
+    if not shutil.which('udisksctl'):
+        raise ToolError('missing_tool', 'udisksctl no está disponible.', 'Instala udisks2.')
+    dev_path = _resolve_block_dev(dev_id)
+    r = subprocess.run(
+        ['udisksctl', 'mount', '-b', dev_path, '--no-user-interaction'],
+        capture_output=True,
+        text=True,
+        timeout=20,
+        check=False,
+    )
+    combined = (r.stdout or '') + '\n' + (r.stderr or '')
+    if r.returncode != 0 and 'alreadymounted' not in combined.lower() and 'already mounted' not in combined.lower():
+        _raise_udisks_error(combined, default_code='mount_failed')
+    mp = _parse_udisks_mountpoint(r.stdout or combined, dev_id)
+    return {'mountpoint': mp}
+
+
+def cmd_unmount(args):
+    import shutil
+    import subprocess
+    dev_id = args.id.strip()
+    if dev_id.startswith('mtp:') or '://' in dev_id:
+        if not shutil.which('gio'):
+            raise ToolError('missing_tool', 'gio no está disponible.', 'Instala glib2.')
+        uri = dev_id if '://' in dev_id else f"mtp://{dev_id.split(':', 1)[1]}/"
+        r = subprocess.run(['gio', 'mount', '-u', uri], capture_output=True, text=True, timeout=15, check=False)
+        if r.returncode != 0:
+            raise ToolError('unmount_failed', (r.stderr or r.stdout or 'No se pudo desmontar').strip())
+        return {}
+
+    if not shutil.which('udisksctl'):
+        raise ToolError('missing_tool', 'udisksctl no está disponible.', 'Instala udisks2.')
+    dev_path = _resolve_block_dev(dev_id)
+    r = subprocess.run(
+        ['udisksctl', 'unmount', '-b', dev_path, '--no-user-interaction'],
+        capture_output=True,
+        text=True,
+        timeout=20,
+        check=False,
+    )
+    if r.returncode != 0:
+        _raise_udisks_error((r.stdout or '') + '\n' + (r.stderr or ''), default_code='unmount_failed')
+    return {}
+
+
+def cmd_eject(args):
+    import shutil
+    import subprocess
+    dev_id = args.id.strip()
+    if dev_id.startswith('mtp:') or '://' in dev_id:
+        return cmd_unmount(args)
+
+    if not shutil.which('udisksctl'):
+        raise ToolError('missing_tool', 'udisksctl no está disponible.', 'Instala udisks2.')
+    dev_path = _resolve_block_dev(dev_id)
+    r_unmount = subprocess.run(
+        ['udisksctl', 'unmount', '-b', dev_path, '--no-user-interaction'],
+        capture_output=True,
+        text=True,
+        timeout=20,
+        check=False,
+    )
+    unmount_out = (r_unmount.stdout or '') + '\n' + (r_unmount.stderr or '')
+    if r_unmount.returncode != 0 and 'notmounted' not in unmount_out.lower() and 'not mounted' not in unmount_out.lower():
+        _raise_udisks_error(unmount_out, default_code='eject_failed')
+
+    r_off = subprocess.run(
+        ['udisksctl', 'power-off', '-b', dev_path, '--no-user-interaction'],
+        capture_output=True,
+        text=True,
+        timeout=20,
+        check=False,
+    )
+    off_out = (r_off.stdout or '') + '\n' + (r_off.stderr or '')
+    if r_off.returncode != 0 and ('busy' in off_out.lower() or 'notauthorized' in off_out.lower()):
+        _raise_udisks_error(off_out, default_code='eject_failed')
+    return {}
+
+
+def cmd_unlock(args):
+    import shutil
+    import subprocess
+    if not args.passphrase_stdin:
+        raise ToolError('invalid_usage', 'La contraseña debe recibirse por stdin (--passphrase-stdin).')
+    passphrase = sys.stdin.readline().rstrip('\r\n')
+    if not passphrase:
+        raise ToolError('bad_passphrase', 'Contraseña incorrecta', 'Introduce la contraseña del volumen cifrado.')
+    if not shutil.which('udisksctl'):
+        raise ToolError('missing_tool', 'udisksctl no está disponible.', 'Instala udisks2.')
+
+    dev_path = _resolve_block_dev(args.id)
+    r = subprocess.run(
+        ['udisksctl', 'unlock', '-b', dev_path, '--key-file', '/dev/stdin', '--no-user-interaction'],
+        input=passphrase,
+        capture_output=True,
+        text=True,
+        timeout=25,
+        check=False,
+    )
+    out_text = (r.stdout or '') + '\n' + (r.stderr or '')
+    if r.returncode != 0:
+        low = out_text.lower()
+        if 'notauthorized' in low or 'not authorized' in low:
+            raise ToolError('permission_denied', 'No tienes permiso para desbloquear este volumen.')
+        raise ToolError('bad_passphrase', 'Contraseña incorrecta', '')
+
+    m = re.search(r'as\s+(/dev/[^\s.]+)', out_text)
+    cleartext_dev = m.group(1).rstrip('.') if m else None
+    mountpoint = None
+    if cleartext_dev:
+        r_mnt = subprocess.run(
+            ['udisksctl', 'mount', '-b', cleartext_dev, '--no-user-interaction'],
+            capture_output=True,
+            text=True,
+            timeout=20,
+            check=False,
+        )
+        mnt_out = (r_mnt.stdout or '') + '\n' + (r_mnt.stderr or '')
+        if r_mnt.returncode == 0 or 'already' in mnt_out.lower():
+            mountpoint = _parse_udisks_mountpoint(r_mnt.stdout or mnt_out, os.path.basename(cleartext_dev))
+    return {'mountpoint': mountpoint}
+
+
 def build_parser():
     parser = Parser(description='Herramienta del explorador de archivos de dragon-island (JSON).')
     sub = parser.add_subparsers(dest='cmd', required=True)
@@ -1786,6 +2246,27 @@ def build_parser():
     p.add_argument('--json-progress', dest='json_progress', action='store_true')
     p.add_argument('--json', action='store_true')
 
+    p = sub.add_parser('devices')
+    p.add_argument('--watch', action='store_true')
+    p.add_argument('--json', action='store_true')
+
+    p = sub.add_parser('mount')
+    p.add_argument('id')
+    p.add_argument('--json', action='store_true')
+
+    p = sub.add_parser('unmount')
+    p.add_argument('id')
+    p.add_argument('--json', action='store_true')
+
+    p = sub.add_parser('eject')
+    p.add_argument('id')
+    p.add_argument('--json', action='store_true')
+
+    p = sub.add_parser('unlock')
+    p.add_argument('id')
+    p.add_argument('--passphrase-stdin', dest='passphrase_stdin', action='store_true')
+    p.add_argument('--json', action='store_true')
+
     return parser
 
 
@@ -1813,6 +2294,19 @@ def main():
         result = cmd_op(args)
     elif args.cmd == 'trash':
         result = cmd_trash(args)
+    elif args.cmd == 'devices':
+        if args.watch:
+            cmd_devices(args)
+            return 0
+        result = cmd_devices(args)
+    elif args.cmd == 'mount':
+        result = cmd_mount(args)
+    elif args.cmd == 'unmount':
+        result = cmd_unmount(args)
+    elif args.cmd == 'eject':
+        result = cmd_eject(args)
+    elif args.cmd == 'unlock':
+        result = cmd_unlock(args)
     else:
         raise ToolError('unsupported', f'Subcomando no soportado: {args.cmd}')
     emit({'ok': True, **result})

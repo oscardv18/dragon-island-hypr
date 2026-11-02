@@ -1,4 +1,4 @@
-"""Tests for dragon-files (d1 + d2) in temp HOME/XDG."""
+"""Tests for dragon-files (d1 + d2 + d3) in temp HOME/XDG."""
 import hashlib
 import json
 import os
@@ -664,6 +664,264 @@ class FilesD1Tests(unittest.TestCase):
         self.cli('trash', 'empty', '--confirm')
         after_empty = self.cli('ls', 'trash:///')
         self.assertEqual(after_empty['entries'], [])
+
+    def test_d3_devices_lsblk_mtp_luks_and_hidden(self):
+        shims = self.home / 'd3-bin'
+        shims.mkdir()
+        lsblk_data = {
+            'blockdevices': [
+                {
+                    'name': 'loop0',
+                    'type': 'loop',
+                    'fstype': 'squashfs',
+                    'size': 1048576,
+                    'mountpoint': '/snap/core',
+                },
+                {
+                    'name': 'nvme0n1',
+                    'type': 'disk',
+                    'model': 'Samsung SSD',
+                    'rm': False,
+                    'hotplug': False,
+                    'tran': 'nvme',
+                    'size': 1000204886016,
+                    'children': [
+                        {
+                            'name': 'nvme0n1p1',
+                            'type': 'part',
+                            'label': 'EFI',
+                            'partlabel': 'EFI System Partition',
+                            'fstype': 'vfat',
+                            'size': 536870912,
+                            'mountpoint': '/boot',
+                            'rm': False,
+                        },
+                        {
+                            'name': 'nvme0n1p2',
+                            'type': 'part',
+                            'label': 'SSD',
+                            'fstype': 'btrfs',
+                            'size': 1000204886016,
+                            'fsused': 500914937856,
+                            'fsavail': 499289948160,
+                            'mountpoint': '/',
+                            'rm': False,
+                        },
+                        {
+                            'name': 'nvme0n1p3',
+                            'type': 'part',
+                            'fstype': 'swap',
+                            'size': 8589934592,
+                            'mountpoint': '[SWAP]',
+                        },
+                    ],
+                },
+                {
+                    'name': 'sda',
+                    'type': 'disk',
+                    'model': 'DataTraveler',
+                    'rm': True,
+                    'hotplug': True,
+                    'tran': 'usb',
+                    'size': 32015679488,
+                    'children': [
+                        {
+                            'name': 'sda1',
+                            'type': 'part',
+                            'label': 'KINGSTON',
+                            'fstype': 'exfat',
+                            'size': 32015679488,
+                            'fsused': 6403135897,
+                            'fsavail': 25612543591,
+                            'mountpoint': '/run/media/oddv/KINGSTON',
+                            'rm': True,
+                            'hotplug': True,
+                            'tran': 'usb',
+                        },
+                    ],
+                },
+                {
+                    'name': 'sdb',
+                    'type': 'disk',
+                    'rm': True,
+                    'hotplug': True,
+                    'tran': 'usb',
+                    'size': 2000398934016,
+                    'children': [
+                        {
+                            'name': 'sdb1',
+                            'type': 'part',
+                            'label': 'Respaldo cifrado',
+                            'fstype': 'crypto_LUKS',
+                            'size': 2000398934016,
+                            'mountpoint': None,
+                            'rm': True,
+                            'hotplug': True,
+                            'tran': 'usb',
+                        },
+                    ],
+                },
+            ],
+        }
+        fake_lsblk = shims / 'lsblk'
+        fake_lsblk.write_text(
+            '#!/usr/bin/env python3\n'
+            'import json\n'
+            f'print(json.dumps({lsblk_data!r}))\n',
+            encoding='utf-8',
+        )
+        fake_lsblk.chmod(0o755)
+
+        gvfs_mtp = Path(self.env['XDG_RUNTIME_DIR']) / 'gvfs/mtp:host=Google_Pixel_8'
+        gvfs_mtp.mkdir(parents=True)
+
+        env = dict(self.env, PATH=f"{shims}:{self.env['PATH']}")
+        res = self.cli('devices', env=env)
+        by_id = {d['id']: d for d in res['devices']}
+
+        self.assertNotIn('loop0', by_id)
+        self.assertNotIn('nvme0n1p3', by_id)
+        self.assertTrue(by_id['nvme0n1p1'].get('hidden'))
+        self.assertIsNone(by_id['nvme0n1p1']['used'])
+        self.assertIsNone(by_id['nvme0n1p1']['free'])
+
+        self.assertEqual(by_id['nvme0n1p2']['kind'], 'disk')
+        self.assertEqual(by_id['nvme0n1p2']['label'], 'SSD')
+        self.assertTrue(by_id['nvme0n1p2']['mounted'])
+        self.assertEqual(by_id['nvme0n1p2']['used'], 500914937856)
+        self.assertEqual(by_id['nvme0n1p2']['free'], 499289948160)
+
+        self.assertEqual(by_id['sda1']['kind'], 'usb')
+        self.assertTrue(by_id['sda1']['removable'])
+        self.assertFalse(by_id['sda1']['locked'])
+
+        self.assertEqual(by_id['sdb1']['kind'], 'luks')
+        self.assertTrue(by_id['sdb1']['locked'])
+        self.assertFalse(by_id['sdb1']['mounted'])
+        self.assertIsNone(by_id['sdb1']['mountpoint'])
+
+        self.assertEqual(by_id['mtp:Google_Pixel_8']['kind'], 'mtp')
+        self.assertEqual(by_id['mtp:Google_Pixel_8']['label'], 'Google Pixel 8')
+        self.assertEqual(by_id['mtp:Google_Pixel_8']['mountpoint'], str(gvfs_mtp))
+
+    def test_d3_mount_unmount_eject_and_unlock_stdin(self):
+        shims = self.home / 'udisks-bin'
+        shims.mkdir()
+        log_path = self.home / 'udisks.log'
+        fake_udisks = shims / 'udisksctl'
+        fake_udisks.write_text(
+            '#!/usr/bin/env python3\n'
+            'import json, sys\n'
+            'args = sys.argv[1:]\n'
+            'stdin_data = sys.stdin.read() if "--key-file" in args else ""\n'
+            f'open({str(log_path)!r}, "a", encoding="utf-8").write(json.dumps({{"argv": args, "stdin": stdin_data}}) + "\\n")\n'
+            'sub = args[0] if args else ""\n'
+            'dev = args[args.index("-b") + 1] if "-b" in args else ""\n'
+            'if sub == "mount":\n'
+            '    name = dev.split("/")[-1]\n'
+            '    print(f"Mounted {dev} at /run/media/test/{name}.")\n'
+            'elif sub in ("unmount", "power-off"):\n'
+            '    print(f"OK {sub} {dev}.")\n'
+            'elif sub == "unlock":\n'
+            '    if stdin_data == "clave-secreta":\n'
+            '        print(f"Unlocked {dev} as /dev/dm-0.")\n'
+            '    else:\n'
+            '        sys.stderr.write("Error unlocking: Failed to activate device: Incorrect passphrase\\n")\n'
+            '        sys.exit(1)\n',
+            encoding='utf-8',
+        )
+        fake_udisks.chmod(0o755)
+        env = dict(self.env, PATH=f"{shims}:{self.env['PATH']}")
+
+        m_res = self.cli('mount', 'sda1', env=env)
+        self.assertEqual(m_res['mountpoint'], '/run/media/test/sda1')
+
+        self.cli('unmount', 'sda1', env=env)
+        self.cli('eject', 'sda1', env=env)
+
+        # Unlock without --passphrase-stdin is rejected
+        err_usage = self.cli('unlock', 'sdb1', ok=False, env=env)
+        self.assertEqual(err_usage['error']['code'], 'invalid_usage')
+
+        # Unlock with wrong passphrase via stdin fails with bad_passphrase
+        p_bad = subprocess.run(
+            [str(BIN), 'unlock', 'sdb1', '--passphrase-stdin', '--json'],
+            input='clave-falsa-xyz\n',
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(p_bad.returncode, 1)
+        bad_json = json.loads(p_bad.stdout)
+        self.assertEqual(bad_json['error']['code'], 'bad_passphrase')
+        self.assertNotIn('clave-falsa-xyz', p_bad.stdout + p_bad.stderr)
+
+        # Unlock with right passphrase via stdin unlocks and mounts cleartext device, never passing secret in argv
+        p_ok = subprocess.run(
+            [str(BIN), 'unlock', 'sdb1', '--passphrase-stdin', '--json'],
+            input='clave-secreta\n',
+            env=env,
+            capture_output=True,
+            text=True,
+            timeout=10,
+        )
+        self.assertEqual(p_ok.returncode, 0, p_ok.stdout + p_ok.stderr)
+        ok_json = json.loads(p_ok.stdout)
+        self.assertTrue(ok_json['ok'])
+        self.assertEqual(ok_json['mountpoint'], '/run/media/test/dm-0')
+
+        calls = [json.loads(line) for line in log_path.read_text(encoding='utf-8').splitlines()]
+        for c in calls:
+            self.assertNotIn('clave-secreta', ' '.join(c['argv']), 'Passphrase must NEVER appear in command arguments')
+        unlock_calls = [c for c in calls if c['argv'][0] == 'unlock']
+        self.assertEqual(unlock_calls[-1]['stdin'], 'clave-secreta')
+
+    def test_d3_devices_watch_and_child_cleanup(self):
+        shims = self.home / 'udev-bin'
+        shims.mkdir()
+        pid_file = self.home / 'udevadm.pid'
+
+        fake_lsblk = shims / 'lsblk'
+        fake_lsblk.write_text('#!/usr/bin/env python3\nprint(\'{"blockdevices": []}\')\n', encoding='utf-8')
+        fake_lsblk.chmod(0o755)
+
+        fake_udev = shims / 'udevadm'
+        fake_udev.write_text(
+            '#!/usr/bin/env python3\n'
+            'import os, time\n'
+            'from pathlib import Path\n'
+            f'Path({str(pid_file)!r}).write_text(str(os.getpid()))\n'
+            'time.sleep(0.2)\n'
+            'print("UDEV  [123.456] add      /devices/pci0000:00/usb1/block/sda/sda1 (block)", flush=True)\n'
+            'time.sleep(30)\n',
+            encoding='utf-8',
+        )
+        fake_udev.chmod(0o755)
+
+        env = dict(self.env, PATH=f"{shims}:{self.env['PATH']}")
+        p = subprocess.Popen(
+            [str(BIN), 'devices', '--watch'],
+            env=env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            ready, _, _ = select.select([p.stdout], [], [], 3.0)
+            self.assertTrue(ready, 'devices --watch did not emit change event')
+            ev = json.loads(p.stdout.readline())
+            self.assertEqual(ev['t'], 'changed')
+            self.assertEqual(ev.get('id'), 'sda1')
+            child_pid = int(pid_file.read_text().strip())
+            p.terminate()
+            p.communicate(timeout=3)
+            self.assertEqual(p.returncode, 0)
+            self.assertFalse(Path(f'/proc/{child_pid}').exists(), 'udevadm child process was not cleaned up')
+        finally:
+            if p.poll() is None:
+                p.kill()
+                p.communicate()
 
 
 if __name__ == '__main__':
