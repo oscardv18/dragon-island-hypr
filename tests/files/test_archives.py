@@ -181,15 +181,49 @@ class ArchiveTests(unittest.TestCase):
                 self.assertEqual((self.dest / 'source').read_text(),'hello')
 
     def test_password_only_stdin(self):
-        # Produce an encrypted ZIP locally; fixture generator argv is not the adapter.
+        # Fixture generation is separate from the adapter. The adapter only reads stdin.
         src = self.home / 'secret'; src.write_text('payload')
-        path = self.home / 'secret.zip'
-        subprocess.run(['7z','a','-tzip','-pfixture-pass',str(path),str(src)],
-                       check=True, stdout=subprocess.DEVNULL)
-        self.reject(path, 'password_required')
-        result = self.cli('extract',path,'--dest',self.dest,'--password-stdin',
-                          stdin='wrong\n',ok=False)
-        self.assertEqual(result['error']['code'],'bad_password')
-        result = self.cli('extract',path,'--dest',self.dest,'--password-stdin',stdin='fixture-pass\n')
-        self.assertNotIn('fixture-pass',str(result))
-        self.assertEqual((self.dest / 'secret').read_text(),'payload')
+        for fmt in ('zip','7z'):
+            with self.subTest(fmt=fmt):
+                path = self.home / ('secret.' + fmt)
+                subprocess.run(['7z','a','-t'+fmt,'-pfixture-pass',str(path),str(src)],
+                               check=True, stdout=subprocess.DEVNULL)
+                self.reject(path, 'password_required')
+                result = self.cli('extract',path,'--dest',self.dest,'--password-stdin',
+                                  stdin='wrong\n',ok=False)
+                self.assertEqual(result['error']['code'],'bad_password')
+                result = self.cli('extract',path,'--dest',self.dest,'--password-stdin',stdin='fixture-pass\n')
+                self.assertNotIn('fixture-pass',str(result))
+                self.assertEqual((self.dest / 'secret').read_text(),'payload')
+                (self.dest / 'secret').unlink()
+
+    def test_existing_symlink_cannot_redirect_published_link(self):
+        outside = self.home / 'outside'; outside.mkdir()
+        (outside / 'secret').write_text('private')
+        (self.dest / 'existing').symlink_to(outside, target_is_directory=True)
+        archive = self.tar('newlink', tarfile.SYMTYPE, 'existing/secret')
+        r = self.cli('extract',archive,'--dest',self.dest,ok=False)
+        self.assertEqual(r['error']['code'],'unsafe_paths')
+        self.assertFalse((self.dest/'newlink').is_symlink())
+        self.assertEqual((outside/'secret').read_text(),'private')
+
+    def test_valid_relative_link_stays_inside_destination(self):
+        archive = self.home / 'links.tar'
+        with tarfile.open(archive,'w') as tar:
+            ent=tarfile.TarInfo('folder/file');ent.size=1
+            tar.addfile(ent,io.BytesIO(b'x'))
+            ent=tarfile.TarInfo('folder/sub/link');ent.type=tarfile.SYMTYPE;ent.linkname='../file'
+            tar.addfile(ent)
+        self.cli('extract',archive,'--dest',self.dest)
+        self.assertEqual((self.dest/'folder/sub/link').read_text(),'x')
+
+    def test_corrupt_archive_leaves_no_partial_output(self):
+        archive=self.home/'corrupt.zip'
+        with zipfile.ZipFile(archive,'w') as z:
+            z.writestr('first',b'good')
+            z.writestr('second',b'payload-to-corrupt')
+        data=archive.read_bytes();data=data.replace(b'payload-to-corrupt',b'xxxxxxxxxxxxxxxxxx')
+        archive.write_bytes(data)
+        r=self.cli('extract',archive,'--dest',self.dest,ok=False)
+        self.assertEqual(r['error']['code'],'archive_error')
+        self.assertEqual(list(self.dest.iterdir()),[])

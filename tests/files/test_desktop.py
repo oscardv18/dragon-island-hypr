@@ -57,3 +57,13 @@ with (Path(os.environ['HOME'])/'ipc').open('a') as f:f.write(json.dumps(sys.argv
         self.assertIn('Exec=dragon-files --browse %U',text)
         self.assertIn('MimeType=inode/directory;',text)
         self.assertNotIn('xdg-open',text)
+
+    def test_filemanager1_private_bus_and_existing_owner(self):
+        import shutil
+        if not shutil.which('dbus-run-session') or not shutil.which('gdbus'):
+            self.skipTest('Faltan herramientas D-Bus opcionales')
+        available=subprocess.run(['/usr/bin/python3','-c','from gi.repository import Gio'],capture_output=True)
+        if available.returncode: self.skipTest('PyGObject opcional no instalado')
+        r=subprocess.run(['dbus-run-session','--','/usr/bin/python3',str(ROOT/'tests/files/filemanager1_session.py'),str(ROOT)],
+                         env=self.env,capture_output=True,text=True,timeout=15)
+        self.assertEqual(r.returncode,0,r.stdout+r.stderr)

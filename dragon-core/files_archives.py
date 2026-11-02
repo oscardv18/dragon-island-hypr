@@ -12,6 +12,7 @@ import shutil
 import stat
 import subprocess
 import tempfile
+import sys
 import time
 
 from taller_common import ToolError
@@ -26,11 +27,11 @@ def unsafe(message='El comprimido contiene rutas o tipos inseguros.'):
     raise ToolError('unsafe_paths', message)
 
 
-def safe_name(name):
+def safe_name(name, link=False):
     if (not name or name.startswith(('/', '\\')) or '\\' in name
             or re.match(r'^[A-Za-z]:', name)
-            or any(ord(c) < 32 or 127 <= ord(c) < 160 for c in name)
-            or '..' in name.split('/')):
+            or any(ord(c) < 32 or 127 <= ord(c) < 160 or 0xD800 <= ord(c) <= 0xDFFF for c in name)
+            or (not link and '..' in name.split('/'))):
         unsafe()
     return PurePosixPath(name)
 
@@ -62,6 +63,8 @@ class Reader:
         ):
             fn = getattr(lib, name)
             fn.restype, fn.argtypes = result, args
+        self.path = path
+        self.current = None
         self.password = password
         self.handle = lib.archive_read_new()
         lib.archive_read_support_filter_all(self.handle)
@@ -101,13 +104,43 @@ class Reader:
                 return os.fsdecode(raw) if raw else None
             name = field('pathname') or ''
             mode = self.lib.archive_entry_mode(entry)
-            yield dict(path=name, size=max(0, self.lib.archive_entry_size(entry)),
+            self.current = dict(path=name, size=max(0, self.lib.archive_entry_size(entry)),
                        mtime=self.lib.archive_entry_mtime(entry), mode=mode,
                        is_dir=stat.S_ISDIR(mode), symlink=field('symlink'),
                        hardlink=field('hardlink'), encrypted=bool(self.lib.archive_entry_is_encrypted(entry)),
                        packed=None)
+            yield self.current
+
+    def encrypted_blocks(self):
+        if self.password is None:
+            raise ToolError('password_required', 'El comprimido necesita una contraseña por stdin.')
+        if not shutil.which('7z'):
+            raise ToolError('missing_tool', 'Falta 7z para leer este cifrado.', 'Instala 7zip.')
+        registry = getattr(sys.modules.get('__main__'), '_CLEANUP_PROCS', set())
+        with tempfile.TemporaryFile() as diagnostics:
+            proc = subprocess.Popen(['7z', 'x', '-so', '-spd', '-i!' + self.current['path'], '--', str(self.path)],
+                                    stdin=subprocess.PIPE, stdout=subprocess.PIPE, stderr=diagnostics,
+                                    start_new_session=True)
+            registry.add(proc)
+            try:
+                proc.stdin.write((self.password + '\n').encode()); proc.stdin.close()
+                while block := proc.stdout.read(CHUNK):
+                    yield block
+                if proc.wait() != 0:
+                    raise ToolError('bad_password', 'Contraseña incorrecta o comprimido cifrado dañado.')
+            finally:
+                if proc.poll() is None:
+                    proc.terminate()
+                    try: proc.wait(timeout=2)
+                    except subprocess.TimeoutExpired: proc.kill(); proc.wait()
+                proc.stdout.close()
+                registry.discard(proc)
 
     def blocks(self):
+        fmt = (self.lib.archive_format_name(self.handle) or b'').lower()
+        if self.current and self.current['encrypted'] and b'7-zip' in fmt:
+            yield from self.encrypted_blocks()
+            return
         buf = C.create_string_buffer(CHUNK)
         while True:
             size = self.lib.archive_read_data(self.handle, buf, CHUNK)
@@ -133,6 +166,7 @@ def catalog(path, password=None):
     with Reader(path, password) as reader:
         entries = list(reader)
         method = (reader.lib.archive_format_name(reader.handle) or b'').decode(errors='replace')
+    validate(entries)
     total = sum(e['size'] for e in entries)
     return dict(format=method, method=method, encrypted=any(e['encrypted'] for e in entries),
                 count=len(entries), total_size=total, entries=entries, warnings=[])
@@ -156,8 +190,10 @@ def validate(entries):
             unsafe('No se admiten enlaces duros en comprimidos.')
         if not (stat.S_ISREG(mode) or stat.S_ISDIR(mode) or stat.S_ISLNK(mode)):
             unsafe('No se admiten dispositivos ni archivos especiales.')
+        if stat.S_ISLNK(mode) and not entry['symlink']:
+            unsafe()
         if entry['symlink']:
-            target = safe_name(entry['symlink'])
+            target = safe_name(entry['symlink'], link=True)
             if str(target) == '.':
                 unsafe()
     for key in seen:
@@ -165,6 +201,52 @@ def validate(entries):
             ent = seen.get(str(parent))
             if ent and not ent['is_dir']:
                 unsafe('Una ruta atraviesa un enlace o archivo del comprimido.')
+
+
+def validate_publish_links(moves, dest):
+    """Resolve links against the planned tree AND untouched existing destinations.
+
+    Renamed/skipped conflicts can change the meaning of a relative link. Resolve
+    through a virtual mapping before publishing, including existing symlinks.
+    """
+    def virtual(path):
+        for src, target, _ in moves:
+            if path == target or target in path.parents:
+                return src / path.relative_to(target)
+        return path
+
+    def resolve(path):
+        pending = list(path.parts[1:])
+        current = Path('/')
+        links = 0
+        while pending:
+            part = pending.pop(0)
+            if part == '..': current = current.parent; continue
+            if part == '.': continue
+            candidate = current / part
+            source = virtual(candidate)
+            if source.is_symlink():
+                links += 1
+                if links > 40: unsafe('Hay un ciclo de enlaces en la extracción.')
+                link = Path(os.readlink(source))
+                if link.is_absolute():
+                    current = Path('/')
+                    pending = list(link.parts[1:]) + pending
+                else:
+                    pending = list(link.parts) + pending
+            else:
+                current = candidate
+        if current != dest and dest not in current.parents:
+            unsafe('Un enlace saldría del destino después de resolver los conflictos.')
+
+    for src, target, _ in moves:
+        paths = [src]
+        if src.is_dir() and not src.is_symlink():
+            paths += list(src.rglob('*'))
+        for item in paths:
+            if item.is_symlink():
+                location = target / item.relative_to(src)
+                resolve(location)
 
 
 def check_resources(total, packed, free, confirm=False):
@@ -189,7 +271,15 @@ def extract(args, api):
         packed = archive.stat().st_size
         if packed > shutil.disk_usage(dest).free:
             raise ToolError('no_space', 'No hay espacio para preparar el comprimido.')
-        shutil.copyfile(archive, snapshot)
+        copied = 0
+        with archive.open('rb') as source, snapshot.open('xb') as out:
+            while block := source.read(CHUNK):
+                copied += len(block)
+                if copied > packed:
+                    raise ToolError('archive_changed', 'El comprimido cambió durante su preparación.')
+                out.write(block)
+        if copied != packed:
+            raise ToolError('archive_changed', 'El comprimido cambió durante su preparación.')
         meta = catalog(snapshot, password)
         validate(meta['entries'])
         check_resources(meta['total_size'], snapshot.stat().st_size, shutil.disk_usage(dest).free, args.confirm_bomb)
@@ -252,6 +342,7 @@ def extract(args, api):
                     raise ToolError('conflict', 'Dos entradas tienen el mismo destino.')
                 reserved.add(result)
                 moves.append((src, Path(result), overwrite))
+        validate_publish_links(moves, dest)
         for directory, mode in reversed(directories):
             directory.chmod(mode)
         for src, target, overwrite in moves:

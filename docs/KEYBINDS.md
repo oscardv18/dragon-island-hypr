@@ -10,7 +10,7 @@ Modificador principal: **SUPER** (tecla Windows). Los atajos de Hyprland están 
 |---|---|
 | `SUPER + Return` | Terminal (Ghostty) |
 | `SUPER + Space` | Lanzador de aplicaciones |
-| `SUPER + E` | Dolphin |
+| `SUPER + E` | Explorador de archivos |
 | `SUPER + D` | Notch: abre / cierra el panel expandido (Nook · Tray). También Esc o clic fuera |
 | `SUPER + W` | Selector de fondos orbital (también con clic derecho en el escritorio vacío); su botón «Cuadrícula» abre el selector clásico |
 | `SUPER + SHIFT + W` | Fondo aleatorio |
@@ -394,3 +394,26 @@ Generada de la configuración real (`scripts/gen-keybinds.sh --inject`, necesita
 | `SUPER + SHIFT + H` · `SUPER + SHIFT + J` · `SUPER + SHIFT + K` · `SUPER + SHIFT + L` | Mover la ventana (Vim) |
 | `SUPER + SHIFT + F` | Pantalla completa |
 <!-- binds:end -->
+
+### Explorador de archivos (dentro) · fase 5d
+
+| Teclas | Acción |
+|---|---|
+| Flechas / Intro | Mover selección / abrir |
+| Retroceso / Alt+↑ | Subir carpeta |
+| Alt+← / Alt+→ | Atrás / adelante |
+| Ctrl+L / `/` | Editar ruta / buscar |
+| Ctrl+H / Ctrl+A | Ocultos / seleccionar todo |
+| Ctrl+C / Ctrl+X / Ctrl+V | Copiar / cortar / pegar |
+| F2 / Ctrl+Shift+N | Renombrar / crear carpeta |
+| Supr / Shift+Supr | Papelera / eliminar con confirmación |
+| Ctrl+T / Ctrl+W / Ctrl+Tab | Nueva pestaña / cerrar / siguiente |
+| Ctrl+Z | Deshacer mover o renombrar |
+| Ctrl+1 / Ctrl+2 | Lista / cuadrícula |
+| Menú / Shift+F10 / F5 | Menú del elemento / recargar |
+| Escape | Cerrar diálogo o búsqueda |
+
+La conexión «Enviar al agente» al compositor corresponde al tramo 5c; el botón
+permanece deshabilitado hasta que ese servicio esté conectado. No se envían rutas
+ni prompts automáticamente. La migración 080 aporta las reglas de ventana y la
+075 el atajo SUPER+E; hay que integrar ambas ramas antes de activar el explorador.
