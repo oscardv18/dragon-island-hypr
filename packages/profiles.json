@@ -97,18 +97,12 @@
     }
   },
   "prereq": {
-    "pacman": [
-      "git",
-      "base-devel",
-      "gum",
-      "curl",
-      "unzip"
-    ],
     "aur_helper": {
       "cachyos": "paru",
       "default": "yay"
     },
     "kernel_headers": "/usr/lib/modules/$(uname -r)/pkgbase + -headers",
-    "manual": true
+    "manual": true,
+    "pacman_file": "base.txt"
   }
 }

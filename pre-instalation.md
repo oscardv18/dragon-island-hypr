@@ -105,32 +105,44 @@ Salida esperada: `0` actualizaciones pendientes, y la versión de `uname -r` igu
 
 ## Paso 3 — Herramientas base
 
-**Para qué sirve:** son lo único que el instalador necesita para empezar: `git` (clonar), `base-devel` (compilar paquetes
-AUR y plugins), `curl`, `unzip`, `gum` (la interfaz de terminal), `github-cli` y `yay` (ayudante de AUR). Es exactamente
-`packages/base.txt`.
+**Para qué sirve:** herramientas comunes de `packages/base.txt`: `git`, `base-devel`,
+`gum`, `curl` y `unzip`. El manifiesto `packages/profiles.json` referencia esa lista;
+el ayudante AUR y las cabeceras se calculan para tu máquina.
 
 ```bash
-sudo pacman -S --needed git base-devel curl unzip gum github-cli yay adw-gtk-theme
+sudo pacman -S --needed git base-devel gum curl unzip
+./doctor.sh --pre
 ```
 
-(`yay` está en el repositorio de EndeavourOS. En **Arch puro** no está en pacman: compílalo desde el AUR con
-`git clone https://aur.archlinux.org/yay-bin.git && cd yay-bin && makepkg -si`.)
+`doctor.sh --pre` imprime el comando exacto, incluidas las cabeceras cuyo nombre
+sale de `/usr/lib/modules/$(uname -r)/pkgbase` más `-headers`. Si el kernel en uso
+ya no coincide con el instalado, reinicia y repite el doctor **antes** de instalar
+cabeceras. No se adivina el nombre cuando falta `pkgbase`.
+
+Se conserva `paru` o `yay` si ya existe. Sin ayudante, se propone `paru` en CachyOS
+(o `yay` en otras distros), pero solo se incluye en el comando pacman si
+`pacman -Si` lo encuentra. En Arch puro, instala el ayudante a mano desde AUR
+(por ejemplo `yay-bin`, revisando su PKGBUILD); el doctor lo indica por separado.
+`github-cli` es opcional para clonar y `adw-gtk-theme` pertenece al perfil base/theme.
 
 **Cómo comprobar que quedó bien:**
 
 ```bash
-command -v git curl unzip gum gh yay
+command -v git curl unzip gum
 pacman -Q base-devel
-yay --version
+command -v paru || command -v yay
+./doctor.sh --pre
 ```
 
-Salida esperada: seis rutas (`/usr/bin/...`), `base-devel` con su versión y `yay v13...` (o superior).
+Salida esperada: herramientas disponibles, un ayudante AUR y el paquete de
+cabeceras correspondiente al kernel en uso. El doctor enumera los requisitos
+pendientes y remite al paso que los resuelve.
 
 **Si falla:**
 
-- *`target not found: yay`:* no estás en EndeavourOS. Compílalo desde el AUR como se indica arriba.
-- *`makepkg` no se ejecuta como root:* ejecútalo con tu usuario, no con `sudo`.
-- *`gum` no existe:* está en `extra`; sincroniza con `sudo pacman -Sy` y repite (Paso 2).
+- *Ayudante no disponible en pacman:* instálalo desde AUR como usuario; `makepkg` no corre con `sudo`.
+- *Kernel pendiente de reinicio:* reinicia, vuelve a generar la lista y comprueba sus cabeceras.
+- *`gum` no existe:* revisa `extra` y completa la actualización del Paso 2; evita actualizaciones parciales.
 
 ## Paso 4 — Red y hora
 
@@ -503,7 +515,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `ninja` | base | oficial |
 | `gcc` | base, editor | oficial |
 | `pkgconf` | base | oficial |
-| `git` | base, editor | oficial |
+| `git` | base, editor, prereq (manual) | oficial |
 | `grimblast-git` | base | AUR |
 | `mpvpaper` | base | AUR |
 | `ttf-outfit` | base | AUR |
@@ -539,8 +551,8 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `rust` | editor | oficial |
 | `php` | editor | oficial |
 | `composer` | editor | oficial |
-| `curl` | editor | oficial |
-| `unzip` | editor | oficial |
+| `curl` | editor, prereq (manual) | oficial |
+| `unzip` | editor, prereq (manual) | oficial |
 | `opencode` | mis-apps | oficial |
 | `btop` | mis-apps | oficial |
 | `nautilus` | mis-apps | oficial |
@@ -575,6 +587,12 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `hermes-agent` | mis-apps | AUR |
 | `sddm` | login | oficial |
 | `qt6-declarative` | login | oficial |
+| `base-devel` | prereq (manual) | oficial |
+| `gum` | prereq (manual) | oficial |
+| `brave-bin` | extras (brave, opt-in) | AUR |
+| `proton-vpn-gtk-app` | extras (protonvpn, opt-in) | oficial |
+| `qrencode` | extras (paneles, opt-in) | oficial |
+| `cava` | extras (paneles, opt-in) | oficial |
 | `herdr` | taller (opt-in) | instalador oficial, confirmación pendiente en I3/I4 |
 | `hyprfocus`, `hyprglass` | plugins | hyprpm |
 | `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |

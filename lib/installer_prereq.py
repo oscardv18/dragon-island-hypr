@@ -53,7 +53,8 @@ def prerequisites():
     kernel = kernel_info()
     helper = next((name for name in ('paru', 'yay') if shutil.which(name)), None)
     preferred = spec['aur_helper'].get(distro().get('ID'), spec['aur_helper']['default'])
-    packages = list(spec['pacman'])
+    packages = [line.split('#')[0].strip() for line in (ROOT/'packages'/spec['pacman_file']).read_text().splitlines()
+                if line.split('#')[0].strip()]
     if kernel['headers'] and not kernel['reboot']:
         packages.append(kernel['headers'])
     helper_repo = False
