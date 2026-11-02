@@ -50,3 +50,5 @@ jq
 # Wallpaper palette extraction (dragon-palette)
 python
 python-pillow
+# Dragon Portal (file dialogs of other apps) and dragon-files --filemanager1: D-Bus through PyGObject (Gio)
+python-gobject

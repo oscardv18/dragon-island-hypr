@@ -972,6 +972,11 @@ Singleton {
         readonly property real menuWidth: 220
         readonly property real menuRow: 28
         readonly property real promptWidth: 420
+        // selector mode (Dragon Portal: the explorer as another app's file dialog)
+        readonly property real pickerBar: 46
+        readonly property real pickerName: 240
+        readonly property real pickerFilter: 190
+        readonly property real pickerTitle: 24
         readonly property real scrollStep: 96
         // type
         readonly property real caption: 10

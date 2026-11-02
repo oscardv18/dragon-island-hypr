@@ -17,8 +17,12 @@ Rectangle {
     property bool active: true            // window visible: the current tab watches its folder
     property bool drawFrame: true         // false while the global window frame already outlines this window
     property real now: Date.now()
+    property var picker: null             // selector mode (Dragon Portal): the request of another app's file dialog, null = normal explorer
+    readonly property bool picking: !!picker
+    property string pickHint: ""
     signal closeRequested()
-    readonly property FilesState state: FilesState { service: root.files; active: root.active }
+    signal pickerResult(var result)       // {response: "accept"|"cancel", paths, filter, choices} → FilePicker.answer
+    readonly property FilesState state: FilesState { service: root.files; active: root.active; picker: root.picker }
     readonly property var tab: state.tab
     property bool editingPath: false
 
@@ -29,18 +33,62 @@ Rectangle {
     border.width: Theme.files.border
     border.color: Theme.files.buttonBorder
     focus: true
-    Component.onCompleted: state.newTab(initialPath || files?.home || "/")
+    Component.onCompleted: {
+        if (picker) {
+            const choices = {};
+            for (const c of picker.choices ?? []) choices[c.id] = c.selected;
+            state.pickChoices = choices;
+            state.pickName = picker.current_name ?? "";
+            state.filterIndex = picker.current_filter ?? -1;
+        }
+        state.newTab(initialPath || files?.home || "/");
+        if (picking && picker.kind === "save") Qt.callLater(() => pickerBar.focusName());
+    }
 
     function activate(entry): void {
         if (!entry || !tab) return;
         const p = tab.pathOf(entry);
         if (entry.kind === "dir" || (entry.kind === "link" && entry.link_dir)) tab.go(p);
+        else if (picking) { tab.select(tab.shown.findIndex(e => e.name === entry.name), 0); acceptPick(); }
         else files?.open(p);
     }
     function activateSelection(): void {
         const sel = tab?.selection.length ? tab.selection : (tab?.current ? [tab.current] : []);
+        if (picking) { if (sel.length === 1 && F.isDirEntry(sel[0]) && !(picker.directory && tab.selection.length)) activate(sel[0]); else acceptPick(); return; }
         if (sel.length === 1) activate(sel[0]);
         else for (const e of sel) if (e.kind !== "dir") files?.open(tab.pathOf(e));
+    }
+    // ---- selector mode: the view collects the choice; FilePicker (service) sends it ----
+    readonly property var pickResolved: picking && tab ? F.pickerResolve(picker, tab.path, tab.selection, state.pickName) : ({ ok: false, paths: [], why: "" })
+    function acceptPick(): void {
+        const r = pickResolved;
+        if (!r.ok) { pickHint = r.why; return; }
+        pickHint = "";
+        if (picker.kind === "save") {
+            const clash = tab.entries.find(e => e.name === state.pickName);
+            if (clash && F.isDirEntry(clash)) { pickHint = "Ya hay una carpeta con ese nombre"; return; }
+            if (clash) {
+                prompt.purpose = "overwrite"; prompt.targets = r.paths;
+                prompt.ask({ title: "Ya existe un archivo", input: false, danger: true,
+                             message: "«" + state.pickName + "» ya está en " + F.displayPath(tab.path, files?.home ?? "") + ". ¿Reemplazarlo?",
+                             buttons: [{ label: "Cancelar", action: "cancel" }, { label: "Reemplazar", action: "ok", danger: true, primary: true }] });
+                return;
+            }
+        }
+        sendPick(r.paths);
+    }
+    function sendPick(paths): void {
+        pickerResult({ response: "accept", paths: paths, filter: state.filterIndex >= 0 ? state.filterIndex : null, choices: state.pickChoices });
+    }
+    function cancelPick(): void { pickerResult({ response: "cancel" }); }
+    function pickMenu(kind, id, x, y): void {
+        if (kind === "filter") menu.popup(x, y - (picker.filters.length * Theme.files.menuRow + Theme.files.smallGap * 3),
+            picker.filters.map((f, i) => ({ label: f.name, action: "filter:" + i, hint: i === state.filterIndex ? "✓" : "" })));
+        else {
+            const c = picker.choices.find(k => k.id === id);
+            menu.popup(x, y - (c.options.length * Theme.files.menuRow + Theme.files.smallGap * 3),
+                c.options.map(o => ({ label: o.label, action: "choice:" + id + ":" + o.id, hint: (state.pickChoices[id] ?? c.selected) === o.id ? "✓" : "" })));
+        }
     }
     // ---- operations (d2): the view only asks; FileOps runs ----
     function pasteInto(dir): void {
@@ -52,7 +100,7 @@ Rectangle {
     // Drop rule: Ctrl copies, Shift moves; otherwise move on the same device and copy across devices (like most
     // file managers). Dropping on the trash trashes. Dropping where the files already are does nothing.
     function dropInto(dir, paths, mods): void {
-        if (!ops || !paths?.length || !dir) return;
+        if (picking || !ops || !paths?.length || !dir) return;
         if (dir.indexOf("trash:") === 0) { ops.trash(paths); return; }
         const moving = paths.filter(p => F.parent(p) !== dir && p !== dir && dir.indexOf(p + "/") !== 0);
         if (!moving.length) return;
@@ -98,6 +146,11 @@ Rectangle {
     function trashSelection(): void { const p = tab?.selectedPaths() ?? []; if (p.length && ops) ops.trash(p); }
     function contextMenuFor(entry, x, y): void {
         lastPointer = Qt.point(x, y);
+        if (picking) {
+            menu.popup(x, y, [{ label: "Nueva carpeta…", action: "mkdir", hint: "Ctrl+Mayús+N", icon: Icons.plus, enabled: !tab?.special },
+                              { label: state.showHidden ? "Ocultar archivos ocultos" : "Mostrar archivos ocultos", action: "hidden", hint: "Ctrl+H" }]);
+            return;
+        }
         const sel = tab?.selectedPaths() ?? [];
         const one = entry && sel.length <= 1;
         const isArch = one && F.isArchive(entry);
@@ -148,6 +201,14 @@ Rectangle {
     property string openWithTarget: ""
     function runAction(action, entry): void {
         const paths = tab?.selectedPaths() ?? [];
+        if (action.indexOf("filter:") === 0) { state.filterIndex = parseInt(action.slice(7)); return; }
+        if (action.indexOf("choice:") === 0) {
+            const parts = action.split(":"), c = Object.assign({}, state.pickChoices);
+            c[parts[1]] = parts.slice(2).join(":");
+            state.pickChoices = c;
+            return;
+        }
+        if (picking && ["hidden", "mkdir"].indexOf(action) < 0) return;      // a file dialog only looks and creates folders
         switch (action) {
         case "open": if (entry) { if (paths.length > 1) activateSelection(); else activate(entry); } break;
         case "openWith": if (entry) openWithMenu(entry); break;
@@ -245,6 +306,7 @@ Rectangle {
     Keys.onPressed: e => {
         const ctrl = e.modifiers & Qt.ControlModifier, alt = e.modifiers & Qt.AltModifier, shift = e.modifiers & Qt.ShiftModifier;
         let handled = true;
+        if (picking && ((ctrl && (e.key === Qt.Key_X || e.key === Qt.Key_V || e.key === Qt.Key_Z)) || e.key === Qt.Key_F2 || e.key === Qt.Key_Delete)) { e.accepted = true; return; }
         if (alt && e.key === Qt.Key_Left) tab?.back();
         else if (alt && e.key === Qt.Key_Right) tab?.forward();
         else if (alt && e.key === Qt.Key_Up) tab?.up();
@@ -275,7 +337,7 @@ Rectangle {
         else if (ctrl && e.key === Qt.Key_1) state.viewMode = "lista";
         else if (ctrl && e.key === Qt.Key_2) state.viewMode = "cuadricula";
         else if (e.key === Qt.Key_F5 || (ctrl && e.key === Qt.Key_R)) tab?.reload();
-        else if (e.key === Qt.Key_Escape) { if (state.search) state.search = ""; else tab?.clearSelection(); }
+        else if (e.key === Qt.Key_Escape) { if (state.search) state.search = ""; else if (picking) cancelPick(); else tab?.clearSelection(); }
         else if (!ctrl && !alt && e.text.length === 1 && e.text > " ") typeAhead(e.text);
         else handled = false;
         e.accepted = handled;
@@ -308,6 +370,17 @@ Rectangle {
         anchors.leftMargin: Theme.files.padding + Theme.files.thinGap
         spacing: Theme.files.gap
 
+        // ---- selector mode: what the other app asks for ----
+        UiText {
+            visible: root.picking
+            Layout.fillWidth: true
+            Layout.preferredHeight: visible ? Theme.files.pickerTitle : 0
+            text: root.picker?.title ?? ""
+            elide: Text.ElideRight
+            size: Theme.files.title
+            weight: Theme.weightSemiBold
+            color: Theme.text
+        }
         // ---- toolbar ----
         RowLayout {
             Layout.fillWidth: true
@@ -376,7 +449,7 @@ Rectangle {
                 onEscaped: { root.state.search = ""; root.focusContent(); }
                 input.Keys.onDownPressed: { root.focusContent(); if (root.tab?.shown.length) root.tab.select(0, 0); }
             }
-            FilesButton { label: "Compartir"; enabled: !(root.tab?.special ?? true); onClicked: root.shareCurrent() }
+            FilesButton { visible: !root.picking; label: "Compartir"; enabled: !(root.tab?.special ?? true); onClicked: root.shareCurrent() }
             Row {
                 spacing: Theme.files.thinGap
                 FilesButton { icon: Icons.viewList; checked: root.state.viewMode === "lista"; primary: checked; implicitWidth: Theme.files.navButton; implicitHeight: Theme.files.navButton; onClicked: root.state.viewMode = "lista" }
@@ -523,8 +596,26 @@ Rectangle {
                 files: root.files
                 archives: root.archives
                 now: root.now
+                actions: !root.picking
                 onAction: (name, entry) => root.runAction(name, entry)
             }
+        }
+
+        PickerBar {
+            id: pickerBar
+            visible: root.picking
+            Layout.fillWidth: true
+            Layout.preferredHeight: visible ? Theme.files.pickerBar : 0
+            picker: root.picker
+            view: root.state
+            summary: F.pickerSummary(root.picker, root.tab?.selection ?? [], root.tab?.path ?? "", root.state.pickName)
+            hint: root.pickHint
+            canAccept: root.pickResolved.ok
+            onAccepted: root.acceptPick()
+            onCancelled: root.cancelPick()
+            onNameChanged: text => { root.state.pickName = text; root.pickHint = ""; }
+            onFilterMenu: (x, y) => root.pickMenu("filter", "", x + Theme.files.pickerFilter, y)
+            onChoiceMenu: (id, x, y) => root.pickMenu("choice", id, x, y)
         }
 
         // ---- status bar ----
@@ -598,6 +689,7 @@ Rectangle {
             else if (purpose === "delete" && action === "ok") root.ops?.remove(targets);
             else if (purpose === "emptyTrash" && action === "ok") root.ops?.emptyTrash();
             else if (purpose === "conflict" && action !== "cancel") root.ops?.answer(opId, action, checked);
+            else if (purpose === "overwrite" && action === "ok") root.sendPick(targets);
             else if (purpose === "compress" && action !== "cancel" && name && name.indexOf("/") < 0) root.archives?.create(action, F.join(root.tab.path, name + "." + action), targets);
             else if (purpose === "unlock" && action === "ok" && value) {
                 const id = target;
@@ -607,6 +699,17 @@ Rectangle {
                 });
             }
             root.focusContent();
+        }
+    }
+    // save dialogs: picking an existing file puts its name in the name field (like GTK)
+    Connections {
+        target: root.tab
+        ignoreUnknownSignals: true
+        function onSelectedChanged() {
+            // read `selected` itself: the derived `selection` binding may not have been re-evaluated yet
+            const names = Object.keys(root.tab?.selected ?? {});
+            const entry = names.length === 1 ? root.tab.shown.find(x => x.name === names[0]) : null;
+            if (root.picking && root.picker.kind === "save" && entry && !F.isDirEntry(entry)) { root.state.pickName = entry.name; root.pickHint = ""; }
         }
     }
     // a conflict question pops up by itself for the window that is in front

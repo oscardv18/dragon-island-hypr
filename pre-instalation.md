@@ -493,6 +493,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `jq` | core | oficial |
 | `python` | core | oficial |
 | `python-pillow` | core | oficial |
+| `python-gobject` | core | oficial |
 | `grimblast-git` | core | AUR |
 | `mpvpaper` | core | AUR |
 | `zsh` | shell | oficial |

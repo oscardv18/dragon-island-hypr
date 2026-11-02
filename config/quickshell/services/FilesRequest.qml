@@ -22,7 +22,7 @@ Process {
     property bool ended: false
     property bool collected: false
     property int exitCode: 0
-    readonly property string tool: `${Quickshell.env("HOME")}/.local/bin/dragon-files`
+    property string tool: `${Quickshell.env("HOME")}/.local/bin/dragon-files`   // PortalRequest points it at dragon-portal
     signal event(var obj)
     signal done(var result)
 
@@ -36,10 +36,10 @@ Process {
         if (!ended || !collected) return;
         let r = result;
         if (!r || (stream && r.ok === undefined && r.t !== "error" && r.t !== "done")) {
-            if (exitCode === 127) r = { ok: false, error: { code: "missing_tool", message: "dragon-files no está instalado", hint: "Ejecuta ./update.sh" } };
+            if (exitCode === 127) r = { ok: false, error: { code: "missing_tool", message: proc.tool.split("/").pop() + " no está instalado", hint: "Ejecuta ./update.sh" } };
             else if (stream && exitCode === 0) r = { ok: true };
             else if (exitCode === 143 || exitCode === -1 || exitCode === 15) r = { ok: false, error: { code: "cancelled", message: "Cancelado" } };
-            else r = { ok: false, error: { code: "invalid_response", message: "dragon-files no respondió como se esperaba", hint: "" } };
+            else r = { ok: false, error: { code: "invalid_response", message: proc.tool.split("/").pop() + " no respondió como se esperaba", hint: "" } };
         } else if (r.t === "error") r = { ok: false, error: r.error ?? { code: "error", message: "Error" } };
         else if (r.t === "done") r = Object.assign({ ok: true }, r);
         done(r);

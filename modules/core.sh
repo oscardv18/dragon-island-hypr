@@ -24,6 +24,9 @@ CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
 # shellcheck source=lib/files-tools.sh
 . "$REPO_DIR/lib/files-tools.sh"
 
+# shellcheck source=lib/portal-tools.sh
+. "$REPO_DIR/lib/portal-tools.sh"
+
 core_desc() { echo "Hyprland, Quickshell, servicios y configuración base (obligatorio)"; }
 core_sudo() { echo "pacman -S (paquetes), systemctl enable (NetworkManager, bluetooth, power-profiles-daemon)"; }
 core_packages() { pkg_list "$REPO_DIR/packages/pacman-core.txt" "$REPO_DIR/packages/aur-core.txt"; }
@@ -80,6 +83,8 @@ core_apply() {
     gate_setup
     tokens_setup
     files_tools_setup
+    portal_tools_setup
+    portal_enable || log_info "Dragon Portal queda sin registrar (los diálogos de archivos siguen siendo los de GTK)."
     core_gpu_env
 
     # the neural core has one source (shared/neural-core): re-sync both copies

@@ -25,6 +25,8 @@ Item {
     signal dropOn(string path, var paths, int modifiers)
     width: Theme.files.tileWidth
     height: Theme.files.tileHeight
+    readonly property bool pickable: (tab?.view?.canSelect(entry) ?? true) || F.isDirEntry(entry)   // selector mode: what cannot be chosen is dimmed (folders stay open for walking)
+    opacity: pickable ? 1 : Theme.files.disabledOpacity
     function requestThumb(): void {
         thumbFile = "";
         if (!wantsThumb || !files) return;

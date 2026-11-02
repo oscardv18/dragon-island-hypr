@@ -1,0 +1,16 @@
+Theme.qml
+shell.qml
+services/qmldir
+services/Files.qml
+services/FilesRequest.qml
+services/PortalRequest.qml
+services/FilePicker.qml
+modules/files/files.js
+modules/files/FilesPanel.qml
+modules/files/FilesWindow.qml
+modules/files/FilesState.qml
+modules/files/FilesTab.qml
+modules/files/FileRow.qml
+modules/files/FileTile.qml
+modules/files/Preview.qml
+modules/files/PickerBar.qml
