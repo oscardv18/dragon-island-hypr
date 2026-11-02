@@ -169,6 +169,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/bar -v; then 
 step "llavero y GTK (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/keyring_gtk -v; then pass "llavero y GTK"; else fail "llavero y GTK"; fi
 
+step "perfiles, prerrequisitos y preflight con paquetes/AUR/bus simulados"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -v; then pass "instalador I1/I2"; else fail "instalador I1/I2"; fi
+
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
 
