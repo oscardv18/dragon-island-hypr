@@ -506,3 +506,31 @@ class TrashInfoPaths(AuditBase):
         self.assertEqual(p.returncode, 0, p.stdout + p.stderr)
         self.assertTrue((self.home / 'nota.txt').exists())
         self.assertEqual(list(self.outside.iterdir()), [])
+
+
+class ExtractPublishRace(AuditBase):
+    """Extraction (d4): publishing used os.rename, which replaced a name created after the conflict check."""
+
+    HARNESS = ('import sys; sys.path.insert(0, sys.argv[1]); import dragon_files as d\n'
+               'real = d.resolve_conflict\n'
+               'def racing(src, dest, policy, is_dir=False):\n'
+               '    result = real(src, dest, policy, is_dir)\n'
+               '    if result[0]:\n'
+               '        open(result[0], "w").write("written meanwhile")\n'
+               '    return result\n'
+               'd.resolve_conflict = racing\n'
+               'sys.argv = ["dragon-files", "archive", "extract", sys.argv[2], "--dest", sys.argv[3], "--conflict", "skip", "--json"]\n'
+               'd.run_cli()')
+
+    def test_intruder_is_not_overwritten(self):
+        import zipfile
+        archive = self.home / 'a.zip'
+        with zipfile.ZipFile(archive, 'w') as z:
+            z.writestr('nota.txt', 'del comprimido')
+        dest = self.home / 'dest'; dest.mkdir()
+        p = subprocess.run(['python3', '-S', '-c', self.HARNESS, str(ROOT / 'dragon-core'), str(archive), str(dest)],
+                           env=self.env, capture_output=True, text=True, timeout=30)
+        self.assertNotEqual(p.returncode, 0, p.stdout + p.stderr)
+        self.assertEqual(json.loads(p.stdout.splitlines()[-1])['error']['code'], 'conflict')
+        self.assertEqual((dest / 'nota.txt').read_text(), 'written meanwhile')
+        self.assertEqual([x.name for x in dest.iterdir()], ['nota.txt'], 'staging removed')

@@ -345,10 +345,15 @@ def extract(args, api):
         validate_publish_links(moves, dest)
         for directory, mode in reversed(directories):
             directory.chmod(mode)
+        # move_item publishes without replacing (a name that appeared after the conflict check is not overwritten)
+        # and, with overwrite, sets the old item aside until the new one is in place (audit 5d).
+        tracker = dict(total_bytes=1, done_bytes=0, start=time.perf_counter(), last_emit=0.0, progress=False)
         for src, target, overwrite in moves:
-            if overwrite and os.path.lexists(target):
-                api.remove_existing_target(str(target))
-            os.rename(src, target)
+            try:
+                api.move_item(str(src), str(target), overwrite, tracker, 1, 1)
+            except FileExistsError:
+                raise ToolError('conflict', f'«{target.name}» apareció en el destino durante la extracción.',
+                                'Vuelve a extraer y elige qué hacer con ese nombre.') from None
         return dict(t='done', dest=str(dest), count=meta['count'])
     finally:
         # Directory modes from the archive may be read-only.
