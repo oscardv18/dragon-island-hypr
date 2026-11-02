@@ -86,3 +86,12 @@ Ambos están ignorados por git. Con la instalación por enlaces, `~/.config/hypr
 ```
 
 Los respaldos y registros quedan en `~/.local/state/dragon-island/`.
+
+## dragon-wifi (pendiente del archivo original)
+
+En I1 no se encontró `~/Descargas/dragon-wifi` ni `~/Downloads/dragon-wifi`.
+No se ha creado una implementación sustitutiva. Cuando esté el original, se copiará
+sin cambios de lógica a `bin/dragon-wifi`, se desplegará mediante `core` a
+`~/.local/bin/dragon-wifi` con respaldo y retirada, y se probará con `nmcli` falso.
+Para sistemas ya instalados corresponderá una migración desde la 170, idempotente,
+con `backup_copy` y respeto a `DRY_RUN`. Esa entrega sigue pendiente.
