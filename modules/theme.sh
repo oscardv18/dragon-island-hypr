@@ -26,6 +26,12 @@ theme_apply() {
     ensure_via aur pkg_list "$REPO_DIR/packages/aur-theme.txt" || log_warn "Paquetes AUR de tema pendientes (fuentes / iconos)."
     deploy_item "$REPO_DIR/config/gtk-3.0/settings.ini" "$THEME_CFG/gtk-3.0/settings.ini"
     deploy_item "$REPO_DIR/config/gtk-4.0/settings.ini" "$THEME_CFG/gtk-4.0/settings.ini"
+    # shellcheck source=lib/gtk.sh
+    . "$REPO_DIR/lib/gtk.sh"
+    gtk_setup
+    # shellcheck source=lib/telegram-portal.sh
+    . "$REPO_DIR/lib/telegram-portal.sh"
+    telegram_portal_setup
     apply_icon_theme
     deploy_item "$REPO_DIR/config/icons/Dragon-Core" "$HOME/.local/share/icons/Dragon-Core"
 

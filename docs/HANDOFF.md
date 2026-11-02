@@ -1048,3 +1048,13 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
 Trabajo en `feat/llavero-portal-gtk`; detalle y límites de verificación en
 [handoff-llavero-gtk.md](handoff-llavero-gtk.md). Migración 120 selecciona libsecret
 para Claude sin tocar secretos ni PAM. Procedimiento manual en [KEYRING.md](KEYRING.md).
+
+Migración 121 oscurece el selector GTK provisional y conecta su CSS a dragon-palette;
+verificado con Zenity servido por xdg-desktop-portal-gtk y captura solo local.
+El paquete adw-gtk-theme queda en base/theme; la sesión de prueba usa una copia local
+del tema oficial porque no se utilizó sudo. Detalles en el handoff específico.
+
+Seguimiento: migración 122 dirige el QFileDialog de Telegram al portal mediante
+un wrapper solo para Hyprland y override del .desktop sin activación D-Bus.
+Verificado con QFileDialog real independiente; Telegram requiere salir por su menú
+y reabrir desde el lanzador para tomar el entorno. Véase el handoff específico.
