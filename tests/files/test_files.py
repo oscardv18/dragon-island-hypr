@@ -1,4 +1,4 @@
-"""Tests for dragon-files (d1: ls, places, watch, props, open, open-with, terminal-here, thumb) in temp HOME/XDG."""
+"""Tests for dragon-files (d1 + d2) in temp HOME/XDG."""
 import hashlib
 import json
 import os
@@ -456,6 +456,214 @@ class FilesD1Tests(unittest.TestCase):
         # Second run is idempotent
         r2 = subprocess.run(['bash', str(ROOT / 'migrations/070-files-tools.sh')], env=mig_env, capture_output=True, text=True, check=True)
         self.assertEqual(r2.returncode, 0)
+
+    def test_d2_mkdir_rename_link_and_errors(self):
+        work = self.home / 'work'
+        work.mkdir()
+        res_mk = self.cli('op', 'mkdir', str(work), '--name', 'Nueva carpeta')
+        self.assertTrue((work / 'Nueva carpeta').is_dir())
+        self.assertEqual(res_mk['path'], str(work / 'Nueva carpeta'))
+
+        # Duplicate mkdir fails cleanly
+        err_dup = self.cli('op', 'mkdir', str(work), '--name', 'Nueva carpeta', ok=False)
+        self.assertEqual(err_dup['error']['code'], 'already_exists')
+
+        # Invalid name with slash fails
+        err_bad = self.cli('op', 'mkdir', str(work), '--name', 'a/b', ok=False)
+        self.assertEqual(err_bad['error']['code'], 'invalid_name')
+
+        # Rename reports moved pair for undo
+        src_file = work / 'borrador.txt'
+        src_file.write_text('contenido', encoding='utf-8')
+        p_ren = subprocess.run(
+            [str(BIN), 'op', 'rename', str(src_file), '--name', 'final.txt', '--json-progress'],
+            env=self.env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        lines = [json.loads(line) for line in p_ren.stdout.splitlines() if line.strip()]
+        done = lines[-1]
+        self.assertEqual(done['t'], 'done')
+        self.assertEqual(done['moved'], [{'from': str(src_file), 'to': str(work / 'final.txt')}])
+        self.assertFalse(src_file.exists())
+        self.assertTrue((work / 'final.txt').is_file())
+
+        # Symlink creation via op link
+        links_dir = self.home / 'links'
+        links_dir.mkdir()
+        self.cli('op', 'link', str(work / 'final.txt'), '--dest', str(links_dir))
+        self.assertTrue((links_dir / 'final.txt').is_symlink())
+        self.assertEqual((links_dir / 'final.txt').resolve(), (work / 'final.txt').resolve())
+
+    def test_d2_copy_move_progress_and_stdin_conflicts(self):
+        src_dir = self.home / 'src'
+        dst_dir = self.home / 'dst'
+        src_dir.mkdir()
+        dst_dir.mkdir()
+
+        # Prepare files including compound extension .tar.gz
+        (src_dir / 'uno.txt').write_text('version-nueva-1', encoding='utf-8')
+        (src_dir / 'dos.txt').write_text('version-nueva-2', encoding='utf-8')
+        (src_dir / 'paquete.tar.gz').write_text('tarball-nuevo', encoding='utf-8')
+        (dst_dir / 'uno.txt').write_text('version-vieja-1', encoding='utf-8')
+        (dst_dir / 'dos.txt').write_text('version-vieja-2', encoding='utf-8')
+        (dst_dir / 'paquete.tar.gz').write_text('tarball-viejo', encoding='utf-8')
+
+        # Copy with --conflict ask:
+        # 1st conflict (uno.txt) -> skip
+        # 2nd conflict (dos.txt) -> overwrite
+        # 3rd conflict (paquete.tar.gz) -> rename
+        answers = (
+            json.dumps({'answer': 'skip', 'all': False}) + '\n'
+            + json.dumps({'answer': 'overwrite', 'all': False}) + '\n'
+            + json.dumps({'answer': 'rename', 'all': False}) + '\n'
+        )
+        p_copy = subprocess.run(
+            [
+                str(BIN), 'op', 'copy',
+                str(src_dir / 'uno.txt'),
+                str(src_dir / 'dos.txt'),
+                str(src_dir / 'paquete.tar.gz'),
+                '--dest', str(dst_dir),
+                '--conflict', 'ask',
+                '--json-progress',
+            ],
+            input=answers,
+            env=self.env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        events = [json.loads(line) for line in p_copy.stdout.splitlines() if line.strip()]
+        conflicts = [e for e in events if e.get('t') == 'conflict']
+        progress = [e for e in events if e.get('t') == 'progress']
+        done = events[-1]
+        self.assertEqual(len(conflicts), 3)
+        self.assertTrue(len(progress) >= 2)
+        self.assertEqual(done['t'], 'done')
+        self.assertTrue(done['ok'])
+        self.assertEqual((dst_dir / 'uno.txt').read_text(encoding='utf-8'), 'version-vieja-1')
+        self.assertEqual((dst_dir / 'dos.txt').read_text(encoding='utf-8'), 'version-nueva-2')
+        self.assertEqual((dst_dir / 'paquete.tar.gz').read_text(encoding='utf-8'), 'tarball-viejo')
+        self.assertEqual((dst_dir / 'paquete (1).tar.gz').read_text(encoding='utf-8'), 'tarball-nuevo')
+
+        # Test "all: true" in conflict answer during move, and verify moved list for undo
+        move_src = self.home / 'move_src'
+        move_dst = self.home / 'move_dst'
+        move_src.mkdir()
+        move_dst.mkdir()
+        for name in ('a.txt', 'b.txt'):
+            (move_src / name).write_text(f'new-{name}', encoding='utf-8')
+            (move_dst / name).write_text(f'old-{name}', encoding='utf-8')
+
+        p_move = subprocess.run(
+            [
+                str(BIN), 'op', 'move',
+                str(move_src / 'a.txt'),
+                str(move_src / 'b.txt'),
+                '--dest', str(move_dst),
+                '--conflict', 'ask',
+                '--json-progress',
+            ],
+            input=json.dumps({'answer': 'rename', 'all': True}) + '\n',
+            env=self.env,
+            capture_output=True,
+            text=True,
+            check=True,
+        )
+        m_events = [json.loads(line) for line in p_move.stdout.splitlines() if line.strip()]
+        m_conflicts = [e for e in m_events if e.get('t') == 'conflict']
+        self.assertEqual(len(m_conflicts), 1, 'Expected only 1 conflict prompt when all=True')
+        m_done = m_events[-1]
+        self.assertEqual(
+            m_done['moved'],
+            [
+                {'from': str(move_src / 'a.txt'), 'to': str(move_dst / 'a (1).txt')},
+                {'from': str(move_src / 'b.txt'), 'to': str(move_dst / 'b (1).txt')},
+            ],
+        )
+        self.assertFalse((move_src / 'a.txt').exists())
+        self.assertFalse((move_src / 'b.txt').exists())
+        self.assertEqual((move_dst / 'a (1).txt').read_text(encoding='utf-8'), 'new-a.txt')
+        self.assertEqual((move_dst / 'b (1).txt').read_text(encoding='utf-8'), 'new-b.txt')
+
+        # Prevent copying/moving a folder into itself
+        err_inside = self.cli('op', 'copy', str(move_dst), '--dest', str(move_dst), ok=False)
+        self.assertEqual(err_inside['error']['code'], 'invalid_dest')
+
+    def test_d2_cancel_copy_cleans_partial_temp_file(self):
+        src = self.home / 'grande.bin'
+        src.write_bytes(b'A' * (262144 * 8))
+        dst_dir = self.home / 'cancel_dst'
+        dst_dir.mkdir()
+
+        slow_env = dict(self.env, DRAGON_FILES_SLOW_MS='80')
+        p = subprocess.Popen(
+            [str(BIN), 'op', 'copy', str(src), '--dest', str(dst_dir), '--json-progress'],
+            env=slow_env,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.PIPE,
+            text=True,
+        )
+        try:
+            # Wait for the first progress line so we know the temp file is open and being written
+            ready, _, _ = select.select([p.stdout], [], [], 3.0)
+            self.assertTrue(ready, 'Expected progress output before cancelling')
+            first = json.loads(p.stdout.readline())
+            self.assertEqual(first['t'], 'progress')
+            p.terminate()
+            p.communicate(timeout=3)
+            self.assertEqual(p.returncode, 0)
+            leftovers = list(dst_dir.iterdir())
+            self.assertEqual(leftovers, [], f'Temporary partial file was not cleaned up: {leftovers}')
+        finally:
+            if p.poll() is None:
+                p.kill()
+                p.communicate()
+
+    def test_d2_trash_restore_empty_and_permanent_delete(self):
+        folder = self.home / 'documentos'
+        folder.mkdir()
+        f1 = folder / 'informe.txt'
+        f2 = folder / 'borrable.txt'
+        f1.write_text('importante', encoding='utf-8')
+        f2.write_text('temporal', encoding='utf-8')
+
+        # Send both to trash
+        self.cli('op', 'trash', str(f1), str(f2))
+        self.assertFalse(f1.exists())
+        self.assertFalse(f2.exists())
+
+        trashed = self.cli('ls', 'trash:///')
+        by_name = {e['name']: e for e in trashed['entries']}
+        self.assertIn('informe.txt', by_name)
+        self.assertIn('borrable.txt', by_name)
+        self.assertEqual(by_name['informe.txt']['orig_path'], str(f1))
+
+        # Restore informe.txt
+        restored = self.cli('trash', 'restore', by_name['informe.txt']['uri'])
+        self.assertTrue(f1.is_file())
+        self.assertEqual(f1.read_text(encoding='utf-8'), 'importante')
+        self.assertEqual(restored['moved'], [{'from': by_name['informe.txt']['uri'], 'to': str(f1)}])
+
+        # Permanent delete without --confirm must fail
+        err_del = self.cli('op', 'delete', str(f1), ok=False)
+        self.assertEqual(err_del['error']['code'], 'confirm_required')
+        self.assertTrue(f1.is_file())
+
+        # Permanent delete with --confirm removes file
+        self.cli('op', 'delete', str(f1), '--confirm')
+        self.assertFalse(f1.exists())
+
+        # Empty trash without --confirm must fail
+        err_empty = self.cli('trash', 'empty', ok=False)
+        self.assertEqual(err_empty['error']['code'], 'confirm_required')
+
+        # Empty trash with --confirm clears remaining items
+        self.cli('trash', 'empty', '--confirm')
+        after_empty = self.cli('ls', 'trash:///')
+        self.assertEqual(after_empty['entries'], [])
 
 
 if __name__ == '__main__':

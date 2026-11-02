@@ -21,6 +21,27 @@ _SECRET_TOKENS = (
     'bearer ', '://', 'sk-', 'ghp_', 'gho_', 'ghu_', 'ghs_', 'ghr_', 'akia',
 )
 _NUM_RE = re.compile(r'(\d+)')
+_CLEANUP_PATHS = set()
+_CLEANUP_PROCS = set()
+
+
+def _cleanup_on_signal(*_):
+    for proc in list(_CLEANUP_PROCS):
+        try:
+            if proc.poll() is None:
+                os.killpg(proc.pid, signal.SIGTERM)
+        except Exception:
+            pass
+    for path in list(_CLEANUP_PATHS):
+        try:
+            if os.path.islink(path) or os.path.isfile(path):
+                os.unlink(path)
+            elif os.path.isdir(path):
+                import shutil
+                shutil.rmtree(path, ignore_errors=True)
+        except OSError:
+            pass
+    sys.exit(0)
 
 
 def folded(text):
@@ -1271,6 +1292,434 @@ def cmd_terminal_here(args):
     return {'path': folder}
 
 
+# ---- file operations (d2: copy, move, rename, mkdir, link, trash, delete) ----
+
+def split_stem_ext(name, is_dir=False):
+    if is_dir:
+        return name, ''
+    ext = ext_of(name)
+    if ext and len(name) > len(ext):
+        return name[:-len(ext)], ext
+    return name, ''
+
+
+def unique_dest_path(dest_dir, name, is_dir=False):
+    candidate = os.path.join(dest_dir, name)
+    if not os.path.lexists(candidate):
+        return candidate
+    stem, ext = split_stem_ext(name, is_dir=is_dir)
+    idx = 1
+    while True:
+        cand = os.path.join(dest_dir, f'{stem} ({idx}){ext}')
+        if not os.path.lexists(cand):
+            return cand
+        idx += 1
+
+
+def resolve_conflict(src_path, dest_path, policy, is_dir=False):
+    if not os.path.lexists(dest_path):
+        return dest_path, False
+    mode = policy['mode']
+    if mode == 'ask' and not policy['apply_all']:
+        emit({'t': 'conflict', 'file': src_path, 'dest': dest_path})
+        line = sys.stdin.readline()
+        if not line:
+            choice = 'skip'
+        else:
+            try:
+                ans = json.loads(line.strip())
+                choice = ans.get('answer', 'skip')
+                if choice not in ('skip', 'overwrite', 'rename'):
+                    choice = 'skip'
+                if ans.get('all'):
+                    policy['mode'] = choice
+                    policy['apply_all'] = True
+            except Exception:
+                choice = 'skip'
+    else:
+        choice = mode
+
+    if choice == 'skip':
+        return None, False
+    if choice == 'rename':
+        return unique_dest_path(os.path.dirname(dest_path), os.path.basename(dest_path), is_dir=is_dir), False
+    return dest_path, True
+
+
+def remove_existing_target(target):
+    import shutil
+    if os.path.islink(target) or not os.path.isdir(target):
+        os.unlink(target)
+    else:
+        shutil.rmtree(target)
+
+
+def total_bytes_of(paths):
+    total = 0
+    for p in paths:
+        try:
+            st = os.lstat(p)
+        except OSError:
+            continue
+        if stat.S_ISREG(st.st_mode):
+            total += int(st.st_size)
+        elif stat.S_ISDIR(st.st_mode):
+            for root, _, files in os.walk(p, followlinks=False):
+                for fname in files:
+                    try:
+                        fst = os.lstat(os.path.join(root, fname))
+                        if stat.S_ISREG(fst.st_mode):
+                            total += int(fst.st_size)
+                    except OSError:
+                        pass
+    return total
+
+
+def copy_single_file(src, dst, tracker, index, count, overwrite=False):
+    import shutil
+    import tempfile
+    lstat = os.lstat(src)
+    if stat.S_ISLNK(lstat.st_mode):
+        if overwrite and os.path.lexists(dst):
+            remove_existing_target(dst)
+        link_to = os.readlink(src)
+        os.symlink(link_to, dst)
+        return
+
+    dest_dir = os.path.dirname(dst)
+    os.makedirs(dest_dir, exist_ok=True)
+    fd, tmp_dst = tempfile.mkstemp(prefix=f'.dragon-part-{os.path.basename(dst)}-', dir=dest_dir)
+    _CLEANUP_PATHS.add(tmp_dst)
+    slow_ms = int(os.environ.get('DRAGON_FILES_SLOW_MS', '0') or '0')
+    try:
+        with open(src, 'rb') as fsrc, os.fdopen(fd, 'wb') as fdst:
+            while True:
+                buf = fsrc.read(262144)
+                if not buf:
+                    break
+                fdst.write(buf)
+                tracker['done_bytes'] += len(buf)
+                elapsed = max(0.001, time.perf_counter() - tracker['start'])
+                bps = int(tracker['done_bytes'] / elapsed)
+                pct = min(99, int((tracker['done_bytes'] * 100) / max(1, tracker['total_bytes'])))
+                now = time.perf_counter()
+                if tracker.get('progress', True) and (now - tracker['last_emit'] >= 0.04 or slow_ms > 0):
+                    tracker['last_emit'] = now
+                    emit({'t': 'progress', 'pct': pct, 'file': os.path.basename(src), 'bps': bps, 'index': index, 'count': count})
+                if slow_ms > 0:
+                    time.sleep(slow_ms / 1000.0)
+        shutil.copystat(src, tmp_dst, follow_symlinks=False)
+        if overwrite and os.path.isdir(dst) and not os.path.islink(dst):
+            shutil.rmtree(dst)
+        os.replace(tmp_dst, dst)
+    finally:
+        _CLEANUP_PATHS.discard(tmp_dst)
+        if os.path.lexists(tmp_dst):
+            try:
+                os.unlink(tmp_dst)
+            except OSError:
+                pass
+
+
+def copy_tree_item(src, dst, tracker, index, count, overwrite=False):
+    import shutil
+    lstat = os.lstat(src)
+    if not stat.S_ISDIR(lstat.st_mode) or stat.S_ISLNK(lstat.st_mode):
+        copy_single_file(src, dst, tracker, index, count, overwrite=overwrite)
+        return
+    if overwrite and os.path.lexists(dst) and (os.path.islink(dst) or not os.path.isdir(dst)):
+        remove_existing_target(dst)
+    os.makedirs(dst, exist_ok=True)
+    for entry in os.scandir(src):
+        sub_src = entry.path
+        sub_dst = os.path.join(dst, entry.name)
+        if entry.is_dir(follow_symlinks=False):
+            copy_tree_item(sub_src, sub_dst, tracker, index, count, overwrite=True)
+        else:
+            copy_single_file(sub_src, sub_dst, tracker, index, count, overwrite=True)
+    try:
+        shutil.copystat(src, dst, follow_symlinks=False)
+    except OSError:
+        pass
+
+
+def trash_put_one(src_path):
+    import datetime
+    import shutil
+    import urllib.parse
+    troot = trash_root()
+    files_dir = troot / 'files'
+    info_dir = troot / 'info'
+    files_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+    info_dir.mkdir(parents=True, exist_ok=True, mode=0o700)
+
+    base = os.path.basename(src_path)
+    stem, ext = split_stem_ext(base, is_dir=os.path.isdir(src_path) and not os.path.islink(src_path))
+    candidate = base
+    idx = 1
+    info_fd = None
+    info_path = None
+    while True:
+        try_info = info_dir / f'{candidate}.trashinfo'
+        if not (files_dir / candidate).exists() and not os.path.lexists(files_dir / candidate):
+            try:
+                info_fd = os.open(str(try_info), os.O_CREAT | os.O_EXCL | os.O_WRONLY, 0o600)
+                info_path = try_info
+                break
+            except FileExistsError:
+                pass
+        candidate = f'{stem} ({idx}){ext}'
+        idx += 1
+
+    dest_file = files_dir / candidate
+    now_iso = datetime.datetime.now().strftime('%Y-%m-%dT%H:%M:%S')
+    quoted_path = urllib.parse.quote(src_path, safe='/')
+    content = f'[Trash Info]\nPath={quoted_path}\nDeletionDate={now_iso}\n'
+    try:
+        with os.fdopen(info_fd, 'w', encoding='utf-8') as handle:
+            handle.write(content)
+        try:
+            os.replace(src_path, str(dest_file))
+        except OSError:
+            shutil.move(src_path, str(dest_file))
+    except Exception:
+        if info_path and info_path.exists():
+            try:
+                info_path.unlink()
+            except OSError:
+                pass
+        raise
+    return 'trash:///' + urllib.parse.quote(candidate)
+
+
+def validate_simple_name(name):
+    if not name or name in ('.', '..') or '/' in name or '\0' in name:
+        raise ToolError('invalid_name', f'Nombre no válido: «{name}».', 'Usa un nombre sin barras.')
+    return name
+
+
+def check_not_inside(src, dest_dir):
+    real_src = os.path.abspath(src)
+    real_dst = os.path.abspath(dest_dir)
+    if real_dst == real_src or real_dst.startswith(real_src.rstrip('/') + '/'):
+        raise ToolError('invalid_dest', 'No se puede copiar ni mover una carpeta dentro de sí misma.', 'Elige otra carpeta de destino.')
+
+
+def cmd_op(args):
+    import shutil
+    kind = args.operation
+    policy = {'mode': args.conflict, 'apply_all': args.conflict != 'ask'}
+    moved = []
+    want_progress = bool(args.json_progress)
+
+    if kind == 'mkdir':
+        if not args.paths:
+            raise ToolError('invalid_usage', 'Falta la carpeta donde crear el directorio.')
+        parent_dir = os.path.abspath(os.path.expanduser(args.paths[0]))
+        name = validate_simple_name(args.name)
+        target = os.path.join(parent_dir, name)
+        if os.path.lexists(target):
+            raise ToolError('already_exists', f'Ya existe «{name}» en la carpeta.', 'Elige otro nombre.')
+        try:
+            os.makedirs(target, exist_ok=False)
+        except PermissionError:
+            raise ToolError('permission_denied', f'Permiso denegado al crear «{name}».') from None
+        if want_progress:
+            emit({'t': 'progress', 'pct': 100, 'file': name, 'bps': 0, 'index': 1, 'count': 1})
+        return {'t': 'done', 'path': target, 'moved': []}
+
+    if kind == 'rename':
+        if not args.paths:
+            raise ToolError('invalid_usage', 'Falta la ruta a renombrar.')
+        src = os.path.abspath(os.path.expanduser(args.paths[0]))
+        if not os.path.lexists(src):
+            raise ToolError('not_found', f'No existe «{args.paths[0]}».')
+        name = validate_simple_name(args.name)
+        dst = os.path.join(os.path.dirname(src), name)
+        if dst != src and os.path.lexists(dst):
+            raise ToolError('already_exists', f'Ya existe «{name}».', 'Elige otro nombre.')
+        if dst != src:
+            os.replace(src, dst)
+        moved.append({'from': src, 'to': dst})
+        if want_progress:
+            emit({'t': 'progress', 'pct': 100, 'file': name, 'bps': 0, 'index': 1, 'count': 1})
+        return {'t': 'done', 'moved': moved}
+
+    if kind == 'trash':
+        sources = [os.path.abspath(os.path.expanduser(p)) for p in args.paths]
+        count = len(sources)
+        for idx, src in enumerate(sources, 1):
+            if not os.path.lexists(src):
+                raise ToolError('not_found', f'No existe «{src}».')
+            trash_put_one(src)
+            pct = int((idx * 100) / max(1, count))
+            if want_progress:
+                emit({'t': 'progress', 'pct': pct, 'file': os.path.basename(src), 'bps': 0, 'index': idx, 'count': count})
+        return {'t': 'done', 'moved': []}
+
+    if kind == 'delete':
+        if not args.confirm:
+            raise ToolError('confirm_required', 'El borrado permanente exige --confirm.', 'Confirma la operación con --confirm.')
+        count = len(args.paths)
+        troot = trash_root()
+        for idx, raw in enumerate(args.paths, 1):
+            if raw.startswith('trash:'):
+                import urllib.parse
+                tname = urllib.parse.unquote(raw.split('trash:///', 1)[-1].lstrip('/'))
+                tfile = troot / 'files' / tname
+                tinfo = troot / 'info' / f'{tname}.trashinfo'
+                if os.path.lexists(tfile):
+                    remove_existing_target(str(tfile))
+                if tinfo.exists():
+                    tinfo.unlink()
+                label = tname
+            else:
+                src = os.path.abspath(os.path.expanduser(raw))
+                if not os.path.lexists(src):
+                    raise ToolError('not_found', f'No existe «{raw}».')
+                remove_existing_target(src)
+                label = os.path.basename(src)
+            pct = int((idx * 100) / max(1, count))
+            if want_progress:
+                emit({'t': 'progress', 'pct': pct, 'file': label, 'bps': 0, 'index': idx, 'count': count})
+        return {'t': 'done', 'moved': []}
+
+    if not args.dest:
+        raise ToolError('invalid_usage', 'Falta la carpeta de destino (--dest).')
+    dest_dir = os.path.abspath(os.path.expanduser(args.dest))
+    if not os.path.isdir(dest_dir):
+        raise ToolError('not_found', f'No existe la carpeta de destino «{args.dest}».')
+
+    sources = [os.path.abspath(os.path.expanduser(p)) for p in args.paths]
+    count = len(sources)
+    for src in sources:
+        if not os.path.lexists(src):
+            raise ToolError('not_found', f'No existe «{src}».')
+        if os.path.isdir(src) and not os.path.islink(src):
+            check_not_inside(src, dest_dir)
+
+    if kind == 'link':
+        for idx, src in enumerate(sources, 1):
+            is_dir = os.path.isdir(src) and not os.path.islink(src)
+            raw_dst = os.path.join(dest_dir, os.path.basename(src))
+            dst, overwrite = resolve_conflict(src, raw_dst, policy, is_dir=is_dir)
+            if dst is None:
+                continue
+            if overwrite and os.path.lexists(dst):
+                remove_existing_target(dst)
+            os.symlink(src, dst)
+            pct = int((idx * 100) / max(1, count))
+            if want_progress:
+                emit({'t': 'progress', 'pct': pct, 'file': os.path.basename(src), 'bps': 0, 'index': idx, 'count': count})
+        return {'t': 'done', 'moved': []}
+
+    total_bytes = total_bytes_of(sources)
+    free_bytes, _, _ = filesystem_info(dest_dir)
+    if kind == 'copy' and free_bytes > 0 and total_bytes > free_bytes:
+        raise ToolError('no_space', 'No queda espacio suficiente en el destino.', 'Libera espacio e inténtalo de nuevo.')
+
+    tracker = {'total_bytes': max(1, total_bytes), 'done_bytes': 0, 'start': time.perf_counter(), 'last_emit': 0.0, 'progress': want_progress}
+    for idx, src in enumerate(sources, 1):
+        is_dir = os.path.isdir(src) and not os.path.islink(src)
+        raw_dst = os.path.join(dest_dir, os.path.basename(src))
+        if kind == 'move' and os.path.abspath(src) == os.path.abspath(raw_dst):
+            continue
+        dst, overwrite = resolve_conflict(src, raw_dst, policy, is_dir=is_dir)
+        if dst is None:
+            continue
+        if want_progress:
+            emit({'t': 'progress', 'pct': int(((idx - 1) * 100) / max(1, count)), 'file': os.path.basename(src), 'bps': 0, 'index': idx, 'count': count})
+        if kind == 'copy':
+            copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
+        elif kind == 'move':
+            if overwrite and os.path.lexists(dst):
+                remove_existing_target(dst)
+            try:
+                os.replace(src, dst)
+            except OSError:
+                if free_bytes > 0 and total_bytes > free_bytes:
+                    raise ToolError('no_space', 'No queda espacio suficiente en el destino.', 'Libera espacio e inténtalo de nuevo.') from None
+                copy_tree_item(src, dst, tracker, idx, count, overwrite=overwrite)
+                remove_existing_target(src)
+            moved.append({'from': src, 'to': dst})
+        elapsed = max(0.001, time.perf_counter() - tracker['start'])
+        bps = int(tracker['done_bytes'] / elapsed)
+        if want_progress:
+            emit({'t': 'progress', 'pct': int((idx * 100) / max(1, count)), 'file': os.path.basename(src), 'bps': bps, 'index': idx, 'count': count})
+
+    return {'t': 'done', 'moved': moved}
+
+
+def cmd_trash(args):
+    import urllib.parse
+    troot = trash_root()
+    files_dir = troot / 'files'
+    info_dir = troot / 'info'
+    want_progress = bool(args.json_progress)
+
+    if args.operation == 'empty':
+        if not args.confirm:
+            raise ToolError('confirm_required', 'Vaciar la papelera exige --confirm.', 'Confirma con --confirm.')
+        items = list(files_dir.iterdir()) if files_dir.is_dir() else []
+        count = max(1, len(items))
+        for idx, item in enumerate(items, 1):
+            remove_existing_target(str(item))
+            info_file = info_dir / f'{item.name}.trashinfo'
+            if info_file.exists():
+                try:
+                    info_file.unlink()
+                except OSError:
+                    pass
+            if want_progress:
+                emit({'t': 'progress', 'pct': int((idx * 100) / count), 'file': item.name, 'bps': 0, 'index': idx, 'count': count})
+        if info_dir.is_dir():
+            for leftover in info_dir.glob('*.trashinfo'):
+                try:
+                    leftover.unlink()
+                except OSError:
+                    pass
+        return {'t': 'done', 'moved': []}
+
+    if not args.uris:
+        raise ToolError('invalid_usage', 'Indica los elementos de la papelera a restaurar.')
+    policy = {'mode': args.conflict, 'apply_all': args.conflict != 'ask'}
+    moved = []
+    count = len(args.uris)
+    for idx, raw_uri in enumerate(args.uris, 1):
+        if raw_uri.startswith('trash:'):
+            name = urllib.parse.unquote(raw_uri.split('trash:///', 1)[-1].lstrip('/'))
+        else:
+            name = os.path.basename(raw_uri)
+        src_file = files_dir / name
+        info_file = info_dir / f'{name}.trashinfo'
+        if not os.path.lexists(src_file):
+            raise ToolError('not_found', f'No está en la papelera: «{name}».')
+        orig_path, _ = parse_trashinfo(info_file)
+        if not orig_path:
+            orig_path = str(Path(os.environ.get('HOME') or Path.home()) / name)
+        os.makedirs(os.path.dirname(orig_path), exist_ok=True)
+        is_dir = os.path.isdir(src_file) and not os.path.islink(src_file)
+        dst, overwrite = resolve_conflict(str(src_file), orig_path, policy, is_dir=is_dir)
+        if dst is None:
+            continue
+        if overwrite and os.path.lexists(dst):
+            remove_existing_target(dst)
+        try:
+            os.replace(str(src_file), dst)
+        except OSError:
+            import shutil
+            shutil.move(str(src_file), dst)
+        if info_file.exists():
+            try:
+                info_file.unlink()
+            except OSError:
+                pass
+        moved.append({'from': raw_uri, 'to': dst})
+        if want_progress:
+            emit({'t': 'progress', 'pct': int((idx * 100) / max(1, count)), 'file': name, 'bps': 0, 'index': idx, 'count': count})
+    return {'t': 'done', 'moved': moved}
+
+
 def build_parser():
     parser = Parser(description='Herramienta del explorador de archivos de dragon-island (JSON).')
     sub = parser.add_subparsers(dest='cmd', required=True)
@@ -1319,6 +1768,24 @@ def build_parser():
     p.add_argument('path')
     p.add_argument('--json', action='store_true')
 
+    p = sub.add_parser('op')
+    p.add_argument('operation', choices=('copy', 'move', 'trash', 'delete', 'rename', 'mkdir', 'link'))
+    p.add_argument('paths', nargs='+')
+    p.add_argument('--dest', default='')
+    p.add_argument('--name', default='')
+    p.add_argument('--conflict', choices=('ask', 'skip', 'overwrite', 'rename'), default='ask')
+    p.add_argument('--confirm', action='store_true')
+    p.add_argument('--json-progress', dest='json_progress', action='store_true')
+    p.add_argument('--json', action='store_true')
+
+    p = sub.add_parser('trash')
+    p.add_argument('operation', choices=('empty', 'restore'))
+    p.add_argument('uris', nargs='*')
+    p.add_argument('--conflict', choices=('ask', 'skip', 'overwrite', 'rename'), default='rename')
+    p.add_argument('--confirm', action='store_true')
+    p.add_argument('--json-progress', dest='json_progress', action='store_true')
+    p.add_argument('--json', action='store_true')
+
     return parser
 
 
@@ -1342,6 +1809,10 @@ def main():
         result = cmd_open_with(args)
     elif args.cmd == 'terminal-here':
         result = cmd_terminal_here(args)
+    elif args.cmd == 'op':
+        result = cmd_op(args)
+    elif args.cmd == 'trash':
+        result = cmd_trash(args)
     else:
         raise ToolError('unsupported', f'Subcomando no soportado: {args.cmd}')
     emit({'ok': True, **result})
@@ -1349,14 +1820,18 @@ def main():
 
 
 if __name__ == '__main__':
-    signal.signal(signal.SIGTERM, lambda *_: sys.exit(0))
+    signal.signal(signal.SIGTERM, _cleanup_on_signal)
     try:
         sys.exit(main() or 0)
     except ToolError as exc:
-        emit(error(exc.code, exc.message, exc.hint))
+        err_payload = error(exc.code, exc.message, exc.hint)
+        err_payload['t'] = 'error'
+        emit(err_payload)
         sys.exit(1)
     except (KeyboardInterrupt, BrokenPipeError):
-        sys.exit(0)
+        _cleanup_on_signal()
     except OSError as exc:
-        emit(error('io_error', f'Error de entrada/salida: {exc.strerror or exc}'))
+        err_payload = error('io_error', f'Error de entrada/salida: {exc.strerror or exc}')
+        err_payload['t'] = 'error'
+        emit(err_payload)
         sys.exit(1)
