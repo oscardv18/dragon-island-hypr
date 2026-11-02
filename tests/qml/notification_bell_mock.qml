@@ -70,18 +70,29 @@ ShellRoot {
         Theme.motionScale = 0;
     }
     Timer {
-        interval: 120
+        id: settle
+        property var job: null
+        interval: 250
+        onTriggered: { const j = job; job = null; if (j) j(); }
+        function run(fn) { job = fn; restart(); }
+    }
+    Timer {
+        interval: 600
         repeat: true
         running: !test.interactive
         onTriggered: {
             const bell = test.find(island, "notificationBell");
             check(bell !== null && bell.visible, "bell in RightIsland");
-            if (test.stage === 0) test.stableWidth = island.width;
             if (test.stage < test.fixtures.length) {
                 const f = test.fixtures[test.stage];
                 state(f.count, f.dnd);
-                Qt.callLater(() => {
-                    check(island.width === test.stableWidth, "unread/DND must not resize island");
+                // the island lays out one frame after the slot animates: look at it a little later
+                settle.run(() => {
+                    const content = test.find(bell, "notificationBellContent");
+                    check(content.width === (f.count > 0 ? Theme.barBellContentWidth : Theme.iconSm), "slot closes with nothing unread and opens for the count");
+                    // island width minus the bell slot is constant: the island follows the slot (it closes again at 0 unread)
+                    if (test.stableWidth === 0) test.stableWidth = island.width - content.width;
+                    check(island.width - content.width === test.stableWidth, "island follows the slot: " + (island.width - content.width) + " vs " + test.stableWidth);
                     check(test.find(bell, "notificationBellBadge").visible === (f.count > 0), "badge visibility");
                     check(test.find(bell, "notificationBellCount").text === (f.count > 99 ? "99+" : String(f.count)), "badge count");
                     check(test.find(bell, "notificationBellGlyph").icon === (f.dnd ? Icons.bellOff : Icons.bell), "DND icon");

@@ -1,4 +1,5 @@
-// A fixed-width bell slot: unread count stays visible with DND, without polling or idle animation.
+// The bell: with nothing unread it is just the icon (the slot closes up); with unread notifications the slot opens for the count,
+// which stays visible with DND. Only the island content changes width (the bar window never does); no polling, no idle animation.
 import QtQuick
 import "../.."
 import "../../services"
@@ -23,8 +24,11 @@ Capsule {
     Accessible.name: `${dnd ? "No molestar" : "Notificaciones"} · ${unread} sin leer`
 
     Item {
-        width: Theme.barBellContentWidth
+        width: bell.unread > 0 ? Theme.barBellContentWidth : Theme.iconSm
         height: Theme.barCapsuleHeight
+        objectName: "notificationBellContent"
+        clip: true
+        Behavior on width { NumberAnimation { duration: Theme.durStd; easing.type: Easing.BezierSpline; easing.bezierCurve: Theme.curveEstandar } }
         Glyph {
             objectName: "notificationBellGlyph"
             anchors.left: parent.left

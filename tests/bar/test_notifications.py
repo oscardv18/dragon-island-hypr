@@ -33,7 +33,10 @@ class NotificationBell(unittest.TestCase):
         self.assertNotIn('Notifs.', clock)
         self.assertNotIn('Toggles.dnd', clock)
         bell = (ROOT / 'config/quickshell/modules/bar/NotificationBell.qml').read_text()
-        for forbidden in ('Timer {', 'Animation', 'Process', 'execDetached', 'DBus', '#'):
+        # the only animation is the slot opening/closing with the unread count: no idle or looping animation
+        for forbidden in ('Timer {', 'Process', 'execDetached', 'DBus', '#', 'loops:', 'running:', 'SequentialAnimation', 'ParallelAnimation', 'SpringAnimation'):
             self.assertNotIn(forbidden, bell)
+        self.assertEqual(bell.count('Animation'), 1)
+        self.assertIn('Behavior on width', bell)
         self.assertIn('Toggles.toggleDnd()', bell)
         self.assertIn('island.openPopover("notifications", bell)', bell)
