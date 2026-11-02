@@ -827,6 +827,8 @@ Singleton {
         readonly property real projectListHeight: 180
         readonly property real stateWidth: 110
         readonly property color panel: root.alpha(root.bg, 0.94)
+        // In-window overlays must hide the content underneath; compositor blur only sees behind the window.
+        readonly property color overlay: root.bg
         readonly property color card: root.alpha(root.text, 0.045)
         readonly property color output: root.alpha(root.bg, 0.85)
         readonly property color selected: root.alpha(root.cyan, 0.06)

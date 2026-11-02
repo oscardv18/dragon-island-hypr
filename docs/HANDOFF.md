@@ -1042,3 +1042,20 @@ El contorno no añade coste medible (dentro del ruido y por debajo del +0,3 pedi
   `qs ipc call tiling toggle` cambió el escritorio 2 a Dwindle y de vuelta a Scrolling, confirmados
   tanto por `hyprctl` como por `qs ipc call tiling get`; `configerrors` vacío. No se pulsaron las
   teclas físicas ni se capturó la barra; al alternar debe cambiar el icono de cuadrícula / columnas.
+
+## Corrección: fondos de menús del Taller (2026-11-02)
+
+- El selector de proyectos usaba `Theme.taller.panel` (94 % de alfa), dejando ver
+  las pestañas y filas del propio Taller. El blur del compositor actúa detrás de
+  la ventana, por lo que no elimina esa superposición interna.
+- Nuevo token opaco `Theme.taller.overlay`: selector de proyectos, compositor de
+  prompts, formulario de nueva tarjeta, confirmación y tarjeta arrastrada de Kanban.
+- Migración **093** para copias: renueva solo Theme y las tres vistas modificadas,
+  con respaldo, idempotencia y respeto a `DRY_RUN` / `ASSUME_YES`.
+- Verificado: captura offscreen del selector con tres proyectos, sin contenido
+  visible a través del fondo; pruebas de vistas del Taller y fase 5c, migración
+  en HOME temporal (dry-run, copia, respaldo y repetición), Bash y shellcheck.
+- Instalación local enlazada al repo: recibe los cambios mediante recarga QML.
+  No se verificó el resultado en una captura de la sesión real. Al abrir el selector,
+  los proyectos deben verse sobre un fondo oscuro sólido, sin pestañas ni agentes
+  atravesándolo; igual para el compositor y los formularios de Kanban.
