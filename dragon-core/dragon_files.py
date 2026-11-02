@@ -1516,6 +1516,41 @@ def validate_simple_name(name):
     return name
 
 
+_SYSTEM_DIRS = ('/bin', '/boot', '/dev', '/efi', '/etc', '/home', '/lib', '/lib32', '/lib64', '/media', '/mnt', '/opt',
+                '/proc', '/root', '/run', '/run/media', '/sbin', '/srv', '/sys', '/tmp', '/usr', '/var')
+_HOME_KEEP = ('.config', '.local', '.local/share', '.local/state', '.ssh', '.gnupg')
+
+
+def protected_reason(path):
+    """Why `path` must never be deleted, trashed or moved away as a whole (None when it may).
+
+    Audit 5d: `op delete --confirm ~` removed the whole HOME. A symlink is checked as itself (removing the link
+    never touches its target); anything else by both its absolute and its real path.
+    """
+    home = os.path.realpath(os.environ.get('HOME') or str(Path.home()))
+    absolute = os.path.normpath(os.path.abspath(path))
+    candidates = {absolute} if os.path.islink(absolute) else {absolute, os.path.realpath(absolute)}
+    keep = {home, *(os.path.join(home, rel) for rel in _HOME_KEEP)}
+    for cand in candidates:
+        if cand == '/' or cand in _SYSTEM_DIRS:
+            return 'una carpeta del sistema'
+        if cand in keep:
+            return 'tu carpeta personal o su configuración'
+        if home.startswith(cand.rstrip('/') + '/'):
+            return 'una carpeta que contiene tu carpeta personal'
+        if not os.path.islink(cand) and os.path.ismount(cand):
+            return 'un punto de montaje (expúlsalo o borra lo que hay dentro)'
+    return None
+
+
+def guard_removable(paths):
+    for raw in paths:
+        why = protected_reason(raw)
+        if why:
+            raise ToolError('protected_path', f'«{raw}» es {why}: no se puede borrar, mover ni enviar a la papelera.',
+                            'Elige los archivos de dentro, no la carpeta entera.')
+
+
 def check_not_inside(src, dest_dir):
     # realpath, not abspath: a destination reached through a symlink to the source (or to a folder inside it)
     # made copy/move recurse into their own output until RecursionError (audit 5d).
@@ -1567,6 +1602,7 @@ def cmd_op(args):
 
     if kind == 'trash':
         sources = [os.path.abspath(os.path.expanduser(p)) for p in args.paths]
+        guard_removable(sources)
         count = len(sources)
         for idx, src in enumerate(sources, 1):
             if not os.path.lexists(src):
@@ -1585,6 +1621,7 @@ def cmd_op(args):
         for raw in args.paths:   # validate every name before deleting the first one
             if raw.startswith('trash:'):
                 trash_item_name(raw)
+        guard_removable([os.path.expanduser(raw) for raw in args.paths if not raw.startswith('trash:')])
         for idx, raw in enumerate(args.paths, 1):
             if raw.startswith('trash:'):
                 tname = trash_item_name(raw)
@@ -1614,6 +1651,8 @@ def cmd_op(args):
 
     sources = [os.path.abspath(os.path.expanduser(p)) for p in args.paths]
     count = len(sources)
+    if kind == 'move':
+        guard_removable(sources)
     for src in sources:
         if not os.path.lexists(src):
             raise ToolError('not_found', f'No existe «{src}».')

@@ -127,3 +127,47 @@ class IntoItself(AuditBase):
     def test_copy_next_to_itself_still_works(self):
         self.cli_ok('op', 'copy', str(self.src), '--dest', str(self.home), '--conflict', 'rename')
         self.assertTrue((self.home / 'a (1)/f').exists())
+
+
+class ProtectedPaths(AuditBase):
+    """Hallazgo 3: `op delete --confirm` removed HOME (or ~/.config…) with no further check.
+    Destructive commands only ever receive paths inside the temporary box; system paths are checked through
+    protected_reason() itself, which never deletes anything."""
+
+    def test_delete_trash_move_refuse_home_and_config(self):
+        (self.home / '.config/app').mkdir(parents=True)
+        (self.home / '.ssh').mkdir()
+        dest = self.home / 'dest'; dest.mkdir()
+        for target in (self.home, self.home / '.config', self.home / '.ssh', self.box):
+            self.cli_error('op', 'delete', str(target), '--confirm', code='protected_path')
+            self.cli_error('op', 'trash', str(target), code='protected_path')
+        self.cli_error('op', 'move', str(self.home / '.config'), '--dest', str(dest), code='protected_path')
+        self.assertTrue((self.home / '.config/app').is_dir())
+
+    def test_tilde_and_trailing_slash(self):
+        self.cli_error('op', 'delete', '~/', '--confirm', code='protected_path')
+        self.cli_error('op', 'delete', str(self.home) + '/./', '--confirm', code='protected_path')
+        self.assertTrue(self.home.is_dir())
+
+    def test_system_paths_are_protected(self):
+        code = ('import sys; sys.path.insert(0, sys.argv[1]); import dragon_files as d; '
+                'print([p for p in sys.argv[2:] if not d.protected_reason(p)])')
+        paths = ['/', '/usr', '/etc/', '/home', '/run/media', '//', '/usr/../usr']
+        p = subprocess.run(['python3', '-S', '-c', code, str(ROOT / 'dragon-core'), *paths], env=self.env,
+                           capture_output=True, text=True, timeout=15)
+        self.assertEqual(p.stdout.strip(), '[]', p.stdout + p.stderr)
+
+    def test_symlink_to_home_is_only_a_link(self):
+        link = self.home / 'atajo'
+        link.symlink_to(self.home)
+        self.cli_ok('op', 'delete', str(link), '--confirm')
+        self.assertFalse(os.path.lexists(link))
+        self.assertTrue(self.home.is_dir())
+
+    def test_ordinary_files_and_folders_still_go(self):
+        (self.home / 'Docs/sub').mkdir(parents=True)
+        (self.home / 'Docs/sub/x').write_text('x')
+        (self.home / '.config/app').mkdir(parents=True)
+        self.cli_ok('op', 'delete', str(self.home / '.config/app'), '--confirm')
+        self.cli_ok('op', 'trash', str(self.home / 'Docs/sub'))
+        self.assertFalse((self.home / 'Docs/sub').exists())
