@@ -25,6 +25,7 @@ Estado de partida: repositorio `oscardv18/dragon-island-hypr`, `main` en la fase
 | `archivos` | sí | `udisks2` `inotify-tools` `gvfs` `gvfs-smb` `gvfs-mtp` `gvfs-nfs` `7zip` `libvips` `imagemagick` `poppler` `smbclient` `avahi` `xdg-utils`; opcionales: `samba`, `python-gobject` |
 | `editor` | sí (separable con `--modules`) | `neovim` ≥ 0.12 + las herramientas que usa la configuración personal (`packages/pacman-editor.txt`); configuración en `~/.config/nvim` con respaldo; plugins en el primer uso **con confirmación y tiempo máximo**; migración 150 **opt-in** (`DRAGON_NVIM=1`) aun con `--yes`; retirada restaura el Neovim anterior y conserva plugins y datos (`docs/NVIM.md`) |
 | `login` | opt-in | `sddm` + tema (toca `/etc`) |
+| `boot` | opt-in (toca `/boot`) | tema de Dragon OS para Limine (GRUB con `--bootloader grub`): papel tapiz, paleta, marca y cuenta atrás de 3 s; cada paso con sudo se pregunta **aunque haya `--yes`**; respaldo con fecha, diff previo, sin tocar entradas EFI ni Windows; `./install.sh --revert-boot` lo quita (`docs/BOOT.md`) |
 | `mis-apps` | opt-in, **fuera de la base** | las listas personales (`user-pacman.txt`, `user-aur.txt`): editores, Android Studio, Telegram, etc. |
 
 **Regla:** cada nombre se valida con `pacman -Si` (o AUR RPC) **al ejecutar el preflight**; no se asumen nombres de memoria (por ejemplo `7zip` frente a `p7zip`).

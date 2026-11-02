@@ -128,6 +128,11 @@ step "explorador: vistas con datos de muestra y servicios con dragon-files simul
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files_ui -v; then pass "explorador (interfaz)"; else fail "explorador (interfaz)"; fi
 # /fase5d: files UI
 
+# fase boot: theme
+step "tema de arranque: Limine y GRUB en una ESP / raíz falsas, regeneración simulada, gancho, módulo y migraciones 160-161 (sin tocar /boot)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -W ignore -m unittest discover -s tests/boot -v; then pass "tema de arranque"; else fail "tema de arranque"; fi
+# /fase boot: theme
+
 # fase6: portal
 step "Dragon Portal: núcleo, CLI, xdg-desktop-portal real en bus propio, explorador simulado, interfaz del modo selector y migraciones 100-102"
 if PYTHONDONTWRITEBYTECODE=1 python3 -W ignore -m unittest discover -s tests/portal -t tests/portal -v; then pass "Dragon Portal"; else fail "Dragon Portal"; fi

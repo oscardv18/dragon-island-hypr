@@ -1,0 +1,18 @@
+#!/usr/bin/env bash
+# limine-entry-tool post hook (/etc/boot/hooks/post.d/): puts the Dragon OS theme back if a regeneration of limine.conf dropped it.
+# Installed by modules/boot.sh. Never fatal: it exits 0, or 1 (a non-fatal error: the tool goes on); it never exits >= 100.
+ENGINE="${DRAGON_BOOT_SYSTEM_DIR:-/usr/local/lib/dragon-os-boot}/dragon_boot.py"
+[[ -f "$ENGINE" ]] || exit 0
+esp=""
+for f in "${DRAGON_BOOT_ETC:-/etc}/default/limine" "${DRAGON_BOOT_ETC:-/etc}/limine-entry-tool.conf"; do
+    [[ -f "$f" ]] || continue
+    v="$(grep -E '^[[:space:]]*ESP_PATH=' "$f" | tail -n1 | cut -d= -f2- | tr -d "\"' ")"
+    [[ -n "$v" ]] && esp="$v" && break
+done
+args=(reapply)
+[[ -n "$esp" ]] && args+=(--esp "$esp")
+if ! out="$(python3 "$ENGINE" "${args[@]}" 2>&1)"; then
+    echo "dragon-boot: no se pudo reaplicar el tema: $out" >&2
+    exit 1
+fi
+exit 0

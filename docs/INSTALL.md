@@ -30,6 +30,7 @@ se aportan las listas de `packages/` con los nombres de esa distro. No se ha inv
 | `login` | tema SDDM dragon-core (`sddm/install-theme.sh`); con Plasma Login Manager solo imprime cómo pasar a SDDM | `install-theme.sh` pregunta antes de cada paso | `install-theme.sh --uninstall` |
 | `keyring` | portal de secretos, flag de Brave, y (si falta) las líneas `pam_gnome_keyring` de `/etc/pam.d/sddm` mostradas como diff | solo el cambio de PAM, con copia `.bak-dragon` | restaura el `.bak-dragon` |
 | `keyboard` | distribuciones (por defecto `us,latam`, us siempre primera) en `local.lua`; `localectl set-x11-keymap` opcional | solo `localectl` | quita el bloque de `local.lua` |
+| `boot` | tema de Dragon OS para el gestor de arranque (Limine; GRUB con `--bootloader grub`): papel tapiz, paleta, marca, cuenta atrás de 3 s; **opt-in**, ver `docs/BOOT.md` | todos sus pasos: motor en `/usr/local/lib/dragon-os-boot`, gancho de limine-entry-tool, `limine.conf` o `/etc/default/grub` + `grub-mkconfig`; cada uno se pregunta **aunque uses `--yes`** | `./install.sh --revert-boot` (copias de seguridad con fecha al lado de cada archivo) |
 | `extras` | Brave, Proton VPN, herdr (instalador oficial), «Mis apps» (cada uno opcional) | `pacman -S` / `yay -S` | retira la configuración; los paquetes se dejan |
 
 `editor` está seleccionado por defecto junto con core, shell, theme, plugins y
