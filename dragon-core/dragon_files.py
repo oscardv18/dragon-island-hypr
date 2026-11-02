@@ -2182,7 +2182,12 @@ def cmd_unlock(args):
 
 def build_parser():
     parser = Parser(description='Herramienta del explorador de archivos de dragon-island (JSON).')
-    sub = parser.add_subparsers(dest='cmd', required=True)
+    integration = parser.add_mutually_exclusive_group()
+    integration.add_argument('--browse', nargs='*')
+    integration.add_argument('--set-default', action='store_true')
+    integration.add_argument('--restore-default', action='store_true')
+    parser.add_argument('--json', action='store_true')
+    sub = parser.add_subparsers(dest='cmd')
 
     p = sub.add_parser('ls')
     p.add_argument('path', nargs='?', default='.')
@@ -2279,7 +2284,13 @@ def build_parser():
 def main():
     parser = build_parser()
     args = parser.parse_args()
-    if args.cmd == 'archive':
+    if args.browse is not None or args.set_default or args.restore_default:
+        if args.cmd:
+            raise ToolError('invalid_usage', 'No combines una acción de escritorio con un subcomando.')
+        import files_desktop
+        result = (files_desktop.browse(args.browse) if args.browse is not None
+                  else files_desktop.default(args.restore_default))
+    elif args.cmd == 'archive':
         import files_archives
         result = files_archives.command(args, sys.modules[__name__])
     elif args.cmd == 'net':

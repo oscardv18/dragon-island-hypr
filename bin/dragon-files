@@ -7,4 +7,8 @@ FILES_LIB="${FILES_ROOT%/*}/dragon-core/dragon_files.py"
 if [[ ! -f "$FILES_LIB" ]]; then
     FILES_LIB="${XDG_DATA_HOME:-$HOME/.local/share}/dragon-island/engines/dragon_files.py"
 fi
+# PyGObject is optional and lives in site-packages; only this explicit mode needs it.
+if [[ "${1:-}" == --filemanager1 ]]; then
+    exec python3 "${FILES_LIB%/*}/files_filemanager1.py"
+fi
 exec python3 -S "$FILES_LIB" "$@"
