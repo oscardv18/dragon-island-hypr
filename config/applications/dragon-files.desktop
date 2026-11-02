@@ -1,0 +1,10 @@
+[Desktop Entry]
+Type=Application
+Name=Archivos Dragon
+Comment=Explorador de archivos de Dragon Island
+Exec=dragon-files --browse %U
+Icon=system-file-manager
+Terminal=false
+Categories=System;FileTools;FileManager;
+MimeType=inode/directory;
+StartupNotify=false

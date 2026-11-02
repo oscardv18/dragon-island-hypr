@@ -77,6 +77,12 @@ step "ajustes de 5c: migración de pantallas y aislamiento de dry-run"
 if python3 -m unittest discover -s tests/fase5c_ajustes -v; then pass "ajustes de 5c"; else fail "ajustes de 5c"; fi
 # /fase5c: adjustments
 
+# fase5d: files
+step "dragon-files: listado, lugares, vigilancia, propiedades, abrir y miniaturas (HOME/XDG temporales)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files -v; then pass "dragon-files"; else fail "dragon-files"; fi
+if PYTHONDONTWRITEBYTECODE=1 python3 tests/files/bench.py --limit-ms 300; then pass "dragon-files ls 1000 <300 ms"; else fail "latencia de dragon-files"; fi
+# /fase5d: files
+
 # fase5b: engines
 step "Docker con socket Unix falso"
 if python3 -m unittest discover -s tests/docker -v; then pass "dragon-docker"; else fail "dragon-docker"; fi
@@ -91,6 +97,11 @@ if python3 tests/fase5b/bench.py --limit-ms 300; then pass "lecturas frías <300
 step "Taller 5c: servicios Prompts/Gate y vistas con herramientas simuladas (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/fase5c -v; then pass "pantallas y servicios de 5c"; else fail "pantallas y servicios de 5c"; fi
 # /fase5c: pantallas
+
+# fase5e: pulido
+step "Taller 5e: CONTEXT.md se exporta solo al cambiar de tarjeta (HOME/XDG temporales)"
+if python3 -m unittest discover -s tests/fase5e -v; then pass "exportación automática de contexto"; else fail "exportación automática de contexto"; fi
+# /fase5e: pulido
 
 # fase5a: shared secrets
 step "secretos compartidos"
@@ -111,6 +122,11 @@ if python3 -m unittest discover -s tests/herdr -v; then pass "dragon-herdr"; els
 step "servicios del Taller con Quickshell real y HOME temporal"
 if python3 -m unittest discover -s tests/taller -v; then pass "servicios del Taller"; else fail "servicios del Taller"; fi
 # /fase5a: services and UI
+
+# fase5d: files UI
+step "explorador: vistas con datos de muestra y servicios con dragon-files simulado"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/files_ui -v; then pass "explorador (interfaz)"; else fail "explorador (interfaz)"; fi
+# /fase5d: files UI
 
 step "motores: búsqueda, uso y portapapeles (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/engines -v; then pass "pruebas de motores"; else fail "pruebas de motores fallaron"; fi
@@ -138,6 +154,9 @@ if tests/idempotency.sh; then pass "idempotente"; else fail "idempotency.sh fall
 
 step "install.sh --dry-run no deja rastro (HOME/XDG temporales)"
 if python3 tests/install-dry-run.py; then pass "instalador sin escrituras en HOME/XDG ni cambios en git"; else fail "el dry-run dejó rastro o falló"; fi
+
+# fase5d: migration
+if python3 -m unittest discover -s tests/files_migration -v; then pass "migración 080"; else fail "migración 080"; fi
 
 echo
 if ((fails == 0)); then echo "TODO EN VERDE"; else echo "$fails bloque(s) fallan"; fi

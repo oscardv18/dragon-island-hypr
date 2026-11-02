@@ -1,0 +1,3 @@
+{"t": "progress", "pct": 38, "file": "capturas/demo-01.png", "bps": 41943040, "index": 2, "count": 5}
+{"t": "conflict", "file": "/home/oddv/Proyectos/arxnet-erp/docs/capturas/demo-02.png", "dest": "/run/media/oddv/KINGSTON/fotos/demo-02.png"}
+{"t": "done", "moved": [{"from": "/home/oddv/a.txt", "to": "/home/oddv/Documentos/a.txt"}]}
