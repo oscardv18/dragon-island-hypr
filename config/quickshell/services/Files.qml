@@ -14,7 +14,7 @@
  *   - visibleWindows: int — windows on screen; Devices only watches udisks while this is > 0
  *   - clipboard: var ({mode: "copy"|"cut", paths: []}) — shared by every window
  *   - shares: var — folders shared right now (`share status` without a path)
- *   - composerAvailable: bool — the prompt composer (tramo 5c) is present; until then «Enviar al agente» is disabled
+ *   - composerAvailable: bool — the prompt composer (tramo 5c) is present (true since the fase 5 integration)
  *
  * Functions:
  *   - list(path, opts {hidden, git}, callback(result)) — `ls`; result = {ok, path, entries, free, total, fs} or error
@@ -26,7 +26,8 @@
  *   - setClipboard(mode, paths) · copyText(text) (system clipboard, for the share addresses)
  *   - refreshPlaces() · addBookmark(path, label) · removeBookmark(path)
  *   - openWindow(path) · closeWindow(uid) · windowShown(bool)
- *   - sendToAgent(paths) — emits agentRequested(paths) for the composer; nothing is sent anywhere by itself
+ *   - sendToAgent(paths) — emits agentRequested(paths) and opens the Taller composer with a `paths` block; nothing is
+ *     sent anywhere by itself
  *   - shareStatus(path, callback) — `share status --path` → {shared, name, rw, guest, host, addresses: {smb, unc},
  *       size?, firewall?: {needed, command, message}}; refreshShares() fills `shares` ([{path, name, rw, guest}])
  *   - shareEnable(path, name, rw, guest, callback) · shareDisable(path, name, callback) — `net usershare` through
@@ -52,7 +53,7 @@ Singleton {
     property var windows: []
     property int visibleWindows: 0
     property var clipboard: ({ mode: "", paths: [] })
-    property bool composerAvailable: false
+    property bool composerAvailable: true    // fase 5e: the 5c composer is merged
     property var shares: []
     property int _uid: 0
     property var _watchers: ({})
@@ -169,7 +170,13 @@ Singleton {
     // ---- clipboard / agent ----
     function setClipboard(mode, paths): void { clipboard = { mode: mode, paths: paths.slice() }; }
     function copyText(text): void { Quickshell.clipboardText = text; }
-    function sendToAgent(paths): void { if (composerAvailable && paths.length) agentRequested(paths); }
+    // fase 5e: opens the Taller composer with the paths as a `paths` block; the target starts on the clipboard and
+    // nothing leaves until the user presses «Enviar» in the composer
+    function sendToAgent(paths): void {
+        if (!composerAvailable || !paths.length) return;
+        agentRequested(paths);
+        Taller.openComposer({ blocks: ["paths:" + paths.join("\n")] });
+    }
 
     // ---- sharing (Samba usershares) ----
     function shareStatus(path, callback): void { call(["share", "status", "--path", path], callback); }
