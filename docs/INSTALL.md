@@ -24,12 +24,28 @@ se aportan las listas de `packages/` con los nombres de esa distro. No se ha inv
 |---|---|---|---|
 | `core` | paquetes de `pacman-core.txt` + `aur-core.txt`; enlaces en `~/.config/{hypr,kitty,ghostty,quickshell}` y `~/.local/bin/dragon-pkg`; servicios NetworkManager, bluetooth, power-profiles-daemon (sistema) y pipewire, wireplumber (usuario); variables NVIDIA solo en `local.lua` | `pacman -S`, `systemctl enable` (cada uno confirmado) | quita los enlaces y restaura los respaldos |
 | `shell` | zsh, starship, eza, fzf, zoxide, fd, bat; clones de zsh-autosuggestions / zsh-syntax-highlighting / fzf-tab; UNA línea marcada en `~/.zshrc` | `pacman -S`; `chsh` solo si lo confirmas | quita la línea marcada y los enlaces |
+| `editor` | Neovim ≥ 0.12 con tu LazyVim, 49 plugins fijados, Laravel/Blade, frontend, Rust y Go; despliega `config/nvim` por enlace o copia | `pacman -S` para dependencias; plugins sin sudo y con confirmación al primer uso | restaura el respaldo anterior; conserva plugins y datos de Neovim |
 | `theme` | fuentes, iconos Candy + Sweet Folders, `nwg-look`, `hyprqt6engine`, ajustes GTK, fondos | `pacman -S` | quita los ajustes GTK (fuentes e iconos se dejan) |
 | `plugins` | `hyprpm update/add/enable` de hyprfocus y hyprglass **en primer plano**, luego `hyprpm reload -n && hyprctl reload` | `hyprpm update` pide la contraseña | `hyprpm disable` de los dos |
 | `login` | tema SDDM dragon-core (`sddm/install-theme.sh`); con Plasma Login Manager solo imprime cómo pasar a SDDM | `install-theme.sh` pregunta antes de cada paso | `install-theme.sh --uninstall` |
 | `keyring` | portal de secretos, flag de Brave, y (si falta) las líneas `pam_gnome_keyring` de `/etc/pam.d/sddm` mostradas como diff | solo el cambio de PAM, con copia `.bak-dragon` | restaura el `.bak-dragon` |
 | `keyboard` | distribuciones (por defecto `us,latam`, us siempre primera) en `local.lua`; `localectl set-x11-keymap` opcional | solo `localectl` | quita el bloque de `local.lua` |
 | `extras` | Brave, Proton VPN, herdr (instalador oficial), «Mis apps» (cada uno opcional) | `pacman -S` / `yay -S` | retira la configuración; los paquetes se dejan |
+
+`editor` está seleccionado por defecto junto con core, shell, theme, plugins y
+keyboard. Puedes excluirlo con una lista explícita, por ejemplo
+`--modules core,shell,theme,plugins,keyboard`. Para desplegarlo: `./install.sh --modules editor` (el instalador incluye core por contrato). `--copy` conserva el
+modo copia. No ejecuta sincronización de plugins durante la instalación.
+
+Al abrir nvim por primera vez, confirma la restauración (180 s y hasta 5 s de
+cierre). Sin red o si la cancelas, abre sin plugins; `:DragonNvimRestore` permite
+reintentar. Nunca se importan plugins, cachés, shada, swap, undo ni logs de otra
+máquina. El detalle de herramientas, límites y pruebas está en [NVIM.md](NVIM.md).
+
+La configuración **ya existente** no se adopta por sorpresa al actualizar:
+la migración 150 necesita `DRAGON_NVIM=1` o una confirmación interactiva explícita,
+lista los archivos diferentes y respalda antes de crear el enlace. `--yes` no
+sustituye ese opt-in. No se ha aplicado al Neovim del usuario en esta revisión.
 
 ## Banderas
 
@@ -46,7 +62,7 @@ se aportan las listas de `packages/` con los nombres de esa distro. No se ha inv
 ## Probar en seco
 
 ```sh
-./install.sh --dry-run --yes --modules core,shell,theme,plugins,keyboard,extras,keyring,login
+./install.sh --dry-run --yes --modules core,shell,editor,theme,plugins,keyboard,extras,keyring,login
 ```
 
 Muestra todo lo que haría, pasa por las mismas comprobaciones que una instalación real y no cambia nada
