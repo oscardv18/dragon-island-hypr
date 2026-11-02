@@ -191,3 +191,23 @@ hará en la VM CachyOS limpia, con red y confirmación, seguida de `:checkhealth
 `:checkhealth mason` y `:checkhealth vim.lsp`. Allí hay que probar un proyecto
 Laravel/Blade, Astro/TypeScript, Rust y Go con sus dependencias locales; Xdebug,
 Composer/npm y Rustup requieren su configuración de proyecto/toolchain habitual.
+
+## 4. Esta máquina: adopción opt-in
+
+La migración 150 **no se ejecutó sobre tu configuración real**. `--yes` y un
+terminal no interactivo no autorizan reemplazar Neovim: sale 10 y lo deja intacto.
+Para adoptarla deliberadamente después de revisar el repo:
+
+```sh
+DRAGON_NVIM=1 bash migrations/150-nvim-opt-in.sh
+```
+
+La variable autoriza el reemplazo. Antes de tocar nada se compara la carpeta y
+se listan únicamente los archivos diferentes o exclusivos, nunca su contenido.
+También puedes ejecutar sin variable desde una terminal con gum: presenta esa
+comparación y pide confirmación explícita. Si es idéntica igualmente se respalda
+con `backup_copy` antes del enlace. El resultado de esta migración es un symlink;
+la instalación nueva permite `--copy`. Las diferencias actuales esperables son
+el guard del primer uso, los ajustes de bootstrap y el log excluido del repo.
+No borres tu carpeta a mano para instalar. Si no optas por adoptarla, mantienes
+tu configuración actual y la migración queda pendiente.
