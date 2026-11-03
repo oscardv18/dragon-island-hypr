@@ -287,18 +287,41 @@ confirm_sudo() {
     run_streamed sudo "$@"
 }
 
+# pacman -T checks dependency satisfaction including installed Provides (unlike -Qq).
+# stdout is the exact list still needed; distinguish its documented 127 from probe errors.
+package_targets() {
+    (( $# > 0 )) || return 0
+    local output rc=0
+    output="$(LC_ALL=C pacman -T -- "$@")" || rc=$?
+    if (( rc == 0 )); then return 0; fi
+    if (( rc != 127 )) || [[ -z "$output" ]]; then
+        log_warn "No se pudo comprobar dependencias con pacman -T (salida $rc)." >&2
+        return 1
+    fi
+    local p
+    while IFS= read -r p; do
+        if [[ " $* " != *" $p "* ]]; then
+            log_warn "Respuesta inesperada de pacman -T: $p" >&2
+            return 1
+        fi
+    done <<<"$output"
+    printf '%s\n' "$output"
+}
+
 # ensure_pacman <pkg>...  installs the ones that are missing (one sudo step, never -y)
 ensure_pacman() {
-    local missing=() p
-    for p in "$@"; do pkg_installed "$p" || missing+=("$p"); done
+    local missing=() targets
+    targets="$(package_targets "$@")" || return 1
+    [[ -z "$targets" ]] || mapfile -t missing <<<"$targets"
     if [[ ${#missing[@]} -eq 0 ]]; then log_info "Paquetes oficiales: todo instalado ($#)."; return 0; fi
     confirm_sudo "Instalar ${#missing[@]} paquetes oficiales: ${missing[*]}" pacman -S --needed --noconfirm "${missing[@]}"
 }
 
 # ensure_aur <pkg>...  AUR helper in the foreground (it asks its own questions); needs AUR_HELPER
 ensure_aur() {
-    local missing=() p
-    for p in "$@"; do pkg_installed "$p" || missing+=("$p"); done
+    local missing=() targets
+    targets="$(package_targets "$@")" || return 1
+    [[ -z "$targets" ]] || mapfile -t missing <<<"$targets"
     if [[ ${#missing[@]} -eq 0 ]]; then log_info "Paquetes AUR: todo instalado ($#)."; return 0; fi
     if [[ -z "$AUR_HELPER" ]]; then
         log_warn "Sin yay/paru: instala a mano ${missing[*]} (ver $PRE_DOC, Paso 3)."

@@ -379,6 +379,10 @@ for row in "${PLAN_PKGS[@]}"; do
 done
 
 install_official() {
+    local targets
+    targets="$(package_targets "${OFFICIAL[@]}")" || return 1
+    OFFICIAL=()
+    [[ -z "$targets" ]] || mapfile -t OFFICIAL <<<"$targets"
     (( ${#OFFICIAL[@]} > 0 )) || { ev_step "Paquetes oficiales: nada que instalar."; return 0; }
     if $NO_SUDO; then ev_warn "Sin sudo (--no-sudo): hazlo a mano: sudo pacman -S --needed ${OFFICIAL[*]}"
         MANUAL_ITEMS+=("Paquetes oficiales: sudo pacman -S --needed ${OFFICIAL[*]}"); return 0; fi
@@ -403,6 +407,10 @@ install_official() {
 }
 
 install_aur() {
+    local targets
+    targets="$(package_targets "${AURPKGS[@]}")" || return 1
+    AURPKGS=()
+    [[ -z "$targets" ]] || mapfile -t AURPKGS <<<"$targets"
     (( ${#AURPKGS[@]} > 0 )) || return 0
     if [[ -z "$AUR_HELPER" ]]; then
         ev_warn "Sin yay/paru: instala a mano ${AURPKGS[*]} (ver $PRE_DOC, Paso 3)."

@@ -49,6 +49,10 @@ class Preflight(unittest.TestCase):
         self.calls.append(args)
         if args[:2] == ('pacman', '-Qi'):
             return 0, self.installed, ''
+        if args[:2] == ('pacman', '-T'):
+            missing = [name for name in args[3:] if not any(
+                pf.satisfies(name, pf.package(r)) for r in pf.records(self.installed))]
+            return (127, '\n'.join(missing), '') if missing else (0, '', '')
         if args[:2] == ('pacman', '-Si'):
             return (0, self.repo[args[2]], '') if args[2] in self.repo else (1, '', 'not found')
         if args[:2] == ('pacman', '-Ql'):
@@ -127,6 +131,21 @@ class Preflight(unittest.TestCase):
         self.aur = []
         self.assertTrue(self.inspect()['blocked'])
 
+    def test_installed_node_and_rust_providers_satisfy_targets(self):
+        for name, provider, provides in [('nodejs', 'nodejs-lts-krypton', 'nodejs=24.22.1'),
+                                         ('rust', 'rustup', 'rust')]:
+            with self.subTest(name=name):
+                self.installed += record(provider, Provides=provides, **{'Conflicts With': name})
+                self.repo[name] = record(name)
+                self.requested = [{'name': name, 'source': 'pacman', 'profiles': ['editor']}]
+                self.calls.clear()
+                data = self.inspect()
+                self.assertFalse(data['blocked'])
+                self.assertEqual(data['packages'][0]['state'], 'satisfied')
+                self.assertEqual(data['packages'][0]['provider'], provider)
+                self.assertEqual(self.check(data, 'satisfied:' + name)['level'], 'informacion')
+                self.assertFalse(any(c[:2] == ('pacman', '-Sp') for c in self.calls))
+
     def test_solver_failure_is_blocking(self):
         self.transaction = (1, '', 'unresolvable dependency')
         self.assertEqual(self.check(self.inspect(), 'transaction')['level'], 'bloqueante')
@@ -139,7 +158,7 @@ class Preflight(unittest.TestCase):
     def test_no_mutation_commands(self):
         self.inspect()
         self.assertFalse(any(c[0] == 'sudo' for c in self.calls))
-        self.assertFalse(any(c[0] == 'pacman' and c[1] not in ('-Qi', '-Ql', '-Si', '-Sp', '-Qqe') for c in self.calls))
+        self.assertFalse(any(c[0] == 'pacman' and c[1] not in ('-Qi', '-Ql', '-Si', '-Sp', '-Qqe', '-T') for c in self.calls))
         self.assertFalse(any(c[0] == 'systemctl' and any(v in c for v in ('start', 'enable', 'disable')) for c in self.calls))
 
     def test_cachyos_hypr_noctalia_blocks(self):

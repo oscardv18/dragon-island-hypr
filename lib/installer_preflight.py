@@ -83,6 +83,7 @@ class Inspector:
         self.checks = []
         self.planned = []
         self.installed = []
+        self.deptested = set()
 
     def add(self, code, level, message, evidence='', remedy=''):
         self.checks.append({'id': code, 'level': level, 'message': message,
@@ -251,7 +252,9 @@ class Inspector:
                      'profiles': request['profiles']}
                 self.planned.append(p)
                 self.add('package:' + p['name'], 'informacion', 'Metadatos AUR RPC; no se compila ni ejecuta código.', json.dumps(p))
-        official = [p['name'] for p in self.planned if p['source'] == 'pacman']
+        self.installed_providers()
+        official = [p['name'] for p in self.planned
+                    if p['source'] == 'pacman' and p.get('state') != 'satisfied']
         if official:
             rc, out, err = run('pacman', '-Sp', '--needed', '--noconfirm', '--print-format', '%n %v %r %s', *official)
             self.add('transaction', 'bloqueante' if rc else 'informacion',
@@ -269,7 +272,8 @@ class Inspector:
                         self.add('dependency:' + dependency['name'], 'aviso', 'La resolución amplía el plan con una dependencia.', dep_out)
                     else:
                         self.add('dependency:' + fields[0], 'bloqueante', 'No se pudieron comprobar los metadatos de una dependencia.', dep_err)
-        pool = self.installed + self.planned
+        self.installed_providers()
+        pool = self.installed + [p for p in self.planned if p.get('state') != 'satisfied']
         for p in self.planned:
             if p['source'] == 'aur':
                 missing = [dep for dep in p['depends'] + p.get('build_depends', []) if not any(satisfies(dep, other) for other in pool)]
@@ -286,11 +290,41 @@ class Inspector:
             self.add('hyprland-plugins', 'aviso', 'Los plugins necesitan el ABI exacto de Hyprland, no basta la versión de hyprpm.',
                      hypr['version'], 'Verifica la revisión compatible y compila en la sesión Hyprland; --check no ejecuta hyprpm.')
 
+    def installed_providers(self):
+        """pacman -T is authoritative; metadata only identifies the provider."""
+        pending = [p for p in self.planned if p['name'] not in self.deptested]
+        if not pending:
+            return
+        names = {p['name'] for p in pending}
+        rc, out, err = run('pacman', '-T', '--', *sorted(names))
+        missing = set(out.splitlines())
+        self.deptested.update(names)
+        if rc not in (0, 127) or not missing.issubset(names) or (rc == 127 and not missing) or (rc == 0 and missing):
+            self.add('deptest', 'bloqueante',
+                     'No se pudo comprobar si los paquetes están satisfechos.', out or err)
+            return
+        for p in pending:
+            if p['name'] in missing or any(i['name'] == p['name'] for i in self.installed):
+                continue
+            providers = sorted((i for i in self.installed if satisfies(p['name'], i)),
+                               key=lambda i: i['name'])
+            if not providers:
+                self.add('deptest:' + p['name'], 'bloqueante',
+                         'pacman -T indica satisfacción sin proveedor identificable; repite el chequeo.', out or err)
+                continue
+            provider = providers[0]
+            p.update(state='satisfied', provider=provider['name'],
+                     provider_origin='installed', installed_version=provider['version'])
+            self.add('satisfied:' + p['name'], 'informacion',
+                     f"{p['name']}: ya satisfecho (lo provee {provider['name']}).",
+                     'pacman -T -- ' + p['name'] + ': salida 0; se conserva el proveedor instalado.')
+
     def conflicts(self):
         reported = set()
-        planned_names = {p['name'] for p in self.planned}
-        for p in self.planned:
-            for other, context in [(other, 'plan') for other in self.planned] + [(other, 'installed') for other in self.installed if other['name'] not in planned_names]:
+        active = [p for p in self.planned if p.get('state') != 'satisfied']
+        planned_names = {p['name'] for p in active}
+        for p in active:
+            for other, context in [(other, 'plan') for other in active] + [(other, 'installed') for other in self.installed if other['name'] not in planned_names]:
                 if other['name'] == p['name']:
                     continue
                 for field in ('conflicts', 'replaces'):

@@ -20,6 +20,9 @@ def record(name):
 if command == 'pacman':
     if args[0] == '-Qi':
         print(record('linux-cachyos') + record('linux-cachyos-headers'), end='')
+    elif args[0] == '-T':
+        print('\n'.join(args[2:]))
+        sys.exit(127)
     elif args[0] == '-Si':
         if args[1] in ('grimblast-git', 'mpvpaper') or args[1] in os.environ.get('PREFLIGHT_FAKE_MISSING', '').split(','):
             sys.exit(1)

@@ -44,7 +44,7 @@ for p in packages:
     state = p.get('state', 'install')
     if p['name'] in conflicting:
         shown = 'conflict'
-    elif state == 'installed':
+    elif state in ('installed', 'satisfied'):
         shown = 'installed'
     elif p.get('source') == 'aur':
         shown = 'aur'
@@ -53,6 +53,8 @@ for p in packages:
     if shown in ('install', 'aur'):
         to_install += 1
     detail = p.get('version', '')
+    if state == 'satisfied':
+        detail = 'ya satisfecho (lo provee %s)' % p['provider']
     if state == 'change' and p.get('installed_version'):
         detail = '%s→%s' % (p['installed_version'], p.get('version', ''))
     in_engine = int(bool(set(p.get('profiles', [])) & engine))
