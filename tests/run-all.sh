@@ -10,8 +10,10 @@ cd "$REPO_DIR"
 if [[ "${1:-}" == --only ]]; then
   case "${2:-}" in
     profiles|prereq|preflight) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -p "test_${2}.py" -v ;;
-    tui) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -v ;;
-    *) echo "Uso: $0 --only profiles|prereq|preflight|tui" >&2; exit 2 ;;
+    tui) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -p 'test_tui.py' -v ;;
+    modes) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v ;;
+    backup) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v ;;
+    *) echo "Uso: $0 --only profiles|prereq|preflight|tui|modes|backup" >&2; exit 2 ;;
   esac
 fi
 fails=0
@@ -175,6 +177,12 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -v;
 
 step "TUI del instalador: terminal simulada (80 columnas y anchas), eventos JSON y texto"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -v; then pass "TUI y eventos"; else fail "TUI y eventos"; fi
+
+step "TUI en un terminal real (pty 80 y 200 columnas), eventos JSON, bloqueos y dry-run sin escrituras (comandos simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v; then pass "install.sh por modos"; else fail "install.sh por modos"; fi
+
+step "respaldo y restauración: base SQLite viva, dry-run, listas sin copiar (HOME temporal)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v; then pass "backup-dragon / restore-dragon"; else fail "backup-dragon / restore-dragon"; fi
 
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
