@@ -456,6 +456,7 @@ stop_point plan
 if ! $DRY_RUN; then
     CONFIRM_YES="Instalar todo" CONFIRM_NO="Cancelar" CONFIRM_DETAIL="$(plan_text)"
     confirm "¿Instalar todo? (los pasos con sudo se anuncian uno a uno)" || finish ok "Cancelado: el sistema ya está preparado, pero no se instaló nada del plan. Repite ./install.sh cuando quieras." 0
+    CONFIRM_YES=""; CONFIRM_NO=""      # later questions (docker group…) use the ordinary Sí / No buttons
 fi
 PLAN_CONFIRMED=true
 
@@ -590,7 +591,7 @@ else
 fi
 
 report=()
-for m in "${SELECTED[@]}"; do report+=("• $m: ${RESULT[$m]:-(dry-run)}"); done
+for m in "${SELECTED[@]}"; do report+=("• $m: $($DRY_RUN && echo simulado || echo "${RESULT[$m]:-?}")"); done
 if $DRY_RUN; then report+=("• paquetes: $n_new por instalar · $n_aur AUR · $n_have ya instalados · $n_bad con conflicto" "")
 else report+=("• paquetes: ${RESULT[paquetes]}" ""); fi
 # the TUI box already lists each problem with its cause under the package counts; text and JSON sinks need them here
@@ -604,8 +605,11 @@ fi
 if [[ -f "$STATE_DIR/needs-relogin" ]] && ! $DRY_RUN; then
     report+=("" "Cierra sesión y vuelve a entrar:"); while IFS= read -r line; do report+=("  - $line"); done < "$STATE_DIR/needs-relogin"
 fi
-report+=("" "Recuperación:")
-while IFS= read -r line; do report+=("  $line"); done < <(snapshot_recovery)
+if $DRY_RUN; then report+=("" "Recuperación: en una instalación real se guarda la lista de paquetes y, si hay snapper o Timeshift, una instantánea previa.")
+else
+    report+=("" "Recuperación:")
+    while IFS= read -r line; do report+=("  $line"); done < <(snapshot_recovery)
+fi
 report+=("" "Respaldos: $BACKUP_DIR (solo si había algo que reemplazar) · Registro: $LOG"
          "Siguiente paso: cierra sesión → en el login elige «Hyprland»."
          "SUPER+Return terminal · SUPER+Space lanzador · SUPER+D notch · SUPER+L bloquear · SUPER+F1 atajos"

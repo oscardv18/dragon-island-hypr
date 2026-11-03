@@ -26,20 +26,36 @@ plan_action_label() {
 plan_text() {
     tui_size
     local W=$((TUI_W_TERM - 4)); (( W > 100 )) && W=100; (( W < 56 )) && W=56
-    local row name state detail source _e line n_have=0 n_new=0 n_aur=0 n_bad=0
-    local -a have=() table=()
+    local row name state detail _s _e line n_have=0 n_new=0 n_aur=0 n_bad=0
+    local -a have=() cells=() bad=()
     for row in "${PLAN_PKGS[@]}"; do
-        IFS=$'\t' read -r name state detail source _e <<<"$row"
+        IFS=$'\t' read -r name state detail _s _e <<<"$row"
         case "$state" in
             installed) n_have=$((n_have + 1)); have+=("$name") ;;
-            install) n_new=$((n_new + 1)); table+=("$(printf '%s↓%s %-30s %-8s %s' "${C_cyan}" "${C_reset}" "$(tui_fit "$name" 30)" "oficial" "$detail")") ;;
-            aur) n_aur=$((n_aur + 1)); table+=("$(printf '%s◆%s %-30s %-8s %s' "${C_violet}" "${C_reset}" "$(tui_fit "$name" 30)" "AUR" "$detail")") ;;
-            conflict|failed) n_bad=$((n_bad + 1)); table+=("$(printf '%s✖%s %-30s %-8s %s' "${C_red}" "${C_reset}" "$(tui_fit "$name" 30)" "$source" "$detail")") ;;
+            install) n_new=$((n_new + 1)); cells+=("${C_cyan}↓${C_reset} $name") ;;
+            aur) n_aur=$((n_aur + 1)); cells+=("${C_violet}◆${C_reset} $name") ;;
+            conflict|failed) n_bad=$((n_bad + 1)); bad+=("${C_red}✖${C_reset} $name — $detail") ;;
         esac
     done
     printf '%s%sPlan de instalación%s\n' "${C_bold}" "${C_magenta}" "${C_reset}"
-    printf '%s\n' "$(tui_rule "Paquetes" "$W")"
-    if (( ${#table[@]} )); then printf '  %s\n' "${table[@]}"; else printf '  %s(nada nuevo que instalar)%s\n' "${C_dim}" "${C_reset}"; fi
+    printf '%s\n' "$(tui_rule "Paquetes  (↓ oficial · ◆ AUR · ✖ conflicto)" "$W")"
+    # a compact grid: one row per package would scroll the confirmation off a small terminal
+    local cols=$(( W / 27 )) cellw i=0 text
+    (( cols < 1 )) && cols=1
+    cellw=$(( (W - 2) / cols ))
+    if (( ${#cells[@]} )); then
+        local lineout=""
+        for text in "${cells[@]}"; do
+            local plain="${text//$'\e'\[*([0-9;])m/}"
+            lineout+="$text$(tui_rep ' ' $(( cellw - ${#plain} < 1 ? 1 : cellw - ${#plain} )))"
+            i=$((i + 1))
+            if (( i % cols == 0 )); then printf '  %s\n' "$lineout"; lineout=""; fi
+        done
+        [[ -z "$lineout" ]] || printf '  %s\n' "$lineout"
+    else printf '  %s(nada nuevo que instalar)%s\n' "${C_dim}" "${C_reset}"; fi
+    for text in "${bad[@]}"; do
+        while IFS= read -r line; do printf '  %s\n' "$line"; done < <(tui_wrap $((W - 2)) "$text")
+    done
     if (( n_have )); then
         printf '  %s✔ Ya instalados (%d):%s\n' "${C_dim}" "$n_have" "${C_reset}"
         while IFS= read -r line; do printf '    %s%s%s\n' "${C_dim}" "$line" "${C_reset}"; done < <(tui_wrap $((W - 4)) "${have[*]}")

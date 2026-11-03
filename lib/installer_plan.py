@@ -31,6 +31,9 @@ NOTABLE_DEPENDENCIES = {
 }
 
 
+MACHINE_CHECKS = {'kernel', 'headers', 'clock', 'sudo', 'display-manager', 'secrets-owner', 'gpu', 'snapshot-plan', 'kwallet'}
+
+
 def clean(text):
     return ' '.join(str(text).split())
 
@@ -161,7 +164,9 @@ for check in checks:
 for (level, message, remedy), ids in groups.items():
     shown = ', '.join(ids[:3]) + (' … (+%d)' % (len(ids) - 3) if len(ids) > 3 else '')
     print('\t'.join(['check', level, shown, message, remedy]))
-    if not any(i.startswith(('package:', 'conflicts:')) for i in ids) and level == 'aviso':
+    # machine-level findings (kernel, clock, sudo, login manager, secrets owner…) are shown by the diagnosis; the plan keeps what concerns packages
+    if not any(i.startswith(('package:', 'conflicts:')) for i in ids) and level == 'aviso' and \
+            not any(i.split(':')[0] in MACHINE_CHECKS for i in ids):
         print('\t'.join(['issue', 'aviso', ids[0].split(':')[0], message, remedy or 'solo informativo; no cambia el plan']))
 
 print('meta\tsize_bytes\t%d' % size)

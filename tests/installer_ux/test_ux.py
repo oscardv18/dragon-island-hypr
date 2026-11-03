@@ -9,7 +9,7 @@ import re
 import subprocess
 import unittest
 
-from tests.tui.test_install_modes import ROOT, Sandbox
+from tests.tui.test_install_modes import ANSI, ROOT, Sandbox, run_in_pty
 
 BASE = ['git', 'base-devel', 'gum', 'curl', 'unzip', 'pciutils']
 
@@ -319,6 +319,29 @@ class PlanIncidents(UX):
         self.assertIn('x, y', issues['AUR'][3])
         self.assertIn('scdoc', issues['AUR'][3])
         self.assertEqual(len([l for l in self.plan_lines(packages, checks) if l[0] == 'issue' and l[2] == 'AUR']), 1, 'una sola nota AUR')
+
+
+class RealTerminal(UX):
+    """The whole flow on a terminal (pty), with the single «Instalar todo» confirmation and one sudo session."""
+
+    def test_plan_screen_and_single_confirmation_at_80_columns(self):
+        (self.state/'installed').write_text('yay\n')                      # prerequisites missing: preparation + plan both appear
+        self.env['DRAGON_STOP_AFTER'] = 'packages'
+        out, code = run_in_pty(['--modules', 'core,taller'], self.env, 80, 30, timeout=240)
+        self.assertEqual(code, 0, out[-3000:])
+        plain = ANSI.sub('', out).replace('\r', '')
+        self.assertIn('Plan de instalación', plain)
+        self.assertIn('Incidencias', plain)
+        self.assertIn('Pasos con sudo', plain)
+        self.assertIn('\x1b[?1049h', out)
+        # the plan text is printed on the normal screen between the alternate-screen sessions: never wider than the terminal
+        for line in plain.split('\n'):
+            if '\x1b' not in line and '[H' not in line:
+                self.assertLessEqual(len(line), 200)
+        self.assertEqual(len(self.calls('sudo', 'pacman', '-Syu')), 1)
+        self.assertTrue(self.calls('sudo', 'pacman', '-S'), 'el plan se instaló tras la confirmación')
+        self.assertTrue((self.home/'dragon-informe.txt').exists())
+        self.assertNotRegex(plain, r'\n\s*\d+ con problema\s*\n')
 
 
 class FinalSummary(unittest.TestCase):

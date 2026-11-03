@@ -140,7 +140,7 @@ tui_handle() {
             TUI_STEP="$(tui_clean "${kv[msg]:-}")"
             # the log keeps a trace of the milestones, not of every package
             if (( TUI_PROG_TOTAL == 0 || TUI_PROG_DONE == 0 || TUI_PROG_DONE % 20 == 0 || TUI_PROG_DONE == TUI_PROG_TOTAL )); then
-                tui_push_log "» ${TUI_PROG_TOTAL:+($TUI_PROG_DONE/$TUI_PROG_TOTAL) }${kv[msg]:-}"
+                tui_push_log "» $( (( TUI_PROG_TOTAL > 0 )) && printf "(%s/%s) " "$TUI_PROG_DONE" "$TUI_PROG_TOTAL")${kv[msg]:-}"
             fi ;;
         done)
             [[ -n "$TUI_PHASE" ]] && TUI_PHASES_DONE+=("$TUI_PHASE")

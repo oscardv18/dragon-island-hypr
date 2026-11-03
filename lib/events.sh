@@ -55,7 +55,8 @@ ev_sink_plain() {
         step)  printf ':: %s\n' "${kv[msg]:-}" ;;
         warn)  printf ':: AVISO: %s\n' "${kv[msg]:-}" ;;
         log)   printf '   %s\n' "${kv[msg]:-}" ;;
-        progress) printf ':: %s%s\n' "${kv[done]:+(${kv[done]}/${kv[total]}) }" "${kv[msg]:-}" ;;
+        progress) if [[ "${kv[total]:-0}" =~ ^[1-9] ]]; then printf ':: (%s/%s) %s\n' "${kv[done]:-0}" "${kv[total]}" "${kv[msg]:-}"
+                  else printf ':: %s\n' "${kv[msg]:-}"; fi ;;
         done)  printf '\n== %s ==\n%s\n' "${kv[status]:-}" "${kv[msg]:-}" ;;
         *)     printf ':: %s %s\n' "$type" "${kv[msg]:-}" ;;
     esac >&"$EV_OUT_FD"
