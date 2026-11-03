@@ -15,7 +15,8 @@ if [[ "${1:-}" == --only ]]; then
     tui) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -p 'test_tui.py' -v ;;
     modes) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v ;;
     backup) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v ;;
-    *) echo "Uso: $0 --only profiles|prereq|preflight|providers|activity|tui|modes|backup" >&2; exit 2 ;;
+    ux) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_ux -v ;;
+    *) echo "Uso: $0 --only profiles|prereq|preflight|providers|activity|tui|modes|backup|ux" >&2; exit 2 ;;
   esac
 fi
 fails=0
@@ -182,6 +183,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -v; then 
 
 step "TUI en un terminal real (pty 80 y 200 columnas), eventos JSON, bloqueos y dry-run sin escrituras (comandos simulados)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v; then pass "install.sh por modos"; else fail "install.sh por modos"; fi
+
+step "instalador de un solo comando: preparación, reinicio y continuación, informe sin secretos, dry-run sin rastro y plan con incidencias (comandos simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_ux -v; then pass "install.sh de un solo comando"; else fail "install.sh de un solo comando"; fi
 
 step "respaldo y restauración: base SQLite viva, dry-run, listas sin copiar (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v; then pass "backup-dragon / restore-dragon"; else fail "backup-dragon / restore-dragon"; fi

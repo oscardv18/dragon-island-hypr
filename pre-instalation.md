@@ -1,36 +1,49 @@
-# pre-instalation — todo lo que hay que hacer ANTES de `./install.sh`
+# pre-instalation — de una máquina recién instalada a dragon-island, con UN comando
 
-Guía paso a paso para partir de una máquina recién instalada y llegar a ejecutar el instalador de dragon-island.
-Está escrita a partir de una instalación real que ya funciona (EndeavourOS + KDE Plasma + SDDM + Hyprland 0.56 +
-Quickshell 0.3, GPU AMD); los comandos y los nombres de paquete se comprueban con `tests/check-docs.sh`.
+```bash
+git clone https://github.com/oscardv18/dragon-island-hypr.git ~/dragon-island-hypr
+cd ~/dragon-island-hypr
+./install.sh
+```
 
-> Comprobación automática de TODO esto: `./doctor.sh --pre`. Cada ✘ te dice qué paso repetir.
+Eso es todo. `./install.sh` diagnostica la máquina, instala lo que le falta (git, base-devel, gum, curl, unzip, pciutils,
+cabeceras del kernel en uso y un ayudante AUR) tras **una** confirmación y con **una** contraseña de sudo, actualiza el sistema,
+te enseña el plan completo (paquetes, tamaño, pasos con sudo y cada incidencia explicada), instala con **una** confirmación
+(«Instalar todo»), verifica con el doctor y escribe `~/dragon-informe.txt`. Si el kernel cambia con la actualización, se detiene
+con «reinicia y vuelve a ejecutar `./install.sh`» y continúa donde lo dejó.
+
+`./doctor.sh` suelto solo diagnostica y termina preguntando «¿Instalar ahora? [S/n]».
+
+Lo único que haces tú es partir de una instalación de Arch o derivada (CachyOS «sin escritorio», EndeavourOS) con red, un
+usuario administrador (`wheel`) y el driver de video que necesites. Los pasos de abajo son la **referencia** de cada
+comprobación: el instalador te remite al que corresponda solo si algo no se pudo resolver por sí mismo.
+Los comandos y los nombres de paquete se comprueban con `tests/check-docs.sh`.
+
 > Convención: `$USER` y `$HOME` son tu usuario y tu carpeta personal; no hay que sustituir nada a mano.
 
-## Paso 0 — Resumen y orden
+## Paso 0 — Qué hace el instalador y qué no
 
-| Paso | Qué haces | Internet | Reinicio | Tiempo aprox. |
-|---|---|---|---|---|
-| 1 | Instalar EndeavourOS (KDE Plasma mínimo, SDDM) | sí | sí | 20–30 min |
-| 2 | Primer arranque: actualizar el sistema y los mirrors | sí | si cambia el kernel | 5–15 min |
-| 3 | Herramientas base: `git base-devel curl unzip gum github-cli yay` | sí | no | 2 min |
-| 4 | Red y hora (NTP) | sí | no | 1 min |
-| 5 | Driver de video (AMD, Intel o NVIDIA; tú eliges UNO) | sí | sí (NVIDIA) | 2–10 min |
-| 6 | Display manager y Plasma como segunda sesión | no | solo si lo cambias | 1–5 min |
-| 7 | Teclado y locale (opcional) | no | no | 1 min |
-| 8 | Acceso al repo y `git clone` | sí | no | 1–5 min |
-| 9 | Verificar los requisitos con `./doctor.sh --pre` | no | no | 10 s |
-| 10 | Primera ejecución: `./install.sh --dry-run` y luego `./install.sh` | sí | cerrar sesión | 15–40 min |
+| Paso | Qué ocurre | Quién |
+|---|---|---|
+| 1 | Instalar la distribución (CachyOS sin escritorio, EndeavourOS o Arch) | tú |
+| 2 | Actualizar el sistema; reinicio si cambia el kernel | `./install.sh` |
+| 3 | Herramientas base, ayudante AUR y cabeceras del kernel | `./install.sh` |
+| 4 | Red y hora (NTP): se comprueban | tú, si falla |
+| 5 | Driver de video: **no** se instala | tú |
+| 6 | Gestor de acceso: sin ninguno, el módulo `login` instala SDDM | `./install.sh` |
+| 7 | Teclado y locale (opcional) | tú |
+| 8 | Acceso al repo y `git clone` | tú |
+| 9 | Diagnóstico (`./doctor.sh`) | `./install.sh` |
+| 10 | Instalación y primer inicio de sesión | `./install.sh` |
 
 **Qué hace el script:** recorre seis fases visibles (Preflight · Plan · Paquetes · Despliegue · Servicios · Verificación), antes de cambiar nada guarda la lista de paquetes (`pacman -Qqe`) y crea una instantánea si hay snapper o Timeshift, instala los paquetes de `packages/`, enlaza las configuraciones en `~/.config` con copia de
-seguridad, compila los plugins de Hyprland con `hyprpm`, y (opcional, cada uno con confirmación) el tema del login, el
-llavero, el teclado y apps extra. Es idempotente: puedes ejecutarlo dos veces.
+seguridad y compila los plugins de Hyprland con `hyprpm`. Es idempotente: puedes ejecutarlo dos veces.
 
 **Qué NO hace:**
 
 - No instala drivers de video (Paso 5, lo haces tú).
 - No toca Plasma: sigue ahí como segunda sesión.
-- No cambia el login ni `/etc` sin preguntarte, y cada paso con `sudo` se explica y se confirma.
+- No cambia el login ni `/etc` sin anunciarlo, y cada paso con `sudo` se muestra en el plan.
 - No se ejecuta como root y no pide ni guarda tu contraseña.
 - No sobrescribe tus configuraciones sin respaldo en `~/.local/state/dragon-island/backups/<fecha>/`.
 
@@ -106,7 +119,8 @@ Salida esperada: `0` actualizaciones pendientes, y la versión de `uname -r` igu
 ## Paso 3 — Herramientas base
 
 **Para qué sirve:** herramientas comunes de `packages/base.txt`: `git`, `base-devel`,
-`gum`, `curl` y `unzip`. El manifiesto `packages/profiles.json` referencia esa lista;
+`gum`, `curl`, `unzip` y `pciutils`. **El instalador las instala solo** (junto con la actualización del sistema, en una
+transacción); este paso es la referencia manual. El manifiesto `packages/profiles.json` referencia esa lista;
 el ayudante AUR y las cabeceras se calculan para tu máquina.
 
 ```bash
@@ -114,15 +128,15 @@ sudo pacman -S --needed git base-devel gum curl unzip pciutils
 ./doctor.sh --pre
 ```
 
-`doctor.sh --pre` imprime el comando exacto, incluidas las cabeceras cuyo nombre
-sale de `/usr/lib/modules/$(uname -r)/pkgbase` más `-headers`. Si el kernel en uso
-ya no coincide con el instalado, reinicia y repite el doctor **antes** de instalar
-cabeceras. No se adivina el nombre cuando falta `pkgbase`.
+(`./install.sh` hace esto por ti; el comando es solo para hacerlo a mano.)
 
-Se conserva `paru` o `yay` si ya existe. Sin ayudante, se propone `paru` en CachyOS
-(o `yay` en otras distros), pero solo se incluye en el comando pacman si
-`pacman -Si` lo encuentra. En Arch puro, instala el ayudante a mano desde AUR
-(por ejemplo `yay-bin`, revisando su PKGBUILD); el doctor lo indica por separado.
+`doctor.sh --pre` imprime el comando exacto, incluidas las cabeceras cuyo nombre
+sale de `/usr/lib/modules/$(uname -r)/pkgbase` más `-headers`. Si la actualización cambia el kernel,
+`./install.sh` se detiene y pide reiniciar: las cabeceras se instalan **después**, nunca para un kernel que ya no está.
+No se adivina el nombre cuando falta `pkgbase`.
+
+Se conserva `paru` o `yay` si ya existe. Sin ayudante, el instalador usa `paru` (CachyOS) o `yay` (otras
+distros) si `pacman -Si` lo encuentra; si no, lo construye desde AUR (`paru-bin` / `yay-bin`, con `git clone` + `makepkg` como tu usuario).
 `github-cli` es opcional para clonar y `adw-gtk-theme` pertenece al perfil base/theme.
 
 **Cómo comprobar que quedó bien:**
@@ -357,7 +371,8 @@ Salida esperada: tres líneas con commits recientes.
 
 ## Paso 9 — Verificar los requisitos
 
-**Para qué sirve:** comprobar de una vez los pasos 1–8. Es solo lectura: no cambia nada.
+**Para qué sirve:** comprobar de una vez los pasos 1–8. Es solo lectura: no cambia nada. `./install.sh` lo ejecuta al empezar;
+a mano, `./doctor.sh` (termina preguntando «¿Instalar ahora? [S/n]»).
 
 ```bash
 cd "$HOME/dragon-island-hypr"
@@ -375,8 +390,8 @@ Requisitos previos (pre-instalation.md)
   ✔ Ayudante de AUR (yay/paru)
   ✔ Red: archlinux.org alcanzable
   ✔ Hora sincronizada (NTP)
-  ✔ Driver de video cargado (...)
-  ✔ Display manager activo (sddm)
+  ✔ GPU y driver de video (...)        (⚠ si no se identifica o estás en una máquina virtual: es un aviso)
+  ✔ Gestor de acceso (display manager): sddm   (⚠ si no hay ninguno: el módulo login instalará SDDM)
   ✔ Teclado del login empieza por us
   ✔ Hyprland ≥ 0.55 y Quickshell ≥ 0.3 (instalados o disponibles en el repo)
   ✔ Espacio libre ≥ 5 GB en $HOME
@@ -417,39 +432,37 @@ Para actualizar una instalación existente, `./update.sh` aplica **055–056** c
 
 ## Paso 10 — Primera ejecución
 
-**Para qué sirve:** instalar dragon-island. Primero en seco (no cambia nada ni pide `sudo`), luego de verdad.
+**Para qué sirve:** instalar dragon-island. Es el único comando:
 
 ```bash
 cd "$HOME/dragon-island-hypr"
-./install.sh --dry-run
 ./install.sh
 ```
 
 **Qué esperar:**
 
-1. Comprobaciones previas: si falla alguna, el instalador se detiene y te dice qué paso de esta guía repetir.
-2. Un menú para elegir módulos (`core` es obligatorio; `login`, `keyring` y `extras` vienen desmarcados porque tocan `/etc` o instalan apps; `taller` —Docker, LazyGit, LazyDocker— y `archivos` vienen marcados) y el **plan completo** (tabla de paquetes, tamaño de descarga y pasos con `sudo`) antes de aplicar. El preflight de conflictos corre antes: con bloqueos, el instalador se detiene sin tocar nada.
-3. Los pasos con `sudo` se explican y se confirman uno a uno: actualizar el sistema, instalar paquetes, habilitar servicios, y `hyprpm` (pide tu contraseña para instalar cabeceras). **Añadirte al grupo `docker` (equivale a root) solo ocurre con tu «sí» explícito.**
-4. Tarda entre 15 y 40 minutos, sobre todo por los paquetes AUR y los plugins.
+1. **Diagnóstico** de la máquina. Lo que falte (git, base-devel, gum, curl, unzip, pciutils, ayudante AUR) se instala tras una confirmación, junto con la actualización del sistema, con una sola contraseña de sudo. Sin `gum`, funciona en texto plano.
+2. Si la actualización cambia el kernel, se detiene con «reinicia y vuelve a ejecutar `./install.sh`»; al volver continúa donde lo dejó, e instala entonces las cabeceras.
+3. **Plan:** la tabla de paquetes, el tamaño de descarga, los pasos con `sudo` y cada incidencia explicada (qué paquete, por qué y qué hará el instalador: omitirlo, sustituirlo o bloquear). Una sola confirmación: **«Instalar todo»**.
+4. Instalación, verificación con el doctor y un resumen final. **Añadirte al grupo `docker` (equivale a root) solo ocurre con tu «sí» explícito.**
+5. Siempre, al terminar o al fallar, escribe **`~/dragon-informe.txt`** (versiones, comprobaciones, paquetes con problema y su causa, paso donde falló y la cola del registro; sin secretos). Si algo sale mal, envía ese archivo.
+6. Tarda entre 15 y 40 minutos, sobre todo por los paquetes AUR y los plugins.
 
-**Al terminar:**
+Si el sistema no tiene gestor de acceso (CachyOS sin escritorio), el instalador añade el módulo `login`: instala y habilita SDDM.
+Las opciones avanzadas (`--check`, `--dry-run`, `--plain`, `--modules`…) están en [docs/INSTALL.md](docs/INSTALL.md).
 
-```bash
-./doctor.sh
-```
-
-Después **cierra sesión**, y en el login elige la sesión **Hyprland**. Si el módulo `plugins` se ejecutó fuera de
+**Al terminar:** **cierra sesión**, y en el login elige la sesión **Hyprland**. Si el módulo `plugins` se ejecutó fuera de
 Hyprland, en tu primer inicio de sesión se abre una terminal que compila los plugins (pide `sudo`): déjala terminar.
 
-Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update.sh`. Antes de reinstalar un equipo, respalda lo tuyo con `scripts/backup-dragon.sh` (también lista lo que debes copiar tú: ssh, gpg, navegadores, volúmenes de Docker, ramas sin subir).
+Revertir o actualizar: `./uninstall.sh`, `./update.sh`. Antes de reinstalar un equipo, respalda lo tuyo con `scripts/backup-dragon.sh` (también lista lo que debes copiar tú: ssh, gpg, navegadores, volúmenes de Docker, ramas sin subir).
 
 **Si usas CachyOS:** instala con la opción «sin escritorio», desmarca `cachyos-hello`, `cachyos-kernel-manager`, `cachyos-packageinstaller`, `cachyos-wallpapers`, Firefox y `vlc-plugins-all`, y recuerda que el shell por defecto es fish (ver [docs/INSTALL.md](docs/INSTALL.md), sección CachyOS).
 
 **Si falla:**
 
-- *Un paquete AUR no compila:* mira el error de `yay`; suele ser una dependencia que falta o un `base-devel` incompleto. Repite `./install.sh --modules core` cuando lo arregles.
+- *Un paquete AUR no compila:* el informe (`~/dragon-informe.txt`) trae el error; suele ser una dependencia que falta o un `base-devel` incompleto. Repite `./install.sh` cuando lo arregles.
 - *`hyprpm update` falla:* no lo lances desde autostart ni desde otra herramienta; ejecuta `scripts/plugins-foreground.sh` en una terminal DENTRO de Hyprland.
-- *Quieres probar sin riesgo:* `./install.sh --dry-run --yes` muestra todo el plan sin escribir nada.
+- *Quieres probar sin riesgo:* `./install.sh --dry-run` (avanzada) muestra todo el plan sin escribir nada ni pedir sudo.
 
 ## Paso 11 — Lo que el script instalará por ti
 

@@ -28,20 +28,21 @@ Versiones probadas: Hyprland 0.56.2, Quickshell 0.3.1, hyprglass 0.9.1, SDDM 0.2
 
 ## Instalación
 
-**Antes de ejecutar nada, lee [`pre-instalation.md`](pre-instalation.md)**: es la guía paso a paso de lo que debes tener
-hecho antes (EndeavourOS, sistema actualizado, herramientas base, red, **driver de video**, display manager, acceso al repo).
-`./doctor.sh --pre` comprueba esos requisitos y, por cada fallo, te dice qué paso repetir.
-
-Soportado: **Arch y derivadas (EndeavourOS, Arch, CachyOS)**. En otras distros el instalador no instala nada
+Soportado: **Arch y derivadas (EndeavourOS, Arch, CachyOS)**; en CachyOS, instala con la opción «sin escritorio». En otras distros el instalador no instala nada
 (ver [docs/INSTALL.md](docs/INSTALL.md)).
 
 ```sh
 git clone https://github.com/oscardv18/dragon-island-hypr.git ~/dragon-island-hypr
 cd ~/dragon-island-hypr
-./doctor.sh --pre        # ¿cumples los requisitos previos?
-./install.sh --dry-run   # el plan completo, sin cambiar nada ni pedir sudo
-./install.sh             # instalación interactiva (gum)
+./install.sh
 ```
+
+Un solo comando hace todo el ciclo: diagnostica la máquina, instala lo que falte (tras **una** confirmación y con **una** contraseña de sudo),
+actualiza el sistema, te enseña el plan completo (paquetes, tamaño, pasos con sudo y cada incidencia explicada), instala con **una**
+confirmación («Instalar todo»), verifica y escribe **`~/dragon-informe.txt`**. Si la actualización cambia el kernel, te pide reiniciar
+y al volver a ejecutar `./install.sh` continúa donde lo dejó. [`pre-instalation.md`](pre-instalation.md) explica el detalle de cada comprobación.
+
+`./doctor.sh` suelto solo diagnostica y termina con «¿Instalar ahora? [S/n]».
 
 Alternativa de una línea (**lee el script antes de ejecutarlo**; hace lo mismo que los comandos de arriba):
 
@@ -50,7 +51,7 @@ curl -fsSL https://raw.githubusercontent.com/oscardv18/dragon-island-hypr/main/b
 less bootstrap.sh && bash bootstrap.sh
 ```
 
-El instalador es **modular**; en el menú eliges qué instalar (`core` es obligatorio):
+El instalador es **modular**; por defecto instala lo marcado «sí» (`core` es obligatorio; con `--choose` eliges en un menú):
 
 | Módulo | Qué hace | Por defecto |
 |---|---|---|
@@ -64,8 +65,8 @@ El instalador es **modular**; en el menú eliges qué instalar (`core` es obliga
 | `keyring` | gnome-keyring como único llavero, con el cambio de PAM mostrado como diff | no |
 | `extras` | Brave, Proton VPN, herdr, «Mis apps» | no |
 
-Garantías: **idempotente** (dos ejecuciones no duplican nada), no corre como root, cada paso con `sudo` se explica y se
-confirma (`--no-sudo` los omite todos), nunca sobrescribe configuraciones sin copia en
+Garantías: **idempotente** (dos ejecuciones no duplican nada), no corre como root, cada paso con `sudo` se anuncia en el plan
+(`--no-sudo` los omite todos), nunca sobrescribe configuraciones sin copia en
 `~/.local/state/dragon-island/backups/<fecha>/`, y no toca Plasma ni `/etc` salvo en los módulos opt-in
 (con copia `.bak-dragon`). Los ajustes propios de cada máquina (monitores, escala, GPU, teclado) van en
 `~/.config/hypr/local.lua` y `~/.config/dragon-island/local.conf`, que no se versionan.
@@ -146,18 +147,15 @@ Regla del proyecto: todo cambio que afecte a sistemas ya instalados viene con su
 ### Opciones
 
 ```sh
-./install.sh --dry-run                      # plan completo sin cambiar nada
-./install.sh --yes                          # sin preguntas (módulos por defecto)
-./install.sh --modules core,shell,login     # solo esos módulos (core siempre se incluye)
-./install.sh --extras brave,herdr           # extras sin preguntar
-./install.sh --no-sudo                      # omite los pasos con sudo e imprime el comando
-./install.sh --copy                         # copia en vez de enlazar (symlink por defecto)
+./install.sh                                # instalar (todo el ciclo)
 ./update.sh                                 # actualizar (también --update)
-./doctor.sh [--pre]                         # diagnóstico, solo lectura
+./doctor.sh                                 # diagnóstico, solo lectura; pregunta «¿Instalar ahora?» si aún no está instalado
 ./uninstall.sh [--modules a,b]              # revertir; los paquetes solo con --remove-packages
 ```
 
-Registro de la instalación: `~/.local/state/dragon-island/install.log`. Problemas: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+Opciones avanzadas (`--check`, `--dry-run`, `--plain`, `--json-events`, `--modules`, `--no-sudo`…): [docs/INSTALL.md](docs/INSTALL.md#opciones-avanzadas).
+
+Informe: `~/dragon-informe.txt` · registro: `~/.local/state/dragon-island/install.log`. Problemas: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Uso
 

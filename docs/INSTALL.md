@@ -1,17 +1,14 @@
 # Instalación
 
-> **Requisitos previos: [`pre-instalation.md`](../pre-instalation.md).** Es la guía paso a paso de lo que debes tener hecho
-> antes de ejecutar el instalador (sistema, herramientas base, red, driver de video, display manager, acceso al repo).
-> `./doctor.sh --pre` los comprueba y, por cada fallo, te remite al paso exacto.
+> **Un solo comando: `./install.sh`.** Diagnostica, prepara el sistema, te enseña el plan, instala, verifica y escribe
+> `~/dragon-informe.txt`. [`pre-instalation.md`](../pre-instalation.md) explica cada comprobación; las opciones de este
+> documento son **avanzadas**: no hacen falta para instalar.
 
 ## Resumen
 
 ```sh
 git clone https://github.com/oscardv18/dragon-island-hypr.git ~/dragon-island-hypr
 cd ~/dragon-island-hypr
-./doctor.sh --pre        # requisitos previos
-./install.sh --check     # conflictos: solo lectura, salida 1 si hay bloqueos
-./install.sh --dry-run   # plan completo, sin cambiar nada
 ./install.sh
 ```
 
@@ -51,7 +48,9 @@ la migración 150 necesita `DRAGON_NVIM=1` o una confirmación interactiva expl�
 lista los archivos diferentes y respalda antes de crear el enlace. `--yes` no
 sustituye ese opt-in. No se ha aplicado al Neovim del usuario en esta revisión.
 
-## Banderas
+## Opciones avanzadas
+
+Ninguna es necesaria para una instalación normal. Sirven para simular, automatizar, probar o acotar lo que se instala.
 
 | Bandera | Efecto |
 |---|---|
@@ -61,7 +60,9 @@ sustituye ese opt-in. No se ha aplicado al Neovim del usuario en esta revisión.
 | `--plain` | texto lineal, sin pantalla (es lo que se usa solo cuando no hay terminal) |
 | `--json-events` | una línea JSON por evento (`phase`, `pkg`, `step`, `warn`, `log`, `done`); para pruebas y herramientas |
 | `--docker-group` | confirma de antemano añadirte al grupo `docker` (equivale a root) |
-| `--dry-run` | imprime el plan completo; no escribe en tu `$HOME` ni pide sudo |
+| `--dry-run` | imprime el plan completo; no escribe en tu `$HOME`, no pide sudo, no escribe el informe y nunca ejecuta `pacman -Sy` |
+| `--choose` | menú de módulos y modo de despliegue (por defecto no hay menús) |
+| `--restart` | olvida el progreso guardado (instalación interrumpida por un reinicio) y empieza de cero |
 | `--yes`, `-y` | sin preguntas; los pasos con sudo siguen mostrando qué hacen |
 | `--modules a,b` | solo esos módulos (core siempre) |
 | `--extras a,b` | `brave,protonvpn,herdr,myapps` sin preguntar |
@@ -69,7 +70,7 @@ sustituye ese opt-in. No se ha aplicado al Neovim del usuario en esta revisión.
 | `--copy` | copia en vez de enlazar |
 | `--update` / `--doctor` / `--uninstall` | equivalen a `update.sh` / `doctor.sh` / `uninstall.sh` |
 
-## Probar en seco
+## Probar en seco (avanzado)
 
 ```sh
 ./install.sh --dry-run --yes --modules core,shell,editor,theme,plugins,keyboard,extras,keyring,login
@@ -129,27 +130,42 @@ Contratos, pruebas, limitaciones y pendientes del preflight en
 [handoff-instalador-preflight.md](handoff-instalador-preflight.md); los de la
 pantalla y los servicios en [handoff-instalador-tui.md](handoff-instalador-tui.md).
 
-## Ciclo de instalación y pantalla (I3)
+## Ciclo de instalación y pantalla
 
 `./install.sh` recorre siempre las mismas fases, en una barra visible arriba:
 **Preflight · Plan · Paquetes · Despliegue · Servicios · Verificación**.
 
-1. **Preflight** (solo lectura): `doctor.sh --pre` y el preflight de conflictos con los módulos elegidos.
-   Si hay bloqueos, se detiene **antes de tocar nada** (ni siquiera crea `~/.local/state/dragon-island`).
-   En `--dry-run` informa y sigue, para que veas el plan.
-2. **Plan:** tabla de paquetes con su estado (`✔` ya instalado · `↓` a instalar · `◆` AUR · `✖` conflicto),
-   tamaño de descarga y los pasos con `sudo` de cada módulo. Una sola confirmación.
-3. **Paquetes:** `sudo` se pide una vez; antes de cambiar nada se guarda `pacman -Qqe` y, si hay
-   snapper o Timeshift, se crea una instantánea. Después `pacman -Syu` y los paquetes del plan.
+1. **Preflight:** diagnóstico (`doctor.sh --pre`) y **preparación** del sistema, con una confirmación y una contraseña de sudo:
+   - los prerrequisitos que falten (`git base-devel gum curl unzip pciutils`) y la actualización completa del sistema van en **una**
+     transacción (`pacman -Syu --needed …`), así nunca hay una actualización parcial;
+   - el ayudante AUR: el que haya; si no, `paru` (CachyOS) o `yay` de los repositorios; si tampoco está, se construye desde AUR
+     (`paru-bin` / `yay-bin`, con `git clone` + `makepkg` como tu usuario);
+   - si el kernel en uso deja de coincidir con el instalado, **se detiene** con «reinicia y vuelve a ejecutar `./install.sh`» y guarda el progreso en
+     `~/.local/state/dragon-island/install-progress`; al volver continúa donde lo dejó (no repite la actualización si es de hace menos de 24 h);
+   - después, y solo si el kernel coincide, las **cabeceras** del kernel en uso;
+   - por último el preflight de conflictos con los módulos elegidos (solo lectura). Con bloqueos se detiene antes de instalar ningún paquete.
+2. **Plan:** la tabla de paquetes (`↓` a instalar · `◆` AUR · `✖` conflicto · y la lista de los ya instalados), el tamaño de descarga,
+   **cada incidencia con el paquete, la causa y lo que hará el instalador** (omitir, sustituir, conservar, compilar o bloquear) y los pasos con `sudo`.
+   Una sola confirmación: **«Instalar todo»**. Los cambios que merecen su propio «sí» (grupo `docker`, PAM, `chsh`) lo siguen pidiendo.
+3. **Paquetes:** antes de cambiar nada se guarda `pacman -Qqe` y, si hay snapper o Timeshift, se crea una instantánea. Después los paquetes del plan.
 4. **Despliegue:** cada módulo enlaza sus configuraciones (con respaldo).
 5. **Servicios:** `docker`, el grupo `docker` (solo con tu confirmación explícita) y el desbloqueo de
    gnome-keyring al iniciar sesión (líneas PAM con `sudo` visible, nunca en silencio).
-6. **Verificación:** `doctor.sh` completo e informe final con lo que queda manual y cómo volver atrás.
+6. **Verificación:** `doctor.sh` completo, resumen final y **`~/dragon-informe.txt`**.
+
+Sin gestor de acceso activo (CachyOS sin escritorio), el módulo `login` se añade solo: instala y habilita SDDM. `xorg-server` entra en el
+plan porque `sddm` lo exige como dependencia fija; el saludo en Wayland de SDDM no lo evita (sigue declarando esa dependencia), así que no reduce paquetes.
+
+### El informe `~/dragon-informe.txt`
+
+Se escribe al terminar **o al fallar** (modo 600). Trae: fecha y resultado, la fase y el paso donde se detuvo, versiones (instalador, distro,
+kernel, GPU, pacman, ayudante AUR, Hyprland, Quickshell…), el resultado de cada comprobación, las incidencias del plan, los paquetes con problema
+y su causa, y la cola del registro. No contiene contraseñas, tokens ni variables de entorno; tu carpeta personal aparece como `~`.
+En `--dry-run` no se escribe (una simulación no deja rastro).
 
 La pantalla se centra según el ancho de la terminal (hasta 78 columnas), funciona desde 60, se redibuja al
 cambiar de tamaño y usa la paleta Sweet/Garuda. Solo dibuja eventos; no ejecuta nada. Si falla, el
-instalador sigue en texto lineal. Los avisos de la fase Preflight que se repiten (por ejemplo los `plasma-*`
-de tu escritorio) salen agrupados.
+instalador sigue en texto lineal. Los avisos repetidos (por ejemplo los `plasma-*` de tu escritorio o los paquetes AUR) salen agrupados.
 
 ## Servicios, instantánea y respaldo (I4)
 
