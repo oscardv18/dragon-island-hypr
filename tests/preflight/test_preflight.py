@@ -146,6 +146,26 @@ class Preflight(unittest.TestCase):
                 self.assertEqual(self.check(data, 'satisfied:' + name)['level'], 'informacion')
                 self.assertFalse(any(c[:2] == ('pacman', '-Sp') for c in self.calls))
 
+    def test_satisfied_target_keeps_real_provider_conflicts_blocking(self):
+        self.installed += record('nodejs-lts-krypton', Provides='nodejs=24',
+                                 **{'Conflicts With': 'nodejs'})
+        self.repo['nodejs'] = record('nodejs')
+        self.repo['docker'] = record('docker', **{'Conflicts With': 'nodejs'})
+        self.requested.append({'name': 'nodejs', 'source': 'pacman', 'profiles': ['editor']})
+        data = self.inspect()
+        self.assertEqual(next(p for p in data['packages'] if p['name'] == 'nodejs')['state'], 'satisfied')
+        self.assertEqual(self.check(data, 'conflicts:installed:docker:nodejs-lts-krypton')['level'], 'bloqueante')
+        self.assertTrue(data['blocked'])
+
+    def test_satisfied_target_does_not_bypass_noctalia(self):
+        self.installed += record('rustup', Provides='rust', **{'Conflicts With': 'rust'})
+        self.installed += record('cachyos-hypr-noctalia')
+        self.repo['rust'] = record('rust')
+        self.requested.append({'name': 'rust', 'source': 'pacman', 'profiles': ['editor']})
+        data = self.inspect()
+        self.assertTrue(data['blocked'])
+        self.assertEqual(self.check(data, 'desktop:cachyos-hypr-noctalia')['level'], 'bloqueante')
+
     def test_solver_failure_is_blocking(self):
         self.transaction = (1, '', 'unresolvable dependency')
         self.assertEqual(self.check(self.inspect(), 'transaction')['level'], 'bloqueante')
