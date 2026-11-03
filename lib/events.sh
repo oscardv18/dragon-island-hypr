@@ -7,7 +7,8 @@
 #   ev_step  <message>               something is being done
 #   ev_warn  <message>               something the user should read
 #   ev_log   <message>               one line of command output (log panel only)
-#   ev_done  <status> <message>      end of the run (status: ok | warn | error | dry-run)
+#   ev_progress <done> <total> <msg> progress of a long check (total 0 = unknown); drawn instead of «Paquetes 0/0»
+#   ev_done  <status> <message>      end of the run (status: ok | warn | error | dry-run | pause)
 # Sinks: plain (linear text) · json (one JSON object per line) · tui (lib/tui.sh, draws only).
 # A sink never runs commands. If the TUI sink fails once, the run continues with the plain sink.
 # =============================================================================
@@ -54,6 +55,7 @@ ev_sink_plain() {
         step)  printf ':: %s\n' "${kv[msg]:-}" ;;
         warn)  printf ':: AVISO: %s\n' "${kv[msg]:-}" ;;
         log)   printf '   %s\n' "${kv[msg]:-}" ;;
+        progress) printf ':: %s%s\n' "${kv[done]:+(${kv[done]}/${kv[total]}) }" "${kv[msg]:-}" ;;
         done)  printf '\n== %s ==\n%s\n' "${kv[status]:-}" "${kv[msg]:-}" ;;
         *)     printf ':: %s %s\n' "$type" "${kv[msg]:-}" ;;
     esac >&"$EV_OUT_FD"
@@ -66,10 +68,13 @@ ev_tui_failed() {
     printf ':: AVISO: la interfaz de terminal falló; se sigue en modo texto (--plain).\n' >&"$EV_OUT_FD"
 }
 
-ev_phase() { ev_emit phase name "$1"; }
+ev_phase() { EV_LAST_PHASE="$1"; ev_emit phase name "$1"; }
 ev_pkg()   { ev_emit pkg name "$1" state "$2" detail "${3:-}"; }
-ev_step()  { ev_emit step msg "$1"; }
+EV_LAST_STEP=""           # the last thing announced: the report says where a failed run stopped
+EV_LAST_PHASE=""
+ev_step()  { EV_LAST_STEP="$1"; ev_emit step msg "$1"; }
 ev_warn()  { ev_emit warn msg "$1"; }
+ev_progress() { ev_emit progress "done" "$1" total "$2" msg "$3"; }
 ev_log()   { ev_emit log msg "$1"; }
 ev_done()  { ev_emit "done" status "$1" msg "$2"; }
 

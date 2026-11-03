@@ -22,6 +22,8 @@ declare -A TUI_PKG_STATE=()
 declare -A TUI_PKG_DETAIL=()
 declare -a TUI_LOG=()
 TUI_STEP=""
+TUI_PROG_DONE=0          # progress of a long check (preflight): shown instead of «Paquetes (0/0)»
+TUI_PROG_TOTAL=0
 TUI_WARNS=0
 TUI_LAST_DRAW=0
 TUI_DIRTY=false
@@ -77,7 +79,9 @@ tui_fit() {
     local s="$1" w="$2"
     (( w < 1 )) && { printf ''; return; }
     if (( ${#s} > w )); then s="${s:0:w-1}…"; fi
-    printf '%-*s' "$w" "$s"
+    # pad by CHARACTERS: printf '%-*s' pads by bytes, so every accent shortened the row and the right border drifted
+    printf '%s%*s' "$s" $((w - ${#s})) ''
+
 }
 
 tui_rep() {   # tui_rep <char> <n>
@@ -121,7 +125,7 @@ tui_handle() {
     case "$type" in
         phase)
             [[ -n "$TUI_PHASE" ]] && TUI_PHASES_DONE+=("$TUI_PHASE")
-            TUI_PHASE="${kv[name]:-}"; TUI_STEP="" ;;
+            TUI_PHASE="${kv[name]:-}"; TUI_STEP=""; TUI_PROG_DONE=0; TUI_PROG_TOTAL=0 ;;
         pkg)
             local n="${kv[name]:-}"
             [[ -n "$n" ]] || return 0
@@ -131,6 +135,13 @@ tui_handle() {
         step)  TUI_STEP="$(tui_clean "${kv[msg]:-}")"; tui_push_log "» ${kv[msg]:-}" ;;
         warn)  TUI_WARNS=$((TUI_WARNS + 1)); tui_push_log "! ${kv[msg]:-}" ;;
         log)   tui_push_log "${kv[msg]:-}" ;;
+        progress)
+            TUI_PROG_DONE="${kv[done]:-0}"; TUI_PROG_TOTAL="${kv[total]:-0}"
+            TUI_STEP="$(tui_clean "${kv[msg]:-}")"
+            # the log keeps a trace of the milestones, not of every package
+            if (( TUI_PROG_TOTAL == 0 || TUI_PROG_DONE == 0 || TUI_PROG_DONE % 20 == 0 || TUI_PROG_DONE == TUI_PROG_TOTAL )); then
+                tui_push_log "» ${TUI_PROG_TOTAL:+($TUI_PROG_DONE/$TUI_PROG_TOTAL) }${kv[msg]:-}"
+            fi ;;
         done)
             [[ -n "$TUI_PHASE" ]] && TUI_PHASES_DONE+=("$TUI_PHASE")
             tui_finish "${kv[status]:-ok}" "${kv[msg]:-}"
@@ -239,7 +250,7 @@ tui_frame() {
     local pad; pad="$(tui_rep ' ' "$M")"
     local -a out=()
     local inner=$((W - 4))
-    local title="$TUI_NAME · Instalador" ver="${TUI_VERSION:+v$TUI_VERSION}"
+    local title="$TUI_NAME · Instalador" ver="${TUI_VERSION:+v${TUI_VERSION#v}}"
     local gap=$((inner - ${#title} - ${#ver})); (( gap < 1 )) && gap=1
     out+=("${C_magenta}╭$(tui_rep ─ $((W - 2)))╮${C_reset}")
     out+=("${C_magenta}│${C_reset} ${C_bold}${C_text}$(tui_fit "$title$(tui_rep ' ' "$gap")$ver" "$inner")${C_reset} ${C_magenta}│${C_reset}")
@@ -260,7 +271,8 @@ tui_frame() {
     local T=$(( avail * 6 / 10 )); (( T < 2 )) && T=2
     local L=$(( avail - T )); (( L < 2 )) && L=2
     tui_counts
-    out+=("$(tui_rule "Paquetes ($TUI_N_DONE/$TUI_N_TOTAL)" "$W")")
+    if (( TUI_N_TOTAL == 0 )); then out+=("$(tui_rule "Paquetes · comprobando…" "$W")")
+    else out+=("$(tui_rule "Paquetes ($TUI_N_DONE/$TUI_N_TOTAL)" "$W")"); fi
     # table window: keep the running package (or the last changed) visible
     local start=0 total=${#TUI_PKGS[@]} i n
     local focus=$((total - 1))
@@ -273,13 +285,15 @@ tui_frame() {
         out+=("  $(tui_icon "$st") $(tui_fit "$n" "$namew") ${C_dim}$(tui_fit "$detail" 14) $(tui_fit "$(tui_state_label "$st")" 10)${C_reset}")
         shown=$((shown + 1))
     done
-    (( total == 0 )) && { out+=("  ${C_dim}(sin paquetes todavía)${C_reset}"); shown=1; }
+    (( total == 0 )) && { out+=("  ${C_dim}Comprobando el sistema; los paquetes aparecen al terminar…${C_reset}"); shown=1; }
     while (( shown < T )); do out+=(""); shown=$((shown + 1)); done
     # progress bar
     local bw=$((W - 22)); (( bw < 8 )) && bw=8
-    local pct=0 fill=0
-    (( TUI_N_TOTAL > 0 )) && { pct=$((TUI_N_DONE * 100 / TUI_N_TOTAL)); fill=$((bw * TUI_N_DONE / TUI_N_TOTAL)); }
-    out+=("  ${C_cyan}$(tui_rep █ "$fill")${C_dim}$(tui_rep ░ $((bw - fill)))${C_reset} $(printf '%3d%%' "$pct")  $TUI_N_DONE/$TUI_N_TOTAL")
+    local pct=0 fill=0 label="$TUI_N_DONE/$TUI_N_TOTAL"
+    if (( TUI_N_TOTAL > 0 )); then pct=$((TUI_N_DONE * 100 / TUI_N_TOTAL)); fill=$((bw * TUI_N_DONE / TUI_N_TOTAL))
+    elif (( TUI_PROG_TOTAL > 0 )); then pct=$((TUI_PROG_DONE * 100 / TUI_PROG_TOTAL)); fill=$((bw * TUI_PROG_DONE / TUI_PROG_TOTAL)); label="$TUI_PROG_DONE/$TUI_PROG_TOTAL"
+    else label="…"; fi
+    out+=("  ${C_cyan}$(tui_rep █ "$fill")${C_dim}$(tui_rep ░ $((bw - fill)))${C_reset} $(printf '%3d%%' "$pct")  $label")
     out+=("$(tui_rule Registro "$W")")
     local ln=${#TUI_LOG[@]} from=$(( ${#TUI_LOG[@]} - L )); (( from < 0 )) && from=0
     shown=0
@@ -297,7 +311,27 @@ tui_frame() {
 }
 
 # --- final summary -----------------------------------------------------------
-# tui_box <colour> <line>... → rounded frame centred in the terminal (gum style when available)
+# tui_wrap <width> <text> → the text broken at spaces into lines of at most <width> columns. Continuation lines keep the indentation
+# of the first one plus two spaces (a hanging indent), so a long path or command never breaks the frame and never loses characters.
+tui_wrap() {
+    local w="$1" line="$2" indent lead rest chunk first=true
+    lead="${line%%[! ]*}"; indent="$lead"
+    (( ${#indent} > w / 2 )) && indent=""
+    while (( ${#line} > w )); do
+        chunk="${line:0:w}"
+        if [[ "${line:w:1}" == " " ]]; then :           # the cut falls right on a space
+        elif [[ "${chunk#"${chunk%%[! ]*}"}" == *" "* ]]; then chunk="${chunk% *}"
+        fi                                              # no space to break at: break inside the word
+        printf '%s\n' "$chunk"
+        rest="${line:${#chunk}}"; rest="${rest# }"
+        first=false
+        line="${indent}  ${rest}"
+        (( ${#indent} + 2 >= w )) && line="$rest"
+    done
+    printf '%s\n' "$line"
+}
+
+# tui_box <colour> <line>... → rounded frame centred in the terminal. Every row is exactly the same width (right border aligned).
 tui_box() {
     local colour="$1"; shift
     tui_size
@@ -308,16 +342,10 @@ tui_box() {
     printf '%s%s╭%s╮%s\n' "$pad" "$(tui_c "$colour")" "$(tui_rep ─ $((W - 2)))" "${C_reset}"
     for line in "$@"; do
         line="$(tui_clean "$line")"
-        while :; do          # wrap long lines instead of overflowing
-            chunk="${line:0:inner}"
-            if (( ${#line} > inner )); then
-                chunk="${line:0:inner}"; [[ "$chunk" == *" "* ]] && chunk="${chunk% *}"
-            fi
+        while IFS= read -r chunk; do
             printf '%s%s│%s %s%s%s %s│%s\n' "$pad" "$(tui_c "$colour")" "${C_reset}" "${C_text}" \
                 "$(tui_fit "$chunk" "$inner")" "${C_reset}" "$(tui_c "$colour")" "${C_reset}"
-            line="${line:${#chunk}}"; line="${line# }"
-            [[ -n "$line" ]] || break
-        done
+        done < <(tui_wrap "$inner" "$line")
     done
     printf '%s%s╰%s╯%s\n' "$pad" "$(tui_c "$colour")" "$(tui_rep ─ $((W - 2)))" "${C_reset}"
 }
@@ -325,23 +353,34 @@ tui_box() {
 # tui_finish <status> <message>: leave the live frame and print the framed summary on the normal screen
 tui_finish() {
     local status="$1" msg="$2" colour=green title n s
-    case "$status" in warn) colour=amber ;; error) colour=red ;; esac
+    case "$status" in warn|pause) colour=amber ;; error) colour=red ;; esac
     tui_close
     local -a lines=()
     case "$status" in
-        dry-run) title="Instalación simulada (dry-run): no se cambió nada" ;;
+        dry-run) title="Simulación terminada (dry-run): no se cambió nada" ;;
         error)   title="La instalación se detuvo" ;;
+        pause)   title="Instalación en pausa: hace falta reiniciar" ;;
         warn)    title="Instalación terminada con avisos" ;;
         *)       title="Instalación terminada" ;;
     esac
     lines+=("$title" "")
     tui_counts
-    local c_inst=0 c_new=0 c_fail=0
+    # one honest line: what was already there, what is new (or would be), what was left out, what really failed
+    local c_inst=0 c_new=0 c_fail=0 c_skip=0 problems=()
     for n in "${TUI_PKGS[@]}"; do
         s="${TUI_PKG_STATE[$n]}"
-        case "$s" in installed) c_inst=$((c_inst + 1)) ;; ok|install|aur|running) c_new=$((c_new + 1)) ;; failed|conflict) c_fail=$((c_fail + 1)) ;; esac
+        case "$s" in
+            installed) c_inst=$((c_inst + 1)) ;;
+            ok|install|aur|running) c_new=$((c_new + 1)) ;;
+            failed|conflict) c_fail=$((c_fail + 1)); problems+=("$n: ${TUI_PKG_DETAIL[$n]:-sin detalle (ver el informe)}") ;;
+        esac
     done
-    (( TUI_N_TOTAL > 0 )) && lines+=("Paquetes: $c_inst ya estaban · $c_new nuevos/por instalar · $c_fail con problema" "")
+    local verb="instalados"; [[ "$status" == dry-run ]] && verb="por instalar"
+    if (( TUI_N_TOTAL > 0 )); then
+        lines+=("Paquetes: $c_inst ya estaban · $c_new $verb · $c_fail con problema")
+        for n in "${problems[@]}"; do lines+=("  ✖ $n"); done
+        lines+=("")
+    fi
     lines+=("Avisos: $TUI_WARNS" "")
     local l
     while IFS= read -r l; do lines+=("$l"); done <<<"$msg"
