@@ -77,5 +77,10 @@ ev_done()  { ev_emit "done" status "$1" msg "$2"; }
 # (needs `shopt -s lastpipe` in the caller so state set by the reader survives the pipe)
 ev_stream() {
     local line
-    while IFS= read -r line; do ev_log "$line"; done
+    shopt -s extglob
+    while IFS= read -r line; do
+        line="${line//$'\e'\[*([0-9;?])[A-Za-z]/}"      # colours and cursor movement from the command
+        line="${line%$'\r'}"
+        ev_log "$line"
+    done
 }

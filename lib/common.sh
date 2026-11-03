@@ -20,8 +20,16 @@ bool_flag() {
 DRY_RUN="$(bool_flag "${DRY_RUN:-false}")"
 ASSUME_YES="$(bool_flag "${ASSUME_YES:-false}")"
 
+# install.sh sets EV_ENGINE=1: output then becomes events (lib/events.sh) drawn by the TUI, or printed as text/JSON.
+# update.sh, doctor.sh and the migrations leave it empty and keep the output below unchanged.
+EV_ENGINE="${EV_ENGINE:-}"
+DOCKER_GROUP_FLAG="${DOCKER_GROUP_FLAG:-false}"
+CONFIRM_DETAIL=""
+declare -a MANUAL_ITEMS=()      # things the installer cannot do for the user; listed in the final report
+
 run() {
     if $DRY_RUN; then
+        if [[ -n "$EV_ENGINE" ]]; then ev_log "[dry-run]$(printf ' %q' "$@")"; return 0; fi
         printf '[dry-run]'; printf ' %q' "$@"
         echo
     else
@@ -29,14 +37,23 @@ run() {
     fi
 }
 
+# run_streamed <command>...: like run, but each output line also becomes a log event (needs shopt -s lastpipe)
+run_streamed() {
+    if [[ -z "$EV_ENGINE" ]] || $DRY_RUN; then run "$@"; return; fi
+    local rc=0
+    "$@" 2>&1 | tee -a "${LOG:-/dev/null}" | ev_stream || rc=${PIPESTATUS[0]}
+    return "$rc"
+}
+
 has_gum() { command -v gum >/dev/null 2>&1; }
 
-log_info() { if has_gum; then gum log --level info "$1"; else echo ":: $1"; fi; }
-log_warn() { if has_gum; then gum log --level warn "$1"; else echo ":: AVISO: $1"; fi; }
+log_info() { if [[ -n "$EV_ENGINE" ]]; then ev_step "$1"; elif has_gum; then gum log --level info "$1"; else echo ":: $1"; fi; }
+log_warn() { if [[ -n "$EV_ENGINE" ]]; then ev_warn "$1"; elif has_gum; then gum log --level warn "$1"; else echo ":: AVISO: $1"; fi; }
 
 # box <border-color> <line>...   (plain text fallback when gum is missing, e.g. in --dry-run)
 box() {
     local color="$1"; shift
+    if [[ -n "$EV_ENGINE" ]]; then ev_step "$1"; return 0; fi
     if has_gum; then
         gum style --border rounded --border-foreground "$color" --padding "1 2" --foreground "#e6e8ef" "$@"
     else
@@ -48,7 +65,16 @@ box() {
 # confirm <question>  → 0 = yes. In --yes mode (or without gum) always yes.
 confirm() {
     if $ASSUME_YES || ! has_gum; then return 0; fi
+    if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" yes; return; fi
     gum confirm --affirmative "Sí" --negative "No" "$1"
+}
+
+# confirm_default_no <question>  → 0 only after an explicit «Sí» (default button: No). --yes never answers it.
+confirm_default_no() {
+    $ASSUME_YES && return 1
+    has_gum || return 1
+    if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" no; return; fi
+    gum confirm --default=false --affirmative "Sí" --negative "No" "$1"
 }
 
 # read_packages <file> <component>...  → prints the packages of the selected sections
@@ -258,7 +284,7 @@ confirm_sudo() {
     fi
     log_info "[sudo] $why"
     confirm "¿Ejecutar con sudo?  sudo $*" || { log_warn "Omitido por ti. Para hacerlo luego: sudo $*"; return 1; }
-    run sudo "$@"
+    run_streamed sudo "$@"
 }
 
 # ensure_pacman <pkg>...  installs the ones that are missing (one sudo step, never -y)
@@ -354,3 +380,6 @@ ensure_via() {
     [[ ${#pk[@]} -gt 0 ]] || return 0
     "ensure_$kind" "${pk[@]}"
 }
+
+# modules also run outside install.sh (tests, update.sh): without the event layer, events become plain lines
+declare -F ev_log >/dev/null || ev_log() { printf '%s\n' "$1"; }

@@ -21,7 +21,7 @@ if command == 'pacman':
     if args[0] == '-Qi':
         print(record('linux-cachyos') + record('linux-cachyos-headers'), end='')
     elif args[0] == '-Si':
-        if args[1] in ('grimblast-git', 'mpvpaper'):
+        if args[1] in ('grimblast-git', 'mpvpaper') or args[1] in os.environ.get('PREFLIGHT_FAKE_MISSING', '').split(','):
             sys.exit(1)
         print(record(args[1]), end='')
     elif args[0] == '-Ql':
