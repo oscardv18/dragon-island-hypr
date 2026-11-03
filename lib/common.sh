@@ -287,7 +287,7 @@ confirm_sudo() {
     run_streamed sudo "$@"
 }
 
-# pacman -T checks dependency satisfaction including installed Provides (unlike -Qq).
+# pacman -T checks dependency satisfaction including installed Provides and versions.
 # stdout is the exact list still needed; distinguish its documented 127 from probe errors.
 package_targets() {
     (( $# > 0 )) || return 0

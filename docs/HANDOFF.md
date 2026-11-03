@@ -1130,3 +1130,15 @@ del bloque afectado en verde al repetir solo ese bloque. No se tocó el escritor
 instalado. `dragon-wifi` no estaba en Descargas/Downloads y queda pendiente.
 Detalles, contratos, evidencias y VM en
 [handoff-instalador-preflight.md](handoff-instalador-preflight.md).
+
+## Instalador fix1: proveedores y latencia (2026-11-03)
+
+Confirmados con pacman los proveedores nodejs-lts-krypton y rustup. El preflight
+usa pacman -T, conserva los proveedores y reduce el plan antes de simularlo;
+la aplicación filtra también los objetivos oficiales y AUR. Editor y Mis apps
+explícitos resuelven sus proveedores sin depender del orden; los conflictos
+reales siguen bloqueando. Actividad conserva mediana <50 ms con siete muestras
+y un único reintento. Suite completa en verde; mediana de actividad 33,9 ms.
+Contrato JSON, pruebas, causa y pendientes de VM en
+[handoff-instalador-fix1.md](handoff-instalador-fix1.md). No se tocó el escritorio
+instalado ni se necesitó migración; la 190 queda libre.
