@@ -12,6 +12,102 @@ with open(os.environ['PREFLIGHT_FAKE_LOG'], 'a') as log:
     log.write(json.dumps([command, *args]) + '\n')
 
 
+STATE = os.environ.get('FAKE_STATE')          # stateful mode (tests/installer_ux): a directory holding the fake system
+SYSTEM = Path(os.environ.get('DRAGON_PREFLIGHT_ROOT', '/'))
+
+
+def state_read(name, default=''):
+    path = Path(STATE) / name
+    return path.read_text() if path.exists() else default
+
+
+def installed_set():
+    return {line for line in state_read('installed').splitlines() if line}
+
+
+def state_install(names):
+    have = installed_set() | set(names)
+    (Path(STATE) / 'installed').write_text('\n'.join(sorted(have)) + '\n')
+
+
+def maybe_fail(names):
+    failing = set(filter(None, os.environ.get('FAKE_FAIL_INSTALL', '').split(',')))
+    bad = [n for n in names if n in failing]
+    if bad:
+        print(f'error: failed to commit transaction (could not satisfy dependencies for {bad[0]}) password=hunter2 Bearer abcdefghijklmnop')
+        sys.exit(1)
+
+
+def stateful(command, args):
+    """Commands whose result depends on what was "installed" so far. Returns True when handled."""
+    if command == 'systemd-detect-virt':
+        virt = os.environ.get('FAKE_VIRT', 'none')
+        print(virt)
+        sys.exit(0 if virt != 'none' else 1)
+    if command == 'uname' and args == ['-r']:
+        print(state_read('uname', '6.test').strip()); return True
+    if command == 'sudo':
+        if args[:1] in (['-v'], ['-n']):
+            return True
+        os.execvp(args[0], args)
+    if command == 'pacman':
+        flags = [a for a in args if a.startswith('-')]
+        names = [a for a in args if not a.startswith('-')]
+        if args[0] == '-T':
+            if os.environ.get('PREFLIGHT_FAKE_DEPTEST_ERROR'):
+                print('database unavailable', file=sys.stderr); sys.exit(1)
+            have = installed_set()
+            missing = [n for n in args[2:] if n not in have]
+            if missing:
+                print('\n'.join(missing)); sys.exit(127)
+            return True
+        if args[0].startswith('-S') and args[0] not in ('-Si', '-Sp') and not args[0].startswith('-Ss'):
+            if 'y' in args[0][2:] and 'u' not in args[0][2:] and args[0] != '-Syu':
+                print('error: partial upgrade refused by the fake (-Sy)'); sys.exit(98)
+            maybe_fail(names)
+            state_install(names)
+            if args[0] == '-Syu' and os.environ.get('FAKE_UPDATE_REPLACES_KERNEL') and (SYSTEM / 'usr/lib/modules/6.test').exists():
+                import shutil
+                shutil.rmtree(SYSTEM / 'usr/lib/modules/6.test')
+                new = SYSTEM / 'usr/lib/modules/7.new'; new.mkdir(parents=True)
+                (new / 'pkgbase').write_text('linux-cachyos\n')
+            for n in names:
+                print(f'(1/1) installing {n}')
+            return True
+        if args[0] == '-Qq' and len(args) > 1:
+            sys.exit(0 if args[1] in installed_set() else 1)
+        if args[0] == '-Qqe':
+            print('\n'.join(sorted(installed_set()))); return True
+        if args[0] == '-Qi':
+            sys.stdout.write(record('linux-cachyos') + ''.join(record(n) for n in sorted(installed_set())))
+            return True
+        if args[0] == '-Ql':
+            for d in sorted((SYSTEM / 'usr/lib/modules').glob('*')):
+                print(f'{args[1]} /usr/lib/modules/{d.name}/pkgbase')
+            return True
+        if args[0] == '-Si' and args[1] == 'paru' and os.environ.get('FAKE_NO_PARU_REPO'):
+            sys.exit(1)
+        if args[0] == '-Sp':
+            for n in args[5:]:
+                if n not in installed_set():
+                    print(n, '1.0 cachyos-v4 100')
+            return True
+        return False
+    if command in ('paru', 'yay'):
+        names = [a for a in args if not a.startswith('-')]
+        maybe_fail(names)
+        state_install(names); return True
+    if command == 'git' and args[:1] == ['clone']:
+        target = Path(args[-1]); target.mkdir(parents=True); (target / 'PKGBUILD').write_text('pkgname=stub\n'); return True
+    if command == 'makepkg':
+        state_install(['paru-bin', 'paru'])
+        link = Path(os.environ['FAKE_BIN']) / 'paru'
+        if not link.exists():
+            link.symlink_to(Path(os.environ['FAKE_BIN']) / 'fixture')
+        return True
+    return False
+
+
 def record(name):
     version = {'hyprland': '0.56.2', 'quickshell': '0.3.1', 'neovim': '0.12.6'}.get(name, '1.0')
     if name in json.loads(os.environ.get('PREFLIGHT_FAKE_PACKAGES', '{}')):
@@ -19,6 +115,8 @@ def record(name):
     return f'Name : {name}\nVersion : {version}\nRepository : cachyos-v4\nProvides : None\nConflicts With : None\nReplaces : None\nDepends On : None\nRequired By : None\n\n'
 
 
+if STATE and stateful(command, args):
+    sys.exit(0)
 if command == 'pacman':
     if args[0] == '-Qi':
         print(record('linux-cachyos') + record('linux-cachyos-headers') +
@@ -69,16 +167,20 @@ elif command == 'systemctl':
     if any(a in args for a in ('enable', 'disable', 'start', 'stop', 'restart', 'mask', 'unmask', 'daemon-reload')):
         sys.exit(99)
     if 'is-enabled' in args:
-        print('enabled' if args[-1] == 'sddm.service' else 'disabled')
-        sys.exit(0 if args[-1] == 'sddm.service' else 1)
+        on = args[-1] == 'sddm.service' and not os.environ.get('FAKE_NO_DM')
+        print('enabled' if on else 'disabled')
+        sys.exit(0 if on else 1)
     elif 'is-active' in args:
         print('inactive'); sys.exit(3)
+    elif os.environ.get('FAKE_NO_DM'):
+        print('Id=display-manager.service\nActiveState=inactive')
     else:
         print('Id=sddm.service\nActiveState=active')
 elif command == 'timedatectl':
     print('yes')
 elif command == 'lspci':
-    print('VGA: AMD\n Kernel driver in use: amdgpu')
+    if not os.environ.get('FAKE_NO_GPU'):
+        print('VGA: AMD\n Kernel driver in use: amdgpu')
 elif command == 'getent':
     print('user:x:1000:1000::/home/user:/usr/bin/zsh')
 elif command == 'id':

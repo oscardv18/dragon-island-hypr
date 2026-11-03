@@ -97,14 +97,14 @@ class JsonAndPlain(Sandbox):
         self.assertIn('usermod -aG docker', flagged.stdout)
         self.assert_untouched()
 
-    def test_blocking_preflight_stops_before_touching_anything(self):
+    def test_blocking_preflight_is_reported_and_explained_in_dry_run(self):
+        # the real-run stop (exit 1, report written, nothing installed) is covered in tests/installer_ux
         self.env['PREFLIGHT_FAKE_MISSING'] = 'lazydocker'
-        result = self.execute('--yes', '--json-events', '--modules', 'core,taller')
-        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)
+        result = self.execute('--dry-run', '--yes', '--json-events', '--modules', 'core,taller')
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
         events = [json.loads(line) for line in result.stdout.splitlines()]
-        self.assertEqual(events[-1]['event'], 'done')
-        self.assertEqual(events[-1]['status'], 'error')
-        self.assertNotIn('Paquetes', [e.get('name') for e in events if e['event'] == 'phase'])
+        self.assertEqual(events[-1]['status'], 'dry-run')
+        self.assertTrue(any(e['event'] == 'warn' and 'lazydocker' in e['msg'] and e['msg'].startswith('bloquear') for e in events))
         self.assert_untouched()
 
     def test_json_requires_no_terminal(self):
@@ -150,7 +150,7 @@ class RealTerminal(Sandbox):
         self.assertEqual(code, 0, out[-2000:])
         self.assertIn('\x1b[?1049h', out)           # pantalla alternativa
         self.assertIn('\x1b[?1049l', out)           # y se devuelve al terminar
-        self.assertIn('Instalación simulada', out)  # resumen final enmarcado
+        self.assertIn('Simulación terminada', out)  # resumen final enmarcado
         frames = out.split('\x1b[H')
         self.assertGreater(len(frames), 3, 'no hubo redibujados')
         for frame in frames:
