@@ -10,10 +10,12 @@ cd "$REPO_DIR"
 if [[ "${1:-}" == --only ]]; then
   case "${2:-}" in
     profiles|prereq|preflight) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -p "test_${2}.py" -v ;;
+    providers) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -p 'test_providers.py' -v ;;
+    activity) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/activity -v ;;
     tui) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -p 'test_tui.py' -v ;;
     modes) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v ;;
     backup) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v ;;
-    *) echo "Uso: $0 --only profiles|prereq|preflight|tui|modes|backup" >&2; exit 2 ;;
+    *) echo "Uso: $0 --only profiles|prereq|preflight|providers|activity|tui|modes|backup" >&2; exit 2 ;;
   esac
 fi
 fails=0

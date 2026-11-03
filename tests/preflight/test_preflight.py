@@ -201,6 +201,22 @@ class Preflight(unittest.TestCase):
         self.requested = [{'name': n, 'source': 'pacman', 'profiles': ['editor']} for n in self.repo]
         self.assertTrue(self.inspect()['blocked'])
 
+    def test_deptest_is_authoritative_and_errors_block(self):
+        self.installed += record('nodejs-lts-krypton', Provides='nodejs=24', **{'Conflicts With': 'nodejs'})
+        self.repo['nodejs'] = record('nodejs')
+        self.requested = [{'name': 'nodejs', 'source': 'pacman', 'profiles': ['editor']}]
+        original = self.fake
+        # Stale/incomplete Provides metadata may never override pacman's dependency test.
+        with patch.object(pf, 'run', lambda *a: (127, 'nodejs', '') if a[:2] == ('pacman', '-T') else original(*a)):
+            data = self.inspect()
+        self.assertTrue(data['blocked'])
+        self.assertNotEqual(data['packages'][0]['state'], 'satisfied')
+        for error in ((1, '', 'database error'), (127, '', 'command missing'), (127, 'unexpected', '')):
+            with patch.object(pf, 'run', lambda *a: error if a[:2] == ('pacman', '-T') else original(*a)):
+                data = self.inspect()
+            self.assertTrue(data['blocked'])
+            self.assertEqual(self.check(data, 'deptest')['level'], 'bloqueante')
+
     def test_solver_failure_is_blocking(self):
         self.transaction = (1, '', 'unresolvable dependency')
         self.assertEqual(self.check(self.inspect(), 'transaction')['level'], 'bloqueante')

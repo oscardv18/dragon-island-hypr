@@ -14,15 +14,29 @@ with open(os.environ['PREFLIGHT_FAKE_LOG'], 'a') as log:
 
 def record(name):
     version = {'hyprland': '0.56.2', 'quickshell': '0.3.1', 'neovim': '0.12.6'}.get(name, '1.0')
+    if name in json.loads(os.environ.get('PREFLIGHT_FAKE_PACKAGES', '{}')):
+        return json.loads(os.environ['PREFLIGHT_FAKE_PACKAGES'])[name]
     return f'Name : {name}\nVersion : {version}\nRepository : cachyos-v4\nProvides : None\nConflicts With : None\nReplaces : None\nDepends On : None\nRequired By : None\n\n'
 
 
 if command == 'pacman':
     if args[0] == '-Qi':
-        print(record('linux-cachyos') + record('linux-cachyos-headers'), end='')
+        print(record('linux-cachyos') + record('linux-cachyos-headers') +
+              ''.join(record(n) for n in os.environ.get('PREFLIGHT_FAKE_INSTALLED', '').split(',') if n), end='')
     elif args[0] == '-T':
-        print('\n'.join(args[2:]))
-        sys.exit(127)
+        if os.environ.get('PREFLIGHT_FAKE_DEPTEST_ERROR'):
+            print('database unavailable', file=sys.stderr)
+            sys.exit(1)
+        capabilities = {'linux-cachyos', 'linux-cachyos-headers'}
+        for name in filter(None, os.environ.get('PREFLIGHT_FAKE_INSTALLED', '').split(',')):
+            capabilities.add(name)
+            for line in record(name).splitlines():
+                if line.startswith('Provides :'):
+                    capabilities.update(value.split('=')[0] for value in line.split(':', 1)[1].split() if value != 'None')
+        missing = [name for name in args[2:] if name not in capabilities]
+        if missing:
+            print('\n'.join(missing))
+            sys.exit(127)
     elif args[0] == '-Si':
         if args[1] in ('grimblast-git', 'mpvpaper') or args[1] in os.environ.get('PREFLIGHT_FAKE_MISSING', '').split(','):
             sys.exit(1)
@@ -30,7 +44,11 @@ if command == 'pacman':
     elif args[0] == '-Ql':
         print('linux-cachyos /usr/lib/modules/6.test/pkgbase')
     elif args[0] == '-Sp':
-        print('docker 1.0 cachyos-v4 100')
+        if os.environ.get('PREFLIGHT_FAKE_PACKAGES'):
+            for name in args[5:]:
+                print(name, '1.0 cachyos-v4 100')
+        else:
+            print('docker 1.0 cachyos-v4 100')
     elif args[0] in ('-Qqe', '-Qq'):
         print('linux-cachyos')
     elif args[0] == '-Q':
