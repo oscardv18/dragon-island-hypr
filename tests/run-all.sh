@@ -10,7 +10,8 @@ cd "$REPO_DIR"
 if [[ "${1:-}" == --only ]]; then
   case "${2:-}" in
     profiles|prereq|preflight) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -p "test_${2}.py" -v ;;
-    *) echo "Uso: $0 --only profiles|prereq|preflight" >&2; exit 2 ;;
+    tui) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -v ;;
+    *) echo "Uso: $0 --only profiles|prereq|preflight|tui" >&2; exit 2 ;;
   esac
 fi
 fails=0
@@ -171,6 +172,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/keyring_gtk -
 
 step "perfiles, prerrequisitos y preflight con paquetes/AUR/bus simulados"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -v; then pass "instalador I1/I2"; else fail "instalador I1/I2"; fi
+
+step "TUI del instalador: terminal simulada (80 columnas y anchas), eventos JSON y texto"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -v; then pass "TUI y eventos"; else fail "TUI y eventos"; fi
 
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi
