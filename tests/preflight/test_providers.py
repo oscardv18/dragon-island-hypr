@@ -76,7 +76,7 @@ run() { capture "$@"; }
 """
         if function in ('install_official', 'install_aur'):
             installer = (ROOT/'install.sh').read_text()
-            definitions = installer[installer.index('install_official() {'):installer.index('install_official || RESULT')]
+            definitions = installer[installer.index('# pkg_failure_cause <log-line-offset>'):installer.index('install_official || RESULT')]
             script += """
 NO_SUDO=false; DRY_RUN=false; LOG=/dev/null
 ev_step() { :; }; ev_warn() { :; }; ev_pkg() { :; }; ev_log() { :; }
