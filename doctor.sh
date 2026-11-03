@@ -12,10 +12,12 @@ REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" && pwd)"
 DRY_RUN=true          # nothing here writes; the flag keeps shared helpers from doing so
 ASSUME_YES=true
 PRE=false
+ASK=auto           # «¿Instalar ahora?» at the end of a standalone run (install.sh calls doctor.sh with --no-ask)
 for a in "$@"; do
     case "$a" in
         --pre) PRE=true ;;
-        -h|--help) echo "Uso: $0 [--pre]   (solo lectura; --pre = requisitos previos de pre-instalation.md)"; exit 0 ;;
+        --no-ask) ASK=no ;;
+        -h|--help) echo "Uso: $0 [--pre] [--no-ask]   (solo lectura; --pre = requisitos previos; al final pregunta «¿Instalar ahora?» si Dragon no está instalado)"; exit 0 ;;
         *) echo "Opción desconocida: $a" >&2; exit 2 ;;
     esac
 done
@@ -26,6 +28,12 @@ done
 . "$REPO_DIR/lib/detect.sh"
 # shellcheck source=lib/checks.sh
 . "$REPO_DIR/lib/checks.sh"
+
+# Dragon not installed yet (no state written by install.sh): the full health check would only list what is missing by design,
+# so a bare ./doctor.sh checks the prerequisites and offers to install.
+if ! $PRE && [[ ! -f "${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island/modules" ]] && ! command -v Hyprland >/dev/null 2>&1; then
+    PRE=true
+fi
 
 FAILS=0
 good() { printf '  \033[32m✔\033[0m %s\n' "$1"; }
@@ -42,6 +50,18 @@ pre() {   # pre <check-id> <label>: ✔ ok · ⚠ warning (the check returned 2:
         2) warn "$label"; printf '%s\n' "$out" | sed 's/^/      /'; return 0 ;;
         *) bad "$label"; printf '%s\n' "$out" | sed 's/^/      /' ;;
     esac
+}
+
+# ask_install: a standalone ./doctor.sh ends by offering the one command. Only on a terminal, only when Dragon is not installed yet
+# (or with --pre), never when install.sh itself runs the doctor (--no-ask).
+ask_install() {
+    [[ "$ASK" == no ]] && return 0
+    [[ -t 0 && -t 1 ]] || return 0
+    if ! $PRE && [[ -f "${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island/modules" ]]; then return 0; fi
+    local ans
+    read -r -p "¿Instalar ahora? [S/n] " ans || return 0
+    [[ "$ans" =~ ^[nN] ]] && return 0
+    exec "$REPO_DIR/install.sh"
 }
 
 if $PRE; then
@@ -61,7 +81,8 @@ if $PRE; then
     pre versions "Hyprland ≥ 0.55 y Quickshell ≥ 0.3 (instalados o disponibles en el repo)"
     pre disk    "Espacio libre ≥ 5 GB en \$HOME"
     echo
-    if (( FAILS == 0 )); then echo "Todo listo: ./install.sh --dry-run"; else echo "$FAILS requisito(s) sin cumplir: repite el paso indicado de pre-instalation.md."; fi
+    if (( FAILS == 0 )); then echo "Todo listo."; else echo "$FAILS requisito(s) sin cumplir: ./install.sh instala los que puede; para el resto, el paso de pre-instalation.md."; fi
+    ask_install
     exit "$FAILS"
 fi
 
