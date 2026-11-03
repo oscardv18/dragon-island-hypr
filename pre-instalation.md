@@ -22,7 +22,7 @@ Quickshell 0.3, GPU AMD); los comandos y los nombres de paquete se comprueban co
 | 9 | Verificar los requisitos con `./doctor.sh --pre` | no | no | 10 s |
 | 10 | Primera ejecución: `./install.sh --dry-run` y luego `./install.sh` | sí | cerrar sesión | 15–40 min |
 
-**Qué hace el script:** instala los paquetes de `packages/`, enlaza las configuraciones en `~/.config` con copia de
+**Qué hace el script:** recorre seis fases visibles (Preflight · Plan · Paquetes · Despliegue · Servicios · Verificación), antes de cambiar nada guarda la lista de paquetes (`pacman -Qqe`) y crea una instantánea si hay snapper o Timeshift, instala los paquetes de `packages/`, enlaza las configuraciones en `~/.config` con copia de
 seguridad, compila los plugins de Hyprland con `hyprpm`, y (opcional, cada uno con confirmación) el tema del login, el
 llavero, el teclado y apps extra. Es idempotente: puedes ejecutarlo dos veces.
 
@@ -428,8 +428,8 @@ cd "$HOME/dragon-island-hypr"
 **Qué esperar:**
 
 1. Comprobaciones previas: si falla alguna, el instalador se detiene y te dice qué paso de esta guía repetir.
-2. Un menú para elegir módulos (`core` es obligatorio; `login`, `keyring` y `extras` vienen desmarcados porque tocan `/etc` o instalan apps) y el **plan completo** antes de aplicar.
-3. Los pasos con `sudo` se explican y se confirman uno a uno: actualizar el sistema, instalar paquetes, habilitar servicios, y `hyprpm` (pide tu contraseña para instalar cabeceras).
+2. Un menú para elegir módulos (`core` es obligatorio; `login`, `keyring` y `extras` vienen desmarcados porque tocan `/etc` o instalan apps; `taller` —Docker, LazyGit, LazyDocker— y `archivos` vienen marcados) y el **plan completo** (tabla de paquetes, tamaño de descarga y pasos con `sudo`) antes de aplicar. El preflight de conflictos corre antes: con bloqueos, el instalador se detiene sin tocar nada.
+3. Los pasos con `sudo` se explican y se confirman uno a uno: actualizar el sistema, instalar paquetes, habilitar servicios, y `hyprpm` (pide tu contraseña para instalar cabeceras). **Añadirte al grupo `docker` (equivale a root) solo ocurre con tu «sí» explícito.**
 4. Tarda entre 15 y 40 minutos, sobre todo por los paquetes AUR y los plugins.
 
 **Al terminar:**
@@ -441,7 +441,9 @@ cd "$HOME/dragon-island-hypr"
 Después **cierra sesión**, y en el login elige la sesión **Hyprland**. Si el módulo `plugins` se ejecutó fuera de
 Hyprland, en tu primer inicio de sesión se abre una terminal que compila los plugins (pide `sudo`): déjala terminar.
 
-Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update.sh`.
+Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update.sh`. Antes de reinstalar un equipo, respalda lo tuyo con `scripts/backup-dragon.sh` (también lista lo que debes copiar tú: ssh, gpg, navegadores, volúmenes de Docker, ramas sin subir).
+
+**Si usas CachyOS:** instala con la opción «sin escritorio», desmarca `cachyos-hello`, `cachyos-kernel-manager`, `cachyos-packageinstaller`, `cachyos-wallpapers`, Firefox y `vlc-plugins-all`, y recuerda que el shell por defecto es fish (ver [docs/INSTALL.md](docs/INSTALL.md), sección CachyOS).
 
 **Si falla:**
 
