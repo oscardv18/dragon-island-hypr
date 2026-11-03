@@ -80,3 +80,10 @@ comprobado es `--dry-run`, `--check`, bloqueos y comandos simulados. Eso es lo p
   consulta dos veces (unos segundos de más). Un dry-run completo tarda ~20–30 s.
 - `tests/run-all.sh` añade ~3 min por los pty y las ejecuciones de `install.sh`; `--only tui|modes|backup` ejecuta cada parte.
 - `dragon-wifi` sigue pendiente (ver `docs/INSTALL.md`): no se encontró el original.
+
+## Resultado de la suite completa
+
+`tests/run-all.sh` ejecutada una vez: todos los bloques en verde salvo `tests/activity`
+(`test_range_cli_under_50ms_with_30_days`: 57,7 ms frente al límite de 50 ms, medida de latencia sensible a la carga de la
+máquina). Se repitió solo ese bloque, sin cambiar código ni límites: pasa (mediana 37,8 ms). No se presenta la primera
+ejecución como pasada limpia; es una intermitencia ajena a este tramo.
