@@ -72,7 +72,7 @@ def missing(names):
 def prerequisites():
     spec = json.loads((ROOT/'packages/profiles.json').read_text())['prereq']
     kernel = kernel_info()
-    helper = next((name for name in ('paru', 'yay') if shutil.which(name)), None)
+    helper = next((name for name in os.environ.get('DRAGON_AUR_HELPERS', 'paru yay').split() if shutil.which(name)), None)
     preferred = spec['aur_helper'].get(distro().get('ID'), spec['aur_helper']['default'])
     base = [line.split('#')[0].strip() for line in (ROOT/'packages'/spec['pacman_file']).read_text().splitlines()
             if line.split('#')[0].strip()]
