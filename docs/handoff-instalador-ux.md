@@ -108,4 +108,4 @@ No pude ver ni probar: **la TUI en un terminal real** (alineación y colores en 
 
 ## Resultado de la suite completa
 
-(se completa al cerrar)
+`tests/run-all.sh` ejecutada una vez al cerrar: **TODO EN VERDE** (todos los bloques, incluido shellcheck, check-docs, idempotencia, dry-run sin rastro y `installer_ux`), en ~19 min. Sin intermitencias esta vez.
