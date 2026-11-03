@@ -63,7 +63,7 @@ keyring_services() {
             MANUAL_ITEMS+=("Llavero al iniciar sesión: añade a $PAM_FILE las líneas pam_gnome_keyring (ver docs/KEYRING.md)")
         else
             CONFIRM_DETAIL="$diff_text"
-            if confirm "[sudo] ¿Aplicar este cambio a $PAM_FILE? (copia .bak-dragon antes)"; then
+            if confirm_explicit "[sudo] ¿Aplicar este cambio a $PAM_FILE? (copia .bak-dragon antes)"; then
                 log_info "[sudo] cp -n $PAM_FILE $PAM_FILE.bak-dragon  y  install -m 644 <candidato> $PAM_FILE"
                 sudo cp -n "$PAM_FILE" "$PAM_FILE.bak-dragon"
                 sudo install -m 644 "$cand" "$PAM_FILE"

@@ -5,7 +5,7 @@
 # the commands to switch to SDDM are printed. Reversion: sddm/install-theme.sh --uninstall.
 # =============================================================================
 login_desc() { echo "Tema de login dragon-core para SDDM (opcional; no toca Plasma Login Manager)"; }
-login_sudo() { echo "sddm/install-theme.sh pregunta antes de cada paso con sudo (copia a /usr/share/sddm, /etc/sddm.conf.d)"; }
+login_sudo() { echo "systemctl enable sddm (si no hay gestor de acceso) y sddm/install-theme.sh (copia a /usr/share/sddm, /etc/sddm.conf.d)"; }
 login_packages() { pkg_list "$REPO_DIR/packages/pacman-login.txt"; }
 
 login_check() { [[ -f /etc/sddm.conf.d/10-dragon-core.conf ]] && grep -q "dragon-core" /etc/sddm.conf.d/10-dragon-core.conf; }
@@ -29,13 +29,18 @@ login_apply() {
                 "  sudo systemctl disable sddm && sudo systemctl enable plasmalogin" \
                 "Luego repite: ./install.sh --modules login"
             return 0 ;;
-        *) log_warn "No hay un display manager reconocido: se omite el tema de login (Paso 6 de $PRE_DOC)."; return 0 ;;
+        none) ;;   # bare install: SDDM is installed and enabled below
+        *) log_warn "Hay otro gestor de acceso ($(display_manager)): se omite el tema de login (Paso 6 de $PRE_DOC)."; return 0 ;;
     esac
     ensure_via pacman login_packages  || log_warn "Faltan paquetes del tema (sddm / qt6)."
+    if [[ "$(display_manager)" == none ]]; then
+        confirm_sudo "Habilitar SDDM como gestor de acceso (no había ninguno activo)" systemctl enable sddm.service \
+            || { log_warn "SDDM no quedó habilitado: sudo systemctl enable sddm"; MANUAL_ITEMS+=("Gestor de acceso: sudo systemctl enable sddm"); return 0; }
+    fi
     if $DRY_RUN; then echo "[dry-run] $REPO_DIR/sddm/install-theme.sh"; return 0; fi
     $NO_SUDO && { log_warn "Sin sudo (--no-sudo): ejecuta luego $REPO_DIR/sddm/install-theme.sh"; return 0; }
     if confirm "[sudo] Instalar el tema de login dragon-core (el script pregunta antes de cada paso con sudo)"; then
-        "$REPO_DIR/sddm/install-theme.sh" || log_warn "install-theme.sh no terminó; reintenta: $REPO_DIR/sddm/install-theme.sh"
+        DRAGON_ASSUME_YES="$($PLAN_CONFIRMED && echo 1 || echo 0)" "$REPO_DIR/sddm/install-theme.sh" || log_warn "install-theme.sh no terminó; reintenta: $REPO_DIR/sddm/install-theme.sh"
     else
         log_info "Omitido. Cuando quieras: $REPO_DIR/sddm/install-theme.sh   (probar sin sudo: --test)"
     fi

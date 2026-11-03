@@ -53,7 +53,7 @@ shell_apply() {
     fi
 
     if [[ "$(getent passwd "$USER" | cut -d: -f7)" != "/usr/bin/zsh" ]] && command -v zsh >/dev/null 2>&1; then
-        if confirm "Tu shell por defecto no es zsh. ¿Cambiarla con chsh -s /usr/bin/zsh? (pide tu contraseña)"; then
+        if confirm_explicit "Tu shell por defecto no es zsh. ¿Cambiarla con chsh -s /usr/bin/zsh? (pide tu contraseña)"; then
             run chsh -s /usr/bin/zsh || log_warn "chsh falló: ejecútalo a mano: chsh -s /usr/bin/zsh"
         fi
     fi

@@ -43,7 +43,11 @@ keyboard_apply() {
     fi
 
     # the login keymap is opt-in: never in unattended mode unless DRAGON_KB_LOGIN=1
-    if { ! $ASSUME_YES || [[ "${DRAGON_KB_LOGIN:-0}" == 1 ]]; } && command -v localectl >/dev/null 2>&1 && [[ "$(localectl status 2>/dev/null | awk -F': *' '/X11 Layout/ {print $2}')" != "$layouts" ]]; then
+    if $PLAN_CONFIRMED && [[ "${DRAGON_KB_LOGIN:-0}" != 1 ]]; then
+        # one-command install: the login keymap is not changed behind the user's back; it stays as a note in the report
+        [[ "$(localectl status 2>/dev/null | awk -F': *' '/X11 Layout/ {print $2}')" == "$layouts" ]] \
+            || MANUAL_ITEMS+=("Teclado del login (opcional): sudo localectl set-x11-keymap $layouts")
+    elif { ! $ASSUME_YES || [[ "${DRAGON_KB_LOGIN:-0}" == 1 ]]; } && command -v localectl >/dev/null 2>&1 && [[ "$(localectl status 2>/dev/null | awk -F': *' '/X11 Layout/ {print $2}')" != "$layouts" ]]; then
         confirm "¿Fijar también el teclado del login a «$layouts»? (sudo localectl set-x11-keymap)" \
             && { confirm_sudo "Teclado del login (SDDM / TTY): $layouts" localectl set-x11-keymap "$layouts" || true; }
     fi

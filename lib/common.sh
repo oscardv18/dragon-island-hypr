@@ -62,19 +62,46 @@ box() {
     fi
 }
 
-# confirm <question>  → 0 = yes. In --yes mode (or without gum) always yes.
+# have_tty: a controlling terminal can be opened (plain text prompts need one)
+have_tty() { { : </dev/tty; } 2>/dev/null; }
+
+# ask_plain <question> <yes|no>: a [S/n] prompt without gum. Without a terminal it answers the default.
+ask_plain() {
+    local ans hint="[S/n]"
+    [[ "$2" == no ]] && hint="[s/N]"
+    have_tty || { [[ "$2" == yes ]]; return; }
+    printf '%s %s ' "$1" "$hint" >/dev/tty
+    read -r ans </dev/tty || ans=""
+    if [[ "$2" == yes ]]; then [[ ! "$ans" =~ ^[nN] ]]; else [[ "$ans" =~ ^[sSyY] ]]; fi
+}
+
+# PLAN_CONFIRMED: set by install.sh after the single «Instalar todo». Ordinary confirmations then answer yes (every sudo step is
+# still announced); the ones that default to NO (docker group, PAM, boot) keep asking.
+PLAN_CONFIRMED="${PLAN_CONFIRMED:-false}"
+
+# confirm <question>  → 0 = yes. In --yes mode, in --dry-run (nothing to ask: nothing is done) and after the plan was accepted always yes.
 confirm() {
-    if $ASSUME_YES || ! has_gum; then return 0; fi
+    if $ASSUME_YES || $DRY_RUN || $PLAN_CONFIRMED; then return 0; fi
     if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" yes; return; fi
-    gum confirm --affirmative "Sí" --negative "No" "$1"
+    if has_gum; then gum confirm --affirmative "Sí" --negative "No" "$1"; return; fi
+    ask_plain "$1" yes
+}
+
+# confirm_explicit <question>: like confirm, but the accepted plan does not answer it (changes that deserve their own «Sí»: PAM, login shell).
+# --yes and --dry-run still answer yes.
+confirm_explicit() {
+    if $ASSUME_YES || $DRY_RUN; then return 0; fi
+    if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" yes; return; fi
+    if has_gum; then gum confirm --affirmative "Sí" --negative "No" "$1"; return; fi
+    ask_plain "$1" yes
 }
 
 # confirm_default_no <question>  → 0 only after an explicit «Sí» (default button: No). --yes never answers it.
 confirm_default_no() {
     $ASSUME_YES && return 1
-    has_gum || return 1
     if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" no; return; fi
-    gum confirm --default=false --affirmative "Sí" --negative "No" "$1"
+    if has_gum; then gum confirm --default=false --affirmative "Sí" --negative "No" "$1"; return; fi
+    ask_plain "$1" no
 }
 
 # read_packages <file> <component>...  → prints the packages of the selected sections
