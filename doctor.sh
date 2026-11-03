@@ -33,10 +33,15 @@ bad()  { printf '  \033[31m✘\033[0m %s\n' "$1"; [[ -n "${2:-}" ]] && printf ' 
 
 # ck <label> <hint> <command...>: ✔ when the command succeeds, ✘ (with the hint) otherwise
 ck() { local label="$1" hint="$2"; shift 2; if "$@" >/dev/null 2>&1; then good "$label"; else bad "$label" "$hint"; fi; }
-pre() {   # pre <check-id> <label>
-    local id="$1" label="$2" out
-    if out="$("check_$id" 2>&1)"; then good "$label"; [[ -n "$out" ]] && printf '      %s\n' "${out//$'\n'/$'\n      '}"; return 0; fi
-    bad "$label"; printf '%s\n' "$out" | sed 's/^/      /'
+warn() { printf '  \033[33m⚠\033[0m %s\n' "$1"; }
+pre() {   # pre <check-id> <label>: ✔ ok · ⚠ warning (the check returned 2: not counted) · ✘ failure
+    local id="$1" label="$2" out rc=0
+    out="$("check_$id" 2>&1)" || rc=$?
+    case "$rc" in
+        0) good "$label"; [[ -n "$out" ]] && printf '      %s\n' "${out//$'\n'/$'\n      '}"; return 0 ;;
+        2) warn "$label"; printf '%s\n' "$out" | sed 's/^/      /'; return 0 ;;
+        *) bad "$label"; printf '%s\n' "$out" | sed 's/^/      /' ;;
+    esac
 }
 
 if $PRE; then
@@ -50,8 +55,8 @@ if $PRE; then
     pre aur     "Ayudante de AUR (yay/paru)"
     pre network "Red: archlinux.org alcanzable"
     pre time    "Hora sincronizada (NTP)"
-    pre gpu     "Driver de video cargado (${GPU_VENDOR:-?}: ${GPU_NAME:-?})"
-    pre dm      "Display manager activo ($(display_manager))"
+    pre gpu     "GPU y driver de video (${GPU_VENDOR:-?}: ${GPU_NAME:-?})"
+    pre dm      "Gestor de acceso (display manager): $(display_manager)"
     pre keymap  "Teclado del login empieza por us"
     pre versions "Hyprland ≥ 0.55 y Quickshell ≥ 0.3 (instalados o disponibles en el repo)"
     pre disk    "Espacio libre ≥ 5 GB en \$HOME"

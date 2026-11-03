@@ -45,7 +45,7 @@ def package_table():
     for line in (ROOT/'packages'/manifest['prereq']['pacman_file']).read_text().splitlines():
         name = line.split('#')[0].strip()
         if name:
-            include(name, 'pacman', 'prereq (manual)')
+            include(name, 'pacman', 'prerrequisito (lo instala el instalador)')
     section = ''
     for line in (ROOT/'packages/extras.txt').read_text().splitlines():
         line = line.split('#')[0].strip()

@@ -391,6 +391,9 @@ fail_step() {
     return 0
 }
 
+# warn_step <message>: like fail_step but for warnings (a check that returns 2); never counted as a failure
+warn_step() { echo "⚠ $*" >&2; return 0; }
+
 # local override files (never versioned): ~/.config/dragon-island/local.conf (KEY=value) and hypr/local.lua
 LOCAL_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/local.conf"
 HYPR_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/local.lua"

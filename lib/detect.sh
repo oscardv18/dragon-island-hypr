@@ -36,10 +36,20 @@ detect_gpu() {
     return 0
 }
 
+# detect_virt → VIRT_KIND (none | kvm | oracle | vmware | …); "none" also when systemd-detect-virt is missing
+detect_virt() {
+    VIRT_KIND="none"
+    command -v systemd-detect-virt >/dev/null 2>&1 || return 0
+    VIRT_KIND="$(systemd-detect-virt 2>/dev/null || true)"
+    [[ -n "$VIRT_KIND" ]] || VIRT_KIND="none"
+    return 0
+}
+
 # display_manager → sddm | plasmalogin | none | <unit>
 display_manager() {
     local unit
-    unit="$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)"
+    # -e: a missing link must give "" (none). With -f, readlink returns the path itself and the name became "display-manager".
+    unit="$(readlink -e /etc/systemd/system/display-manager.service 2>/dev/null || true)"
     case "$unit" in
         *sddm*) echo sddm ;;
         *plasmalogin*|*plasma-login*) echo plasmalogin ;;

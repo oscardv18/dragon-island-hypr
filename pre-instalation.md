@@ -110,7 +110,7 @@ Salida esperada: `0` actualizaciones pendientes, y la versión de `uname -r` igu
 el ayudante AUR y las cabeceras se calculan para tu máquina.
 
 ```bash
-sudo pacman -S --needed git base-devel gum curl unzip
+sudo pacman -S --needed git base-devel gum curl unzip pciutils
 ./doctor.sh --pre
 ```
 
@@ -517,7 +517,7 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `ninja` | base | oficial |
 | `gcc` | base, editor | oficial |
 | `pkgconf` | base | oficial |
-| `git` | base, editor, prereq (manual) | oficial |
+| `git` | base, editor, prerrequisito (lo instala el instalador) | oficial |
 | `grimblast-git` | base | AUR |
 | `mpvpaper` | base | AUR |
 | `ttf-outfit` | base | AUR |
@@ -553,8 +553,8 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `rust` | editor | oficial |
 | `php` | editor | oficial |
 | `composer` | editor | oficial |
-| `curl` | editor, prereq (manual) | oficial |
-| `unzip` | editor, prereq (manual) | oficial |
+| `curl` | editor, prerrequisito (lo instala el instalador) | oficial |
+| `unzip` | editor, prerrequisito (lo instala el instalador) | oficial |
 | `opencode` | mis-apps | oficial |
 | `btop` | mis-apps | oficial |
 | `nautilus` | mis-apps | oficial |
@@ -589,8 +589,9 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 | `hermes-agent` | mis-apps | AUR |
 | `sddm` | login | oficial |
 | `qt6-declarative` | login | oficial |
-| `base-devel` | prereq (manual) | oficial |
-| `gum` | prereq (manual) | oficial |
+| `base-devel` | prerrequisito (lo instala el instalador) | oficial |
+| `gum` | prerrequisito (lo instala el instalador) | oficial |
+| `pciutils` | prerrequisito (lo instala el instalador) | oficial |
 | `brave-bin` | extras (brave, opt-in) | AUR |
 | `proton-vpn-gtk-app` | extras (protonvpn, opt-in) | oficial |
 | `qrencode` | extras (paneles, opt-in) | oficial |

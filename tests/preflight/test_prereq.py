@@ -34,7 +34,7 @@ class Prereq(unittest.TestCase):
     def test_exact_command_and_preserve_helper(self):
         with patch.object(p, 'run', self.fake), patch.object(p.shutil, 'which', lambda n: n == 'yay'):
             data = p.prerequisites()
-        self.assertEqual(data['packages'], ['git', 'base-devel', 'gum', 'curl', 'unzip', 'linux-cachyos-headers'])
+        self.assertEqual(data['packages'], ['git', 'base-devel', 'gum', 'curl', 'unzip', 'pciutils', 'linux-cachyos-headers'])
         self.assertEqual(data['helper'], 'yay')
 
     def test_cachyos_prefers_paru_when_missing(self):

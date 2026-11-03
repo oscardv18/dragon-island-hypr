@@ -22,7 +22,9 @@ declare -gA CHECK_STEP=(
     [disk]="12|Problemas comunes antes del script"
 )
 
-BASE_TOOLS=(git curl unzip gum)   # commands; base-devel (a group) and the AUR helper are checked separately
+# commands (and their package when it differs); base-devel (a group) and the AUR helper are checked separately.
+# lspci comes from pciutils: without it the GPU cannot be identified.
+BASE_TOOLS=(git curl unzip gum lspci:pciutils)
 
 # Every check_* prints nothing on success, calls fail_step and returns 1 on failure.
 # Callers collect failures; nothing here exits.
@@ -43,7 +45,7 @@ check_sudo() {
 check_base() {
     local t rc=0
     for t in "${BASE_TOOLS[@]}"; do
-        command -v "$t" >/dev/null 2>&1 || { fail_step base "Falta $t."; rc=1; }
+        command -v "${t%%:*}" >/dev/null 2>&1 || { fail_step base "Falta ${t#*:}."; rc=1; }
     done
     pkg_installed base-devel || { fail_step base "Falta base-devel."; rc=1; }
     command -v gh >/dev/null 2>&1 || log_warn "github-cli (gh) no está: solo hace falta si clonas por HTTPS con gh (Paso 8)."
@@ -68,24 +70,39 @@ check_time() {
     return 1
 }
 
-# GPU: the installer never installs drivers. Warn-level: returns 1 so doctor shows ✘, install.sh only warns.
+# GPU: the installer never installs drivers. Returns 2 (a WARNING, not a failure) when the GPU cannot be identified or has
+# no driver bound: inside a virtual machine that is normal, and without pciutils nothing can be said. 1 is reserved for hard failures.
 check_gpu() {
-    detect_gpu
+    detect_gpu; detect_virt
     if [[ "$GPU_VENDOR" == "unknown" ]]; then
-        fail_step gpu "No se pudo identificar la GPU (¿falta pciutils / lspci?)."
-        return 1
+        if [[ "$VIRT_KIND" != none ]]; then
+            warn_step "No se identifica una GPU física: estás en una máquina virtual ($VIRT_KIND). Es normal; Hyprland puede ir sin aceleración."
+        elif ! command -v lspci >/dev/null 2>&1; then
+            warn_step "No se pudo identificar la GPU porque falta pciutils (lspci). El instalador lo instala como prerrequisito."
+        else
+            warn_step "No se pudo identificar la GPU. El instalador no instala drivers: comprueba el tuyo (Paso 5)."
+        fi
+        return 2
     fi
     $GPU_DRIVER_LOADED && return 0
-    fail_step gpu "La GPU ($GPU_VENDOR: $GPU_NAME) no tiene driver del kernel cargado."
-    return 1
+    if [[ "$VIRT_KIND" != none ]]; then
+        warn_step "La GPU ($GPU_VENDOR: $GPU_NAME) no tiene driver cargado; en una máquina virtual ($VIRT_KIND) es normal."
+    else
+        warn_step "La GPU ($GPU_VENDOR: $GPU_NAME) no tiene driver del kernel cargado: instálalo antes de abrir Hyprland (Paso 5)."
+    fi
+    return 2
 }
 
+# No active login manager is NORMAL on a bare install (CachyOS without desktop): module login installs SDDM. Returns 2 = warning.
 check_dm() {
     local dm; dm="$(display_manager)"
     case "$dm" in
         sddm) return 0 ;;
         plasmalogin) log_warn "Display manager: Plasma Login Manager. Hyprland arranca igual, pero el tema de login solo funciona con SDDM (Paso 6)."; return 0 ;;
-        *) fail_step dm "No hay un display manager activo reconocido (se encontró: $dm)."; return 1 ;;
+        none) warn_step "No hay gestor de acceso activo (normal en una instalación sin escritorio): el módulo login instalará y habilitará SDDM."
+              return 2 ;;
+        *) warn_step "Gestor de acceso activo: $dm. Hyprland arranca igual; el tema de login solo funciona con SDDM (Paso 6)."
+           return 2 ;;
     esac
 }
 
