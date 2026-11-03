@@ -166,6 +166,41 @@ class Preflight(unittest.TestCase):
         self.assertTrue(data['blocked'])
         self.assertEqual(self.check(data, 'desktop:cachyos-hypr-noctalia')['level'], 'bloqueante')
 
+    def test_explicit_plan_providers_are_order_independent(self):
+        import itertools
+        self.repo = {
+            'nodejs': record('nodejs'), 'rust': record('rust'),
+            'nodejs-lts-krypton': record('nodejs-lts-krypton', Provides='nodejs=24',
+                                        **{'Conflicts With': 'nodejs'}),
+            'rustup': record('rustup', Provides='rust', **{'Conflicts With': 'rust'}),
+        }
+        self.transaction = (0, '', '')
+        for order in itertools.permutations(self.repo):
+            self.requested = [{'name': n, 'source': 'pacman',
+                               'profiles': ['editor' if n in ('nodejs', 'rust') else 'mis-apps']} for n in order]
+            self.calls.clear()
+            data = self.inspect()
+            self.assertFalse(data['blocked'], order)
+            aliases = {p['name']: p['provider'] for p in data['packages'] if p['state'] == 'satisfied'}
+            self.assertEqual(aliases, {'nodejs': 'nodejs-lts-krypton', 'rust': 'rustup'})
+            targets = next(c[6:] for c in self.calls if c[:2] == ('pacman', '-Sp'))
+            self.assertEqual(set(targets), {'nodejs-lts-krypton', 'rustup'})
+            for p in data['packages']:
+                if p['name'] in ('nodejs-lts-krypton', 'rustup'):
+                    self.assertIn('editor', p['required_profiles'])
+
+    def test_mutual_or_ambiguous_providers_do_not_hide_conflicts(self):
+        self.transaction = (0, '', '')
+        self.repo = {'a': record('a', Provides='b', **{'Conflicts With': 'b'}),
+                     'b': record('b', Provides='a', **{'Conflicts With': 'a'})}
+        self.requested = [{'name': n, 'source': 'pacman', 'profiles': ['editor']} for n in self.repo]
+        self.assertTrue(self.inspect()['blocked'])
+        self.repo = {'nodejs': record('nodejs'),
+                     'lts-a': record('lts-a', Provides='nodejs', **{'Conflicts With': 'nodejs'}),
+                     'lts-b': record('lts-b', Provides='nodejs', **{'Conflicts With': 'nodejs'})}
+        self.requested = [{'name': n, 'source': 'pacman', 'profiles': ['editor']} for n in self.repo]
+        self.assertTrue(self.inspect()['blocked'])
+
     def test_solver_failure_is_blocking(self):
         self.transaction = (1, '', 'unresolvable dependency')
         self.assertEqual(self.check(self.inspect(), 'transaction')['level'], 'bloqueante')

@@ -253,6 +253,7 @@ class Inspector:
                 self.planned.append(p)
                 self.add('package:' + p['name'], 'informacion', 'Metadatos AUR RPC; no se compila ni ejecuta código.', json.dumps(p))
         self.installed_providers()
+        self.plan_providers()
         official = [p['name'] for p in self.planned
                     if p['source'] == 'pacman' and p.get('state') != 'satisfied']
         if official:
@@ -318,6 +319,28 @@ class Inspector:
             self.add('satisfied:' + p['name'], 'informacion',
                      f"{p['name']}: ya satisfecho (lo provee {provider['name']}).",
                      'pacman -T -- ' + p['name'] + ': salida 0; se conserva el proveedor instalado.')
+
+    def plan_providers(self):
+        """Choose explicit provider roots from the complete plan, never insertion order.
+
+        Mutual providers and ambiguous alternatives remain active: their real
+        conflicts still block instead of silently choosing an arbitrary package.
+        """
+        active = [p for p in self.planned if p.get('state') != 'satisfied']
+        roots = [p for p in active if not any(
+            other['name'] != p['name'] and satisfies(p['name'], other) for other in active)]
+        for p in active:
+            candidates = [other for other in roots
+                          if other['name'] != p['name'] and satisfies(p['name'], other)]
+            if len(candidates) != 1:
+                continue
+            provider = candidates[0]
+            p.update(state='satisfied', provider=provider['name'],
+                     provider_origin='plan', installed_version=None)
+            provider['required_profiles'] = sorted(set(provider.get('required_profiles', [])) | set(p['profiles']))
+            self.add('satisfied:' + p['name'], 'informacion',
+                     f"{p['name']}: satisfecho por el proveedor explícito {provider['name']} del plan.",
+                     'Se instalará el proveedor; se omite el paquete redundante.')
 
     def conflicts(self):
         reported = set()

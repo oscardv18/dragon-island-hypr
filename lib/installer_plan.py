@@ -54,10 +54,11 @@ for p in packages:
         to_install += 1
     detail = p.get('version', '')
     if state == 'satisfied':
-        detail = 'ya satisfecho (lo provee %s)' % p['provider']
+        detail = ('ya satisfecho (lo provee %s)' if p.get('provider_origin') == 'installed'
+                  else 'lo proveerá %s (incluido en el plan)') % p['provider']
     if state == 'change' and p.get('installed_version'):
         detail = '%s→%s' % (p['installed_version'], p.get('version', ''))
-    in_engine = int(bool(set(p.get('profiles', [])) & engine))
+    in_engine = int(bool((set(p.get('profiles', [])) | set(p.get('required_profiles', []))) & engine))
     print('\t'.join(['pkg', p['name'], shown, clean(detail), p.get('source', 'pacman'), str(in_engine)]))
 
 # one line per (level, message): repeated findings (a dozen plasma-* packages) are grouped with their ids

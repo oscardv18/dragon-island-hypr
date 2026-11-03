@@ -1,5 +1,6 @@
 """Read the package manifest without state, caches or duplicate package requests."""
 import json
+import os
 from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[1]
@@ -13,7 +14,8 @@ def load_profiles(names=None, modules=None):
         else:
             selected = set(modules) | {'core'}
             names = [name for name, spec in profiles.items()
-                     if selected.intersection(spec['modules']) and name != 'mis-apps']
+                     if selected.intersection(spec['modules']) and
+                     (name != 'mis-apps' or 'myapps' in os.environ.get('DRAGON_EXTRAS', '').split(','))]
     unknown = set(names) - profiles.keys()
     if unknown:
         raise ValueError('Perfiles desconocidos: ' + ', '.join(sorted(unknown)))
