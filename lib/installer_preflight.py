@@ -17,6 +17,12 @@ from installer_prereq import distro, kernel_info, run, system_path
 from installer_profiles import load_profiles
 
 
+def compatible_pairs():
+    """Known-compatible Provides overlaps (packages/compatible.json): a set of frozenset({a, b})."""
+    data = json.loads((Path(__file__).resolve().parents[1]/'packages/compatible.json').read_text())
+    return {frozenset(item[:2]) for item in data['provides']}
+
+
 def records(text):
     """Parse LC_ALL=C pacman paragraphs, including wrapped relationships."""
     result, item, key = [], {}, None
@@ -76,6 +82,15 @@ def satisfies(expression, candidate):
     return False
 
 
+def progress(done, total, message):
+    """One line on stderr; install.sh turns it into a progress event. Silent unless --progress."""
+    if PROGRESS:
+        print(f'{done}\t{total}\t{message}', file=sys.stderr, flush=True)
+
+
+PROGRESS = False
+
+
 class Inspector:
     def __init__(self, profiles, packages):
         self.profiles = profiles
@@ -95,6 +110,7 @@ class Inspector:
         return rc, out
 
     def machine(self):
+        progress(0, 0, 'Comprobando el sistema (distribución, kernel, disco, red, reloj, GPU)…')
         os_info = distro()
         supported = os_info.get('ID') in ('arch', 'endeavouros', 'cachyos') or 'arch' in os_info.get('ID_LIKE', '').split()
         self.add('distro', 'informacion' if supported else 'bloqueante',
@@ -130,13 +146,21 @@ class Inspector:
                  'Disponibilidad de sudo y grupo administrativo; no autentica ni modifica credenciales.',
                  groups or err, 'Los permisos sudo efectivos y la autenticación se validarán al aplicar (I3).')
         rc, out, err = run('lspci', '-k')
-        self.add('gpu', 'informacion' if rc == 0 and 'Kernel driver in use:' in out else 'aviso',
-                 'GPU y módulos del kernel (no instala drivers).', out or err,
-                 'Comprueba el driver en uso y DKMS antes de instalar.')
+        _, virt, _ = run('systemd-detect-virt')
+        virtual = virt not in ('', 'none')
+        driver = rc == 0 and 'Kernel driver in use:' in out
+        self.add('gpu', 'informacion' if driver else 'aviso',
+                 'GPU y módulos del kernel (no instala drivers)' + (f'; máquina virtual ({virt}): es un aviso, no un fallo.' if virtual and not driver else '.'),
+                 '\n'.join(out.splitlines()[:3]) if driver else (err or ('sin GPU identificable' if rc == 0 else 'falta pciutils (lspci)')),
+                 'Hyprland puede ir sin aceleración en una máquina virtual.' if virtual else 'Comprueba el driver en uso y DKMS antes de instalar.')
+        self.add('virtualization', 'informacion', 'Entorno de ejecución (systemd-detect-virt).', virt or 'none')
         rc, out, err = run('systemctl', 'show', 'display-manager.service', '-p', 'Id', '-p', 'ActiveState', '-p', 'FragmentPath')
-        self.add('display-manager', 'informacion' if rc == 0 and 'ActiveState=active' in out else 'aviso',
-                 'Gestor de acceso activo; no se cambia.', out or err,
-                 'Comprueba el gestor de acceso antes de iniciar la sesión Hyprland.' if 'ActiveState=active' not in out else '')
+        dm_active = rc == 0 and 'ActiveState=active' in out
+        self.add('display-manager', 'informacion' if dm_active else 'aviso',
+                 'Gestor de acceso activo; no se cambia.' if dm_active else
+                 'No hay gestor de acceso activo (normal en una instalación sin escritorio): el módulo login instalará SDDM.',
+                 out if dm_active else 'ninguno activo',
+                 '' if dm_active else 'Incluye el módulo login (el instalador lo añade solo si no hay ningún gestor).')
         managers = []
         for name in ('sddm', 'gdm', 'lightdm', 'greetd', 'plasmalogin'):
             if run('systemctl', 'is-enabled', name + '.service')[1] in ('enabled', 'enabled-runtime', 'linked', 'linked-runtime', 'alias'):
@@ -218,20 +242,23 @@ class Inspector:
 
     def metadata(self):
         aur = []
-        for request in self.requested:
+        for number, request in enumerate(self.requested, 1):
+            progress(number, len(self.requested), 'Consultando paquetes: ' + request['name'])
             rc, out, err = run('pacman', '-Si', request['name'])
             parsed = records(out)
             if rc == 0 and parsed:
                 p = package(parsed[0])
                 p['profiles'] = request['profiles']
                 self.planned.append(p)
-                self.add('package:' + request['name'], 'informacion', 'Paquete disponible en los repositorios configurados (prioridad efectiva de pacman).', out)
+                self.add('package:' + request['name'], 'informacion', 'Paquete disponible en los repositorios configurados (prioridad efectiva de pacman).',
+                         f"{p['repository']}/{p['name']} {p['version']}")
             elif request['source'] == 'aur':
                 aur.append(request)
             else:
                 self.add('package:' + request['name'], 'bloqueante', 'Paquete oficial no disponible; no se adivina otro nombre ni se refrescan bases.', out or err,
                          'Revisa el nombre y tus repositorios; actualiza el sistema manualmente y repite --check.')
         if aur:
+            progress(len(self.requested), len(self.requested), f'Consultando {len(aur)} paquetes del AUR…')
             query = urlencode([('v', '5'), ('type', 'info')] + [('arg[]', p['name']) for p in aur])
             rc, out, err = run('curl', '-fsS', '--max-time', '12', 'https://aur.archlinux.org/rpc/?' + query)
             try:
@@ -252,6 +279,7 @@ class Inspector:
                      'profiles': request['profiles']}
                 self.planned.append(p)
                 self.add('package:' + p['name'], 'informacion', 'Metadatos AUR RPC; no se compila ni ejecuta código.', json.dumps(p))
+        progress(0, 0, 'Resolviendo dependencias y proveedores…')
         self.installed_providers()
         self.plan_providers()
         official = [p['name'] for p in self.planned
@@ -262,7 +290,10 @@ class Inspector:
                      'Resolución pacman -Sp --needed (sin instalar); conflictos comprobados además por metadatos.', out + ('\n' + err if err else ''),
                      'Resuelve el error del plan antes de aplicar.' if rc else '')
             planned_names = {p['name'] for p in self.planned}
-            for line in out.splitlines() if rc == 0 else []:
+            lines = out.splitlines() if rc == 0 else []
+            for number, line in enumerate(lines, 1):
+                if number % 25 == 0:
+                    progress(number, len(lines), 'Consultando dependencias de la transacción…')
                 fields = line.split()
                 if len(fields) == 4 and fields[0] not in planned_names:
                     dep_rc, dep_out, dep_err = run('pacman', '-Si', fields[0])
@@ -270,7 +301,10 @@ class Inspector:
                     if dep_rc == 0 and parsed:
                         dependency = package(parsed[0]); dependency['profiles'] = ['dependency']
                         self.planned.append(dependency); planned_names.add(dependency['name'])
-                        self.add('dependency:' + dependency['name'], 'aviso', 'La resolución amplía el plan con una dependencia.', dep_out)
+                        dependency['pulled_by'] = [q['name'] for q in self.planned
+                                                   if any(relation(d)[0] == dependency['name'] for d in q['depends'])][:3]
+                        self.add('dependency:' + dependency['name'], 'informacion', 'La resolución amplía el plan con una dependencia.',
+                                 f"{dependency['repository']}/{dependency['name']} {dependency['version']}")
                     else:
                         self.add('dependency:' + fields[0], 'bloqueante', 'No se pudieron comprobar los metadatos de una dependencia.', dep_err)
         self.installed_providers()
@@ -365,13 +399,15 @@ class Inspector:
                              f"{p['name']} / {other['name']} ({context}): {', '.join(matches)}",
                              'Resuelve la selección antes de aplicar; no se retira ni sustituye nada automáticamente.')
                 overlaps = {relation(r)[0] for r in p['provides']} & {relation(r)[0] for r in other['provides']}
-                if overlaps and context == 'plan' and p['name'] < other['name']:
+                if overlaps and context == 'plan' and p['name'] < other['name'] and \
+                        frozenset((p['name'], other['name'])) not in compatible_pairs():
                     self.add(f"provides:{p['name']}:{other['name']}", 'aviso', 'Dos paquetes del plan proporcionan la misma capacidad.', ', '.join(sorted(overlaps)))
             installed = next((i for i in self.installed if i['name'] == p['name']), None)
             p['installed_version'] = installed['version'] if installed else None
             p['state'] = 'installed' if installed and installed['version'] == p['version'] else 'change' if installed else 'install'
 
     def inspect(self):
+        progress(0, 0, 'Leyendo los paquetes instalados…')
         rc, out, err = run('pacman', '-Qi')
         self.installed = [package(r) for r in records(out)]
         self.add('installed-metadata', 'bloqueante' if rc else 'informacion',
@@ -388,12 +424,53 @@ class Inspector:
                 'packages': self.planned, 'checks': self.checks, 'blocked': blocked}
 
 
+def short(text, lines=2, width=150):
+    """First lines of a piece of evidence, each cut with an ellipsis: raw command output is never dumped."""
+    rows = [row.strip() for row in str(text).splitlines() if row.strip()][:lines]
+    return ' | '.join(row if len(row) <= width else row[:width - 1] + '…' for row in rows)
+
+
+def render_text(result):
+    """Human summary of --check: the JSON stays behind --json; no raw pacman output, no JSON lines."""
+    checks = result['checks']
+    out = ['Preflight SOLO LECTURA · perfiles: ' + ', '.join(result['profiles'])]
+    counts = {}
+    for check in checks:
+        counts[check['level']] = counts.get(check['level'], 0) + 1
+    packages = [p for p in result['packages'] if 'dependency' not in p['profiles']]
+    out.append(f"{len(packages)} paquetes en los perfiles · {len(result['packages']) - len(packages)} dependencias que trae pacman · "
+               f"{counts.get('bloqueante', 0)} bloqueos · {counts.get('aviso', 0)} avisos")
+    for level, title in (('bloqueante', 'BLOQUEOS'), ('aviso', 'AVISOS')):
+        rows = [c for c in checks if c['level'] == level and not c['id'].startswith('aur-build:')]
+        if rows:
+            out.append('')
+            out.append(title)
+        for check in rows:
+            out.append(f"  [{check['id']}] {check['message']}")
+            if check['evidence'] and level == 'bloqueante':
+                out.append('      ' + short(check['evidence']))
+            if check['remedy']:
+                out.append('      Salida: ' + check['remedy'])
+    aur = [json.loads(c['evidence'])['package'] for c in checks if c['id'].startswith('aur-build:')]
+    if aur:
+        out.append('')
+        out.append(f"AUR ({len(aur)}): {', '.join(aur)}")
+        out.append('  Se compilan en esta máquina. Revisa sus PKGBUILD si no los conoces: el RPC no sustituye una revisión del código.')
+    out.append('')
+    out.append('BLOQUEADO: resuelve los bloqueos y repite --check.' if result['blocked']
+               else 'Sin bloqueos detectados; revisa los avisos antes de aplicar.')
+    return '\n'.join(out)
+
+
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument('--profiles', help='Perfiles separados por comas; por defecto los del manifiesto.')
     parser.add_argument('--modules', help='Selección de módulos, incluye core; traduce a perfiles sin aplicar.')
     parser.add_argument('--json', action='store_true')
+    parser.add_argument('--progress', action='store_true', help='Avance por stderr (done<TAB>total<TAB>mensaje).')
     args = parser.parse_args()
+    global PROGRESS
+    PROGRESS = args.progress
     try:
         if args.profiles and args.modules:
             raise ValueError('Usa --profiles o --modules, no ambos.')
@@ -410,14 +487,7 @@ def main():
     if args.json:
         print(json.dumps(result, ensure_ascii=False, indent=2))
     else:
-        print('Preflight SOLO LECTURA · perfiles: ' + ', '.join(profiles))
-        for check in result['checks']:
-            print(f"[{check['level']}] {check['id']}: {check['message']}")
-            if check['evidence']:
-                print(check['evidence'])
-            if check['remedy']:
-                print('Salida: ' + check['remedy'])
-        print('BLOQUEADO: resuelve los bloqueos y repite --check.' if result['blocked'] else 'Sin bloqueos detectados; revisa los avisos antes de aplicar.')
+        print(render_text(result))
     return int(result['blocked'])
 
 

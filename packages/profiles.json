@@ -102,7 +102,11 @@
       "default": "yay"
     },
     "kernel_headers": "/usr/lib/modules/$(uname -r)/pkgbase + -headers",
-    "manual": true,
-    "pacman_file": "base.txt"
+    "manual": false,
+    "pacman_file": "base.txt",
+    "aur_build": {
+      "paru": "paru-bin",
+      "yay": "yay-bin"
+    }
   }
 }

@@ -372,7 +372,7 @@ class Preflight(unittest.TestCase):
         self.repo['extra-dep'] = record('extra-dep', **{'Conflicts With': 'linux-cachyos'})
         data = self.inspect()
         self.assertTrue(data['blocked'])
-        self.assertEqual(self.check(data, 'dependency:extra-dep')['level'], 'aviso')
+        self.assertEqual(self.check(data, 'dependency:extra-dep')['level'], 'informacion')
 
     def test_provider_overlap_warns(self):
         self.repo['docker'] = record('docker', Provides='virtual-api=1')

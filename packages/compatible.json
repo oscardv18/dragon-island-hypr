@@ -1,0 +1,8 @@
+{
+  "schema": 1,
+  "comment": "Pares de paquetes que ofrecen la misma capacidad (Provides) y conviven sin problema. El preflight no avisa de ellos. [paquete, paquete, capacidad compartida]",
+  "provides": [
+    ["xdg-desktop-portal-gtk", "xdg-desktop-portal-hyprland", "xdg-desktop-portal-impl"],
+    ["hyprland", "hyprpm", "wayland-compositor"]
+  ]
+}
