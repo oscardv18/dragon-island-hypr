@@ -97,7 +97,15 @@ has() { grep -qiE "$1" <<<"$2"; }
 graphic_session() { in_hyprland || [[ -n "${WAYLAND_DISPLAY:-}" || -n "${DISPLAY:-}" ]]; }
 SYSFS="${DRAGON_SYSFS:-/sys}"     # tests point it at a fake tree
 
+# shellcheck source=lib/pins.sh
+. "$REPO_DIR/lib/pins.sh"
 echo "Compilación de plugins (hyprpm)"
+pin_msg="$(hyprland_pin_check)"; pin_rc=$?
+case "$pin_rc" in
+    0) good "Versión de Hyprland = fijada ($pin_msg)" ;;
+    1) bad "Versión de Hyprland distinta de la fijada: $pin_msg" "git pull && ./update.sh (el repo puede traer ya la serie nueva); si ya estás al día, los plugins pueden no cargar: alinea Hyprland (sudo pacman -Syu) o revisa packages/pins.json y docs/TESTED-VERSIONS.md" ;;
+    *) warn "Versión de Hyprland: $pin_msg" ;;
+esac
 for p in hyprpm cmake meson ninja cpio pkgconf git gcc; do
     ck "Paquete $p (prerrequisito de hyprpm)" "sudo pacman -S --needed $p" pacman -T "$p"
 done

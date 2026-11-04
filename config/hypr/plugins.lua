@@ -1,6 +1,6 @@
 -- =============================================================================
 -- Hyprland Plugins (hyprfocus; hyprglass lives in glass.lua)
--- Pinned for Hyprland 0.56.x stable via hyprpm
+-- Written for the Hyprland series pinned in packages/pins.json (0.57); doctor.sh and the first-run step compare it with the installed one
 --
 -- No title bars: hyprbars is gone (ajuste de ventanas, migration 037). Windows get the frame of the popovers instead
 -- — a thin top line and four cyan corner brackets drawn by Quickshell (modules/frame/FrameWindow.qml) — plus a 1 px
