@@ -234,6 +234,7 @@ if $DRY_RUN; then LOG=/dev/null
 else PRELOG="$(mktemp "${TMPDIR:-/tmp}/dragon-install.XXXXXX")"; LOG="$PRELOG"; fi
 exec >>"$LOG" 2>&1
 REPORT_ARMED=false
+FINISHED=false
 trap 'echo "✗ Error en ${BASH_SOURCE[0]##*/}:$LINENO (${FUNCNAME[1]:-main}). Revisa el registro en: $LOG" >&3' ERR
 
 # shellcheck disable=SC2329  # called by the EXIT trap
@@ -243,6 +244,11 @@ cleanup() {
     # a run that dies on its own still leaves its report (before the temporary log disappears)
     if $REPORT_ARMED && ! $REPORT_WRITTEN && (( rc != 0 )); then report_write error "El instalador terminó con salida $rc en: ${EV_LAST_STEP:-?}" || true; fi
     tui_close || true
+    # never a silent exit and never a success box: say where it stopped and how to go on
+    if ! $FINISHED && $REPORT_ARMED && (( rc != 0 )); then
+        printf '\n✖ El instalador se detuvo de forma inesperada (salida %s) en: %s\n  Reintenta con ./install.sh: continúa donde lo dejó.%s\n' \
+            "$rc" "${EV_LAST_STEP:-?}" "${REPORT_PATH_SHOWN:+ Informe: $REPORT_PATH_SHOWN}" >&3 2>/dev/null || true
+    fi
     [[ -n "$PRELOG" && -f "$PRELOG" ]] && rm -f "$PRELOG"
     [[ -n "${PLAN_JSON:-}" ]] && rm -f "$PLAN_JSON" "${PLAN_TSV:-}"
     return 0
@@ -281,6 +287,8 @@ engine_confirm() {
 
 # --- helpers --------------------------------------------------------------------------------------
 declare -A RESULT=()
+declare -A PHASE_DONE=()
+FAILED_CHECKS=()
 HARD=0
 BLOCKERS=()
 PLAN_PKGS=()          # name<TAB>state<TAB>detail<TAB>source<TAB>engine
@@ -309,8 +317,10 @@ run_captured() {
 }
 
 # finish <status> <message> <exit-code>: the report is written first so that its path is part of the final message
+FINISHED=false
 finish() {
     local status="$1" message="$2"
+    FINISHED=true
     if ! $DRY_RUN && $REPORT_ARMED; then
         report_write "$status" "$message"
         [[ -n "$REPORT_PATH_SHOWN" ]] && message+=$'\n\n'"Informe: $REPORT_PATH_SHOWN"
@@ -328,7 +338,7 @@ check_result() {
     case "$rc" in
         0) REPORT_CHECKS+=("ok     $label") ;;
         2) REPORT_CHECKS+=("aviso  $label"); ev_warn "$label" ;;
-        *) REPORT_CHECKS+=("fallo  $label"); ev_warn "Requisito previo sin cumplir: $label" ;;
+        *) REPORT_CHECKS+=("fallo  $label"); FAILED_CHECKS+=("$label"); ev_warn "Requisito previo sin cumplir: $label" ;;
     esac
     if (( rc != 0 )); then while IFS= read -r line; do [[ -n "$line" ]] && ev_log "$line"; done <<<"$out"; fi
     return "$rc"
@@ -387,7 +397,9 @@ for id in gpu dm time disk; do
 done
 if $AUTO_LOGIN; then ev_step "Sin gestor de acceso: se añade el módulo login (instala y habilita SDDM)."; fi
 if (( HARD > 0 )) && ! $DRY_RUN; then
-    finish error "Faltan $HARD requisito(s) previos tras la preparación (arriba). Repite ./install.sh o mira ./doctor.sh --pre" 1
+    finish error "Faltan $HARD requisito(s) previos tras la preparación:
+$(printf '  ✘ %s\n' "${FAILED_CHECKS[@]}")
+Corrígelos y repite ./install.sh: continúa donde lo dejó (más detalle: ./doctor.sh --pre)." 1
 fi
 AUR_HELPER="$(aur_helper)"
 if pacman -Qq plasma-desktop >/dev/null 2>&1 || pacman -Qq plasma-workspace >/dev/null 2>&1; then
@@ -479,6 +491,8 @@ for row in "${PLAN_PKGS[@]}"; do
 done
 
 # pkg_failure_cause <log-line-offset> <package>: the first error line the last command wrote, as the cause shown to the user
+# PKG_CAUSE[<package>] holds why a package did not end up installed ("omitido: …" when it was left out on purpose)
+declare -A PKG_CAUSE=()
 pkg_failure_cause() {
     local cause=""
     [[ "$LOG" != /dev/null && -f "$LOG" ]] && cause="$(tail -n +"$(( $1 + 1 ))" "$LOG" | grep -E -i -m1 "(error|failed|fall[óo]|could not|no se pudo|unable|==> ERROR)" | cut -c1-140 || true)"
@@ -492,14 +506,18 @@ install_official() {
     OFFICIAL=()
     [[ -z "$targets" ]] || mapfile -t OFFICIAL <<<"$targets"
     (( ${#OFFICIAL[@]} > 0 )) || { ev_step "Paquetes oficiales: nada que instalar."; return 0; }
+    local p
     if $NO_SUDO; then ev_warn "Sin sudo (--no-sudo): hazlo a mano: sudo pacman -S --needed ${OFFICIAL[*]}"
-        MANUAL_ITEMS+=("Paquetes oficiales: sudo pacman -S --needed ${OFFICIAL[*]}"); return 0; fi
+        MANUAL_ITEMS+=("Paquetes oficiales: sudo pacman -S --needed ${OFFICIAL[*]}")
+        for p in "${OFFICIAL[@]}"; do PKG_CAUSE[$p]="omitido: --no-sudo"; done
+        return 0; fi
     ev_step "[sudo] Instalar ${#OFFICIAL[@]} paquetes oficiales (pacman -S --needed)"
     if $DRY_RUN; then
         ev_log "[dry-run] sudo pacman -S --needed --noconfirm ${OFFICIAL[*]}"
         return 0
     fi
-    local line last="" rc=0 p mark; mark="$(log_lines)"
+    sudo_refresh || { ev_warn "sudo perdió la sesión y no se pudo renovar."; return 1; }
+    local line last="" rc=0 mark; mark="$(log_lines)"
     sudo pacman -S --needed --noconfirm "${OFFICIAL[@]}" 2>&1 | tee -a "$LOG" | while IFS= read -r line; do
         ev_log "$line"
         if [[ "$line" =~ ^\([0-9]+/[0-9]+\)\ (installing|upgrading|reinstalling)\ ([^[:space:]]+) ]]; then
@@ -507,13 +525,7 @@ install_official() {
             last="${BASH_REMATCH[2]}"; ev_pkg "$last" running
         fi
     done || rc=${PIPESTATUS[0]}
-    for p in "${OFFICIAL[@]}"; do
-        if pkg_installed "$p"; then ev_pkg "$p" ok
-        else
-            local cause; cause="$(pkg_failure_cause "$mark" "$p")"
-            ev_pkg "$p" failed "$cause"; REPORT_PROBLEMS+=("$p — $cause"); rc=1
-        fi
-    done
+    (( rc == 0 )) || { PKG_CAUSE[_official]="$(pkg_failure_cause "$mark" pacman)"; }
     return "$rc"
 }
 
@@ -523,39 +535,84 @@ install_aur() {
     AURPKGS=()
     [[ -z "$targets" ]] || mapfile -t AURPKGS <<<"$targets"
     (( ${#AURPKGS[@]} > 0 )) || return 0
+    local p
     if [[ -z "$AUR_HELPER" ]]; then
         ev_warn "Sin yay/paru: instala a mano ${AURPKGS[*]} (ver $PRE_DOC, Paso 3)."
-        MANUAL_ITEMS+=("Paquetes AUR sin ayudante: ${AURPKGS[*]}"); return 1
+        MANUAL_ITEMS+=("Paquetes AUR sin ayudante: ${AURPKGS[*]}")
+        for p in "${AURPKGS[@]}"; do PKG_CAUSE[$p]="no hay ayudante AUR (paru/yay)"; done
+        return 1
+    fi
+    if $NO_SUDO; then
+        for p in "${AURPKGS[@]}"; do PKG_CAUSE[$p]="omitido: --no-sudo"; done
+        MANUAL_ITEMS+=("Paquetes AUR: $AUR_HELPER -S --needed ${AURPKGS[*]}")
+        return 0
     fi
     ev_step "Paquetes AUR con $AUR_HELPER (${#AURPKGS[@]}; compilan en esta máquina y pueden tardar)"
-    local p rc=0 mark
+    local rc=0 mark
     for p in "${AURPKGS[@]}"; do
         if $DRY_RUN; then ev_log "[dry-run] $AUR_HELPER -S --needed --noconfirm $p"; continue; fi
         ev_pkg "$p" running; mark="$(log_lines)"
-        run_streamed "$AUR_HELPER" -S --needed --noconfirm "$p" || true
-        if pkg_installed "$p"; then ev_pkg "$p" ok
-        else
-            local cause; cause="$(pkg_failure_cause "$mark" "$p")"
-            ev_pkg "$p" failed "$cause"; REPORT_PROBLEMS+=("$p — $cause"); rc=1
-        fi
+        # the ticket is renewed first (silent while valid) so the helper does not ask in the middle of a build; if it does, it has the terminal
+        sudo_refresh || true
+        run_tty "$AUR_HELPER" -S --needed --noconfirm "$p" || true
+        if ! pkg_installed "$p"; then PKG_CAUSE[$p]="$(pkg_failure_cause "$mark" "$p")"; rc=1; fi
     done
     return "$rc"
 }
-install_official || RESULT[paquetes]="con avisos"
-install_aur || RESULT[paquetes]="con avisos"
-if (( ${#REPORT_PROBLEMS[@]} > 0 )); then RESULT[paquetes]="${#REPORT_PROBLEMS[@]} con problema"
-elif [[ -z "${RESULT[paquetes]:-}" ]]; then RESULT[paquetes]="ok"; fi
 
+# verify_packages: the count of installed / problem comes from pacman -Q AFTER installing, never from assuming success
+verify_packages() {
+    $DRY_RUN && return 0
+    local row name state source engine p cause
+    local -a want=() missing=()
+    for row in "${PLAN_PKGS[@]}"; do
+        IFS=$'\t' read -r name state _ source engine <<<"$row"
+        [[ "$engine" == 1 && ( "$state" == install || "$state" == aur ) ]] && want+=("$name")
+    done
+    (( ${#want[@]} > 0 )) || return 0
+    local targets
+    if ! targets="$(package_targets "${want[@]}")"; then ev_warn "No se pudo verificar con pacman -T lo instalado."; return 1; fi
+    [[ -z "$targets" ]] || mapfile -t missing <<<"$targets"
+    for p in "${want[@]}"; do
+        if [[ " ${missing[*]} " != *" $p "* ]]; then ev_pkg "$p" ok; continue; fi
+        cause="${PKG_CAUSE[$p]:-${PKG_CAUSE[_official]:-no quedó instalado (ver el registro)}}"
+        if [[ "$cause" == omitido:* ]]; then ev_pkg "$p" skipped "${cause#omitido: }"; PKG_SKIPPED+=("$p — ${cause#omitido: }")
+        else ev_pkg "$p" failed "$cause"; REPORT_PROBLEMS+=("$p — $cause"); fi
+    done
+    return 0
+}
+PKG_SKIPPED=()
+OFFICIAL_RC=0
+install_official || OFFICIAL_RC=$?
+install_aur || true          # AUR failures are recorded per package (PKG_CAUSE) and read by verify_packages
+verify_packages || true
+if (( ${#REPORT_PROBLEMS[@]} > 0 )); then RESULT[paquetes]="fallido (${#REPORT_PROBLEMS[@]} con problema)"
+elif (( ${#PKG_SKIPPED[@]} > 0 )); then RESULT[paquetes]="omitido (${#PKG_SKIPPED[@]}: ver abajo)"
+else RESULT[paquetes]="ok"; fi
+PHASE_DONE[Paquetes]=1
+
+# A failed package phase never leads to the success summary: it stops here, says which step failed and how to retry.
+# Official packages are the system itself; AUR packages (themes, icons, plugins' tools) fail soft: the modules still deploy and the
+# final box says «incompleta» and lists them.
+if (( OFFICIAL_RC != 0 )) || [[ -n "${PKG_CAUSE[_official]:-}" ]]; then
+    progress_set stage prepared
+    finish error "La fase de paquetes falló en: ${EV_LAST_STEP:-instalar paquetes oficiales}.
+Causa: ${PKG_CAUSE[_official]:-pacman terminó con error}
+$(printf '  ✖ %s\n' "${REPORT_PROBLEMS[@]}")
+No se desplegó ningún módulo. Reintenta con ./install.sh: continúa donde lo dejó (no repite la actualización)." 1
+fi
 stop_point packages
 
 # =============================================================================
-# Phase 4 · Despliegue: each module (its packages are already there)
+# Phase 4 · Despliegue: each module (its packages are already there). A failing module never stops the others.
 # =============================================================================
 ev_phase Despliegue
 for m in "${SELECTED[@]}"; do
     ev_step "Módulo: $m — $("${m}_desc")"
-    if run_captured "${m}_apply"; then RESULT[$m]="ok"; else RESULT[$m]="con avisos"; ev_warn "$m terminó con avisos"; fi
+    RESULT[$m]="fallido (no terminó)"
+    if run_captured "${m}_apply"; then RESULT[$m]="ok"; else RESULT[$m]="fallido (${m}_apply salió con error; ver el registro)"; ev_warn "$m falló: ${EV_LAST_STEP:-?}"; fi
 done
+PHASE_DONE[Despliegue]=1
 
 # state read by update.sh / uninstall.sh; a fresh install already contains every migration
 if ! $DRY_RUN; then
@@ -575,27 +632,51 @@ ev_phase Servicios
 for m in "${SELECTED[@]}"; do
     declare -F "${m}_services" >/dev/null || continue
     ev_step "Servicios de $m"
-    run_captured "${m}_services" || ev_warn "$m: servicios con avisos"
+    if ! run_captured "${m}_services"; then
+        ev_warn "$m: servicios con avisos"
+        [[ "${RESULT[$m]}" == ok ]] && RESULT[$m]="con avisos (servicios)"
+    fi
 done
+PHASE_DONE[Servicios]=1
 
 # =============================================================================
-# Phase 6 · Verificación: doctor.sh + the final report with what stays manual
+# Phase 6 · Verificación: doctor.sh decides how the summary reads. «Terminada» only if the doctor is clean.
 # =============================================================================
 ev_phase Verificación
 doctor_rc=0
+MISSING_ITEMS=()
 if $DRY_RUN; then ev_step "Verificación omitida en --dry-run (no hay nada instalado que comprobar)."
 else
     ev_step "doctor.sh: diagnóstico completo"
-    "$REPO_DIR/doctor.sh" --no-ask 2>&1 | ev_stream || doctor_rc=${PIPESTATUS[0]}
-    (( doctor_rc == 0 )) || ev_warn "doctor.sh encontró $doctor_rc problema(s); sigue sus indicaciones."
+    doctor_out="$(mktemp)"
+    "${DRAGON_DOCTOR:-$REPO_DIR/doctor.sh}" --no-ask >"$doctor_out" 2>&1 || doctor_rc=$?   # DRAGON_DOCTOR: test hook
+    ev_stream < "$doctor_out"
+    # every «✘ label» with its «↳ command» becomes a line of the final box
+    while IFS=$'\t' read -r label hint; do
+        MISSING_ITEMS+=("$label${hint:+ → $hint}")
+    done < <(sed -E 's/\x1b\[[0-9;]*m//g' "$doctor_out" | awk '
+        /✘/ { if (lab != "") print lab "\t"; lab = $0; sub(/^[^✘]*✘ */, "", lab); next }
+        /↳/ { if (lab != "") { h = $0; sub(/^[^↳]*↳ */, "", h); print lab "\t" h; lab = "" } next }
+        END { if (lab != "") print lab "\t" }')
+    rm -f "$doctor_out"
+    (( doctor_rc == 0 )) || ev_warn "doctor.sh encontró $doctor_rc problema(s); el resumen los lista con su comando."
 fi
 
+# module results are NEVER blank: ok · con avisos · fallido · omitido (with the reason)
+module_result() { printf '%s' "${RESULT[$1]:-omitido (no se ejecutó: la fase de despliegue no llegó a este módulo)}"; }
 report=()
-for m in "${SELECTED[@]}"; do report+=("• $m: $($DRY_RUN && echo simulado || echo "${RESULT[$m]:-?}")"); done
+for m in "${SELECTED[@]}"; do
+    if $DRY_RUN; then report+=("• $m: simulado"); else report+=("• $m: $(module_result "$m")"); fi
+done
 if $DRY_RUN; then report+=("• paquetes: $n_new por instalar · $n_aur AUR · $n_have ya instalados · $n_bad con conflicto" "")
-else report+=("• paquetes: ${RESULT[paquetes]}" ""); fi
+else report+=("• paquetes: ${RESULT[paquetes]:-omitido (la fase de paquetes no llegó a ejecutarse)}" ""); fi
 # the TUI box already lists each problem with its cause under the package counts; text and JSON sinks need them here
 [[ "$EV_SINK" == tui ]] || for p in "${REPORT_PROBLEMS[@]}"; do report+=("  ✖ $p"); done
+if (( ${#MISSING_ITEMS[@]} > 0 )); then
+    report+=("" "FALTA (según doctor.sh), con su comando:")
+    for item in "${MISSING_ITEMS[@]}"; do report+=("  ✘ $item"); done
+    report+=("Reintenta con ./install.sh (no repite lo ya hecho) o ejecuta los comandos de arriba.")
+fi
 has_module plugins && report+=("• Plugins: si no estabas dentro de Hyprland, se compilan en tu primer inicio de sesión (se abre una terminal).")
 has_module login && report+=("• Login: reinicia para ver el tema (SDDM).")
 if (( ${#MANUAL_ITEMS[@]} > 0 )); then
@@ -614,10 +695,15 @@ report+=("" "Respaldos: $BACKUP_DIR (solo si había algo que reemplazar) · Regi
          "Siguiente paso: cierra sesión → en el login elige «Hyprland»."
          "SUPER+Return terminal · SUPER+Space lanzador · SUPER+D notch · SUPER+L bloquear · SUPER+F1 atajos"
          "Actualizar: ./update.sh · Diagnóstico: ./doctor.sh · Revertir: ./uninstall.sh [--modules a,b]")
-status=ok
-(( doctor_rc > 0 )) && status=warn
-(( ${#REPORT_PROBLEMS[@]} > 0 )) && status=warn
-for m in "${!RESULT[@]}"; do [[ "${RESULT[$m]}" == "con avisos" ]] && status=warn; done
-$DRY_RUN && status=dry-run
-[[ "$status" == dry-run ]] || progress_clear
-finish "$status" "$(printf '%s\n' "${report[@]}")" 0
+
+# status: ok → warn → incomplete. Anything that failed, anything the doctor still misses, any phase that did not run = incomplete.
+status=ok; code=0
+for m in "${SELECTED[@]}"; do [[ "$(module_result "$m")" == ok ]] || status=warn; done
+(( ${#PKG_SKIPPED[@]} > 0 )) && status=warn
+if (( doctor_rc > 0 || ${#REPORT_PROBLEMS[@]} > 0 )) || [[ -z "${PHASE_DONE[Despliegue]:-}" || -z "${PHASE_DONE[Servicios]:-}" ]]; then status=incomplete; fi
+for m in "${SELECTED[@]}"; do [[ "$(module_result "$m")" == fallido* || "$(module_result "$m")" == omitido* ]] && status=incomplete; done
+[[ "$status" == incomplete ]] && code=1
+$DRY_RUN && { status=dry-run; code=0; }
+[[ "$status" == ok || "$status" == warn ]] && progress_clear
+[[ "$status" == incomplete ]] && progress_set stage prepared
+finish "$status" "$(printf '%s\n' "${report[@]}")" "$code"
