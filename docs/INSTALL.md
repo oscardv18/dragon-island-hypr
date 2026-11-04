@@ -156,6 +156,22 @@ pantalla y los servicios en [handoff-instalador-tui.md](handoff-instalador-tui.m
 Sin gestor de acceso activo (CachyOS sin escritorio), el módulo `login` se añade solo: instala y habilita SDDM. `xorg-server` entra en el
 plan porque `sddm` lo exige como dependencia fija; el saludo en Wayland de SDDM no lo evita (sigue declarando esa dependencia), así que no reduce paquetes.
 
+### Qué dice el recuadro final (y el código de salida)
+
+El recuadro sale de **verificar**, no de suponer: los paquetes se comprueban con `pacman` después de instalar y el resultado final lo decide `doctor.sh`.
+
+| Título | Cuándo | Salida |
+|---|---|---|
+| Instalación terminada | todo instalado y el doctor sin fallos | 0 |
+| terminada con avisos | algo se omitió a propósito (p. ej. `--no-sudo`) | 0 |
+| **Instalación INCOMPLETA** | un paquete no quedó instalado, un módulo falló o el doctor aún echa algo en falta; se listan con su comando exacto | 1 |
+| La instalación se detuvo | falló un requisito, el preflight o la fase de paquetes oficiales: indica el paso y cómo reintentar | 1 |
+| Instalación en pausa | hay que reiniciar (kernel nuevo) | 0 |
+
+Cada módulo figura como `ok`, `con avisos`, `fallido` u `omitido (razón)`; nunca en blanco. `./install.sh` de nuevo **continúa donde lo dejó**. Los paquetes AUR que fallen no impiden
+desplegar los módulos (el recuadro queda en «INCOMPLETA»); los oficiales sí detienen la instalación. Mientras corre `paru`, `sudo` o cualquier comando interactivo, la pantalla
+de la TUI se retira y el terminal es del comando; al terminar vuelve con el estado de las fases.
+
 ### El informe `~/dragon-informe.txt`
 
 Se escribe al terminar **o al fallar** (modo 600). Trae: fecha y resultado, la fase y el paso donde se detuvo, versiones (instalador, distro,
