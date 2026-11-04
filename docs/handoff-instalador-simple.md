@@ -82,4 +82,4 @@ Si algo falla, el recuadro rojo «Incompleta» trae el comando de cada punto; re
 
 ## Resultado de la suite completa
 
-Ver el último apartado (se rellena al cerrar).
+`tests/run-all.sh`: **TODO EN VERDE** (una sola pasada completa al cerrar, incluido el bloque `install.sh lineal`, los bloques de la TUI contra `install-tui.sh` y `install.sh --dry-run` sin rastro).
