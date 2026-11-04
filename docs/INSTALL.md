@@ -1,8 +1,25 @@
 # Instalación
 
-> **Un solo comando: `./install.sh`.** Diagnostica, prepara el sistema, te enseña el plan, instala, verifica y escribe
-> `~/dragon-informe.txt`. [`pre-instalation.md`](../pre-instalation.md) explica cada comprobación; las opciones de este
-> documento son **avanzadas**: no hacen falta para instalar.
+> **Un solo comando: `./install.sh`.** Instalador lineal: escanea, instala lo que falta (una llamada a `sudo pacman`, luego `paru`),
+> despliega, levanta servicios, configura SDDM y el llavero y verifica con `doctor.sh`. Las opciones de este documento son **avanzadas**.
+> [`pre-instalation.md`](../pre-instalation.md) explica cada comprobación.
+
+### Las siete fases
+
+| Fase | Qué hace |
+|---|---|
+| (antes) | `sudo -v` una sola vez, con mantenimiento en segundo plano que se cierra al terminar; escaneo con `pacman -T` y aviso del preflight |
+| 1/7 Paquetes oficiales | `sudo pacman -Syu --needed --noconfirm <faltantes>` en UNA llamada (`--no-update` usa `-S`). Si falla: valida los nombres con `pacman -Si`, repite sin los inexistentes y, si hace falta, instala uno a uno |
+| 2/7 Paquetes AUR | `paru -S --needed --noconfirm` (o `yay`); un fallo se anota y sigue. Sin ayudante AUR lo dice y lista el comando exacto |
+| 3/7 Despliegue | enlaces y configuración de cada módulo, `backup_copy` de lo existente, bloque marcado en `~/.zshrc` |
+| 4/7 Servicios y SDDM | `systemctl enable --now` de los servicios del sistema y de usuario; SDDM se **habilita** (no se arranca: cortaría tu sesión) y su tema |
+| 5/7 Llavero y grupos | PAM de gnome-keyring (diff visible, copia `.bak-dragon`), grupo docker (confirmación explícita) |
+| 6/7 Arranque | tema de GRUB/Limine: opt-in con su propia pregunta (`--modules boot`) |
+| 7/7 Verificación | `doctor.sh`: el recuadro final sale de ahí |
+
+Salida: **0** si todo está en orden (con o sin avisos); **1** si algo esencial falla (paquete que no se instaló, módulo fallido, algo que `doctor.sh`
+marca). `--dry-run` no escribe, no pide sudo y termina con «Simulación (dry-run)», nunca con «completa». Sin terminal o con `NO_COLOR` la salida es
+texto plano con cajas ASCII. `--tui` abre la interfaz anterior de pantalla alterna (`install-tui.sh`).
 
 ## Resumen
 

@@ -37,10 +37,13 @@ cd ~/dragon-island-hypr
 ./install.sh
 ```
 
-Un solo comando hace todo el ciclo: diagnostica la máquina, instala lo que falte (tras **una** confirmación y con **una** contraseña de sudo),
-actualiza el sistema, te enseña el plan completo (paquetes, tamaño, pasos con sudo y cada incidencia explicada), instala con **una**
-confirmación («Instalar todo»), verifica y escribe **`~/dragon-informe.txt`**. Si la actualización cambia el kernel, te pide reiniciar
-y al volver a ejecutar `./install.sh` continúa donde lo dejó. [`pre-instalation.md`](pre-instalation.md) explica el detalle de cada comprobación.
+Un solo comando hace todo el ciclo, en línea recta y con la salida real de pacman y paru a la vista: escribes tu clave de administrador **una vez**; el
+instalador escanea qué falta (`faltan N paquetes: …`), instala los oficiales con **una** llamada a `sudo pacman` y los AUR con `paru` (o `yay`),
+despliega las configuraciones, levanta los servicios (NetworkManager, bluetooth, power-profiles-daemon, docker, pipewire…), configura SDDM y su
+tema, desbloquea el llavero en el login y lo comprueba todo con `doctor.sh`. El resumen final sale de esas comprobaciones: **«Instalación completa»**
+(verde) solo si `doctor.sh` pasa; si no, **«Incompleta»** (rojo) con el comando exacto para arreglar cada punto y salida distinta de 0. Todo queda en
+`~/dragon-install.log` y, al terminar, en **`~/dragon-informe.txt`** (con el paso que falló y la cola del registro). Repetirlo no rompe nada ni reinstala
+lo ya hecho. La interfaz de pantalla alterna anterior sigue disponible con `./install.sh --tui`. [`pre-instalation.md`](pre-instalation.md) explica el detalle de cada comprobación.
 
 `./doctor.sh` suelto solo diagnostica y termina con «¿Instalar ahora? [S/n]».
 
