@@ -4,6 +4,8 @@
 > despliega, levanta servicios, configura SDDM y el llavero y verifica con `doctor.sh`. Las opciones de este documento son **avanzadas**.
 > [`pre-instalation.md`](../pre-instalation.md) explica cada comprobación.
 
+¿Pruebas en una máquina virtual? Lee [VIRTUALBOX.md](VIRTUALBOX.md) (atajos con SUPER, terminal sin atajos).
+
 ### Las siete fases
 
 | Fase | Qué hace |
