@@ -68,4 +68,4 @@ Ninguna: todo son scripts que se ejecutan desde el repositorio. `docs/HANDOFF.md
 
 ## Resultado de la suite completa
 
-(se completa al cerrar)
+`tests/run-all.sh`: **TODO EN VERDE** en la segunda pasada. La primera encontró un fallo real mío (la simulación llamaba a `qs`, que crea su directorio de ejecución; corregido: en `--dry-run` no se consulta a Quickshell) y un fallo intermitente ajeno (`tests/fase5c`, `TodayUsage`, servicio de tokens con Quickshell real) que pasa al repetirlo sin cambios.
