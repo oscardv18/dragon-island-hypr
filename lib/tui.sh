@@ -58,7 +58,8 @@ tui_size() {   # sets TUI_W_TERM, TUI_H_TERM
     local r="" c=""
     if [[ -n "${TUI_COLS:-}" ]]; then c="$TUI_COLS"; r="${TUI_ROWS:-24}"
     else
-        read -r r c < <(stty size </dev/tty 2>/dev/null) || true
+        local size; size="$(stty size </dev/tty 2>/dev/null || true)"   # no ERR-trap noise from a subshell when there is no terminal
+        read -r r c <<<"$size" || true
         [[ "$c" =~ ^[0-9]+$ ]] || c="$(tput cols 2>/dev/null || true)"
         [[ "$r" =~ ^[0-9]+$ ]] || r="$(tput lines 2>/dev/null || true)"
     fi
@@ -215,6 +216,7 @@ tui_icon() {   # tui_icon <state> → coloured icon (1 column)
         aur)       printf '%s◆%s' "${C_violet}" "${C_reset}" ;;
         conflict|failed) printf '%s✖%s' "${C_red}" "${C_reset}" ;;
         running)   printf '%s…%s' "${C_amber}" "${C_reset}" ;;
+        skipped)   printf '%s–%s' "${C_dim}" "${C_reset}" ;;
         ok)        printf '%s✔%s' "${C_green}" "${C_reset}" ;;
         *)         printf '·' ;;
     esac
@@ -223,7 +225,7 @@ tui_icon() {   # tui_icon <state> → coloured icon (1 column)
 tui_state_label() {
     case "$1" in
         installed) echo "instalado" ;; install) echo "a instalar" ;; aur) echo "AUR" ;;
-        conflict) echo "conflicto" ;; running) echo "instalando" ;; ok) echo "listo" ;; failed) echo "falló" ;;
+        conflict) echo "conflicto" ;; running) echo "instalando" ;; ok) echo "listo" ;; failed) echo "falló" ;; skipped) echo "omitido" ;;
         *) echo "$1" ;;
     esac
 }
@@ -353,12 +355,13 @@ tui_box() {
 # tui_finish <status> <message>: leave the live frame and print the framed summary on the normal screen
 tui_finish() {
     local status="$1" msg="$2" colour=green title n s
-    case "$status" in warn|pause) colour=amber ;; error) colour=red ;; esac
+    case "$status" in warn|pause) colour=amber ;; error|incomplete) colour=red ;; esac
     tui_close
     local -a lines=()
     case "$status" in
         dry-run) title="Simulación terminada (dry-run): no se cambió nada" ;;
         error)   title="La instalación se detuvo" ;;
+        incomplete) title="Instalación INCOMPLETA: faltan cosas (abajo, con su comando)" ;;
         pause)   title="Instalación en pausa: hace falta reiniciar" ;;
         warn)    title="Instalación terminada con avisos" ;;
         *)       title="Instalación terminada" ;;
@@ -366,18 +369,21 @@ tui_finish() {
     lines+=("$title" "")
     tui_counts
     # one honest line: what was already there, what is new (or would be), what was left out, what really failed
-    local c_inst=0 c_new=0 c_fail=0 c_skip=0 problems=()
+    local c_inst=0 c_new=0 c_fail=0 c_skip=0 c_open=0 problems=()
     for n in "${TUI_PKGS[@]}"; do
         s="${TUI_PKG_STATE[$n]}"
         case "$s" in
             installed) c_inst=$((c_inst + 1)) ;;
-            ok|install|aur|running) c_new=$((c_new + 1)) ;;
+            ok) c_new=$((c_new + 1)) ;;
+            skipped) c_skip=$((c_skip + 1)); problems+=("$n: omitido — ${TUI_PKG_DETAIL[$n]:-sin detalle}") ;;
+            install|aur|running) if [[ "$status" == dry-run ]]; then c_new=$((c_new + 1)); else c_open=$((c_open + 1)); fi ;;
             failed|conflict) c_fail=$((c_fail + 1)); problems+=("$n: ${TUI_PKG_DETAIL[$n]:-sin detalle (ver el informe)}") ;;
         esac
     done
     local verb="instalados"; [[ "$status" == dry-run ]] && verb="por instalar"
     if (( TUI_N_TOTAL > 0 )); then
-        lines+=("Paquetes: $c_inst ya estaban · $c_new $verb · $c_fail con problema")
+        local extra=""; (( c_skip > 0 )) && extra+=" · $c_skip omitidos"; (( c_open > 0 )) && extra+=" · $c_open sin completar"
+        lines+=("Paquetes: $c_inst ya estaban · $c_new $verb · $c_fail con problema$extra")
         for n in "${problems[@]}"; do lines+=("  ✖ $n"); done
         lines+=("")
     fi

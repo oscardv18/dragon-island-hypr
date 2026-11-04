@@ -39,12 +39,14 @@ start_real_log() {
 }
 
 # sudo_start: ONE password for the whole run (sudo -v + keep-alive). Returns 1 when it cannot be had.
+# The keep-alive MUST see the real terminal: sudo keeps one timestamp per tty, and a background loop whose stdin is /dev/null renews
+# a different (tty-less) ticket. The user's own ticket then expired during a long AUR build and paru asked for the password again.
 SUDO_KEEPALIVE="${SUDO_KEEPALIVE:-}"
 sudo_start() {
     $DRY_RUN && return 0
     $NO_SUDO && return 1
-    [[ -n "$SUDO_KEEPALIVE" ]] && return 0
-    if ! sudo -n true 2>/dev/null; then       # passwordless or already authenticated: nothing to ask
+    [[ -n "$SUDO_KEEPALIVE" ]] && kill -0 "$SUDO_KEEPALIVE" 2>/dev/null && return 0
+    if ! sudo -n -v 2>/dev/null; then       # passwordless or already authenticated: nothing to ask
         have_tty || { ev_warn "sudo pide contraseña y no hay terminal donde escribirla."; return 1; }
         tui_suspend
         # shellcheck disable=SC2024  # the password prompt must use the real terminal
@@ -52,8 +54,35 @@ sudo_start() {
         tui_resume
     fi
     # detached from every pipe (>/dev/null): a captured stdout must not wait for the sleep after the installer ends
-    ( while true; do sudo -n true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done ) >/dev/null 2>&1 &
+    # shellcheck disable=SC2024  # the redirect is on purpose: it gives sudo the terminal whose ticket must be renewed
+    if have_tty; then
+        ( while true; do sudo -n -v </dev/tty >/dev/null 2>&1 || true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done ) >/dev/null 2>&1 &
+    else
+        ( while true; do sudo -n -v >/dev/null 2>&1 || true; sleep 50; kill -0 "$$" 2>/dev/null || exit; done ) >/dev/null 2>&1 &
+    fi
     SUDO_KEEPALIVE=$!
+}
+
+# sudo_refresh: before a long or interactive step. Silent while the ticket is valid; asks again (once) only if it was lost.
+sudo_refresh() {
+    $DRY_RUN && return 0
+    $NO_SUDO && return 0
+    # shellcheck disable=SC2024  # same: sudo's ticket is per terminal
+    if have_tty; then sudo -n -v </dev/tty 2>/dev/null && return 0; else sudo -n -v 2>/dev/null && return 0; fi
+    SUDO_KEEPALIVE=""
+    sudo_start
+}
+
+# run_tty <command>...: gives the terminal to a command that may ask something (paru, a build, sudo). The TUI leaves the alternate
+# screen, the command talks to the real terminal (its output is also kept in the log) and the TUI comes back with its state intact.
+run_tty() {
+    local rc=0
+    if $DRY_RUN || [[ "$EV_SINK" == json ]] || ! have_tty; then run_streamed "$@"; return; fi
+    tui_suspend
+    printf '\n» %s\n' "$*" >/dev/tty
+    "$@" </dev/tty 2>&1 | tee -a "$LOG" >/dev/tty || rc=${PIPESTATUS[0]}
+    tui_resume
+    return "$rc"
 }
 
 # build_aur_helper <aur-package>: git clone + makepkg as the user (never root); sudo is only used by makepkg for pacman
