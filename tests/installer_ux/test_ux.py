@@ -208,7 +208,7 @@ class Report(UX):
         self.env['DRAGON_API_TOKEN'] = 'tok-123456789-SECRET'
         self.env['SUPER_SECRET_ENV'] = 'hunter3-env'
         result = self.run_install('--yes', '--plain', '--modules', 'core', stop='packages')
-        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+        self.assertEqual(result.returncode, 1, result.stdout + result.stderr)       # a failed package phase stops the run (UX2)
         report = self.home/'dragon-informe.txt'
         self.assertTrue(report.exists(), 'no escribió el informe')
         self.assertEqual(report.stat().st_mode & 0o777, 0o600)

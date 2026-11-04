@@ -95,6 +95,16 @@ def stateful(command, args):
         return False
     if command in ('paru', 'yay'):
         names = [a for a in args if not a.startswith('-')]
+        mode = os.environ.get('FAKE_PARU_MODE', '')
+        if mode == 'tty':        # asks for the sudo password on the terminal, like sudo/paru do
+            with open('/dev/tty', 'w') as out:
+                out.write('[sudo] contraseña: ')
+            with open('/dev/tty') as tty:
+                tty.readline()
+        if mode == 'noop':       # exits 0 but installs nothing: success must not be assumed
+            sys.exit(0)
+        if mode == 'fail':
+            print('error: no se pudo compilar ' + (names[0] if names else '?')); sys.exit(1)
         maybe_fail(names)
         state_install(names); return True
     if command == 'git' and args[:1] == ['clone']:
@@ -102,7 +112,7 @@ def stateful(command, args):
     if command == 'makepkg':
         state_install(['paru-bin', 'paru'])
         link = Path(os.environ['FAKE_BIN']) / 'paru'
-        if not link.exists():
+        if not link.exists() and not os.environ.get('FAKE_MAKEPKG_NOHELPER'):
             link.symlink_to(Path(os.environ['FAKE_BIN']) / 'fixture')
         return True
     return False
@@ -185,7 +195,12 @@ elif command == 'getent':
     print('user:x:1000:1000::/home/user:/usr/bin/zsh')
 elif command == 'id':
     print('user wheel' if args == ['-nG'] else '1000')
-elif command in ('sudo', 'paru', 'yay', 'chsh', 'hyprctl', 'hyprpm', 'qs', 'snapper', 'timeshift'):
+elif command == 'qs':
+    if args[:1] == ['list']:
+        if os.environ.get('FAKE_QS_RUNNING'):
+            print('Instance 1')
+    sys.exit(0)
+elif command in ('sudo', 'paru', 'yay', 'chsh', 'hyprctl', 'hyprpm', 'snapper', 'timeshift'):
     sys.exit(99)
 elif command == 'gsettings':
     if not args or args[0] != 'get':
