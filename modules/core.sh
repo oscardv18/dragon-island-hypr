@@ -114,9 +114,10 @@ core_apply() {
 # a shell that is already running with the previous configuration is restarted so it loads the new one.
 core_quickshell_reload() {
     if ! in_hyprland; then log_info "Quickshell no se arranca fuera de Hyprland: se inicia solo al entrar en la sesión (cierra sesión y elige Hyprland)."; return 0; fi
+    # a simulation must not even ask the running shell (qs creates its runtime directory)
+    if $DRY_RUN; then echo "[dry-run] si Quickshell ya corre: qs kill; qs -d"; return 0; fi
     command -v qs >/dev/null 2>&1 || return 0
     [[ -n "$(qs list 2>/dev/null)" ]] || { log_info "Quickshell no está en marcha: Hyprland lo arrancará."; return 0; }
-    if $DRY_RUN; then echo "[dry-run] qs kill; qs -d"; return 0; fi
     log_info "Quickshell ya estaba en marcha: se reinicia con la configuración nueva."
     qs kill || true
     sleep 1
