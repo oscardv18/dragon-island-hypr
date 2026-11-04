@@ -194,6 +194,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_simple 
 step "rc1: plugins.lua sin errores, primer arranque con avisos, doctor (bluetooth, llavero, plugins) y boot con vista previa (hyprctl, hyprpm y /sys simulados)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_rc1 -v; then pass "rc1"; else fail "rc1"; fi
 
+step "rc2: sintaxis de hyprctl de Hyprland 0.57 (Lua), versión fijada de Hyprland, KWallet con confirmación y modificador de pruebas (hyprctl y hyprpm simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_rc2 -v; then pass "rc2"; else fail "rc2"; fi
+
 step "respaldo y restauración: base SQLite viva, dry-run, listas sin copiar (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v; then pass "backup-dragon / restore-dragon"; else fail "backup-dragon / restore-dragon"; fi
 

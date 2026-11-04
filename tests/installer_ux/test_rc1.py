@@ -47,14 +47,14 @@ class FirstRun(unittest.TestCase):
         self.log = self.tmp/'calls.log'
         for name in ('hyprctl', 'hyprpm', 'notify-send'):
             script(self.bin/name, f'#!/bin/sh\necho "{name} $*" >> "{self.log}"\n'
-                   + {'hyprctl': 'case "$1 $2" in "plugin list") cat "$FAKE_LOADED" 2>/dev/null;; esac\n',
+                   + {'hyprctl': 'case "$1 $2" in "plugin list") cat "$FAKE_LOADED" 2>/dev/null;; "version -j") echo "{\\"tag\\":\\"$FAKE_TAG\\"}";; esac\n',
                       'hyprpm': '[ "$1" = update ] && [ -n "$FAKE_UPDATE_FAILS" ] && exit 1\n[ "$1" = list ] && echo "hyprland-plugins HyprGlass"\n',
                       'notify-send': ''}[name] + 'exit 0\n')
         self.loaded = self.tmp/'loaded'
         self.loaded.write_text('plugin hyprfocus\nplugin hyprglass\n  Version: 0.9.1\n')
         self.state = self.tmp/'state'
         self.env = dict(os.environ, PATH=f'{self.bin}:{os.environ["PATH"]}', XDG_STATE_HOME=str(self.state), HOME=str(self.tmp),
-                        HYPRLAND_INSTANCE_SIGNATURE='fake', FAKE_LOADED=str(self.loaded), FAKE_UPDATE_FAILS='')
+                        HYPRLAND_INSTANCE_SIGNATURE='fake', FAKE_LOADED=str(self.loaded), FAKE_UPDATE_FAILS='', FAKE_TAG='v0.57.0')
         (self.state/'dragon-island').mkdir(parents=True)
         (self.state/'dragon-island/plugins.pending').touch()
 
@@ -87,6 +87,20 @@ class FirstRun(unittest.TestCase):
         self.assertNotIn('Plugins listos', text)
         self.assertTrue((self.state/'dragon-island/plugins.pending').exists())
 
+    def test_other_hyprland_series_stops_before_compiling(self):
+        r = self.run_script(FAKE_TAG='v0.56.2')
+        self.assertNotEqual(r.returncode, 0)
+        self.assertIn('no es la fijada', r.stderr)
+        self.assertIn('git pull', r.stderr)
+        self.assertNotIn('hyprpm update', self.log.read_text())
+        self.assertIn('Plugins con error', ' | '.join(self.notifications()))
+        self.assertTrue((self.state/'dragon-island/plugins.pending').exists())
+
+    def test_pinned_series_compiles(self):
+        r = self.run_script(FAKE_TAG='v0.57.3')
+        self.assertEqual(r.returncode, 0, r.stdout + r.stderr)
+        self.assertIn('hyprpm update', self.log.read_text())
+
     def test_plugin_not_loaded_is_an_error(self):
         self.loaded.write_text('plugin hyprfocus\n')
         r = self.run_script()
@@ -100,11 +114,11 @@ class Doctor(unittest.TestCase):
         self.sys = self.tmp/'sys'; (self.sys/'class/bluetooth').mkdir(parents=True)
         (self.tmp/'state/dragon-island').mkdir(parents=True); (self.tmp/'state/dragon-island/modules').write_text('core\n')
         self.bin = self.tmp/'bin'; self.bin.mkdir()
-        script(self.bin/'hyprctl', '#!/bin/sh\ncase "$1" in configerrors) [ -n "$FAKE_CFGERR" ] && echo "$FAKE_CFGERR";; plugin) cat "$FAKE_LOADED";; esac\nexit 0\n')
+        script(self.bin/'hyprctl', '#!/bin/sh\ncase "$1" in configerrors) [ -n "$FAKE_CFGERR" ] && echo "$FAKE_CFGERR";; plugin) cat "$FAKE_LOADED";; version) echo "{\\"tag\\":\\"$FAKE_TAG\\"}";; esac\nexit 0\n')
         script(self.bin/'systemctl', '#!/bin/sh\nexit 1\n')
         self.loaded = self.tmp/'loaded'; self.loaded.write_text('plugin hyprfocus\nplugin hyprglass\n')
         self.env = dict(os.environ, HOME=str(self.tmp), XDG_STATE_HOME=str(self.tmp/'state'), XDG_CONFIG_HOME=str(self.tmp/'cfg'),
-                        DRAGON_SYSFS=str(self.sys), PATH=f'{self.bin}:{os.environ["PATH"]}', FAKE_LOADED=str(self.loaded), FAKE_CFGERR='')
+                        DRAGON_SYSFS=str(self.sys), PATH=f'{self.bin}:{os.environ["PATH"]}', FAKE_LOADED=str(self.loaded), FAKE_CFGERR='', FAKE_TAG='v0.57.0')
         for k in ('WAYLAND_DISPLAY', 'DISPLAY', 'HYPRLAND_INSTANCE_SIGNATURE'):
             self.env.pop(k, None)
 
@@ -136,6 +150,12 @@ class Doctor(unittest.TestCase):
         self.loaded.write_text('')
         gone = self.doctor(**env)
         self.assertIn('✘', gone.split('Plugin hyprfocus cargado')[0].rsplit('\n', 1)[-1])
+
+    def test_pinned_hyprland_version_is_compared(self):
+        self.assertIn('Versión de Hyprland = fijada', self.doctor())
+        bad = self.doctor(FAKE_TAG='v0.56.2')
+        self.assertIn('Versión de Hyprland distinta de la fijada', bad)
+        self.assertIn('git pull && ./update.sh', bad)
 
     def test_hyprpm_prerequisites_are_checked(self):
         out = self.doctor()
@@ -170,7 +190,7 @@ def run_pty(args_script, env, answers):
 class BootMinimalUI(Module):
     def pty(self, code, answers):
         env = dict(os.environ, HOME=str(self.home), REPO_DIR=str(ROOT), BOOT_SUDO='', BOOT_ESP=str(self.esp), BOOT_SYSTEM_DIR=str(self.system),
-                   BOOT_HOOK_DIR=str(self.hooks), BOOT_ROOT=str(self.tmp/'noroot'), PYTHONDONTWRITEBYTECODE='1', PATH=self.env['PATH'], TERM='xterm')
+                   BOOT_HOOK_DIR=str(self.hooks), BOOT_ROOT=str(self.tmp/'noroot'), PYTHONDONTWRITEBYTECODE='1', PATH=self.env['PATH'], TERM='xterm', DRAGON_NO_GUM='1')
         env.pop('DRAGON_BOOT_ASSUME_YES', None)
         text = f'''set -Eeuo pipefail
 REPO_DIR="{ROOT}"; DRY_RUN=false; ASSUME_YES=true; NO_SUDO=false; LINK_MODE=symlink
