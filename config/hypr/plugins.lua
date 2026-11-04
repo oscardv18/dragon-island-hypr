@@ -7,17 +7,22 @@
 -- native border (look.lua). Close / maximize / float / minimize are SUPER + Q / F / SHIFT + Space / M.
 -- =============================================================================
 
-hl.config({
-    plugin = {
-        hyprfocus = {
-            -- none: "shrink" also fired on every workspace switch (focus moves to that workspace's window), so the
-            -- windows shrank and grew back each time
-            keyboard_focus_animation = "none",
-            mouse_focus_animation    = "none",
-            shrink_percentage        = 0.97,
+-- The plugin.* keys exist only while the plugin is loaded: set before that, Hyprland prints «unknown config key» in red at the
+-- first login. Without the plugins (not built yet, or a failed build) nothing is set and nothing is reported; the first-run
+-- step (autostart.lua → plugins-foreground.sh) loads them and reloads, and this block then applies.
+if hl.plugin and hl.plugin.hyprfocus then
+    hl.config({
+        plugin = {
+            hyprfocus = {
+                -- none: "shrink" also fired on every workspace switch (focus moves to that workspace's window), so the
+                -- windows shrank and grew back each time
+                keyboard_focus_animation = "none",
+                mouse_focus_animation    = "none",
+                shrink_percentage        = 0.97,
+            },
         },
-    },
-})
+    })
+end
 
 -- Safety net for an install where hyprbars is still enabled in hyprpm (disabling it needs the password, migration
 -- 037 asks): while it is loaded, no window gets its bar. Nothing else of hyprbars is configured any more.
