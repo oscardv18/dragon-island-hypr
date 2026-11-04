@@ -341,6 +341,11 @@ ensure_pacman() {
     targets="$(package_targets "$@")" || return 1
     [[ -z "$targets" ]] || mapfile -t missing <<<"$targets"
     if [[ ${#missing[@]} -eq 0 ]]; then log_info "Paquetes oficiales: todo instalado ($#)."; return 0; fi
+    # install.sh installs every package in its own phases: a module does not try again (and does not ask again)
+    if [[ "${DRAGON_PKGS_DONE:-}" == 1 ]]; then
+        if $DRY_RUN; then log_info "Paquetes oficiales por instalar en la fase de paquetes: ${missing[*]}"; return 0; fi
+        log_warn "Paquetes oficiales pendientes (ya se intentó en la fase de paquetes): ${missing[*]}"; return 1
+    fi
     confirm_sudo "Instalar ${#missing[@]} paquetes oficiales: ${missing[*]}" pacman -S --needed --noconfirm "${missing[@]}"
 }
 
@@ -350,6 +355,10 @@ ensure_aur() {
     targets="$(package_targets "$@")" || return 1
     [[ -z "$targets" ]] || mapfile -t missing <<<"$targets"
     if [[ ${#missing[@]} -eq 0 ]]; then log_info "Paquetes AUR: todo instalado ($#)."; return 0; fi
+    if [[ "${DRAGON_PKGS_DONE:-}" == 1 ]]; then
+        if $DRY_RUN; then log_info "Paquetes AUR por instalar en la fase de paquetes: ${missing[*]}"; return 0; fi
+        log_warn "Paquetes AUR pendientes (ya se intentó en la fase de paquetes): ${missing[*]}"; return 1
+    fi
     if [[ -z "$AUR_HELPER" ]]; then
         log_warn "Sin yay/paru: instala a mano ${missing[*]} (ver $PRE_DOC, Paso 3)."
         return 1

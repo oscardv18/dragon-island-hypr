@@ -41,6 +41,7 @@ report_write() {
         echo "Fecha:        $(date '+%Y-%m-%d %H:%M:%S %z')"
         echo "Resultado:    $status"
         echo "Fase / paso:  ${EV_LAST_PHASE:-—} / ${EV_LAST_STEP:-—}"
+        echo "Salida:       ${REPORT_EXIT:-?}"
         echo
         echo "== Versiones =="
         echo "Instalador:   ${TUI_VERSION:-?}${commit:+ ($commit)}"

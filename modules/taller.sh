@@ -34,9 +34,17 @@ docker_group_consent() {
         confirm_default_no "¿Añadir a $USER al grupo docker?"
 }
 
-taller_services() {
+taller_services() { taller_docker_service; taller_group; }
+
+taller_docker_service() {
     if ! pkg_installed docker && ! $DRY_RUN; then log_warn "docker no está instalado: se omite el servicio."; return 0; fi
-    confirm_sudo "Habilitar y arrancar docker.service (daemon de contenedores)" systemctl enable --now docker.service || true
+    if systemctl is-enabled --quiet docker.service 2>/dev/null; then log_info "Servicio docker ya habilitado."
+    else confirm_sudo "Habilitar y arrancar docker.service (daemon de contenedores)" systemctl enable --now docker.service || true; fi
+    return 0
+}
+
+taller_group() {
+    if ! pkg_installed docker && ! $DRY_RUN; then return 0; fi
     if taller_in_group "$USER" docker; then
         log_info "$USER ya está en el grupo docker."
     elif docker_group_consent; then
