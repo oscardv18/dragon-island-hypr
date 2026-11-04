@@ -80,14 +80,33 @@ keyring_services() {
         log_warn "kwallet-pam también desbloquea su cartera al iniciar sesión y compite con gnome-keyring."
         MANUAL_ITEMS+=("kwallet-pam compite con gnome-keyring por el desbloqueo al login: decide cuál conservar (sudo pacman -Rns kwallet-pam si te quedas con gnome-keyring)")
     fi
-    if pkg_installed kwallet; then
-        local kw; kw="$(kreadconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled 2>/dev/null || true)"
-        if [[ "$kw" != "false" ]]; then
-            log_warn "KWallet también ofrece el servicio de secretos y compite con gnome-keyring."
-            MANUAL_ITEMS+=("KWallet compite por org.freedesktop.secrets: kwriteconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled false")
-        fi
-    fi
+    keyring_kwallet_offer
     return 0
+}
+
+# KWallet (Plasma) also offers org.freedesktop.secrets and, activated by D-Bus, can win over gnome-keyring. We WARN and offer — with an
+# explicit yes — to switch off only its Secret Service API (kwalletrc, backup first). KWallet and Plasma stay installed.
+keyring_kwallet_offer() {
+    local rc="${XDG_CONFIG_HOME:-$HOME/.config}/kwalletrc" api=""
+    pkg_installed kwallet || pkg_installed kwallet-pam || return 0
+    log_warn "KWallet está presente y también ofrece el servicio de secretos (org.freedesktop.secrets): puede competir con gnome-keyring."
+    command -v kreadconfig6 >/dev/null 2>&1 && api="$(kreadconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled 2>/dev/null || true)"
+    if [[ "$api" == false ]]; then log_info "KWallet ya tiene desactivado su servicio de secretos (apiEnabled=false)."; return 0; fi
+    local cmd="kwriteconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled false"
+    if ! command -v kwriteconfig6 >/dev/null 2>&1; then
+        MANUAL_ITEMS+=("KWallet compite por org.freedesktop.secrets: instala kwriteconfig6 (paquete kconfig) y ejecuta  $cmd")
+        return 0
+    fi
+    if $DRY_RUN; then echo "[dry-run] respaldo de $rc y $cmd"; return 0; fi
+    if confirm_default_no "¿Desactivar el servicio de secretos de KWallet (solo eso: ni Plasma ni KWallet se desinstalan) para que gane gnome-keyring?"; then
+        backup_copy "$rc"
+        if $cmd; then
+            log_info "KWallet ya no ofrece org.freedesktop.secrets. Para volver: kwriteconfig6 --file kwalletrc --group org.freedesktop.secrets --key apiEnabled true"
+            need_relogin "KWallet: cierra sesión para que gnome-keyring sea el único servicio de secretos"
+        else MANUAL_ITEMS+=("KWallet compite por org.freedesktop.secrets: $cmd"); fi
+    else
+        MANUAL_ITEMS+=("KWallet compite por org.freedesktop.secrets: $cmd")
+    fi
 }
 
 keyring_revert() {

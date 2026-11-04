@@ -45,7 +45,7 @@ run_streamed() {
     return "$rc"
 }
 
-has_gum() { command -v gum >/dev/null 2>&1; }
+has_gum() { [[ -z "${DRAGON_NO_GUM:-}" ]] && command -v gum >/dev/null 2>&1; }   # DRAGON_NO_GUM=1: plain [S/n] prompts (tests, minimal terminals)
 
 log_info() { if [[ -n "$EV_ENGINE" ]]; then ev_step "$1"; elif has_gum; then gum log --level info "$1"; else echo ":: $1"; fi; }
 log_warn() { if [[ -n "$EV_ENGINE" ]]; then ev_warn "$1"; elif has_gum; then gum log --level warn "$1"; else echo ":: AVISO: $1"; fi; }
