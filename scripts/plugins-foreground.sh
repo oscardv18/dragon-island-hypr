@@ -35,22 +35,29 @@ if ! hyprland_session; then
 fi
 
 notify() { command -v notify-send >/dev/null 2>&1 && notify-send -a "dragon-island" "$@" || true; }
-finish() { if [[ -t 0 && -t 1 ]]; then echo; read -rp "Pulsa Enter para cerrar esta ventana..." _ || true; fi; }
+# First-run step (autostart.lua launches this while plugins.pending exists): the user sees what is going on through notifications.
+DONE=false
+finish() {
+    local rc=$?
+    if ! $DONE && (( rc != 0 )); then notify "Plugins con error" "No se pudieron compilar los plugins. Se reintenta en el próximo inicio de sesión. Registro: $LOG"; fi
+    if [[ -t 0 && -t 1 ]]; then echo; read -rp "Pulsa Enter para cerrar esta ventana..." _ || true; fi
+}
 trap finish EXIT
 
 # hyprpm is not re-entrant
 exec 9>"$STATE_DIR/hyprpm.lock"
 flock 9
 
+notify "Compilando plugins…" "hyprfocus y hyprglass: puede tardar unos minutos. Si pide la contraseña, escríbela en la ventana que se abre."
 echo "==> dragon-island: plugins (hyprfocus, hyprglass)"
 if ! command -v hyprpm >/dev/null 2>&1; then
     echo "ERROR: hyprpm no está instalado (en Arch es el paquete 'hyprpm'). Ejecuta: sudo pacman -S hyprpm" >&2
-    notify "Plugins" "Falta el paquete hyprpm"
+   
     exit 1
 fi
 
 echo "==> Cabeceras de Hyprland (hyprpm update; pide tu contraseña)..."
-hyprpm update || { echo "ERROR: hyprpm update falló. Se reintentará en el próximo inicio de sesión." >&2; notify "Plugins" "hyprpm update falló. Revisa $LOG"; exit 1; }
+hyprpm update || { echo "ERROR: hyprpm update falló. Se reintentará en el próximo inicio de sesión." >&2; exit 1; }
 
 listing="$(hyprpm list 2>/dev/null || true)"
 grep -q "hyprland-plugins" <<<"$listing" || { echo "==> Añadiendo $PLUGINS_REPO ..."; hyprpm add "$PLUGINS_REPO"; }
@@ -66,12 +73,13 @@ hyprctl reload
 
 loaded="$(hyprctl plugin list 2>/dev/null || true)"
 for p in hyprfocus hyprglass; do
-    grep -qi "$p" <<<"$loaded" || { echo "ERROR: $p no aparece cargado. Revisa: hyprpm list · $LOG" >&2; notify "Plugins" "$p no se cargó. Revisa $LOG"; exit 1; }
+    grep -qi "$p" <<<"$loaded" || { echo "ERROR: $p no aparece cargado. Revisa: hyprpm list · $LOG" >&2; exit 1; }
 done
 grep -A4 -i "plugin hyprglass" <<<"$loaded" | grep -q "$GLASS_EXPECTED" \
     || echo "AVISO: la versión cargada de hyprglass no es la $GLASS_EXPECTED fijada para Hyprland 0.56.x (mira la línea Version de arriba)." >&2
 
 rm -f "$PENDING" "$STATE_DIR/glass.pending"
 touch "$STATE_DIR/firstrun.done"
+DONE=true
 notify "Plugins listos" "hyprfocus y hyprglass están activos."
 echo "==> Listo. Si algo falla: hyprpm disable <plugin>"

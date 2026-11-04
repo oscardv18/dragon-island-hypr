@@ -27,7 +27,8 @@ hl.on("hyprland.start", function()
     -- glass.lua) are applied now that the plugins exist.
     hl.exec_cmd("hyprpm reload -n && hyprctl reload")
 
-    -- Plugins not installed yet (plugins.pending, written by install.sh outside Hyprland): build them with hyprpm in a
+    -- First-run step: plugins not built yet (plugins.pending, written by install.sh; removed when they are loaded = the done marker).
+    -- It notifies «Compilando plugins…» / «Plugins listos» / «Plugins con error». Build them with hyprpm in a
     -- visible terminal (hyprpm asks for the sudo password to install headers). No-op once the marker is gone.
     local state = "${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island"
     hl.exec_cmd("test -f " .. state .. "/plugins.pending && test -x " .. state .. "/plugins-foreground.sh && "
