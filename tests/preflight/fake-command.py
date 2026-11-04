@@ -46,6 +46,37 @@ def stateful(command, args):
         sys.exit(0 if virt != 'none' else 1)
     if command == 'uname' and args == ['-r']:
         print(state_read('uname', '6.test').strip()); return True
+    if command == 'systemctl':
+        enabled = set(state_read('enabled').splitlines())
+        verbs = [a for a in args if not a.startswith('-')]
+        if verbs[:1] == ['enable']:
+            for n in verbs[1:]:
+                enabled.add(n.removesuffix('.service').removesuffix('.socket'))
+            (Path(STATE) / 'enabled').write_text('\n'.join(sorted(enabled)) + '\n'); return True
+        if verbs[:1] == ['is-enabled']:
+            name = verbs[1].removesuffix('.service').removesuffix('.socket') if len(verbs) > 1 else ''
+            sys.exit(0 if name in enabled else 1)
+        return True
+    if command == 'sudo' and os.environ.get('FAKE_SUDO_TTY'):
+        # a sudo with a password ticket: it asks on the terminal (/dev/tty) once and remembers it
+        ticket = Path(STATE) / 'sudo-ticket'
+        quiet = '-n' in args
+        rest = [a for a in args if a not in ('-n', '-v', '-k')]
+        if '-k' in args:
+            ticket.unlink(missing_ok=True); return True
+        if not ticket.exists():
+            if quiet:
+                sys.exit(1)
+            with open('/dev/tty', 'w') as out:
+                out.write('[sudo] contraseña: ')
+            with open('/dev/tty') as tty:
+                tty.readline()
+            ticket.write_text('1')
+            with open(Path(STATE) / 'sudo-prompts', 'a') as count:
+                count.write('1\n')
+        if rest:
+            os.execvp(rest[0], rest)
+        return True
     if command == 'sudo':
         if args[:1] in (['-v'], ['-n']):
             return True
@@ -53,6 +84,14 @@ def stateful(command, args):
     if command == 'pacman':
         flags = [a for a in args if a.startswith('-')]
         names = [a for a in args if not a.startswith('-')]
+        nonexistent = set(filter(None, os.environ.get('FAKE_MISSING_PKG', '').split(',')))
+        if args[0] in ('-Si', '-Sp') and nonexistent & set(names):
+            print('error: package not found', file=sys.stderr); sys.exit(1)
+        if args[0].startswith('-S') and args[0] not in ('-Si', '-Sp', '-Ss') and nonexistent & set(names):
+            for n in names:
+                if n in nonexistent:
+                    print(f'error: target not found: {n}')
+            sys.exit(1)
         if args[0] == '-T':
             if os.environ.get('PREFLIGHT_FAKE_DEPTEST_ERROR'):
                 print('database unavailable', file=sys.stderr); sys.exit(1)

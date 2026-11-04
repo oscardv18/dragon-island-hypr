@@ -75,7 +75,7 @@ confirm_sudo() { shift; capture "$@"; }
 run() { capture "$@"; }
 """
         if function in ('install_official', 'install_aur'):
-            installer = (ROOT/'install.sh').read_text()
+            installer = (ROOT/'install-tui.sh').read_text()
             definitions = installer[installer.index('# pkg_failure_cause <log-line-offset>'):installer.index('# verify_packages')]
             script += """
 NO_SUDO=false; DRY_RUN=false; LOG=/dev/null

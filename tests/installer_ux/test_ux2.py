@@ -134,7 +134,7 @@ class Summary(Flow):
 
     def test_module_result_is_never_blank(self):
         # every module line ends in ok · con avisos · fallido · omitido (reason): checked in the source as well as in the output
-        source = (ROOT/'install.sh').read_text()
+        source = (ROOT/'install-tui.sh').read_text()
         self.assertNotIn('${RESULT[$m]:-?}', source)
         self.assertIn('omitido (no se ejecutó', source)
 
@@ -145,7 +145,7 @@ class Summary(Flow):
         crash.write_text('core_apply() { exit 7; }\n')
         result = subprocess.run(['bash', '-c', f'cd {ROOT}; . {crash} 2>/dev/null; true'], env=env, capture_output=True)
         self.assertEqual(result.returncode, 0)
-        source = (ROOT/'install.sh').read_text()
+        source = (ROOT/'install-tui.sh').read_text()
         self.assertIn('se detuvo de forma inesperada', source)
 
 

@@ -63,7 +63,7 @@ class Sandbox(unittest.TestCase):
                 self.assertFalse({'create', '--create', 'delete', 'rollback', '--restore'} & set(command[1:]), 'ejecutó ' + line)
 
     def execute(self, *args, **kwargs):
-        return subprocess.run([str(ROOT/'install.sh'), *args], cwd=ROOT, env=self.env, text=True,
+        return subprocess.run([str(ROOT/'install-tui.sh'), *args], cwd=ROOT, env=self.env, text=True,
                               capture_output=True, timeout=180, **kwargs)
 
 
@@ -120,7 +120,7 @@ def run_in_pty(args, env, cols, rows, timeout=180):
     if pid == 0:
         os.chdir(ROOT)
         env = dict(env, TERM='xterm-256color')
-        os.execve(str(ROOT/'install.sh'), [str(ROOT/'install.sh'), *args], env)
+        os.execve(str(ROOT/'install-tui.sh'), [str(ROOT/'install-tui.sh'), *args], env)
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', rows, cols, 0, 0))
     chunks, deadline = [], time.time() + timeout
     while time.time() < deadline:

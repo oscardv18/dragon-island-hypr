@@ -51,7 +51,7 @@ class UX(Sandbox):
         env = dict(self.env)
         if stop:
             env['DRAGON_STOP_AFTER'] = stop
-        return subprocess.run([str(ROOT/'install.sh'), *args], cwd=ROOT, env=env, text=True, capture_output=True, timeout=300)
+        return subprocess.run([str(ROOT/'install-tui.sh'), *args], cwd=ROOT, env=env, text=True, capture_output=True, timeout=300)
 
     def events(self, result):
         return [json.loads(line) for line in result.stdout.splitlines()]

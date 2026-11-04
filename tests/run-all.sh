@@ -16,7 +16,8 @@ if [[ "${1:-}" == --only ]]; then
     modes) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v ;;
     backup) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v ;;
     ux) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_ux tests.installer_ux.test_ux2 -v ;;
-    *) echo "Uso: $0 --only profiles|prereq|preflight|providers|activity|tui|modes|backup|ux" >&2; exit 2 ;;
+    simple) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_simple -v ;;
+    *) echo "Uso: $0 --only profiles|prereq|preflight|providers|activity|tui|modes|backup|ux|simple" >&2; exit 2 ;;
   esac
 fi
 fails=0
@@ -178,7 +179,7 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/keyring_gtk -
 step "perfiles, prerrequisitos y preflight con paquetes/AUR/bus simulados"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -v; then pass "instalador I1/I2"; else fail "instalador I1/I2"; fi
 
-step "TUI del instalador: terminal simulada (80 columnas y anchas), eventos JSON y texto"
+step "TUI del instalador (install-tui.sh, opcional): terminal simulada (80 columnas y anchas), eventos JSON y texto"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -v; then pass "TUI y eventos"; else fail "TUI y eventos"; fi
 
 step "TUI en un terminal real (pty 80 y 200 columnas), eventos JSON, bloqueos y dry-run sin escrituras (comandos simulados)"
@@ -186,6 +187,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v
 
 step "instalador de un solo comando: preparación, reinicio y continuación, informe sin secretos, dry-run sin rastro, plan con incidencias, paru con contraseña/fallo/ausente y resumen sin «?» (comandos simulados)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_ux tests.installer_ux.test_ux2 -v; then pass "install.sh de un solo comando"; else fail "install.sh de un solo comando"; fi
+
+step "instalador LINEAL (./install.sh): todo ok, paquete inexistente, paru que falla/ausente, sudo por /dev/tty, sin terminal, idempotencia, módulo fallido, resumen honesto, 60/80/120 columnas con y sin color, dry-run (comandos simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_simple -v; then pass "install.sh lineal"; else fail "install.sh lineal"; fi
 
 step "respaldo y restauración: base SQLite viva, dry-run, listas sin copiar (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v; then pass "backup-dragon / restore-dragon"; else fail "backup-dragon / restore-dragon"; fi

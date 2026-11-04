@@ -10,12 +10,12 @@ import time
 from tests.tui.test_install_modes import ROOT
 
 
-def run_interactive(args, env, cols=80, rows=30, answers=(), timeout=240):
+def run_interactive(args, env, cols=80, rows=30, answers=(), timeout=240, script='install-tui.sh'):
     """answers: iterable of (text-to-wait-for, text-to-type). Returns (raw output, exit code)."""
     pid, fd = pty.fork()
     if pid == 0:
         os.chdir(ROOT)
-        os.execve(str(ROOT/'install.sh'), [str(ROOT/'install.sh'), *args], dict(env, TERM='xterm-256color'))
+        os.execve(str(ROOT/script), [str(ROOT/script), *args], dict(env, TERM='xterm-256color'))
     fcntl.ioctl(fd, termios.TIOCSWINSZ, struct.pack('HHHH', rows, cols, 0, 0))
     pending, chunks, seen, deadline = list(answers), [], b'', time.time() + timeout
     while time.time() < deadline:
