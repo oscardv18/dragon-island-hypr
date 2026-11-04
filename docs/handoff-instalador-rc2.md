@@ -29,3 +29,6 @@ poner `apiEnabled=false` en la sección `org.freedesktop.secrets` de `kwalletrc`
 
 ## Probar en la VM
 `git pull`, `./install.sh`, reinicia y entra en Hyprland: `./doctor.sh` debe mostrar «Versión de Hyprland = fijada»; si hay KWallet, el instalador pregunta una vez.
+
+## Suite completa
+`tests/run-all.sh`: **TODO EN VERDE** en la segunda pasada. La primera encontró un fallo real mío: `plugins-foreground.sh` (con `set -e`) abortaba al comprobar la versión fijada antes de dar el aviso; corregido.
