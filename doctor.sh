@@ -89,6 +89,8 @@ fi
 echo "dragon-island — doctor"
 ck "Python + Pillow para dragon-palette" "sudo pacman -S --needed python python-pillow" python3 -c 'from PIL import Image'
 CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
+# the hints name the AUR helper that is really installed (paru on CachyOS), not always yay
+AURH="$(aur_helper)"; AURH="${AURH:-paru}"
 has() { grep -qiE "$1" <<<"$2"; }
 
 echo "Sesión y configuración"
@@ -106,18 +108,20 @@ else
     printf '  - fuera de Hyprland: se omiten configerrors, teclado y plugins\n'
 fi
 
-if command -v qs >/dev/null 2>&1; then
-    if [[ -n "$(qs list 2>/dev/null)" ]]; then
-        good "Quickshell en marcha"
-        ipc="$(qs ipc show 2>&1 || true)"
-        for t in shell lock; do ck "IPC «$t» disponible" "reinicia la shell: qs kill; qs -d" has "target $t" "$ipc"; done
-        log="$(qs log 2>/dev/null | tail -n 400 || true)"
-        if has "Failed to load configuration|is not a type" "$log"; then bad "Quickshell registró errores de carga" "qs log | less ; docs/TROUBLESHOOTING.md"
-        else good "Quickshell sin errores de carga en el registro"; fi
-    else
-        bad "Quickshell no está en marcha" "qs -d (o cierra sesión y vuelve a entrar)"
-    fi
-else bad "No existe qs (quickshell)" "sudo pacman -S quickshell"; fi
+if ! command -v qs >/dev/null 2>&1; then bad "No existe qs (quickshell)" "sudo pacman -S quickshell"
+elif ! in_hyprland; then
+    # Quickshell is started by Hyprland's autostart: outside a Hyprland session it is not expected to run (and the installer never starts it)
+    printf '  - fuera de Hyprland: Quickshell y sus IPC (shell, lock) se comprueban dentro de la sesión; cierra sesión y entra en Hyprland\n'
+elif [[ -n "$(qs list 2>/dev/null)" ]]; then
+    good "Quickshell en marcha"
+    ipc="$(qs ipc show 2>&1 || true)"
+    for t in shell lock; do ck "IPC «$t» disponible" "reinicia la shell: qs kill; qs -d" has "target $t" "$ipc"; done
+    log="$(qs log 2>/dev/null | tail -n 400 || true)"
+    if has "Failed to load configuration|is not a type" "$log"; then bad "Quickshell registró errores de carga" "qs log | less ; docs/TROUBLESHOOTING.md"
+    else good "Quickshell sin errores de carga en el registro"; fi
+else
+    bad "Quickshell no está en marcha" "qs -d (o cierra sesión y vuelve a entrar)"
+fi
 
 echo "Dashboard del notch: apps en segundo plano · IA (herdr)"
 bi="$CFG/dragon-island/background-apps.json"
@@ -147,11 +151,11 @@ else printf '  - sin estado guardado: todos los escritorios en dwindle (correcto
 
 echo "Tema y fuentes"
 fonts="$(fc-list 2>/dev/null || true)"
-ck "Fuente Outfit" "yay -S ttf-outfit (módulo theme)" has "outfit" "$fonts"
+ck "Fuente Outfit" "$AURH -S ttf-outfit (módulo theme)" has "outfit" "$fonts"
 ck "JetBrains Mono Nerd" "sudo pacman -S ttf-jetbrains-mono-nerd" has "JetBrainsMono Nerd|JetBrains Mono Nerd" "$fonts"
-ck "Tema de iconos Sweet-Purple" "yay -S candy-icons-git sweet-folders-icons-git" test -d /usr/share/icons/Sweet-Purple
-ck "Iconos MacTahoe-purple-dark (base de Dragon-Core)" "yay -S mactahoe-icon-theme-git" test -d /usr/share/icons/MacTahoe-purple-dark
-ck "Iconos WhiteSur-dark (respaldo de Dragon-Core)" "yay -S whitesur-icon-theme" test -d /usr/share/icons/WhiteSur-dark
+ck "Tema de iconos Sweet-Purple" "$AURH -S candy-icons-git sweet-folders-icons-git" test -d /usr/share/icons/Sweet-Purple
+ck "Iconos MacTahoe-purple-dark (base de Dragon-Core)" "$AURH -S mactahoe-icon-theme-git" test -d /usr/share/icons/MacTahoe-purple-dark
+ck "Iconos WhiteSur-dark (respaldo de Dragon-Core)" "$AURH -S whitesur-icon-theme" test -d /usr/share/icons/WhiteSur-dark
 ck "Tema de iconos del shell Dragon-Core" "./update.sh (migración 021)" test -f "$HOME/.local/share/icons/Dragon-Core/index.theme"
 
 echo "Login"
@@ -164,12 +168,16 @@ echo "Llavero y servicios"
 if command -v busctl >/dev/null 2>&1 && busctl --user list 2>/dev/null | grep -q org.freedesktop.secrets; then
     locked="$(busctl --user get-property org.freedesktop.secrets /org/freedesktop/secrets/collection/login org.freedesktop.Secret.Collection Locked 2>/dev/null || true)"
     ck "Llavero «login» desbloqueado" "su contraseña debe ser la de tu usuario (Seahorse); módulo keyring" test "$locked" = "b false"
+elif ! in_hyprland; then printf '  - fuera de una sesión gráfica: el llavero se crea y desbloquea al iniciar sesión (cierra sesión y entra)\n'
 else bad "Nadie ofrece org.freedesktop.secrets" "./install.sh --modules keyring (gnome-keyring)"; fi
 for s in NetworkManager bluetooth power-profiles-daemon; do
     ck "Servicio $s activo" "sudo systemctl enable --now $s" systemctl is-active --quiet "$s"
 done
+# user services start with the user session: outside it «habilitado» is what can be asked
+# shellcheck disable=SC2329  # called through ck
+user_unit_ok() { systemctl --user is-active --quiet "$1" || systemctl --user is-enabled --quiet "$1" || systemctl --user is-enabled --quiet "$1.socket"; }
 for s in pipewire wireplumber; do
-    ck "Servicio de usuario $s activo" "systemctl --user enable --now $s" systemctl --user is-active --quiet "$s"
+    ck "Servicio de usuario $s activo o habilitado" "systemctl --user enable --now $s" user_unit_ok "$s"
 done
 
 echo "Repositorio"
