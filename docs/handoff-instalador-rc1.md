@@ -12,3 +12,6 @@ Pruebas: `tests/installer_ux/test_rc1.py` (22). `tests/boot/test_boot.py` ajusta
 
 ## Probar en la VM
 `git pull`, `./install.sh`, reiniciar y entrar en Hyprland: sin rojos; llega «Compilando plugins…» y luego «Plugins listos» (o «con error»). Después `./doctor.sh`.
+
+## Suite completa
+`tests/run-all.sh`: **TODO EN VERDE**.
