@@ -90,8 +90,8 @@ class FirstRun(unittest.TestCase):
     def test_other_hyprland_series_stops_before_compiling(self):
         r = self.run_script(FAKE_TAG='v0.56.2')
         self.assertNotEqual(r.returncode, 0)
-        self.assertIn('no es la fijada', r.stderr)
-        self.assertIn('git pull', r.stderr)
+        self.assertIn('no es la fijada', r.stdout + r.stderr)
+        self.assertIn('git pull', r.stdout + r.stderr)
         self.assertNotIn('hyprpm update', self.log.read_text())
         self.assertIn('Plugins con error', ' | '.join(self.notifications()))
         self.assertTrue((self.state/'dragon-island/plugins.pending').exists())

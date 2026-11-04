@@ -63,7 +63,7 @@ fi
 # The plugins and plugins.lua are written for one Hyprland series (packages/pins.json): compiling against another would build
 # something that cannot load. Stop BEFORE compiling and say what to do; the step stays pending.
 if declare -F hyprland_pin_check >/dev/null; then
-    pin_msg="$(hyprland_pin_check)"; pin_rc=$?
+    pin_rc=0; pin_msg="$(hyprland_pin_check)" || pin_rc=$?
     echo "==> Versión: $pin_msg"
     if (( pin_rc == 1 )); then
         echo "ERROR: la versión de Hyprland no es la fijada. No se compila nada. Qué hacer:" >&2

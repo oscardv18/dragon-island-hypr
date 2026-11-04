@@ -11,7 +11,8 @@ from tests.installer_ux.test_rc1 import run_pty, script
 from tests.tui.test_install_modes import ROOT
 
 # Third-party references and historic design notes are not code of this repo.
-SKIP = ('.agents/', 'quickshell/', 'docs/design/', 'tests/', 'dragon-core/prompts/')
+# (docs/VIRTUALBOX.md and the rc2 handoff quote the old syntax on purpose, as the thing that no longer works)
+SKIP = ('.agents/', 'quickshell/', 'docs/design/', 'tests/', 'dragon-core/prompts/', 'docs/VIRTUALBOX.md', 'docs/handoff-instalador-rc2.md')
 STUBS = Path('/usr/share/hypr/stubs/hl.meta.lua')
 
 # `hyprctl [flags] dispatch <arg>`: in 0.57 the arg is a Lua expression, e.g. 'hl.dsp.exec_cmd("kitty")'
