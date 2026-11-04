@@ -191,6 +191,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_ux test
 step "instalador LINEAL (./install.sh): todo ok, paquete inexistente, paru que falla/ausente, sudo por /dev/tty, sin terminal, idempotencia, módulo fallido, resumen honesto, 60/80/120 columnas con y sin color, dry-run (comandos simulados)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_simple -v; then pass "install.sh lineal"; else fail "install.sh lineal"; fi
 
+step "rc1: plugins.lua sin errores, primer arranque con avisos, doctor (bluetooth, llavero, plugins) y boot con vista previa (hyprctl, hyprpm y /sys simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_rc1 -v; then pass "rc1"; else fail "rc1"; fi
+
 step "respaldo y restauración: base SQLite viva, dry-run, listas sin copiar (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v; then pass "backup-dragon / restore-dragon"; else fail "backup-dragon / restore-dragon"; fi
 
