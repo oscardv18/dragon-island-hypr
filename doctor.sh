@@ -93,6 +93,15 @@ CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
 AURH="$(aur_helper)"; AURH="${AURH:-paru}"
 has() { grep -qiE "$1" <<<"$2"; }
 
+# a graphic session: Hyprland (or any Wayland/X11 session) — the keyring and the desktop services only exist there
+graphic_session() { in_hyprland || [[ -n "${WAYLAND_DISPLAY:-}" || -n "${DISPLAY:-}" ]]; }
+SYSFS="${DRAGON_SYSFS:-/sys}"     # tests point it at a fake tree
+
+echo "Compilación de plugins (hyprpm)"
+for p in hyprpm cmake meson ninja cpio pkgconf git gcc; do
+    ck "Paquete $p (prerrequisito de hyprpm)" "sudo pacman -S --needed $p" pacman -T "$p"
+done
+
 echo "Sesión y configuración"
 if in_hyprland && command -v hyprctl >/dev/null 2>&1; then
     errs="$(hyprctl configerrors 2>&1 | sed '/^[[:space:]]*$/d' || true)"
@@ -165,12 +174,16 @@ if [[ "$dm" == sddm ]]; then
 else printf '  - display manager «%s»: el tema de login es solo para SDDM\n' "$dm"; fi
 
 echo "Llavero y servicios"
-if command -v busctl >/dev/null 2>&1 && busctl --user list 2>/dev/null | grep -q org.freedesktop.secrets; then
+if ! graphic_session; then
+    printf '  - sin sesión gráfica: el llavero se crea y desbloquea al iniciar sesión en Hyprland (no se exige aquí)\n'
+elif command -v busctl >/dev/null 2>&1 && busctl --user list 2>/dev/null | grep -q org.freedesktop.secrets; then
     locked="$(busctl --user get-property org.freedesktop.secrets /org/freedesktop/secrets/collection/login org.freedesktop.Secret.Collection Locked 2>/dev/null || true)"
     ck "Llavero «login» desbloqueado" "su contraseña debe ser la de tu usuario (Seahorse); módulo keyring" test "$locked" = "b false"
-elif ! in_hyprland; then printf '  - fuera de una sesión gráfica: el llavero se crea y desbloquea al iniciar sesión (cierra sesión y entra)\n'
 else bad "Nadie ofrece org.freedesktop.secrets" "./install.sh --modules keyring (gnome-keyring)"; fi
 for s in NetworkManager bluetooth power-profiles-daemon; do
+    if [[ "$s" == bluetooth && -z "$(ls -A "$SYSFS/class/bluetooth" 2>/dev/null)" ]]; then
+        printf '  - bluetooth activo: no aplica (sin adaptador bluetooth en %s/class/bluetooth)\n' "$SYSFS"; continue
+    fi
     ck "Servicio $s activo" "sudo systemctl enable --now $s" systemctl is-active --quiet "$s"
 done
 # user services start with the user session: outside it «habilitado» is what can be asked
