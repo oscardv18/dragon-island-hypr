@@ -27,8 +27,11 @@ CFG="${XDG_CONFIG_HOME:-$HOME/.config}"
 # shellcheck source=lib/portal-tools.sh
 . "$REPO_DIR/lib/portal-tools.sh"
 
+# shellcheck source=lib/usb-audio.sh
+. "$REPO_DIR/lib/usb-audio.sh"
+
 core_desc() { echo "Hyprland, Quickshell, servicios y configuración base (obligatorio)"; }
-core_sudo() { echo "pacman -S (paquetes), systemctl enable (NetworkManager, bluetooth, power-profiles-daemon)"; }
+core_sudo() { echo "pacman -S (paquetes), systemctl enable (NetworkManager, bluetooth, power-profiles-daemon), install en /etc/modprobe.d (audio USB)"; }
 core_packages() { pkg_list "$REPO_DIR/packages/pacman-core.txt" "$REPO_DIR/packages/aur-core.txt"; }
 
 core_check() {
@@ -41,6 +44,7 @@ core_plan() {
     echo "  · enlaces (con respaldo): ~/.config/{hypr,kitty,ghostty,quickshell}, ~/.local/bin/{dragon-pkg,dragon-tiling}"
     echo "  · servicios del sistema (sudo, confirmado uno a uno): NetworkManager, bluetooth, power-profiles-daemon"
     echo "  · servicios de usuario: pipewire, pipewire-pulse, wireplumber"
+    echo "  · audio USB (sudo, confirmado): /etc/modprobe.d/dragon-usb-audio.conf (micrófono de audífonos Jieli 4c4a:4155)"
     echo "  · GPU: solo escribe variables en ~/.config/hypr/local.lua si es NVIDIA (no instala drivers)"
 }
 
@@ -86,6 +90,7 @@ core_apply() {
     portal_tools_setup
     portal_enable || log_info "Dragon Portal queda sin registrar (los diálogos de archivos siguen siendo los de GTK)."
     core_gpu_env
+    usb_audio_quirks_setup || log_info "Audio USB sin aplicar: el micrófono de los audífonos Jieli 4c4a:4155 no grabará."
 
     # the neural core has one source (shared/neural-core): re-sync both copies
     if $DRY_RUN; then "$REPO_DIR/scripts/sync-shared.sh" --check || log_warn "NeuralCore/CoreIcon desincronizados (se corrigen al instalar)."

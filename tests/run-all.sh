@@ -131,6 +131,8 @@ if python3 -m unittest discover -s tests/mem -v; then pass "dragon-mem"; else fa
 step "puente de herdr con socket falso (HOME/XDG temporales)"
 if python3 -m unittest discover -s tests/herdr -v; then pass "dragon-herdr"; else fail "dragon-herdr"; fi
 # /fase5a: herdr
+step "audio USB: /etc/modprobe.d/dragon-usb-audio.conf (micrófono Jieli 4c4a:4155) con sudo falso, migración 194"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/usb-audio -v; then pass "arreglos de audio USB"; else fail "arreglos de audio USB"; fi
 
 # fase5a: services and UI
 step "servicios del Taller con Quickshell real y HOME temporal"
