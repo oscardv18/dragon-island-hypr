@@ -183,6 +183,7 @@ if grep -qsx shell "${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island/modules"
     ck "Shell por defecto: zsh (${login_shell:-?})" "chsh -s /usr/bin/zsh   (y abre una terminal nueva)" test "$(basename "${login_shell:-none}")" = zsh
     # shellcheck disable=SC2329  # called through ck
     zshrc_loads_dragon() { zsh_block_ok || [[ "$(readlink -f "$HOME/.zshrc")" == "$(readlink -f "$REPO_DIR/config/zsh/.zshrc")" ]]; }
+    # shellcheck disable=SC2088  # a label shown to the user, not a path
     ck "~/.zshrc carga Dragon (bloque dragon-island:zsh)" "$REPO_DIR/install.sh --modules shell   (añade UNA línea a ~/.zshrc, con copia)" zshrc_loads_dragon
     st="$(starship_config_path)"
     ck "starship.toml de Dragon ($st)" "$REPO_DIR/install.sh --modules shell   (guarda el tuyo en las copias y pone el de Dragon)" starship_is_dragon "$st"
