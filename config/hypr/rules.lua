@@ -147,22 +147,11 @@ hl.layer_rule({
 --     match   = { class = "^org\\.kde\\.dolphin$" },
 --     opacity = "0.92 0.88",
 -- })
-
--- Visual Studio Code: translucent window + blur behind it. Change the three values here and `hyprctl reload`.
--- Only these classes are touched (anchored match, nothing else gets the rule): com.microsoft.VSCode is the native
--- Wayland / Flatpak app id (what runs here), Code / code the distro and AUR builds on XWayland, code-oss and
--- Antigravity the forks. To turn it off set VSCODE_OPACITY_ACTIVE and _INACTIVE to "1.0".
--- The opacity applies to the whole window (text included): if code gets hard to read, raise both numbers
--- (0.94 / 0.88) before touching blur. Blur itself is the global decoration.blur of look.lua.
-local VSCODE_OPACITY_ACTIVE   = "0.90"
-local VSCODE_OPACITY_INACTIVE = "0.82"
-local VSCODE_CLASSES          = { "com\\.microsoft\\.VSCode", "Code", "code", "code-oss", "Antigravity" }
-hl.window_rule({
-    name    = "opacity-vscode",
-    match   = { class = "^(" .. table.concat(VSCODE_CLASSES, "|") .. ")$" },
-    opacity = VSCODE_OPACITY_ACTIVE .. " " .. VSCODE_OPACITY_INACTIVE,
-    no_blur = false,
-})
+-- hl.window_rule({
+--     name    = "opacity-code",
+--     match   = { class = "^(code|Code|code-oss)$" },
+--     opacity = "0.93 0.90",
+-- })
 
 -- Keep window transparency in every state so blur/glass remains visible. Video players stay opaque.
 hl.window_rule({
