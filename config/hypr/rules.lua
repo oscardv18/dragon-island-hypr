@@ -142,6 +142,13 @@ hl.layer_rule({
 -- Per-app transparency (window opacity). Syntax: opacity = "<active> <inactive>".
 -- Opt in by uncommenting; omit fullscreen matching to keep transparency in every window state.
 -- -----------------------------------------------------------------------------
+-- Herdr desktop app: its GPUI window is opaque (no alpha), so the compositor makes it translucent like Ghostty;
+-- being translucent, it gets the native blur (ahumado / clasico) or the hyprglass glass (liquido).
+hl.window_rule({
+    name    = "opacity-herdr-app",
+    match   = { class = "^herdr-app$" },
+    opacity = "0.85 0.85",
+})
 -- hl.window_rule({
 --     name    = "opacity-dolphin",
 --     match   = { class = "^org\\.kde\\.dolphin$" },
