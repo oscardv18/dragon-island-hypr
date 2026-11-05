@@ -6,3 +6,9 @@ android-studio
 hermes-agent
 whitesur-icon-theme
 mactahoe-icon-theme-git
+google-chrome
+visual-studio-code-bin
+antigravity
+antigravity-cli
+antigravity-ide
+chatgpt-desktop

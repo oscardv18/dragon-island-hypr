@@ -35,3 +35,8 @@ nss
 memtest86+
 smartmontools
 lazygit
+brave-bin
+proton-vpn-gtk-app
+claude-code
+claude-desktop
+openai-codex
