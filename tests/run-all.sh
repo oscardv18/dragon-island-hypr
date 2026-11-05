@@ -167,6 +167,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/session -v; t
 step "mosaico: selectores numéricos, con nombre y especiales (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tiling -v; then pass "modos de mosaico"; else fail "modos de mosaico"; fi
 
+step "zsh sobre el ~/.zshrc de CachyOS: Starship gana a p10k, plugins (paquetes + fzf-tab), oh-my-zsh de solo lectura, clon fallido, respuestas «no», starship.toml ajeno, migración 191 y doctor (HOME temporal)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/zsh -v; then pass "zsh de Dragon en CachyOS"; else fail "zsh de Dragon en CachyOS"; fi
+
 step "Neovim: editor, opt-in, seguridad y retirada (HOME/XDG temporales, sin sincronización real)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/nvim -v; then pass "módulo editor"; else fail "módulo editor"; fi
 

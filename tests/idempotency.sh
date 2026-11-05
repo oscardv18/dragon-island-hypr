@@ -20,7 +20,9 @@ printf '#!/usr/bin/env bash\necho "[shim:sudo] $*" >> "%s/shim.log"\nexit 1\n' "
 mkdir -p "$TESTHOME/.config/gtk-4.0" "$TESTHOME/.local/share/dragon-island/zsh-plugins"
 printf 'export MY_OWN_LINE=1\nalias ll="ls -la"\n' > "$TESTHOME/.zshrc"
 printf '[Settings]\ngtk-theme-name=mine\n' > "$TESTHOME/.config/gtk-4.0/settings.ini"
-for p in zsh-autosuggestions zsh-syntax-highlighting fzf-tab; do mkdir -p "$TESTHOME/.local/share/dragon-island/zsh-plugins/$p"; done
+for p in zsh-autosuggestions zsh-syntax-highlighting fzf-tab; do
+    mkdir -p "$TESTHOME/.local/share/dragon-island/zsh-plugins/$p"; : > "$TESTHOME/.local/share/dragon-island/zsh-plugins/$p/$p.plugin.zsh"
+done
 
 apply_all() {
     # shellcheck disable=SC2016  # the script is deliberately single-quoted: it expands inside the child shell
