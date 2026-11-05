@@ -317,6 +317,16 @@ step_configs() {
     return 0
 }
 
+# Apps installed after the theme module (Telegram from the Tienda, …): their portal integration is re-applied on
+# every update, not only by migration 122 at install time. Idempotent and quiet when there is nothing to change.
+step_app_integrations() {
+    has_component theme || return 0
+    # shellcheck source=lib/telegram-portal.sh
+    . "$REPO_DIR/lib/telegram-portal.sh"
+    telegram_portal_setup || log_warn "Telegram: no se pudo aplicar su integración con el portal."
+    return 0
+}
+
 # =============================================================================
 # 5. Optional plugins (hyprglass): hyprpm in the foreground
 # =============================================================================
@@ -388,6 +398,7 @@ hyprland_session || true
 step_migrations
 step_packages
 step_configs
+step_app_integrations
 step_plugins
 step_reload
 save_state
