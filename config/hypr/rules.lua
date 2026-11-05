@@ -153,9 +153,9 @@ hl.layer_rule({
 -- Wayland / Flatpak app id (what runs here), Code / code the distro and AUR builds on XWayland, code-oss and
 -- Antigravity the forks. To turn it off set VSCODE_OPACITY_ACTIVE and _INACTIVE to "1.0".
 -- The opacity applies to the whole window (text included): if code gets hard to read, raise both numbers
--- (0.94 / 0.88) before touching blur. Blur itself is the global decoration.blur of look.lua.
-local VSCODE_OPACITY_ACTIVE   = "0.90"
-local VSCODE_OPACITY_INACTIVE = "0.82"
+-- (0.85 / 0.78) before touching blur. Blur itself is the global decoration.blur of look.lua.
+local VSCODE_OPACITY_ACTIVE   = "0.75"
+local VSCODE_OPACITY_INACTIVE = "0.68"
 local VSCODE_CLASSES          = { "com\\.microsoft\\.VSCode", "Code", "code", "code-oss", "Antigravity" }
 hl.window_rule({
     name    = "opacity-vscode",
