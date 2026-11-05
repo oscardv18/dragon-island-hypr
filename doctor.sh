@@ -175,6 +175,39 @@ ck "Iconos MacTahoe-purple-dark (base de Dragon-Core)" "$AURH -S mactahoe-icon-t
 ck "Iconos WhiteSur-dark (respaldo de Dragon-Core)" "$AURH -S whitesur-icon-theme" test -d /usr/share/icons/WhiteSur-dark
 ck "Tema de iconos del shell Dragon-Core" "./update.sh (migración 021)" test -f "$HOME/.local/share/icons/Dragon-Core/index.theme"
 
+if grep -qsx shell "${XDG_STATE_HOME:-$HOME/.local/state}/dragon-island/modules" || grep -qs ">>> dragon-island:zsh" "$HOME/.zshrc"; then
+    echo "Terminal (zsh)"
+    # shellcheck source=lib/zsh-setup.sh
+    . "$REPO_DIR/lib/zsh-setup.sh"
+    login_shell="$(getent passwd "$USER" | cut -d: -f7)"
+    ck "Shell por defecto: zsh (${login_shell:-?})" "chsh -s /usr/bin/zsh   (y abre una terminal nueva)" test "$(basename "${login_shell:-none}")" = zsh
+    # shellcheck disable=SC2329  # called through ck
+    zshrc_loads_dragon() { zsh_block_ok || [[ "$(readlink -f "$HOME/.zshrc")" == "$(readlink -f "$REPO_DIR/config/zsh/.zshrc")" ]]; }
+    ck "~/.zshrc carga Dragon (bloque dragon-island:zsh)" "$REPO_DIR/install.sh --modules shell   (añade UNA línea a ~/.zshrc, con copia)" zshrc_loads_dragon
+    st="$(starship_config_path)"
+    ck "starship.toml de Dragon ($st)" "$REPO_DIR/install.sh --modules shell   (guarda el tuyo en las copias y pone el de Dragon)" starship_is_dragon "$st"
+    probe="$(zsh_probe)"
+    pv() { sed -n "s/^$1=//p" <<< "$probe"; }
+    case "$(pv prompt)" in
+        starship) good "Prompt activo: Starship de Dragon" ;;
+        p10k) bad "Prompt activo: Powerlevel10k (gana a Starship)" "$REPO_DIR/update.sh   (dragon.zsh desactiva p10k); si sigue: $REPO_DIR/install.sh --modules shell" ;;
+        *) bad "Prompt activo: ni Starship ni p10k ($(pv prompt))" "$REPO_DIR/install.sh --modules shell   y abre una terminal nueva" ;;
+    esac
+    pdir="$(zsh_plugin_dir)"
+    for pl in zsh-autosuggestions zsh-syntax-highlighting fzf-tab; do
+        case "$pl" in
+            zsh-autosuggestions) key=autosuggestions; fix="sudo pacman -S --needed zsh-autosuggestions" ;;
+            zsh-syntax-highlighting) key=syntax; fix="sudo pacman -S --needed zsh-syntax-highlighting" ;;
+            fzf-tab) key=fzftab; fix="git clone --depth 1 https://github.com/Aloxaf/fzf-tab.git '$pdir/fzf-tab'" ;;
+        esac
+        if ! file="$(zsh_plugin_file "$pl")"; then bad "Plugin $pl: no está instalado" "$fix"
+        elif [[ "$(pv "$key")" == 1 ]]; then good "Plugin $pl cargado ($file)"
+        else bad "Plugin $pl instalado pero no se carga ($file)" "comprueba que ~/.zshrc carga Dragon y abre una terminal nueva: zsh -i"; fi
+    done
+    if [[ "$(pv stderr)" == 0 ]]; then good "zsh -i arranca sin errores"
+    else bad "zsh -i escribe $(pv stderr) línea(s) de error: $(pv error)" "zsh -i   (y revisa ~/.zshrc / ~/.zshrc.local)"; fi
+fi
+
 echo "Login"
 dm="$(display_manager)"
 if [[ "$dm" == sddm ]]; then
