@@ -21,4 +21,5 @@ fastfetch() {
 if [[ -o interactive && -n $DRAGON_FF_ON_START && -z $DRAGON_FF_SHOWN ]]; then
   export DRAGON_FF_SHOWN=1
   fastfetch
+  typeset -g _dragon_prompt_seen=1   # the first prompt gets its blank line after fastfetch (dragon.zsh)
 fi

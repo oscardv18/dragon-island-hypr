@@ -89,5 +89,12 @@ command -v zoxide >/dev/null && eval "$(zoxide init zsh)"
 
 command -v starship >/dev/null && eval "$(starship init zsh)"
 
+# A blank line between one command's output and the next prompt, but none above the first prompt of a new
+# terminal or after `clear` (starship's add_newline is off: it printed one there too). fastfetch.zsh sets the
+# flag when it prints at start, so its output still gets the gap.
+_dragon_prompt_spacer() { (( ${+_dragon_prompt_seen} )) && print; typeset -g _dragon_prompt_seen=1 }
+precmd_functions+=(_dragon_prompt_spacer)
+clear() { unset _dragon_prompt_seen; command clear "$@" }
+
 # Private bits (tokens, personal aliases, machine paths) live outside the repo
 [[ -f ~/.zshrc.local ]] && source ~/.zshrc.local
