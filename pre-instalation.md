@@ -595,18 +595,27 @@ Revertir o actualizar: `./uninstall.sh`, `./update.sh`. Antes de reinstalar un e
 | `nss` | mis-apps | oficial |
 | `memtest86+` | mis-apps | oficial |
 | `smartmontools` | mis-apps | oficial |
+| `brave-bin` | mis-apps, extras (brave, opt-in) | oficial |
+| `proton-vpn-gtk-app` | mis-apps, extras (protonvpn, opt-in) | oficial |
+| `claude-code` | mis-apps | oficial |
+| `claude-desktop` | mis-apps | oficial |
+| `openai-codex` | mis-apps | oficial |
 | `genoffice-bin` | mis-apps | AUR |
 | `lmbionic-bin` | mis-apps | AUR |
 | `otf-apple-sf-mono` | mis-apps | AUR |
 | `android-studio` | mis-apps | AUR |
 | `hermes-agent` | mis-apps | AUR |
+| `google-chrome` | mis-apps | AUR |
+| `visual-studio-code-bin` | mis-apps | AUR |
+| `antigravity` | mis-apps | AUR |
+| `antigravity-cli` | mis-apps | AUR |
+| `antigravity-ide` | mis-apps | AUR |
+| `chatgpt-desktop` | mis-apps | AUR |
 | `sddm` | login | oficial |
 | `qt6-declarative` | login | oficial |
 | `base-devel` | prerrequisito (lo instala el instalador) | oficial |
 | `gum` | prerrequisito (lo instala el instalador) | oficial |
 | `pciutils` | prerrequisito (lo instala el instalador) | oficial |
-| `brave-bin` | extras (brave, opt-in) | AUR |
-| `proton-vpn-gtk-app` | extras (protonvpn, opt-in) | oficial |
 | `qrencode` | extras (paneles, opt-in) | oficial |
 | `cava` | extras (paneles, opt-in) | oficial |
 | `herdr` | taller (opt-in) | instalador oficial, confirmación pendiente en I3/I4 |
