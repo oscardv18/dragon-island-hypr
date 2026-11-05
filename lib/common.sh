@@ -210,6 +210,7 @@ deploy_herdr() {
     # shellcheck source=lib/herdr.sh
     . "$REPO_DIR/lib/herdr.sh"
     herdr_bridge_setup
+    herdr_app_setup || true   # 10: the desktop app has not run here yet; migration 193 retries on the next update
     if [[ -x "$HOME/.local/bin/herdr" ]]; then
         run mkdir -p "$HOME/.zfunc"
         [[ "${DRY_RUN:-false}" == "true" ]] || "$HOME/.local/bin/herdr" completion zsh >| "$HOME/.zfunc/_herdr" 2>/dev/null || true
