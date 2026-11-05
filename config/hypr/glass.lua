@@ -120,6 +120,14 @@ if glass.liquid then
         match = { class = "^(com\\.mitchellh\\.ghostty|com\\.mitchellh\\.ghostty\\..*|kitty|org\\.dragonisland\\.(Herdr|Pkg|Setup))$" },
         tag   = "-hyprglass_disabled",
     })
+    -- Visual Studio Code (and only it) keeps glass: the blur of the background shows through the transparency that
+    -- its own theme/settings provide. Other editors and browsers stay excluded above. com.microsoft.VSCode is the
+    -- app id of the Flatpak/Wayland build; code / Code the distro packages.
+    hl.window_rule({
+        name  = "glass-keep-vscode",
+        match = { class = "^(com\\.microsoft\\.VSCode|code|Code)$" },
+        tag   = "-hyprglass_disabled",
+    })
     hl.window_rule({
         name  = "glass-off-video-players",
         match = { class = "^(mpv|vlc|celluloid|io\\.github\\.celluloid_player\\.Celluloid|haruna|org\\.kde\\.haruna|smplayer|totem|org\\.gnome\\.Totem)$" },
