@@ -1,4 +1,5 @@
-# dragon-island — module shell: zsh + terminal tools (fzf-tab and zsh plugins are git clones, see modules/shell.sh)
+# dragon-island — module shell: zsh + terminal tools. zsh-autosuggestions and zsh-syntax-highlighting are packages
+# (/usr/share/zsh/plugins); only fzf-tab is a git clone (no package in extra), see lib/zsh-setup.sh
 # One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
 
 zsh
@@ -8,3 +9,5 @@ fzf
 zoxide
 fd
 bat
+zsh-autosuggestions
+zsh-syntax-highlighting

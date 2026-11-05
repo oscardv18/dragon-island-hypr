@@ -60,7 +60,7 @@ def package_table():
         print(f"| `{item['name']}` | {', '.join(item['profiles'])} | {'oficial' if item['source'] == 'pacman' else 'AUR'} |")
     print('| `herdr` | taller (opt-in) | instalador oficial, confirmación pendiente en I3/I4 |')
     print('| `hyprfocus`, `hyprglass` | plugins | hyprpm |')
-    print('| `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |')
+    print('| `fzf-tab` | shell | git clone (sin paquete en extra) |')
 
 
 if __name__ == '__main__':

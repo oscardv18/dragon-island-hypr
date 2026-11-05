@@ -520,6 +520,8 @@ Revertir o actualizar: `./uninstall.sh`, `./update.sh`. Antes de reinstalar un e
 | `zoxide` | base, mis-apps | oficial |
 | `fd` | base, editor | oficial |
 | `bat` | base, mis-apps | oficial |
+| `zsh-autosuggestions` | base | oficial |
+| `zsh-syntax-highlighting` | base | oficial |
 | `ttf-jetbrains-mono-nerd` | base | oficial |
 | `nwg-look` | base | oficial |
 | `adw-gtk-theme` | base | oficial |
@@ -620,7 +622,7 @@ Revertir o actualizar: `./uninstall.sh`, `./update.sh`. Antes de reinstalar un e
 | `cava` | extras (paneles, opt-in) | oficial |
 | `herdr` | taller (opt-in) | instalador oficial, confirmación pendiente en I3/I4 |
 | `hyprfocus`, `hyprglass` | plugins | hyprpm |
-| `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |
+| `fzf-tab` | shell | git clone (sin paquete en extra) |
 <!-- packages:end -->
 
 Lo que ya tengas instalado no se reinstala (`pacman -S --needed`). Los paquetes **no** se desinstalan al revertir salvo que lo pidas
