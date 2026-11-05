@@ -15,6 +15,7 @@ from pathlib import Path
 
 ROOT = Path(__file__).resolve().parents[2]
 ANSI = re.compile(r'\x1b\[[0-9;?]*[A-Za-z]')
+REAL_TOOLS_HIDDEN = {'paru', 'yay'}    # the sandbox only ever sees the fake AUR helpers
 
 
 class Sandbox(unittest.TestCase):
@@ -40,7 +41,13 @@ class Sandbox(unittest.TestCase):
         for name in ('pacman', 'curl', 'busctl', 'systemctl', 'timedatectl', 'lspci', 'getent', 'id', 'uname',
                      'sudo', 'paru', 'yay', 'gum', 'gsettings', 'chsh', 'hyprctl', 'hyprpm', 'qs', 'snapper', 'timeshift'):
             (bin_dir/name).symlink_to(fixture)
-        self.env['PATH'] = str(bin_dir) + ':/usr/bin:/bin'
+        # The real tools, minus the AUR helpers: when a test removes the fake paru/yay, a paru installed on the
+        # machine running the suite (/usr/bin/paru on CachyOS) must not take its place and reach the AUR.
+        sysbin = self.base/'sysbin'; sysbin.mkdir()
+        for entry in os.scandir('/usr/bin'):
+            if entry.name not in REAL_TOOLS_HIDDEN:
+                (sysbin/entry.name).symlink_to(entry.path)
+        self.env['PATH'] = f'{bin_dir}:{sysbin}'
         self.env.pop('HYPRLAND_INSTANCE_SIGNATURE', None)
         self.env.pop('NO_COLOR', None)
         (home/'.zshrc').write_text('# usuario\n')

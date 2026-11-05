@@ -167,6 +167,13 @@ class Preparation(UX):
         self.run_install('--yes', '--plain', '--restart', '--modules', 'core', stop='prepare')
         self.assertEqual(len(self.calls('sudo', 'pacman', '-Syu')), 1, '--restart no debe contar el progreso viejo como actualización')
 
+    def test_sandbox_never_sees_a_real_aur_helper(self):
+        """Without its fake paru/yay the sandbox has no AUR helper at all, even on a machine with /usr/bin/paru."""
+        for name in ('paru', 'yay'):
+            (self.base/'bin'/name).unlink()
+        found = subprocess.run(['bash', '-c', 'command -v paru yay || true'], env=self.env, text=True, capture_output=True)
+        self.assertEqual(found.stdout, '')
+
     def test_aur_helper_from_repo_or_built_from_aur(self):
         for name in ('paru', 'yay'):
             link = self.base/'bin'/name
