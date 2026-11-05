@@ -229,7 +229,9 @@ Dos capas, y la segunda es opcional. Ambas trabajan por **alfa**: el blur / cris
 
 ## Shell: zsh + starship
 
-Módulo `shell` del instalador. Instala `zsh`, `starship` y las herramientas, clona `zsh-autosuggestions`, `zsh-syntax-highlighting` y `fzf-tab` (clones de git, no paquetes; en la carpeta de plugins de oh-my-zsh si lo tienes, o en `~/.local/share/dragon-island/zsh-plugins`), enlaza `config/zsh` en `~/.config/dragon-island/zsh` y `config/starship/starship.toml` en `~/.config/starship.toml` (con respaldo), y **añade UNA línea a tu `~/.zshrc` entre marcadores** (`source …/dragon.zsh`): tu archivo no se reemplaza. Pregunta antes de `chsh -s /usr/bin/zsh`.
+Módulo `shell` del instalador. Instala `zsh`, `starship`, las herramientas y los paquetes `zsh-autosuggestions` y `zsh-syntax-highlighting` (de `extra`); clona solo `fzf-tab` (no tiene paquete), en la carpeta de plugins de oh-my-zsh si existe **y es escribible**, o en `~/.local/share/dragon-island/zsh-plugins` (el oh-my-zsh de CachyOS es de root). Un clon fallido hace fallar el módulo con el comando exacto. Enlaza `config/zsh` en `~/.config/dragon-island/zsh`, pone el `starship.toml` de Dragon (si tenías otro, lo guarda en las copias) y, **si aceptas la pregunta** («Sí» por defecto), **añade UNA línea a tu `~/.zshrc` entre marcadores** (`source …/dragon.zsh`): tu archivo no se reemplaza. Pregunta también antes de `chsh -s /usr/bin/zsh`; lo que contestes «no» queda en «Queda para ti» con su comando y `./doctor.sh` lo detecta.
+
+**CachyOS:** su `~/.zshrc` carga Powerlevel10k y sus plugins antes del bloque de Dragon. `dragon.zsh` descarga p10k (instant prompt incluido) para que mande Starship, sin editar archivos de CachyOS: sus aliases y su completado se quedan, y no se carga una segunda copia de los plugins que CachyOS ya cargó.
 
 - Lo privado (tokens, alias personales, rutas) va en `~/.zshrc.local`, fuera del repo: el `.zshrc` lo carga si existe.
 - Los colores de starship usan la paleta Dragonized (accent, violetSoft, cyan, ok, warn, error).
@@ -240,7 +242,7 @@ Módulo `shell` del instalador. Instala `zsh`, `starship` y las herramientas, cl
 
 Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo suma `eza`, `fzf`, `fzf-tab`, `zoxide`, `fd` y `bat`, todo en `config/zsh/` (desplegado en `~/.config/dragon-island/zsh`; `~/.zshrc` solo los carga, y **el prompt de starship no cambia**).
 
-**Orden de carga** (importa): oh-my-zsh con el plugin `git` (`oh-my-zsh.sh` ejecuta `compinit` después de la lista `plugins`) → historial → `fzf` (`fzf --zsh`, que también enlaza Tab) → `fzf-tab` (el último en enlazar `^I`) → `zsh-autosuggestions` → `zsh-syntax-highlighting` (el último envoltorio de widgets) → aliases → `zoxide` → starship. Por eso autosuggestions y el resaltado ya no están en `plugins=()`. `fzf-tab` es un clon de git como los otros plugins; el resto, paquetes de `extra`. Toda esta carga vive en `config/zsh/dragon.zsh` (funciona con o sin oh-my-zsh).
+**Orden de carga** (importa): oh-my-zsh con el plugin `git` (`oh-my-zsh.sh` ejecuta `compinit` después de la lista `plugins`) → historial → `fzf` (`fzf --zsh`, que también enlaza Tab) → `fzf-tab` (el último en enlazar `^I`) → `zsh-autosuggestions` → `zsh-syntax-highlighting` (el último envoltorio de widgets) → aliases → `zoxide` → starship. Por eso autosuggestions y el resaltado ya no están en `plugins=()`. `fzf-tab` es el único clon de git; `zsh-autosuggestions`, `zsh-syntax-highlighting` y el resto son paquetes de `extra` (`/usr/share/zsh/plugins`). Si falta un plugin, `dragon.zsh` lo dice una vez por sesión. Toda esta carga vive en `config/zsh/dragon.zsh` (funciona con o sin oh-my-zsh).
 
 | Atajo | Qué hace |
 |---|---|
