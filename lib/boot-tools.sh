@@ -16,14 +16,27 @@ boot_first() { local f; for f in "$@"; do [[ -e "$f" ]] && { echo "$f"; return 0
 boot_engine() { python3 "$REPO_DIR/dragon-core/dragon_boot.py" "$@"; }
 boot_sys_engine() { "${BOOT_SUDO_CMD[@]}" env DRAGON_BOOT_SYSTEM_DIR="$BOOT_SYSTEM_DIR" python3 "$BOOT_SYSTEM_DIR/dragon_boot.py" "$@"; }
 
-# a question about /boot is never answered by --yes: needs a terminal (or the test variable)
+# a question about /boot is never answered by --yes. Minimal interface that works in the linear installer too: a plain [s/N] on the
+# real terminal (default NO). Without a terminal nothing is asked and nothing is done.
 boot_confirm() {
     [[ "${DRAGON_BOOT_ASSUME_YES:-}" == 1 ]] && return 0
-    if [[ ! -t 0 || ! -t 1 ]] || ! has_gum; then
-        log_warn "Arranque: hace falta confirmar a mano (terminal con gum); no se hace nada sin preguntar."
+    if ! have_tty; then
+        log_warn "Arranque: no hay terminal donde preguntar; no se hace nada sin preguntar. Repite desde una terminal: ./install.sh --modules boot"
         return 1
     fi
-    gum confirm --affirmative "Sí" --negative "No" "$1"
+    ask_plain "$1" no
+}
+
+# boot_preview <bootloader>: renders what the menu will look like (no system access) and says where the image is
+boot_preview() {
+    local out="${STATE_DIR:-$HOME/.local/state/dragon-island}/boot-preview.png"
+    if $DRY_RUN; then echo "[dry-run] dragon-boot preview --out $out --bootloader $1"; return 0; fi
+    mkdir -p "$(dirname "$out")"
+    if boot_engine preview --out "$out" --bootloader "$1" >/dev/null 2>&1; then
+        log_info "Vista previa del tema de arranque: $out   (ábrela con tu visor de imágenes antes de confirmar)"
+    else
+        log_warn "No se pudo generar la vista previa (¿python-pillow?); puedes seguir sin ella."
+    fi
 }
 
 boot_detect() {   # → bootloader name or empty
@@ -65,6 +78,7 @@ boot_apply_limine() {
         return 0
     fi
     log_info "Limine: $esp"
+    boot_preview limine
     stage="$(boot_stage_dir)"
     if $DRY_RUN; then
         echo "[dry-run] se renderiza el papel tapiz, se copian el motor y el gancho con sudo y se aplica el bloque a limine.conf. Diferencia que se aplicaría:"
@@ -86,6 +100,7 @@ boot_apply_limine() {
 
 boot_apply_grub() {
     local stage
+    boot_preview grub
     stage="$(boot_stage_dir)"
     if $DRY_RUN; then
         boot_engine apply --bootloader grub --root "$BOOT_ROOT" --dry-run --no-regen | python3 -c 'import json,sys; d=json.load(sys.stdin); print(d.get("diff") or d)' || log_warn "(no se pudo leer /etc/default/grub)"

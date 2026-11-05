@@ -81,7 +81,7 @@ Si ya iniciaste sesión, `SUPER + ALT + Space` cambia de distribución (también
 
 1. Cambia a una TTY: `Ctrl+Alt+F3` e inicia sesión.
 2. Reinicia la shell para recrear el bloqueo: `pkill quickshell` y vuelve a la sesión gráfica (`Ctrl+Alt+F1` o `F2`), donde la pantalla sigue bloqueada.
-3. Como respaldo existe **hyprlock** (`config/hypr/hyprlock.conf`): desde la TTY, `HYPRLAND_INSTANCE_SIGNATURE=$(ls /run/user/$UID/hypr | head -n1) hyprctl dispatch exec hyprlock`, y desbloquea con él.
+3. Como respaldo existe **hyprlock** (`config/hypr/hyprlock.conf`): desde la TTY, `HYPRLAND_INSTANCE_SIGNATURE=$(ls /run/user/$UID/hypr | head -n1) hyprctl dispatch 'hl.dsp.exec_cmd("hyprlock")'`, y desbloquea con él.
 4. Último recurso: `loginctl terminate-session <id>` (`loginctl list-sessions`); pierdes las ventanas abiertas.
 
 ## Plasma Login Manager vs SDDM

@@ -20,8 +20,16 @@ bool_flag() {
 DRY_RUN="$(bool_flag "${DRY_RUN:-false}")"
 ASSUME_YES="$(bool_flag "${ASSUME_YES:-false}")"
 
+# install.sh sets EV_ENGINE=1: output then becomes events (lib/events.sh) drawn by the TUI, or printed as text/JSON.
+# update.sh, doctor.sh and the migrations leave it empty and keep the output below unchanged.
+EV_ENGINE="${EV_ENGINE:-}"
+DOCKER_GROUP_FLAG="${DOCKER_GROUP_FLAG:-false}"
+CONFIRM_DETAIL=""
+declare -a MANUAL_ITEMS=()      # things the installer cannot do for the user; listed in the final report
+
 run() {
     if $DRY_RUN; then
+        if [[ -n "$EV_ENGINE" ]]; then ev_log "[dry-run]$(printf ' %q' "$@")"; return 0; fi
         printf '[dry-run]'; printf ' %q' "$@"
         echo
     else
@@ -29,14 +37,23 @@ run() {
     fi
 }
 
-has_gum() { command -v gum >/dev/null 2>&1; }
+# run_streamed <command>...: like run, but each output line also becomes a log event (needs shopt -s lastpipe)
+run_streamed() {
+    if [[ -z "$EV_ENGINE" ]] || $DRY_RUN; then run "$@"; return; fi
+    local rc=0
+    "$@" 2>&1 | tee -a "${LOG:-/dev/null}" | ev_stream || rc=${PIPESTATUS[0]}
+    return "$rc"
+}
 
-log_info() { if has_gum; then gum log --level info "$1"; else echo ":: $1"; fi; }
-log_warn() { if has_gum; then gum log --level warn "$1"; else echo ":: AVISO: $1"; fi; }
+has_gum() { [[ -z "${DRAGON_NO_GUM:-}" ]] && command -v gum >/dev/null 2>&1; }   # DRAGON_NO_GUM=1: plain [S/n] prompts (tests, minimal terminals)
+
+log_info() { if [[ -n "$EV_ENGINE" ]]; then ev_step "$1"; elif has_gum; then gum log --level info "$1"; else echo ":: $1"; fi; }
+log_warn() { if [[ -n "$EV_ENGINE" ]]; then ev_warn "$1"; elif has_gum; then gum log --level warn "$1"; else echo ":: AVISO: $1"; fi; }
 
 # box <border-color> <line>...   (plain text fallback when gum is missing, e.g. in --dry-run)
 box() {
     local color="$1"; shift
+    if [[ -n "$EV_ENGINE" ]]; then ev_step "$1"; return 0; fi
     if has_gum; then
         gum style --border rounded --border-foreground "$color" --padding "1 2" --foreground "#e6e8ef" "$@"
     else
@@ -45,10 +62,46 @@ box() {
     fi
 }
 
-# confirm <question>  → 0 = yes. In --yes mode (or without gum) always yes.
+# have_tty: a controlling terminal can be opened (plain text prompts need one)
+have_tty() { { : </dev/tty; } 2>/dev/null; }
+
+# ask_plain <question> <yes|no>: a [S/n] prompt without gum. Without a terminal it answers the default.
+ask_plain() {
+    local ans hint="[S/n]"
+    [[ "$2" == no ]] && hint="[s/N]"
+    have_tty || { [[ "$2" == yes ]]; return; }
+    printf '%s %s ' "$1" "$hint" >/dev/tty
+    read -r ans </dev/tty || ans=""
+    if [[ "$2" == yes ]]; then [[ ! "$ans" =~ ^[nN] ]]; else [[ "$ans" =~ ^[sSyY] ]]; fi
+}
+
+# PLAN_CONFIRMED: set by install.sh after the single «Instalar todo». Ordinary confirmations then answer yes (every sudo step is
+# still announced); the ones that default to NO (docker group, PAM, boot) keep asking.
+PLAN_CONFIRMED="${PLAN_CONFIRMED:-false}"
+
+# confirm <question>  → 0 = yes. In --yes mode, in --dry-run (nothing to ask: nothing is done) and after the plan was accepted always yes.
 confirm() {
-    if $ASSUME_YES || ! has_gum; then return 0; fi
-    gum confirm --affirmative "Sí" --negative "No" "$1"
+    if $ASSUME_YES || $DRY_RUN || $PLAN_CONFIRMED; then return 0; fi
+    if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" yes; return; fi
+    if has_gum; then gum confirm --affirmative "Sí" --negative "No" "$1"; return; fi
+    ask_plain "$1" yes
+}
+
+# confirm_explicit <question>: like confirm, but the accepted plan does not answer it (changes that deserve their own «Sí»: PAM, login shell).
+# --yes and --dry-run still answer yes.
+confirm_explicit() {
+    if $ASSUME_YES || $DRY_RUN; then return 0; fi
+    if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" yes; return; fi
+    if has_gum; then gum confirm --affirmative "Sí" --negative "No" "$1"; return; fi
+    ask_plain "$1" yes
+}
+
+# confirm_default_no <question>  → 0 only after an explicit «Sí» (default button: No). --yes never answers it.
+confirm_default_no() {
+    $ASSUME_YES && return 1
+    if [[ -n "$EV_ENGINE" ]] && declare -F engine_confirm >/dev/null; then engine_confirm "$1" no; return; fi
+    if has_gum; then gum confirm --default=false --affirmative "Sí" --negative "No" "$1"; return; fi
+    ask_plain "$1" no
 }
 
 # read_packages <file> <component>...  → prints the packages of the selected sections
@@ -157,6 +210,7 @@ deploy_herdr() {
     # shellcheck source=lib/herdr.sh
     . "$REPO_DIR/lib/herdr.sh"
     herdr_bridge_setup
+    herdr_app_setup || true   # 10: the desktop app has not run here yet; migration 193 retries on the next update
     if [[ -x "$HOME/.local/bin/herdr" ]]; then
         run mkdir -p "$HOME/.zfunc"
         [[ "${DRY_RUN:-false}" == "true" ]] || "$HOME/.local/bin/herdr" completion zsh >| "$HOME/.zfunc/_herdr" 2>/dev/null || true
@@ -258,22 +312,54 @@ confirm_sudo() {
     fi
     log_info "[sudo] $why"
     confirm "¿Ejecutar con sudo?  sudo $*" || { log_warn "Omitido por ti. Para hacerlo luego: sudo $*"; return 1; }
-    run sudo "$@"
+    run_streamed sudo "$@"
+}
+
+# pacman -T checks dependency satisfaction including installed Provides and versions.
+# stdout is the exact list still needed; distinguish its documented 127 from probe errors.
+package_targets() {
+    (( $# > 0 )) || return 0
+    local output rc=0
+    output="$(LC_ALL=C pacman -T -- "$@")" || rc=$?
+    if (( rc == 0 )); then return 0; fi
+    if (( rc != 127 )) || [[ -z "$output" ]]; then
+        log_warn "No se pudo comprobar dependencias con pacman -T (salida $rc)." >&2
+        return 1
+    fi
+    local p
+    while IFS= read -r p; do
+        if [[ " $* " != *" $p "* ]]; then
+            log_warn "Respuesta inesperada de pacman -T: $p" >&2
+            return 1
+        fi
+    done <<<"$output"
+    printf '%s\n' "$output"
 }
 
 # ensure_pacman <pkg>...  installs the ones that are missing (one sudo step, never -y)
 ensure_pacman() {
-    local missing=() p
-    for p in "$@"; do pkg_installed "$p" || missing+=("$p"); done
+    local missing=() targets
+    targets="$(package_targets "$@")" || return 1
+    [[ -z "$targets" ]] || mapfile -t missing <<<"$targets"
     if [[ ${#missing[@]} -eq 0 ]]; then log_info "Paquetes oficiales: todo instalado ($#)."; return 0; fi
+    # install.sh installs every package in its own phases: a module does not try again (and does not ask again)
+    if [[ "${DRAGON_PKGS_DONE:-}" == 1 ]]; then
+        if $DRY_RUN; then log_info "Paquetes oficiales por instalar en la fase de paquetes: ${missing[*]}"; return 0; fi
+        log_warn "Paquetes oficiales pendientes (ya se intentó en la fase de paquetes): ${missing[*]}"; return 1
+    fi
     confirm_sudo "Instalar ${#missing[@]} paquetes oficiales: ${missing[*]}" pacman -S --needed --noconfirm "${missing[@]}"
 }
 
 # ensure_aur <pkg>...  AUR helper in the foreground (it asks its own questions); needs AUR_HELPER
 ensure_aur() {
-    local missing=() p
-    for p in "$@"; do pkg_installed "$p" || missing+=("$p"); done
+    local missing=() targets
+    targets="$(package_targets "$@")" || return 1
+    [[ -z "$targets" ]] || mapfile -t missing <<<"$targets"
     if [[ ${#missing[@]} -eq 0 ]]; then log_info "Paquetes AUR: todo instalado ($#)."; return 0; fi
+    if [[ "${DRAGON_PKGS_DONE:-}" == 1 ]]; then
+        if $DRY_RUN; then log_info "Paquetes AUR por instalar en la fase de paquetes: ${missing[*]}"; return 0; fi
+        log_warn "Paquetes AUR pendientes (ya se intentó en la fase de paquetes): ${missing[*]}"; return 1
+    fi
     if [[ -z "$AUR_HELPER" ]]; then
         log_warn "Sin yay/paru: instala a mano ${missing[*]} (ver $PRE_DOC, Paso 3)."
         return 1
@@ -342,6 +428,9 @@ fail_step() {
     return 0
 }
 
+# warn_step <message>: like fail_step but for warnings (a check that returns 2); never counted as a failure
+warn_step() { echo "⚠ $*" >&2; return 0; }
+
 # local override files (never versioned): ~/.config/dragon-island/local.conf (KEY=value) and hypr/local.lua
 LOCAL_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/dragon-island/local.conf"
 HYPR_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/hypr/local.lua"
@@ -354,3 +443,6 @@ ensure_via() {
     [[ ${#pk[@]} -gt 0 ]] || return 0
     "ensure_$kind" "${pk[@]}"
 }
+
+# modules also run outside install.sh (tests, update.sh): without the event layer, events become plain lines
+declare -F ev_log >/dev/null || ev_log() { printf '%s\n' "$1"; }

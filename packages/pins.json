@@ -1,0 +1,6 @@
+{
+  "schema": 1,
+  "comment": "Versión de Hyprland (serie major.minor) para la que están escritos plugins.lua, glass.lua y los plugins de hyprpm. doctor.sh y el primer arranque (plugins-foreground.sh) la comprueban. Al subir de serie: probar, cambiar aquí y en config/hypr/plugins.lua.",
+  "hyprland": "0.57",
+  "hyprglass": null
+}

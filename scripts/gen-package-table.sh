@@ -10,22 +10,7 @@ BEGIN='<!-- packages:begin (generado por scripts/gen-package-table.sh; no editar
 END='<!-- packages:end -->'
 
 table() {
-    echo "| Paquete | Módulo | Origen |"
-    echo "|---|---|---|"
-    local f mod src name
-    for f in base pacman-core aur-core pacman-shell pacman-editor pacman-theme aur-theme pacman-login pacman-plugins; do
-        case "$f" in
-            base) mod="(previo, Paso 3)"; src="oficial" ;;
-            pacman-*) mod="${f#pacman-}"; src="oficial" ;;
-            aur-*) mod="${f#aur-}"; src="AUR" ;;
-        esac
-        while read -r name; do echo "| \`$name\` | $mod | $src |"; done < <(awk '/^[[:space:]]*(#|$|@)/ { next } { print $1 }' "$REPO_DIR/packages/$f.txt")
-    done
-    awk '/^[[:space:]]*(#|$)/ { next } /^@/ { sec = substr($1, 2); next } { split($1, a, ":"); printf "| `%s` | extras (%s) | %s |\n", a[2], sec, (a[1] == "aur" ? "AUR" : "oficial") }' "$REPO_DIR/packages/extras.txt"
-    echo "| \`herdr\` | extras | instalador oficial (sin root, ~/.local/bin) |"
-    echo "| \`zsh-autosuggestions\`, \`zsh-syntax-highlighting\`, \`fzf-tab\` | shell | git clone |"
-    echo "| \`hyprfocus\`, \`hyprglass\` | plugins | hyprpm |"
-    echo "| Mis apps: $(awk '/^[[:space:]]*(#|$)/ { next } { printf "%s ", $1 }' "$REPO_DIR/packages/user-pacman.txt" "$REPO_DIR/packages/user-aur.txt") | extras (myapps) | lo que instalaste desde la Tienda |"
+    PYTHONDONTWRITEBYTECODE=1 python3 "$REPO_DIR/lib/installer_profiles.py"
 }
 
 render() {  # the whole document with the block replaced

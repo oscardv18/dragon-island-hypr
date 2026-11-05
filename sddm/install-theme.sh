@@ -14,13 +14,16 @@ SRC="$HERE/dragon-core"
 DEST="/usr/share/sddm/themes/dragon-core"
 CONF="/etc/sddm.conf.d/10-dragon-core.conf"
 
-say()  { printf '\033[35m▸\033[0m %s\n' "$*"; }
-warn() { printf '\033[33m!\033[0m %s\n' "$*" >&2; }
-ask()  { local a; read -r -p "$1 [s/N] " a; [[ "$a" =~ ^[sSyY]$ ]]; }
+# colors only on a real terminal and without NO_COLOR (the installer's log and pipes get plain text)
+if [[ -t 1 && -z "${NO_COLOR:-}" ]]; then C_M=$'\033[35m'; C_Y=$'\033[33m'; C_0=$'\033[0m'; else C_M=""; C_Y=""; C_0=""; fi
+say()  { printf '%s▸%s %s\n' "$C_M" "$C_0" "$*"; }
+warn() { printf '%s!%s %s\n' "$C_Y" "$C_0" "$*" >&2; }
+# DRAGON_ASSUME_YES=1: install.sh already showed this step in the accepted plan, so it does not ask again
+ask()  { local a; [[ "${DRAGON_ASSUME_YES:-}" == 1 ]] && return 0; read -r -p "$1 [s/N] " a; [[ "$a" =~ ^[sSyY]$ ]]; }
 
 display_manager() {
     local unit
-    unit="$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)"
+    unit="$(readlink -e /etc/systemd/system/display-manager.service 2>/dev/null || true)"
     case "$unit" in
         *sddm*) echo sddm ;;
         *plasmalogin*|*plasma-login*) echo plasmalogin ;;

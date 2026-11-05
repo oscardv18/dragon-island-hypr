@@ -28,20 +28,24 @@ Versiones probadas: Hyprland 0.56.2, Quickshell 0.3.1, hyprglass 0.9.1, SDDM 0.2
 
 ## Instalación
 
-**Antes de ejecutar nada, lee [`pre-instalation.md`](pre-instalation.md)**: es la guía paso a paso de lo que debes tener
-hecho antes (EndeavourOS, sistema actualizado, herramientas base, red, **driver de video**, display manager, acceso al repo).
-`./doctor.sh --pre` comprueba esos requisitos y, por cada fallo, te dice qué paso repetir.
-
-Soportado: **Arch y derivadas (EndeavourOS, Arch, CachyOS)**. En otras distros el instalador no instala nada
+Soportado: **Arch y derivadas (EndeavourOS, Arch, CachyOS)**; en CachyOS, instala con la opción «sin escritorio». En otras distros el instalador no instala nada
 (ver [docs/INSTALL.md](docs/INSTALL.md)).
 
 ```sh
 git clone https://github.com/oscardv18/dragon-island-hypr.git ~/dragon-island-hypr
 cd ~/dragon-island-hypr
-./doctor.sh --pre        # ¿cumples los requisitos previos?
-./install.sh --dry-run   # el plan completo, sin cambiar nada ni pedir sudo
-./install.sh             # instalación interactiva (gum)
+./install.sh
 ```
+
+Un solo comando hace todo el ciclo, en línea recta y con la salida real de pacman y paru a la vista: escribes tu clave de administrador **una vez**; el
+instalador escanea qué falta (`faltan N paquetes: …`), instala los oficiales con **una** llamada a `sudo pacman` y los AUR con `paru` (o `yay`),
+despliega las configuraciones, levanta los servicios (NetworkManager, bluetooth, power-profiles-daemon, docker, pipewire…), configura SDDM y su
+tema, desbloquea el llavero en el login y lo comprueba todo con `doctor.sh`. El resumen final sale de esas comprobaciones: **«Instalación completa»**
+(verde) solo si `doctor.sh` pasa; si no, **«Incompleta»** (rojo) con el comando exacto para arreglar cada punto y salida distinta de 0. Todo queda en
+`~/dragon-install.log` y, al terminar, en **`~/dragon-informe.txt`** (con el paso que falló y la cola del registro). Repetirlo no rompe nada ni reinstala
+lo ya hecho. La interfaz de pantalla alterna anterior sigue disponible con `./install.sh --tui`. [`pre-instalation.md`](pre-instalation.md) explica el detalle de cada comprobación.
+
+`./doctor.sh` suelto solo diagnostica y termina con «¿Instalar ahora? [S/n]».
 
 Alternativa de una línea (**lee el script antes de ejecutarlo**; hace lo mismo que los comandos de arriba):
 
@@ -50,7 +54,7 @@ curl -fsSL https://raw.githubusercontent.com/oscardv18/dragon-island-hypr/main/b
 less bootstrap.sh && bash bootstrap.sh
 ```
 
-El instalador es **modular**; en el menú eliges qué instalar (`core` es obligatorio):
+El instalador es **modular**; por defecto instala lo marcado «sí» (`core` es obligatorio; con `--choose` eliges en un menú):
 
 | Módulo | Qué hace | Por defecto |
 |---|---|---|
@@ -64,8 +68,8 @@ El instalador es **modular**; en el menú eliges qué instalar (`core` es obliga
 | `keyring` | gnome-keyring como único llavero, con el cambio de PAM mostrado como diff | no |
 | `extras` | Brave, Proton VPN, herdr, «Mis apps» | no |
 
-Garantías: **idempotente** (dos ejecuciones no duplican nada), no corre como root, cada paso con `sudo` se explica y se
-confirma (`--no-sudo` los omite todos), nunca sobrescribe configuraciones sin copia en
+Garantías: **idempotente** (dos ejecuciones no duplican nada), no corre como root, cada paso con `sudo` se anuncia en el plan
+(`--no-sudo` los omite todos), nunca sobrescribe configuraciones sin copia en
 `~/.local/state/dragon-island/backups/<fecha>/`, y no toca Plasma ni `/etc` salvo en los módulos opt-in
 (con copia `.bak-dragon`). Los ajustes propios de cada máquina (monitores, escala, GPU, teclado) van en
 `~/.config/hypr/local.lua` y `~/.config/dragon-island/local.conf`, que no se versionan.
@@ -146,18 +150,15 @@ Regla del proyecto: todo cambio que afecte a sistemas ya instalados viene con su
 ### Opciones
 
 ```sh
-./install.sh --dry-run                      # plan completo sin cambiar nada
-./install.sh --yes                          # sin preguntas (módulos por defecto)
-./install.sh --modules core,shell,login     # solo esos módulos (core siempre se incluye)
-./install.sh --extras brave,herdr           # extras sin preguntar
-./install.sh --no-sudo                      # omite los pasos con sudo e imprime el comando
-./install.sh --copy                         # copia en vez de enlazar (symlink por defecto)
+./install.sh                                # instalar (todo el ciclo)
 ./update.sh                                 # actualizar (también --update)
-./doctor.sh [--pre]                         # diagnóstico, solo lectura
+./doctor.sh                                 # diagnóstico, solo lectura; pregunta «¿Instalar ahora?» si aún no está instalado
 ./uninstall.sh [--modules a,b]              # revertir; los paquetes solo con --remove-packages
 ```
 
-Registro de la instalación: `~/.local/state/dragon-island/install.log`. Problemas: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
+Opciones avanzadas (`--check`, `--dry-run`, `--plain`, `--json-events`, `--modules`, `--no-sudo`…): [docs/INSTALL.md](docs/INSTALL.md#opciones-avanzadas).
+
+Informe: `~/dragon-informe.txt` · registro: `~/.local/state/dragon-island/install.log`. Problemas: [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md).
 
 ## Uso
 
@@ -228,7 +229,9 @@ Dos capas, y la segunda es opcional. Ambas trabajan por **alfa**: el blur / cris
 
 ## Shell: zsh + starship
 
-Módulo `shell` del instalador. Instala `zsh`, `starship` y las herramientas, clona `zsh-autosuggestions`, `zsh-syntax-highlighting` y `fzf-tab` (clones de git, no paquetes; en la carpeta de plugins de oh-my-zsh si lo tienes, o en `~/.local/share/dragon-island/zsh-plugins`), enlaza `config/zsh` en `~/.config/dragon-island/zsh` y `config/starship/starship.toml` en `~/.config/starship.toml` (con respaldo), y **añade UNA línea a tu `~/.zshrc` entre marcadores** (`source …/dragon.zsh`): tu archivo no se reemplaza. Pregunta antes de `chsh -s /usr/bin/zsh`.
+Módulo `shell` del instalador. Instala `zsh`, `starship`, las herramientas y los paquetes `zsh-autosuggestions` y `zsh-syntax-highlighting` (de `extra`); clona solo `fzf-tab` (no tiene paquete), en la carpeta de plugins de oh-my-zsh si existe **y es escribible**, o en `~/.local/share/dragon-island/zsh-plugins` (el oh-my-zsh de CachyOS es de root). Un clon fallido hace fallar el módulo con el comando exacto. Enlaza `config/zsh` en `~/.config/dragon-island/zsh`, pone el `starship.toml` de Dragon (si tenías otro, lo guarda en las copias) y, **si aceptas la pregunta** («Sí» por defecto), **añade UNA línea a tu `~/.zshrc` entre marcadores** (`source …/dragon.zsh`): tu archivo no se reemplaza. Pregunta también antes de `chsh -s /usr/bin/zsh`; lo que contestes «no» queda en «Queda para ti» con su comando y `./doctor.sh` lo detecta.
+
+**CachyOS:** su `~/.zshrc` carga Powerlevel10k y sus plugins antes del bloque de Dragon. `dragon.zsh` descarga p10k (instant prompt incluido) para que mande Starship, sin editar archivos de CachyOS: sus aliases y su completado se quedan, y no se carga una segunda copia de los plugins que CachyOS ya cargó.
 
 - Lo privado (tokens, alias personales, rutas) va en `~/.zshrc.local`, fuera del repo: el `.zshrc` lo carga si existe.
 - Los colores de starship usan la paleta Dragonized (accent, violetSoft, cyan, ok, warn, error).
@@ -239,7 +242,7 @@ Módulo `shell` del instalador. Instala `zsh`, `starship` y las herramientas, cl
 
 Con el componente «Shell: zsh + starship» (zsh, oh-my-zsh, starship) el repo suma `eza`, `fzf`, `fzf-tab`, `zoxide`, `fd` y `bat`, todo en `config/zsh/` (desplegado en `~/.config/dragon-island/zsh`; `~/.zshrc` solo los carga, y **el prompt de starship no cambia**).
 
-**Orden de carga** (importa): oh-my-zsh con el plugin `git` (`oh-my-zsh.sh` ejecuta `compinit` después de la lista `plugins`) → historial → `fzf` (`fzf --zsh`, que también enlaza Tab) → `fzf-tab` (el último en enlazar `^I`) → `zsh-autosuggestions` → `zsh-syntax-highlighting` (el último envoltorio de widgets) → aliases → `zoxide` → starship. Por eso autosuggestions y el resaltado ya no están en `plugins=()`. `fzf-tab` es un clon de git como los otros plugins; el resto, paquetes de `extra`. Toda esta carga vive en `config/zsh/dragon.zsh` (funciona con o sin oh-my-zsh).
+**Orden de carga** (importa): oh-my-zsh con el plugin `git` (`oh-my-zsh.sh` ejecuta `compinit` después de la lista `plugins`) → historial → `fzf` (`fzf --zsh`, que también enlaza Tab) → `fzf-tab` (el último en enlazar `^I`) → `zsh-autosuggestions` → `zsh-syntax-highlighting` (el último envoltorio de widgets) → aliases → `zoxide` → starship. Por eso autosuggestions y el resaltado ya no están en `plugins=()`. `fzf-tab` es el único clon de git; `zsh-autosuggestions`, `zsh-syntax-highlighting` y el resto son paquetes de `extra` (`/usr/share/zsh/plugins`). Si falta un plugin, `dragon.zsh` lo dice una vez por sesión. Toda esta carga vive en `config/zsh/dragon.zsh` (funciona con o sin oh-my-zsh).
 
 | Atajo | Qué hace |
 |---|---|

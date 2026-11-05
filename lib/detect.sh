@@ -8,10 +8,12 @@
 # detect_distro → sets DISTRO_ID, DISTRO_NAME, DISTRO_SUPPORTED (true for Arch, EndeavourOS, CachyOS and Arch derivatives)
 detect_distro() {
     DISTRO_ID="unknown"; DISTRO_NAME="desconocida"; DISTRO_SUPPORTED=false
-    [[ -f /etc/os-release ]] || return 0
+    # DRAGON_PREFLIGHT_ROOT redirects filesystem READS to a fixture tree (tests); empty on a real machine
+    local root="${DRAGON_PREFLIGHT_ROOT:-}"
+    [[ -f "$root/etc/os-release" ]] || return 0
     local ID="" ID_LIKE="" PRETTY_NAME=""
     # shellcheck source=/dev/null
-    . /etc/os-release
+    . "$root/etc/os-release"
     DISTRO_ID="$ID"; DISTRO_NAME="${PRETTY_NAME:-$ID}"
     case "$ID" in
         arch|endeavouros|cachyos) DISTRO_SUPPORTED=true ;;
@@ -36,10 +38,20 @@ detect_gpu() {
     return 0
 }
 
+# detect_virt → VIRT_KIND (none | kvm | oracle | vmware | …); "none" also when systemd-detect-virt is missing
+detect_virt() {
+    VIRT_KIND="none"
+    command -v systemd-detect-virt >/dev/null 2>&1 || return 0
+    VIRT_KIND="$(systemd-detect-virt 2>/dev/null || true)"
+    [[ -n "$VIRT_KIND" ]] || VIRT_KIND="none"
+    return 0
+}
+
 # display_manager → sddm | plasmalogin | none | <unit>
 display_manager() {
     local unit
-    unit="$(readlink -f /etc/systemd/system/display-manager.service 2>/dev/null || true)"
+    # -e: a missing link must give "" (none). With -f, readlink returns the path itself and the name became "display-manager".
+    unit="$(readlink -e "${DRAGON_PREFLIGHT_ROOT:-}/etc/systemd/system/display-manager.service" 2>/dev/null || true)"
     case "$unit" in
         *sddm*) echo sddm ;;
         *plasmalogin*|*plasma-login*) echo plasmalogin ;;
@@ -50,7 +62,8 @@ display_manager() {
 
 aur_helper() {
     local h
-    for h in paru yay; do command -v "$h" >/dev/null 2>&1 && { echo "$h"; return 0; }; done
+    # DRAGON_AUR_HELPERS lets tests (and people with an unusual setup) choose the candidates
+    for h in ${DRAGON_AUR_HELPERS:-paru yay}; do command -v "$h" >/dev/null 2>&1 && { echo "$h"; return 0; }; done
     return 0
 }
 

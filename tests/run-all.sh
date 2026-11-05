@@ -6,6 +6,20 @@
 set -Eeuo pipefail
 REPO_DIR="$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$REPO_DIR"
+# Focused checks for individual installer commits; the full suite runs once at closure.
+if [[ "${1:-}" == --only ]]; then
+  case "${2:-}" in
+    profiles|prereq|preflight) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -p "test_${2}.py" -v ;;
+    providers) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -p 'test_providers.py' -v ;;
+    activity) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/activity -v ;;
+    tui) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -p 'test_tui.py' -v ;;
+    modes) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v ;;
+    backup) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v ;;
+    ux) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_ux tests.installer_ux.test_ux2 -v ;;
+    simple) exec env PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_simple -v ;;
+    *) echo "Uso: $0 --only profiles|prereq|preflight|providers|activity|tui|modes|backup|ux|simple" >&2; exit 2 ;;
+  esac
+fi
 fails=0
 step() { printf '\n== %s ==\n' "$1"; }
 pass() { echo "✔ $*"; }
@@ -153,6 +167,9 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/session -v; t
 step "mosaico: selectores numéricos, con nombre y especiales (HOME temporal)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tiling -v; then pass "modos de mosaico"; else fail "modos de mosaico"; fi
 
+step "zsh sobre el ~/.zshrc de CachyOS: Starship gana a p10k, plugins (paquetes + fzf-tab), oh-my-zsh de solo lectura, clon fallido, respuestas «no», starship.toml ajeno, migración 191 y doctor (HOME temporal)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/zsh -v; then pass "zsh de Dragon en CachyOS"; else fail "zsh de Dragon en CachyOS"; fi
+
 step "Neovim: editor, opt-in, seguridad y retirada (HOME/XDG temporales, sin sincronización real)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/nvim -v; then pass "módulo editor"; else fail "módulo editor"; fi
 
@@ -161,6 +178,30 @@ if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/bar -v; then 
 
 step "llavero y GTK (HOME/XDG temporales)"
 if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/keyring_gtk -v; then pass "llavero y GTK"; else fail "llavero y GTK"; fi
+
+step "perfiles, prerrequisitos y preflight con paquetes/AUR/bus simulados"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/preflight -v; then pass "instalador I1/I2"; else fail "instalador I1/I2"; fi
+
+step "TUI del instalador (install-tui.sh, opcional): terminal simulada (80 columnas y anchas), eventos JSON y texto"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/tui -v; then pass "TUI y eventos"; else fail "TUI y eventos"; fi
+
+step "TUI en un terminal real (pty 80 y 200 columnas), eventos JSON, bloqueos y dry-run sin escrituras (comandos simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.tui.test_install_modes -v; then pass "install.sh por modos"; else fail "install.sh por modos"; fi
+
+step "instalador de un solo comando: preparación, reinicio y continuación, informe sin secretos, dry-run sin rastro, plan con incidencias, paru con contraseña/fallo/ausente y resumen sin «?» (comandos simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_ux tests.installer_ux.test_ux2 -v; then pass "install.sh de un solo comando"; else fail "install.sh de un solo comando"; fi
+
+step "instalador LINEAL (./install.sh): todo ok, paquete inexistente, paru que falla/ausente, sudo por /dev/tty, sin terminal, idempotencia, módulo fallido, resumen honesto, 60/80/120 columnas con y sin color, dry-run (comandos simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_simple -v; then pass "install.sh lineal"; else fail "install.sh lineal"; fi
+
+step "rc1: plugins.lua sin errores, primer arranque con avisos, doctor (bluetooth, llavero, plugins) y boot con vista previa (hyprctl, hyprpm y /sys simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_rc1 -v; then pass "rc1"; else fail "rc1"; fi
+
+step "rc2: sintaxis de hyprctl de Hyprland 0.57 (Lua), versión fijada de Hyprland, KWallet con confirmación y modificador de pruebas (hyprctl y hyprpm simulados)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest tests.installer_ux.test_rc2 -v; then pass "rc2"; else fail "rc2"; fi
+
+step "respaldo y restauración: base SQLite viva, dry-run, listas sin copiar (HOME temporal)"
+if PYTHONDONTWRITEBYTECODE=1 python3 -m unittest discover -s tests/backup -v; then pass "backup-dragon / restore-dragon"; else fail "backup-dragon / restore-dragon"; fi
 
 step "pre-instalation.md ↔ código"
 if tests/check-docs.sh; then pass "documentación coherente"; else fail "check-docs.sh falló"; fi

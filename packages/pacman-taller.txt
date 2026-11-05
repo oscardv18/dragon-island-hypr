@@ -1,0 +1,6 @@
+# Perfil taller — nombres validados con pacman -Si, 2026-11-02.
+docker
+docker-compose
+docker-buildx
+lazygit
+lazydocker

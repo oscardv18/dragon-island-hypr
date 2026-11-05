@@ -6,11 +6,46 @@ import statistics
 import subprocess
 import sys
 import time
+import unittest
 
 ROOT = Path(__file__).resolve().parents[2]
 sys.path.insert(0, str(ROOT / 'tests/engines'))
 from support import EngineCase
 import dragon_activity as activity
+
+
+def check_latency(measure, limit_ms=50, samples=7):
+    """One retry for transient host load; sustained slow medians still fail."""
+    batches = []
+    for _ in range(2):
+        durations = [measure() for _ in range(samples)]
+        batches.append(durations)
+        median = statistics.median(durations)
+        if median < limit_ms:
+            return median, batches
+    medians = [statistics.median(batch) for batch in batches]
+    raise AssertionError(f'latency medians {medians} ms >= {limit_ms} ms; samples={batches}')
+
+
+class LatencyCriterionTests(unittest.TestCase):
+    def test_one_outlier_does_not_trigger_retry(self):
+        values = iter([37.8] * 6 + [200])
+        median, batches = check_latency(lambda: next(values))
+        self.assertEqual(median, 37.8)
+        self.assertEqual(len(batches), 1)
+
+    def test_transient_slow_batch_gets_exactly_one_retry(self):
+        values = iter([57.7] * 7 + [37.8] * 7)
+        median, batches = check_latency(lambda: next(values))
+        self.assertEqual(median, 37.8)
+        self.assertEqual(len(batches), 2)
+
+    def test_sustained_regression_and_exact_limit_fail(self):
+        for value in (57.7, 50):
+            values = iter([value] * 14)
+            with self.assertRaisesRegex(AssertionError, 'latency medians'):
+                check_latency(lambda: next(values))
+            self.assertEqual(list(values), [])
 
 
 class ActivityTests(EngineCase):
@@ -171,15 +206,16 @@ class ActivityTests(EngineCase):
                      status='ok') for i in range(6000)]
         self.fixture(rows)
         self.rows(now - 21600, now)  # Warm process/filesystem caches.
-        durations = []
-        for _ in range(7):
+        def measure():
             start = time.perf_counter()
             result = self.rows(now - 21600, now)
-            durations.append((time.perf_counter() - start) * 1000)
+            elapsed = (time.perf_counter() - start) * 1000
             self.assertEqual(len(result), 50)
-        median = statistics.median(durations)
-        print(f'\nACTIVITY range: median={median:.1f} ms (6000 entries, 30 days, full CLI)')
-        self.assertLess(median, 50, durations)
+            return elapsed
+        median, batches = check_latency(measure)
+        medians = [round(statistics.median(batch), 1) for batch in batches]
+        print(f'\nACTIVITY range: median={median:.1f} ms; batch medians={medians} '
+              '(7 samples/batch, one retry max, limit <50 ms, 6000 entries, 30 days, full CLI)')
 
     def test_index_rebuild_after_external_edit_corruption_and_unavailable_cache(self):
         identifier = self.add()

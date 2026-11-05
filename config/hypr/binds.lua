@@ -7,7 +7,20 @@
 -- source of truth. Binds with the same group and text are shown as one row.
 -- =============================================================================
 
+-- Main modifier. SUPER, except for tests inside a VM whose host also uses SUPER (docs/VIRTUALBOX.md): MAIN_MOD=ALT in
+-- ~/.config/dragon-island/local.conf. Only SUPER, ALT or CTRL are accepted; anything else falls back to SUPER.
 local mainMod = "SUPER"
+do
+    local dir = os.getenv("XDG_CONFIG_HOME") or ((os.getenv("HOME") or "") .. "/.config")
+    local f = io.open(dir .. "/dragon-island/local.conf", "r")
+    if f then
+        for line in f:lines() do
+            local v = line:match("^MAIN_MOD=(%a+)%s*$")
+            if v == "SUPER" or v == "ALT" or v == "CTRL" then mainMod = v end
+        end
+        f:close()
+    end
+end
 
 -- hl.bind with a description (merged into the flags table)
 local function bind(keys, dispatcher, description, flags)

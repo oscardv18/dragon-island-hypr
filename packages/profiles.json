@@ -1,0 +1,112 @@
+{
+  "schema": 1,
+  "profiles": {
+    "base": {
+      "default": true,
+      "modules": [
+        "core",
+        "shell",
+        "theme",
+        "plugins",
+        "keyboard"
+      ],
+      "pacman": [
+        "pacman-core.txt",
+        "pacman-shell.txt",
+        "pacman-theme.txt",
+        "pacman-plugins.txt"
+      ],
+      "aur": [
+        "aur-core.txt",
+        "aur-theme.txt"
+      ]
+    },
+    "keyring": {
+      "default": true,
+      "modules": [
+        "keyring"
+      ],
+      "pacman": [
+        "pacman-keyring.txt"
+      ],
+      "optional": [
+        "seahorse"
+      ]
+    },
+    "taller": {
+      "default": true,
+      "modules": [
+        "taller"
+      ],
+      "pacman": [
+        "pacman-taller.txt"
+      ],
+      "opt_in": [
+        "herdr (https://herdr.dev/install.sh)"
+      ]
+    },
+    "archivos": {
+      "default": true,
+      "modules": [
+        "archivos"
+      ],
+      "pacman": [
+        "pacman-archivos.txt"
+      ],
+      "optional": [
+        "samba",
+        "python-gobject"
+      ]
+    },
+    "editor": {
+      "default": true,
+      "modules": [
+        "editor"
+      ],
+      "pacman": [
+        "pacman-editor.txt"
+      ]
+    },
+    "mis-apps": {
+      "default": false,
+      "modules": [
+        "extras"
+      ],
+      "pacman": [
+        "user-pacman.txt"
+      ],
+      "aur": [
+        "user-aur.txt"
+      ]
+    },
+    "login": {
+      "default": false,
+      "modules": [
+        "login"
+      ],
+      "pacman": [
+        "pacman-login.txt"
+      ]
+    },
+    "boot": {
+      "default": false,
+      "modules": [
+        "boot"
+      ],
+      "pacman": []
+    }
+  },
+  "prereq": {
+    "aur_helper": {
+      "cachyos": "paru",
+      "default": "yay"
+    },
+    "kernel_headers": "/usr/lib/modules/$(uname -r)/pkgbase + -headers",
+    "manual": false,
+    "pacman_file": "base.txt",
+    "aur_build": {
+      "paru": "paru-bin",
+      "yay": "yay-bin"
+    }
+  }
+}

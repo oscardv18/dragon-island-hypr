@@ -1,90 +1,294 @@
 palette = "dragon"
-# dragon-island — starship prompt (the user's own colors, restored after the Dragonized mapping of migration 002).
-add_newline = true
-command_timeout = 200
-#format = "$os$username$hostname${custom.location}$directory$git_branch$git_state$git_status$nodejs$deno$bun$python$rust$golang$java$kotlin$php$ruby$lua$c$dart$elixir$haskell$swift$zig$docker_context$package$kubernetes$terraform$aws$nix_shell$conda$character"
-format = "$username$hostname${custom.location}$directory$git_branch$git_state$git_status$nodejs$deno$bun$python$rust$golang$java$kotlin$php$ruby$lua$c$dart$elixir$haskell$swift$zig$docker_context$package$kubernetes$terraform$aws$nix_shell$conda$character"
-right_format = "$status$cmd_duration$jobs$time"
+# dragon-island — starship prompt, two lines.
+# Line 1: identity, full path, git and toolchains on the left; duration, status, jobs and clock on the right.
+# Line 2: just the prompt character.
+# Colors: palette names (rewritten by dragon-palette from the wallpaper) for the chrome; plain ANSI names
+# (yellow, green, ...) for the toolchains, so they follow the terminal palette. Never hard-coded hex outside the
+# dragon-palette block: the converter only rewrites that block.
+# The blank line between commands comes from zsh (_dragon_prompt_spacer in dragon.zsh), so it is not printed above
+# the very first prompt of a new terminal; starship's own newline would be.
+add_newline = false
+command_timeout = 300
+
+format = """
+[╭─](accent_deep) $os$username$hostname$shlvl$container${custom.location}$directory\
+$git_branch$git_commit$git_state$git_metrics$git_status\
+$c$cmake$dart$deno$bun$elixir$golang$haskell$java$kotlin$lua$nodejs$php$python$ruby$rust$swift$zig\
+$conda$nix_shell$docker_context$kubernetes$terraform$aws\
+$fill\
+$cmd_duration$status$jobs$memory_usage$battery$time
+[╰─](accent_deep)$sudo$character"""
+
+# ---------------------------------------------------------------------------- line 1, left: who and where
+[fill]
+symbol = " "
 
 [os]
 disabled = false
-format = "[$symbol](bold accent_soft) "
+format = "[$symbol](bold accent) "
 
 [os.symbols]
-Arch = ""
-Linux = ""
+Arch = "\uf303"
+CachyOS = "\uf303"
+EndeavourOS = "\uf322"
+Manjaro = "\uf312"
+Linux = "\uf17c"
+Unknown = "\uf17c"
 
 [username]
 show_always = true
-format = "[$user](bold accent) "
+format = "[ $user](bold accent_soft) "
 
 [hostname]
 ssh_only = true
-format = "[󰒋 $hostname](bold warn) "
+ssh_symbol = " "
+format = "[$ssh_symbol$hostname](bold warn) "
 
-[character]
-error_symbol = "[✗](bold error)"
-success_symbol = "[❯❯](bold success)"
+# Off: terminals started by Herdr / herdr-core always open nested (SHLVL 3), so the badge was permanent noise.
+[shlvl]
+disabled = true
+threshold = 2
+format = "[\U000F0328 $shlvl](warn) "
 
+[container]
+format = "[\U000F0868 $name](bold cyan) "
+
+# Home or folder icon in front of the path. when = true (boolean) skips the extra "when" shell.
 [custom.location]
-command = 'if [ "$PWD" = "$HOME" ]; then printf ""; else printf "󰉋"; fi'
-when = "true"
+command = "if [ \"$PWD\" = \"$HOME\" ]; then printf '\U000F02DC'; else printf '\U000F024B'; fi"
+when = true
+shell = ["sh"]
 format = "[$output](bold cyan) "
 
+# Full path, unless it is deeper than 5 folders: then the outer ones shrink to their first letter (~/.d/c/a/b/c/d/e).
+# Inside a repo the repo's own folder is highlighted.
 [directory]
-truncation_length = 1
+truncation_length = 5
+truncate_to_repo = false
+fish_style_pwd_dir_length = 1
 truncation_symbol = ""
 home_symbol = "~"
-read_only = "󰌾"
+read_only = " \U000F033E"
+read_only_style = "bold error"
 style = "bold directory_accent"
+before_repo_root_style = "directory_accent"
+repo_root_style = "bold underline accent_soft"
 format = "[$path]($style)[$read_only]($read_only_style) "
+repo_root_format = "[$before_root_path]($before_repo_root_style)[$repo_root]($repo_root_style)[$path]($style)[$read_only]($read_only_style) "
 
+# ---------------------------------------------------------------------------- git
 [git_branch]
-format = "[ $branch]($style) "
-style = "italic cyan"
+symbol = " "
+format = "[$symbol$branch(:$remote_branch)]($style) "
+style = "bold italic cyan"
+
+[git_commit]
+tag_disabled = false
+tag_symbol = "  "
+format = "[ $hash$tag]($style) "
+style = "bold glow"
 
 [git_state]
-format = "[󰘬 $state( $progress_current/$progress_total)]($style) "
+format = "[\U000F062C $state( $progress_current/$progress_total)]($style) "
 style = "bold git_state"
 
+[git_metrics]
+disabled = false
+added_style = "ok"
+deleted_style = "error"
+
+# Every state with its count: = conflicts, ⇡⇣ ahead/behind, ≡ stash, + staged, ! modified, » renamed, ✘ deleted, ? untracked
 [git_status]
-format     = '[$all_status]($style)'
-style      = "cyan"
-ahead      = "⇡${count} "
-diverged   = "⇕⇡${ahead_count}⇣${behind_count} "
-behind     = "⇣${count} "
-conflicted = " "
-up_to_date = " "
-untracked  = "? "
-modified   = " "
-stashed    = ""
-staged     = ""
-renamed    = ""
-deleted    = ""
+format = "([$all_status$ahead_behind]($style))"
+style = "bold warn"
+conflicted = "[=${count} ](bold error)"
+ahead = "[⇡${count} ](bold cyan)"
+behind = "[⇣${count} ](bold cyan)"
+diverged = "[⇡${ahead_count}⇣${behind_count} ](bold error)"
+up_to_date = "[ ](ok)"
+stashed = "[≡${count} ](accent_soft)"
+staged = "[+${count} ](bold ok)"
+modified = "[!${count} ](warn)"
+renamed = "[»${count} ](glow)"
+deleted = "[✘${count} ](error)"
+untracked = "[?${count} ](accent_soft)"
+
+# ---------------------------------------------------------------------------- toolchains (shown only where used)
+[c]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "blue"
+
+[cmake]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "blue"
+
+[dart]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "cyan"
+
+[deno]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "green"
+
+[bun]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "white"
+
+[elixir]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "purple"
+
+[golang]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "cyan"
+
+[haskell]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "purple"
+
+[java]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "red"
+
+[kotlin]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "purple"
+
+[lua]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "blue"
+
+[nodejs]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "green"
+
+[php]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "purple"
+
+[python]
+symbol = " "
+format = "[$symbol$pyenv_prefix($version )(\\($virtualenv\\) )]($style)"
+style = "yellow"
+
+[ruby]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "red"
+
+[rust]
+symbol = "\U000F1617 "
+format = "[$symbol($version )]($style)"
+style = "red"
+
+[swift]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "red"
+
+[zig]
+symbol = " "
+format = "[$symbol($version )]($style)"
+style = "yellow"
+
+[conda]
+symbol = "\U000F0EC4 "
+format = "[$symbol$environment ]($style)"
+style = "green"
+
+[nix_shell]
+symbol = " "
+format = "[$symbol$state( \\($name\\))]($style) "
+style = "blue"
+
+[docker_context]
+symbol = " "
+format = "[$symbol$context]($style) "
+style = "blue"
+
+[kubernetes]
+symbol = "\U000F10FE "
+format = "[$symbol$context( \\($namespace\\))]($style) "
+style = "cyan"
+
+[terraform]
+symbol = "\U000F1062 "
+format = "[$symbol$workspace]($style) "
+style = "purple"
+
+[aws]
+symbol = " "
+format = "[$symbol($profile )(\\($region\\) )]($style)"
+style = "yellow"
+
+# ---------------------------------------------------------------------------- line 1, right: how it went
+[cmd_duration]
+min_time = 500
+format = "[\U000F051B $duration]($style) "
+style = "warn"
 
 [status]
 disabled = false
-format = "[$symbol$status]($style) "
-symbol = "✗ "
+pipestatus = true
+map_symbol = true
+symbol = " "
+not_executable_symbol = " "
+not_found_symbol = " "
+sigint_symbol = " "
+signal_symbol = " "
+format = "[$symbol$status( $signal_name)]($style) "
+pipestatus_format = "[\\[$pipestatus\\]](error) => [$symbol$status( $signal_name)]($style) "
+pipestatus_segment_format = "[$status]($style)"
 style = "bold error"
-
-[cmd_duration]
-min_time = 500
-format = "[󰔛 $duration]($style) "
-style = "warn"
 
 [jobs]
 format = "[$symbol$number]($style) "
-symbol = "󰜎 "
+symbol = "\U000F070E "
 style = "accent_soft"
 number_threshold = 1
 symbol_threshold = 1
+
+[memory_usage]
+disabled = false
+threshold = 80
+symbol = "\U000F035B "
+format = "[$symbol$ram_pct]($style) "
+style = "warn"
+
+[[battery.display]]
+threshold = 20
+style = "bold error"
 
 [time]
 disabled = false
 time_format = "%H:%M"
 format = "[ $time]($style)"
 style = "dimmed cyan"
+
+# ---------------------------------------------------------------------------- line 2
+[sudo]
+disabled = false
+symbol = " "
+format = "[$symbol]($style)"
+style = "bold warn"
+
+[character]
+success_symbol = "[❯❯](bold success)"
+error_symbol = "[❯❯](bold error)"
+vimcmd_symbol = "[❮❮](bold accent)"
 
 # >>> dragon-palette
 [palettes.dragon]

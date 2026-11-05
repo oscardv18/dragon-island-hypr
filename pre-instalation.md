@@ -1,36 +1,49 @@
-# pre-instalation — todo lo que hay que hacer ANTES de `./install.sh`
+# pre-instalation — de una máquina recién instalada a dragon-island, con UN comando
 
-Guía paso a paso para partir de una máquina recién instalada y llegar a ejecutar el instalador de dragon-island.
-Está escrita a partir de una instalación real que ya funciona (EndeavourOS + KDE Plasma + SDDM + Hyprland 0.56 +
-Quickshell 0.3, GPU AMD); los comandos y los nombres de paquete se comprueban con `tests/check-docs.sh`.
+```bash
+git clone https://github.com/oscardv18/dragon-island-hypr.git ~/dragon-island-hypr
+cd ~/dragon-island-hypr
+./install.sh
+```
 
-> Comprobación automática de TODO esto: `./doctor.sh --pre`. Cada ✘ te dice qué paso repetir.
+Eso es todo. `./install.sh` diagnostica la máquina, instala lo que le falta (git, base-devel, gum, curl, unzip, pciutils,
+cabeceras del kernel en uso y un ayudante AUR) tras **una** confirmación y con **una** contraseña de sudo, actualiza el sistema,
+te enseña el plan completo (paquetes, tamaño, pasos con sudo y cada incidencia explicada), instala con **una** confirmación
+(«Instalar todo»), verifica con el doctor y escribe `~/dragon-informe.txt`. Si el kernel cambia con la actualización, se detiene
+con «reinicia y vuelve a ejecutar `./install.sh`» y continúa donde lo dejó.
+
+`./doctor.sh` suelto solo diagnostica y termina preguntando «¿Instalar ahora? [S/n]».
+
+Lo único que haces tú es partir de una instalación de Arch o derivada (CachyOS «sin escritorio», EndeavourOS) con red, un
+usuario administrador (`wheel`) y el driver de video que necesites. Los pasos de abajo son la **referencia** de cada
+comprobación: el instalador te remite al que corresponda solo si algo no se pudo resolver por sí mismo.
+Los comandos y los nombres de paquete se comprueban con `tests/check-docs.sh`.
+
 > Convención: `$USER` y `$HOME` son tu usuario y tu carpeta personal; no hay que sustituir nada a mano.
 
-## Paso 0 — Resumen y orden
+## Paso 0 — Qué hace el instalador y qué no
 
-| Paso | Qué haces | Internet | Reinicio | Tiempo aprox. |
-|---|---|---|---|---|
-| 1 | Instalar EndeavourOS (KDE Plasma mínimo, SDDM) | sí | sí | 20–30 min |
-| 2 | Primer arranque: actualizar el sistema y los mirrors | sí | si cambia el kernel | 5–15 min |
-| 3 | Herramientas base: `git base-devel curl unzip gum github-cli yay` | sí | no | 2 min |
-| 4 | Red y hora (NTP) | sí | no | 1 min |
-| 5 | Driver de video (AMD, Intel o NVIDIA; tú eliges UNO) | sí | sí (NVIDIA) | 2–10 min |
-| 6 | Display manager y Plasma como segunda sesión | no | solo si lo cambias | 1–5 min |
-| 7 | Teclado y locale (opcional) | no | no | 1 min |
-| 8 | Acceso al repo y `git clone` | sí | no | 1–5 min |
-| 9 | Verificar los requisitos con `./doctor.sh --pre` | no | no | 10 s |
-| 10 | Primera ejecución: `./install.sh --dry-run` y luego `./install.sh` | sí | cerrar sesión | 15–40 min |
+| Paso | Qué ocurre | Quién |
+|---|---|---|
+| 1 | Instalar la distribución (CachyOS sin escritorio, EndeavourOS o Arch) | tú |
+| 2 | Actualizar el sistema; reinicio si cambia el kernel | `./install.sh` |
+| 3 | Herramientas base, ayudante AUR y cabeceras del kernel | `./install.sh` |
+| 4 | Red y hora (NTP): se comprueban | tú, si falla |
+| 5 | Driver de video: **no** se instala | tú |
+| 6 | Gestor de acceso: sin ninguno, el módulo `login` instala SDDM | `./install.sh` |
+| 7 | Teclado y locale (opcional) | tú |
+| 8 | Acceso al repo y `git clone` | tú |
+| 9 | Diagnóstico (`./doctor.sh`) | `./install.sh` |
+| 10 | Instalación y primer inicio de sesión | `./install.sh` |
 
-**Qué hace el script:** instala los paquetes de `packages/`, enlaza las configuraciones en `~/.config` con copia de
-seguridad, compila los plugins de Hyprland con `hyprpm`, y (opcional, cada uno con confirmación) el tema del login, el
-llavero, el teclado y apps extra. Es idempotente: puedes ejecutarlo dos veces.
+**Qué hace el script:** recorre seis fases visibles (Preflight · Plan · Paquetes · Despliegue · Servicios · Verificación), antes de cambiar nada guarda la lista de paquetes (`pacman -Qqe`) y crea una instantánea si hay snapper o Timeshift, instala los paquetes de `packages/`, enlaza las configuraciones en `~/.config` con copia de
+seguridad y compila los plugins de Hyprland con `hyprpm`. Es idempotente: puedes ejecutarlo dos veces.
 
 **Qué NO hace:**
 
 - No instala drivers de video (Paso 5, lo haces tú).
 - No toca Plasma: sigue ahí como segunda sesión.
-- No cambia el login ni `/etc` sin preguntarte, y cada paso con `sudo` se explica y se confirma.
+- No cambia el login ni `/etc` sin anunciarlo, y cada paso con `sudo` se muestra en el plan.
 - No se ejecuta como root y no pide ni guarda tu contraseña.
 - No sobrescribe tus configuraciones sin respaldo en `~/.local/state/dragon-island/backups/<fecha>/`.
 
@@ -105,32 +118,45 @@ Salida esperada: `0` actualizaciones pendientes, y la versión de `uname -r` igu
 
 ## Paso 3 — Herramientas base
 
-**Para qué sirve:** son lo único que el instalador necesita para empezar: `git` (clonar), `base-devel` (compilar paquetes
-AUR y plugins), `curl`, `unzip`, `gum` (la interfaz de terminal), `github-cli` y `yay` (ayudante de AUR). Es exactamente
-`packages/base.txt`.
+**Para qué sirve:** herramientas comunes de `packages/base.txt`: `git`, `base-devel`,
+`gum`, `curl`, `unzip` y `pciutils`. **El instalador las instala solo** (junto con la actualización del sistema, en una
+transacción); este paso es la referencia manual. El manifiesto `packages/profiles.json` referencia esa lista;
+el ayudante AUR y las cabeceras se calculan para tu máquina.
 
 ```bash
-sudo pacman -S --needed git base-devel curl unzip gum github-cli yay adw-gtk-theme
+sudo pacman -S --needed git base-devel gum curl unzip pciutils
+./doctor.sh --pre
 ```
 
-(`yay` está en el repositorio de EndeavourOS. En **Arch puro** no está en pacman: compílalo desde el AUR con
-`git clone https://aur.archlinux.org/yay-bin.git && cd yay-bin && makepkg -si`.)
+(`./install.sh` hace esto por ti; el comando es solo para hacerlo a mano.)
+
+`doctor.sh --pre` imprime el comando exacto, incluidas las cabeceras cuyo nombre
+sale de `/usr/lib/modules/$(uname -r)/pkgbase` más `-headers`. Si la actualización cambia el kernel,
+`./install.sh` se detiene y pide reiniciar: las cabeceras se instalan **después**, nunca para un kernel que ya no está.
+No se adivina el nombre cuando falta `pkgbase`.
+
+Se conserva `paru` o `yay` si ya existe. Sin ayudante, el instalador usa `paru` (CachyOS) o `yay` (otras
+distros) si `pacman -Si` lo encuentra; si no, lo construye desde AUR (`paru-bin` / `yay-bin`, con `git clone` + `makepkg` como tu usuario).
+`github-cli` es opcional para clonar y `adw-gtk-theme` pertenece al perfil base/theme.
 
 **Cómo comprobar que quedó bien:**
 
 ```bash
-command -v git curl unzip gum gh yay
+command -v git curl unzip gum
 pacman -Q base-devel
-yay --version
+command -v paru || command -v yay
+./doctor.sh --pre
 ```
 
-Salida esperada: seis rutas (`/usr/bin/...`), `base-devel` con su versión y `yay v13...` (o superior).
+Salida esperada: herramientas disponibles, un ayudante AUR y el paquete de
+cabeceras correspondiente al kernel en uso. El doctor enumera los requisitos
+pendientes y remite al paso que los resuelve.
 
 **Si falla:**
 
-- *`target not found: yay`:* no estás en EndeavourOS. Compílalo desde el AUR como se indica arriba.
-- *`makepkg` no se ejecuta como root:* ejecútalo con tu usuario, no con `sudo`.
-- *`gum` no existe:* está en `extra`; sincroniza con `sudo pacman -Sy` y repite (Paso 2).
+- *Ayudante no disponible en pacman:* instálalo desde AUR como usuario; `makepkg` no corre con `sudo`.
+- *Kernel pendiente de reinicio:* reinicia, vuelve a generar la lista y comprueba sus cabeceras.
+- *`gum` no existe:* revisa `extra` y completa la actualización del Paso 2; evita actualizaciones parciales.
 
 ## Paso 4 — Red y hora
 
@@ -345,7 +371,8 @@ Salida esperada: tres líneas con commits recientes.
 
 ## Paso 9 — Verificar los requisitos
 
-**Para qué sirve:** comprobar de una vez los pasos 1–8. Es solo lectura: no cambia nada.
+**Para qué sirve:** comprobar de una vez los pasos 1–8. Es solo lectura: no cambia nada. `./install.sh` lo ejecuta al empezar;
+a mano, `./doctor.sh` (termina preguntando «¿Instalar ahora? [S/n]»).
 
 ```bash
 cd "$HOME/dragon-island-hypr"
@@ -363,8 +390,8 @@ Requisitos previos (pre-instalation.md)
   ✔ Ayudante de AUR (yay/paru)
   ✔ Red: archlinux.org alcanzable
   ✔ Hora sincronizada (NTP)
-  ✔ Driver de video cargado (...)
-  ✔ Display manager activo (sddm)
+  ✔ GPU y driver de video (...)        (⚠ si no se identifica o estás en una máquina virtual: es un aviso)
+  ✔ Gestor de acceso (display manager): sddm   (⚠ si no hay ninguno: el módulo login instalará SDDM)
   ✔ Teclado del login empieza por us
   ✔ Hyprland ≥ 0.55 y Quickshell ≥ 0.3 (instalados o disponibles en el repo)
   ✔ Espacio libre ≥ 5 GB en $HOME
@@ -405,37 +432,37 @@ Para actualizar una instalación existente, `./update.sh` aplica **055–056** c
 
 ## Paso 10 — Primera ejecución
 
-**Para qué sirve:** instalar dragon-island. Primero en seco (no cambia nada ni pide `sudo`), luego de verdad.
+**Para qué sirve:** instalar dragon-island. Es el único comando:
 
 ```bash
 cd "$HOME/dragon-island-hypr"
-./install.sh --dry-run
 ./install.sh
 ```
 
 **Qué esperar:**
 
-1. Comprobaciones previas: si falla alguna, el instalador se detiene y te dice qué paso de esta guía repetir.
-2. Un menú para elegir módulos (`core` es obligatorio; `login`, `keyring` y `extras` vienen desmarcados porque tocan `/etc` o instalan apps) y el **plan completo** antes de aplicar.
-3. Los pasos con `sudo` se explican y se confirman uno a uno: actualizar el sistema, instalar paquetes, habilitar servicios, y `hyprpm` (pide tu contraseña para instalar cabeceras).
-4. Tarda entre 15 y 40 minutos, sobre todo por los paquetes AUR y los plugins.
+1. **Diagnóstico** de la máquina. Lo que falte (git, base-devel, gum, curl, unzip, pciutils, ayudante AUR) se instala tras una confirmación, junto con la actualización del sistema, con una sola contraseña de sudo. Sin `gum`, funciona en texto plano.
+2. Si la actualización cambia el kernel, se detiene con «reinicia y vuelve a ejecutar `./install.sh`»; al volver continúa donde lo dejó, e instala entonces las cabeceras.
+3. **Plan:** la tabla de paquetes, el tamaño de descarga, los pasos con `sudo` y cada incidencia explicada (qué paquete, por qué y qué hará el instalador: omitirlo, sustituirlo o bloquear). Una sola confirmación: **«Instalar todo»**.
+4. Instalación, verificación con el doctor y un resumen final. **Añadirte al grupo `docker` (equivale a root) solo ocurre con tu «sí» explícito.**
+5. Siempre, al terminar o al fallar, escribe **`~/dragon-informe.txt`** (versiones, comprobaciones, paquetes con problema y su causa, paso donde falló y la cola del registro; sin secretos). Si algo sale mal, envía ese archivo.
+6. Tarda entre 15 y 40 minutos, sobre todo por los paquetes AUR y los plugins.
 
-**Al terminar:**
+Si el sistema no tiene gestor de acceso (CachyOS sin escritorio), el instalador añade el módulo `login`: instala y habilita SDDM.
+Las opciones avanzadas (`--check`, `--dry-run`, `--plain`, `--modules`…) están en [docs/INSTALL.md](docs/INSTALL.md).
 
-```bash
-./doctor.sh
-```
-
-Después **cierra sesión**, y en el login elige la sesión **Hyprland**. Si el módulo `plugins` se ejecutó fuera de
+**Al terminar:** **cierra sesión**, y en el login elige la sesión **Hyprland**. Si el módulo `plugins` se ejecutó fuera de
 Hyprland, en tu primer inicio de sesión se abre una terminal que compila los plugins (pide `sudo`): déjala terminar.
 
-Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update.sh`.
+Revertir o actualizar: `./uninstall.sh`, `./update.sh`. Antes de reinstalar un equipo, respalda lo tuyo con `scripts/backup-dragon.sh` (también lista lo que debes copiar tú: ssh, gpg, navegadores, volúmenes de Docker, ramas sin subir).
+
+**Si usas CachyOS:** instala con la opción «sin escritorio», desmarca `cachyos-hello`, `cachyos-kernel-manager`, `cachyos-packageinstaller`, `cachyos-wallpapers`, Firefox y `vlc-plugins-all`, y recuerda que el shell por defecto es fish (ver [docs/INSTALL.md](docs/INSTALL.md), sección CachyOS).
 
 **Si falla:**
 
-- *Un paquete AUR no compila:* mira el error de `yay`; suele ser una dependencia que falta o un `base-devel` incompleto. Repite `./install.sh --modules core` cuando lo arregles.
+- *Un paquete AUR no compila:* el informe (`~/dragon-informe.txt`) trae el error; suele ser una dependencia que falta o un `base-devel` incompleto. Repite `./install.sh` cuando lo arregles.
 - *`hyprpm update` falla:* no lo lances desde autostart ni desde otra herramienta; ejecuta `scripts/plugins-foreground.sh` en una terminal DENTRO de Hyprland.
-- *Quieres probar sin riesgo:* `./install.sh --dry-run --yes` muestra todo el plan sin escribir nada.
+- *Quieres probar sin riesgo:* `./install.sh --dry-run` (avanzada) muestra todo el plan sin escribir nada ni pedir sudo.
 
 ## Paso 11 — Lo que el script instalará por ti
 
@@ -444,109 +471,158 @@ Revertir o actualizar: `./uninstall.sh` (por módulo con `--modules`), `./update
 <!-- packages:begin (generado por scripts/gen-package-table.sh; no editar a mano) -->
 | Paquete | Módulo | Origen |
 |---|---|---|
-| `git` | (previo, Paso 3) | oficial |
-| `base-devel` | (previo, Paso 3) | oficial |
-| `curl` | (previo, Paso 3) | oficial |
-| `unzip` | (previo, Paso 3) | oficial |
-| `gum` | (previo, Paso 3) | oficial |
-| `github-cli` | (previo, Paso 3) | oficial |
-| `yay` | (previo, Paso 3) | oficial |
-| `adw-gtk-theme` | (previo, Paso 3) | oficial |
-| `hyprland` | core | oficial |
-| `hyprlock` | core | oficial |
-| `hypridle` | core | oficial |
-| `hyprpolkitagent` | core | oficial |
-| `xdg-desktop-portal-hyprland` | core | oficial |
-| `xdg-desktop-portal-gtk` | core | oficial |
-| `gnome-keyring` | core | oficial |
-| `libsecret` | core | oficial |
-| `ghostty` | core | oficial |
-| `kitty` | core | oficial |
-| `dolphin` | core | oficial |
-| `wl-clipboard` | core | oficial |
-| `cliphist` | core | oficial |
-| `grim` | core | oficial |
-| `slurp` | core | oficial |
-| `wf-recorder` | core | oficial |
-| `hyprsunset` | core | oficial |
-| `libnotify` | core | oficial |
-| `quickshell` | core | oficial |
-| `qt6-svg` | core | oficial |
-| `qt6-imageformats` | core | oficial |
-| `awww` | core | oficial |
-| `mpv` | core | oficial |
-| `ffmpeg` | core | oficial |
-| `ffmpegthumbnailer` | core | oficial |
-| `pacman-contrib` | core | oficial |
-| `pipewire` | core | oficial |
-| `pipewire-pulse` | core | oficial |
-| `wireplumber` | core | oficial |
-| `playerctl` | core | oficial |
-| `brightnessctl` | core | oficial |
-| `networkmanager` | core | oficial |
-| `bluez` | core | oficial |
-| `bluez-utils` | core | oficial |
-| `power-profiles-daemon` | core | oficial |
-| `upower` | core | oficial |
-| `khal` | core | oficial |
-| `ddcutil` | core | oficial |
-| `jq` | core | oficial |
-| `python` | core | oficial |
-| `python-pillow` | core | oficial |
-| `python-gobject` | core | oficial |
-| `grimblast-git` | core | AUR |
-| `mpvpaper` | core | AUR |
-| `zsh` | shell | oficial |
-| `starship` | shell | oficial |
-| `eza` | shell | oficial |
-| `fzf` | shell | oficial |
-| `zoxide` | shell | oficial |
-| `fd` | shell | oficial |
-| `bat` | shell | oficial |
+| `hyprland` | base | oficial |
+| `hyprlock` | base | oficial |
+| `hypridle` | base | oficial |
+| `hyprpolkitagent` | base | oficial |
+| `xdg-desktop-portal-hyprland` | base | oficial |
+| `xdg-desktop-portal-gtk` | base | oficial |
+| `gnome-keyring` | base, keyring | oficial |
+| `libsecret` | base, keyring | oficial |
+| `ghostty` | base | oficial |
+| `kitty` | base | oficial |
+| `dolphin` | base | oficial |
+| `wl-clipboard` | base, editor | oficial |
+| `cliphist` | base | oficial |
+| `grim` | base | oficial |
+| `slurp` | base | oficial |
+| `wf-recorder` | base | oficial |
+| `hyprsunset` | base | oficial |
+| `libnotify` | base | oficial |
+| `quickshell` | base | oficial |
+| `qt6-svg` | base, login | oficial |
+| `qt6-imageformats` | base | oficial |
+| `awww` | base | oficial |
+| `mpv` | base | oficial |
+| `ffmpeg` | base | oficial |
+| `ffmpegthumbnailer` | base | oficial |
+| `pacman-contrib` | base | oficial |
+| `pipewire` | base | oficial |
+| `pipewire-pulse` | base | oficial |
+| `wireplumber` | base | oficial |
+| `playerctl` | base | oficial |
+| `brightnessctl` | base | oficial |
+| `networkmanager` | base | oficial |
+| `bluez` | base | oficial |
+| `bluez-utils` | base | oficial |
+| `power-profiles-daemon` | base | oficial |
+| `upower` | base | oficial |
+| `khal` | base | oficial |
+| `ddcutil` | base | oficial |
+| `jq` | base | oficial |
+| `python` | base | oficial |
+| `python-pillow` | base | oficial |
+| `python-gobject` | base | oficial |
+| `zsh` | base | oficial |
+| `starship` | base | oficial |
+| `eza` | base, mis-apps | oficial |
+| `fzf` | base | oficial |
+| `zoxide` | base, mis-apps | oficial |
+| `fd` | base, editor | oficial |
+| `bat` | base, mis-apps | oficial |
+| `zsh-autosuggestions` | base | oficial |
+| `zsh-syntax-highlighting` | base | oficial |
+| `ttf-jetbrains-mono-nerd` | base | oficial |
+| `nwg-look` | base | oficial |
+| `adw-gtk-theme` | base | oficial |
+| `hyprpm` | base | oficial |
+| `cpio` | base | oficial |
+| `cmake` | base | oficial |
+| `meson` | base | oficial |
+| `ninja` | base | oficial |
+| `gcc` | base, editor | oficial |
+| `pkgconf` | base | oficial |
+| `git` | base, editor, prerrequisito (lo instala el instalador) | oficial |
+| `grimblast-git` | base | AUR |
+| `mpvpaper` | base | AUR |
+| `ttf-outfit` | base | AUR |
+| `candy-icons-git` | base | AUR |
+| `sweet-folders-icons-git` | base | AUR |
+| `hyprqt6engine` | base | AUR |
+| `mactahoe-icon-theme-git` | base, mis-apps | AUR |
+| `whitesur-icon-theme` | base, mis-apps | AUR |
+| `docker` | taller, mis-apps | oficial |
+| `docker-compose` | taller, mis-apps | oficial |
+| `docker-buildx` | taller, mis-apps | oficial |
+| `lazygit` | taller, editor, mis-apps | oficial |
+| `lazydocker` | taller | oficial |
+| `udisks2` | archivos | oficial |
+| `inotify-tools` | archivos | oficial |
+| `gvfs` | archivos | oficial |
+| `gvfs-smb` | archivos | oficial |
+| `gvfs-mtp` | archivos | oficial |
+| `gvfs-nfs` | archivos | oficial |
+| `7zip` | archivos | oficial |
+| `libvips` | archivos | oficial |
+| `imagemagick` | archivos | oficial |
+| `poppler` | archivos | oficial |
+| `smbclient` | archivos | oficial |
+| `avahi` | archivos | oficial |
+| `xdg-utils` | archivos | oficial |
 | `neovim` | editor | oficial |
-| `git` | editor | oficial |
 | `ripgrep` | editor | oficial |
-| `fd` | editor | oficial |
-| `gcc` | editor | oficial |
 | `tree-sitter-cli` | editor | oficial |
 | `nodejs` | editor | oficial |
-| `npm` | editor | oficial |
-| `lazygit` | editor | oficial |
-| `go` | editor | oficial |
+| `npm` | editor, mis-apps | oficial |
+| `go` | editor, mis-apps | oficial |
 | `rust` | editor | oficial |
 | `php` | editor | oficial |
 | `composer` | editor | oficial |
-| `curl` | editor | oficial |
-| `unzip` | editor | oficial |
-| `wl-clipboard` | editor | oficial |
-| `ttf-jetbrains-mono-nerd` | theme | oficial |
-| `nwg-look` | theme | oficial |
-| `adw-gtk-theme` | theme | oficial |
-| `ttf-outfit` | theme | AUR |
-| `candy-icons-git` | theme | AUR |
-| `sweet-folders-icons-git` | theme | AUR |
-| `hyprqt6engine` | theme | AUR |
-| `mactahoe-icon-theme-git` | theme | AUR |
-| `whitesur-icon-theme` | theme | AUR |
+| `curl` | editor, prerrequisito (lo instala el instalador) | oficial |
+| `unzip` | editor, prerrequisito (lo instala el instalador) | oficial |
+| `opencode` | mis-apps | oficial |
+| `btop` | mis-apps | oficial |
+| `nautilus` | mis-apps | oficial |
+| `telegram-desktop` | mis-apps | oficial |
+| `github-cli` | mis-apps | oficial |
+| `shellcheck` | mis-apps | oficial |
+| `thunar` | mis-apps | oficial |
+| `vlc` | mis-apps | oficial |
+| `obs-studio` | mis-apps | oficial |
+| `obsidian` | mis-apps | oficial |
+| `vlc-plugin-ffmpeg` | mis-apps | oficial |
+| `nodejs-lts-krypton` | mis-apps | oficial |
+| `pnpm` | mis-apps | oficial |
+| `python-pip` | mis-apps | oficial |
+| `uv` | mis-apps | oficial |
+| `cloudflared` | mis-apps | oficial |
+| `rustup` | mis-apps | oficial |
+| `php-gd` | mis-apps | oficial |
+| `php-cgi` | mis-apps | oficial |
+| `php-fpm` | mis-apps | oficial |
+| `php-pgsql` | mis-apps | oficial |
+| `php-redis` | mis-apps | oficial |
+| `php-sqlite` | mis-apps | oficial |
+| `dart` | mis-apps | oficial |
+| `nss` | mis-apps | oficial |
+| `memtest86+` | mis-apps | oficial |
+| `smartmontools` | mis-apps | oficial |
+| `brave-bin` | mis-apps, extras (brave, opt-in) | oficial |
+| `proton-vpn-gtk-app` | mis-apps, extras (protonvpn, opt-in) | oficial |
+| `claude-code` | mis-apps | oficial |
+| `claude-desktop` | mis-apps | oficial |
+| `openai-codex` | mis-apps | oficial |
+| `genoffice-bin` | mis-apps | AUR |
+| `lmbionic-bin` | mis-apps | AUR |
+| `otf-apple-sf-mono` | mis-apps | AUR |
+| `android-studio` | mis-apps | AUR |
+| `hermes-agent` | mis-apps | AUR |
+| `google-chrome` | mis-apps | AUR |
+| `visual-studio-code-bin` | mis-apps | AUR |
+| `antigravity` | mis-apps | AUR |
+| `antigravity-cli` | mis-apps | AUR |
+| `antigravity-ide` | mis-apps | AUR |
+| `chatgpt-desktop` | mis-apps | AUR |
 | `sddm` | login | oficial |
 | `qt6-declarative` | login | oficial |
-| `qt6-svg` | login | oficial |
-| `hyprpm` | plugins | oficial |
-| `cpio` | plugins | oficial |
-| `cmake` | plugins | oficial |
-| `meson` | plugins | oficial |
-| `ninja` | plugins | oficial |
-| `gcc` | plugins | oficial |
-| `pkgconf` | plugins | oficial |
-| `git` | plugins | oficial |
-| `brave-bin` | extras (brave) | AUR |
-| `proton-vpn-gtk-app` | extras (protonvpn) | oficial |
-| `qrencode` | extras (paneles) | oficial |
-| `cava` | extras (paneles) | oficial |
-| `herdr` | extras | instalador oficial (sin root, ~/.local/bin) |
-| `zsh-autosuggestions`, `zsh-syntax-highlighting`, `fzf-tab` | shell | git clone |
+| `base-devel` | prerrequisito (lo instala el instalador) | oficial |
+| `gum` | prerrequisito (lo instala el instalador) | oficial |
+| `pciutils` | prerrequisito (lo instala el instalador) | oficial |
+| `qrencode` | extras (paneles, opt-in) | oficial |
+| `cava` | extras (paneles, opt-in) | oficial |
+| `herdr` | taller (opt-in) | instalador oficial, confirmación pendiente en I3/I4 |
 | `hyprfocus`, `hyprglass` | plugins | hyprpm |
-| Mis apps: opencode eza zoxide bat btop nautilus telegram-desktop github-cli shellcheck thunar vlc obs-studio obsidian vlc-plugin-ffmpeg docker docker-compose nodejs-lts-krypton npm pnpm python-pip uv cloudflared rustup php-gd php-cgi php-fpm php-pgsql php-redis php-sqlite go dart docker-buildx nss memtest86+ smartmontools lazygit genoffice-bin lmbionic-bin otf-apple-sf-mono android-studio hermes-agent whitesur-icon-theme mactahoe-icon-theme-git  | extras (myapps) | lo que instalaste desde la Tienda |
+| `fzf-tab` | shell | git clone (sin paquete en extra) |
 <!-- packages:end -->
 
 Lo que ya tengas instalado no se reinstala (`pacman -S --needed`). Los paquetes **no** se desinstalan al revertir salvo que lo pidas

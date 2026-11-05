@@ -456,7 +456,7 @@ REPO_DIR="%s"; DRY_RUN="${DRY_RUN:-false}"; ASSUME_YES=true; NO_SUDO=false; LINK
         self.assertEqual(r.returncode, 0, r.stderr)
         self.assertEqual(sha(self.conf), before)
         self.assertFalse(self.system.exists())
-        self.assertIn('confirmar a mano', r.stdout + r.stderr)
+        self.assertIn('no hay terminal', r.stdout + r.stderr)
 
     def test_full_apply_installs_engine_hook_and_theme(self):
         r = self.sh('boot_apply', DRAGON_BOOT_ASSUME_YES='1')

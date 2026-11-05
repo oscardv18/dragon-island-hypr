@@ -91,6 +91,21 @@ core_apply() {
     if $DRY_RUN; then "$REPO_DIR/scripts/sync-shared.sh" --check || log_warn "NeuralCore/CoreIcon desincronizados (se corrigen al instalar)."
     else "$REPO_DIR/scripts/sync-shared.sh"; fi
 
+    # the linear installer enables the services in its own phase (DRAGON_DEFER_SERVICES=1); update.sh and old flows do it here
+    [[ "${DRAGON_DEFER_SERVICES:-}" == 1 ]] || core_services
+
+    core_quickshell_reload
+
+    # only one notification daemon per session: the Quickshell one
+    local s
+    for s in mako dunst swaync; do
+        pkg_installed "$s" && log_warn "$s está instalado: si arranca en Hyprland competirá con las notificaciones de Quickshell."
+    done
+    return 0
+}
+
+# System and user services of the base session. Idempotent: an enabled service is left alone.
+core_services() {
     local s
     for s in NetworkManager bluetooth power-profiles-daemon; do
         if systemctl is-enabled --quiet "$s" 2>/dev/null; then log_info "Servicio $s ya habilitado."
@@ -100,12 +115,21 @@ core_apply() {
         systemctl --user is-enabled --quiet "$s" 2>/dev/null || systemctl --user is-enabled --quiet "$s.socket" 2>/dev/null \
             || run systemctl --user enable --now "$s" || log_warn "No se pudo habilitar $s (usuario)."
     done
-
-    # only one notification daemon per session: the Quickshell one
-    for s in mako dunst swaync; do
-        pkg_installed "$s" && log_warn "$s está instalado: si arranca en Hyprland competirá con las notificaciones de Quickshell."
-    done
     return 0
+}
+
+# Quickshell is started by Hyprland's autostart. The installer never starts it: outside a Hyprland session it only says so; inside one,
+# a shell that is already running with the previous configuration is restarted so it loads the new one.
+core_quickshell_reload() {
+    if ! in_hyprland; then log_info "Quickshell no se arranca fuera de Hyprland: se inicia solo al entrar en la sesión (cierra sesión y elige Hyprland)."; return 0; fi
+    # a simulation must not even ask the running shell (qs creates its runtime directory)
+    if $DRY_RUN; then echo "[dry-run] si Quickshell ya corre: qs kill; qs -d"; return 0; fi
+    command -v qs >/dev/null 2>&1 || return 0
+    [[ -n "$(qs list 2>/dev/null)" ]] || { log_info "Quickshell no está en marcha: Hyprland lo arrancará."; return 0; }
+    log_info "Quickshell ya estaba en marcha: se reinicia con la configuración nueva."
+    qs kill || true
+    sleep 1
+    qs -d >/dev/null 2>&1 </dev/null || log_warn "Quickshell no arrancó: ejecuta «qs -d» o reinicia la sesión."
 }
 
 core_revert() {

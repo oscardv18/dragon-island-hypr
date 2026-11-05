@@ -30,6 +30,8 @@ plugins_apply() {
     run chmod +x "$PLUGINS_SCRIPT"
     deploy_item "$PLUGINS_SCRIPT" "$STATE_DIR/plugins-foreground.sh"
     deploy_item "$REPO_DIR/lib/hyprland-session.sh" "$STATE_DIR/hyprland-session.sh"
+    deploy_item "$REPO_DIR/lib/pins.sh" "$STATE_DIR/pins.sh"
+    deploy_item "$REPO_DIR/packages/pins.json" "$STATE_DIR/pins.json"
     $DRY_RUN || touch "$STATE_DIR/plugins.pending"
     if in_hyprland && ! $DRY_RUN; then
         if confirm "[sudo] hyprpm va a instalar cabeceras de Hyprland (pide tu contraseña). ¿Compilar los plugins ahora, en primer plano?"; then

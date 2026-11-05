@@ -1,11 +1,7 @@
-# dragon-island — base: must exist BEFORE running install.sh (pre-instalation.md, step 3)
-# One package per line, "#" starts a comment. Names verified with pacman -Si / yay -Si (see docs/TESTED-VERSIONS.md).
-
+# Prerrequisitos comunes, instalados a mano; ayudante AUR y cabeceras son dinámicos.
 git
 base-devel
+gum
 curl
 unzip
-gum
-github-cli
-yay            # EndeavourOS repo; on plain Arch it is an AUR package (build it by hand, see pre-instalation.md)
-adw-gtk-theme  # GTK3 dark base for the provisional file chooser
+pciutils
